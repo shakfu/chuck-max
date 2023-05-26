@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include "chuck.h"
+#include "chuck_globals.h"
 
 #define GAIN 0.5
 #define SAMPLE float
@@ -23,15 +24,15 @@
 
 // struct to represent the object's state
 typedef struct _ck {
-    t_pxobject ob;      // the object itself (t_pxobject in MSP instead of t_object)
-    t_symbol* filename; // filename of lua file in Max search path
-    t_symbol* funcname; // name of lua dsp function to use
-    double param1;      // the value of a property of our object
-    double v1;          // historical value;
-    const char *working_dir;
-    ChucK *chuck;
-    float *in_chuck_buffer;
-    float *out_chuck_buffer;
+    t_pxobject ob;              // the object itself (t_pxobject in MSP instead of t_object)    
+    double param1;              // the value of a property of our object
+
+    // chuck-related
+    t_symbol* filename;         // name of chuck file in Max search path
+    const char *working_dir;    // chuck working directory
+    ChucK *chuck;               // chuck instance
+    float *in_chuck_buffer;     // intermediate chuck input buffer
+    float *out_chuck_buffer;    // intermediate chuck output buffer
 } t_ck;
 
 
@@ -39,13 +40,25 @@ typedef struct _ck {
 void *ck_new(t_symbol *s, long argc, t_atom *argv);
 void ck_free(t_ck *x);
 void ck_assist(t_ck *x, void *b, long m, long a, char *s);
+
+// message handlers
 void ck_bang(t_ck *x);
-void ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 void ck_float(t_ck *x, double f);
+
+void ck_run(t_ck* x, t_symbol* s);
+void ck_run_file(t_ck *x);
+void ck_compile_file(t_ck *x, const char *filename);
+void ck_reset(t_ck* x);
+void ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type);
+
 void ck_dsp64(t_ck *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
 void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
-t_string* get_path_from_package(t_class* c, char* subpath);
+t_string* ck_get_path_from_external(t_class* c, char* subpath);
+t_string* ck_get_path_from_package(t_class* c, char* subpath);
+
+
+
 
 // global class pointer variable
 static t_class *ck_class = NULL;
@@ -54,7 +67,7 @@ static t_class *ck_class = NULL;
 //-----------------------------------------------------------------------------------------------
 
 
-t_string* get_path_from_external(t_class* c, char* subpath)
+t_string* ck_get_path_from_external(t_class* c, char* subpath)
 {
     char external_path[MAX_PATH_CHARS];
     char external_name[MAX_PATH_CHARS];
@@ -78,10 +91,10 @@ t_string* get_path_from_external(t_class* c, char* subpath)
 }
 
 
-t_string* get_path_from_package(t_class* c, char* subpath)
+t_string* ck_get_path_from_package(t_class* c, char* subpath)
 {
     t_string* result;
-    t_string* external_path = get_path_from_external(c, NULL);
+    t_string* external_path = ck_get_path_from_external(c, NULL);
 
     const char* ext_path_c = string_getptr(external_path);
 
@@ -106,8 +119,9 @@ void ext_main(void *r)
     t_class *c = class_new("chuck~", (method)ck_new, (method)ck_free, (long)sizeof(t_ck), 0L, A_GIMME, 0);
 
     class_addmethod(c, (method)ck_float,    "float",    A_FLOAT, 0);
-    class_addmethod(c, (method)ck_anything, "anything", A_GIMME, 0);
+    class_addmethod(c, (method)ck_run,      "run",      A_SYM,   0);
     class_addmethod(c, (method)ck_bang,     "bang",              0);
+    class_addmethod(c, (method)ck_reset,    "reset",             0);
     class_addmethod(c, (method)ck_dsp64,    "dsp64",    A_CANT,  0);
     class_addmethod(c, (method)ck_assist,   "assist",   A_CANT,  0);
 
@@ -139,7 +153,7 @@ void ck_run_file(t_ck *x)
         if (access(norm_path, F_OK) == 0) { // file exists in path
             ck_compile_file(x, norm_path);
         } else { // try in the example folder
-            t_string* path = get_path_from_package(ck_class, "/examples/");
+            t_string* path = ck_get_path_from_package(ck_class, "/examples/");
             string_append(path, x->filename->s_name);
             const char* ck_file = string_getptr(path);
             ck_compile_file(x, ck_file);
@@ -162,16 +176,13 @@ void *ck_new(t_symbol *s, long argc, t_atom *argv)
             outlet_new(x, "signal");        // signal outlet (note "signal" rather than NULL)            
         }
         x->param1 = 0.0;
-        x->v1 = 0.0;
         x->filename = atom_getsymarg(0, argc, argv); // 1st arg of object
-        x->funcname = gensym("base");
-        x->working_dir = string_getptr(get_path_from_package(ck_class, "/examples"));
+        x->working_dir = string_getptr(ck_get_path_from_package(ck_class, "/examples"));
         x->in_chuck_buffer = NULL;
         x->out_chuck_buffer = NULL;
 
-
         x->chuck = new ChucK();
-        x->chuck->setParam( CHUCK_PARAM_SAMPLE_RATE, (t_CKINT) MY_SRATE );
+        x->chuck->setParam( CHUCK_PARAM_SAMPLE_RATE, (t_CKINT) sys_getsr() );
         x->chuck->setParam( CHUCK_PARAM_INPUT_CHANNELS, (t_CKINT) N_IN_CHANNELS );
         x->chuck->setParam( CHUCK_PARAM_OUTPUT_CHANNELS, (t_CKINT) N_OUT_CHANNELS );
         x->chuck->setParam( CHUCK_PARAM_VM_HALT, (t_CKINT) 0 );
@@ -180,8 +191,6 @@ void *ck_new(t_symbol *s, long argc, t_atom *argv)
         std::string global_dir = std::string(x->working_dir);
         x->chuck->setParam( CHUCK_PARAM_WORKING_DIRECTORY, global_dir );
         std::list< std::string > chugin_search;
-        chugin_search.push_back(global_dir + "/Chugins" );
-        chugin_search.push_back(global_dir + "/ChuGins" );
         chugin_search.push_back(global_dir + "/chugins" );
         x->chuck->setParam( CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, chugin_search );
 
@@ -226,12 +235,56 @@ void ck_bang(t_ck *x)
     ck_run_file(x);
 }
 
-void ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+void ck_run(t_ck* x, t_symbol* s)
 {
     if (s != gensym("")) {
-        post("funcname: %s", s->s_name);
-        x->funcname = s;
+        post("filename: %s", s->s_name);
+        x->filename = s;
+        ck_run_file(x);
     }
+}
+
+
+void ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
+{
+    // enum Chuck_Msg_Type
+    // {
+    //     MSG_ADD = 1,
+    //     MSG_REMOVE,
+    //     MSG_REMOVEALL,
+    //     MSG_REPLACE,
+    //     MSG_STATUS,
+    //     MSG_PAUSE,
+    //     MSG_KILL,
+    //     MSG_TIME,
+    //     MSG_RESET_ID,
+    //     MSG_DONE,
+    //     MSG_ABORT,
+    //     MSG_ERROR, // added 1.3.0.0
+    //     MSG_CLEARVM,
+    //     MSG_CLEARGLOBALS,
+    // };
+    
+    Chuck_Msg * msg = new Chuck_Msg;
+    msg->type = msg_type;
+    
+    // null reply so that VM will delete for us when it's done
+    msg->reply = ( ck_msg_func )NULL;
+    
+    x->chuck->vm()->globals_manager()->execute_chuck_msg_with_globals( msg );
+}
+
+
+void ck_reset(t_ck* x)
+{
+    post("# of vms: %d", x->chuck->numVMs());
+
+    // create a msg asking to clear the globals
+    ck_send_chuck_vm_msg(x, MSG_CLEARGLOBALS);
+
+    // create a msg asking to clear the VM
+    ck_send_chuck_vm_msg(x, MSG_CLEARVM);
+
 }
 
 
