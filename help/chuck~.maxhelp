@@ -158,8 +158,8 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 142.0, 287.0, 42.0, 19.0 ],
-					"text" : "reload"
+					"patching_rect" : [ 186.0, 266.0, 33.0, 19.0 ],
+					"text" : "load"
 				}
 
 			}

@@ -158,7 +158,7 @@ void *ck_new(t_symbol *s, long argc, t_atom *argv)
         // use 0 if you don't need inlets
 
         for (int i=0; i < N_OUT_CHANNELS; i++) {
-            post("created: outlet %d", i);
+            // post("created: outlet %d", i);
             outlet_new(x, "signal");        // signal outlet (note "signal" rather than NULL)            
         }
         x->param1 = 0.0;
@@ -169,8 +169,6 @@ void *ck_new(t_symbol *s, long argc, t_atom *argv)
         x->in_chuck_buffer = NULL;
         x->out_chuck_buffer = NULL;
 
-        post("working_dir: %s", x->working_dir);
-        post("filename: %s", x->filename->s_name);
 
         x->chuck = new ChucK();
         x->chuck->setParam( CHUCK_PARAM_SAMPLE_RATE, (t_CKINT) MY_SRATE );
@@ -179,21 +177,26 @@ void *ck_new(t_symbol *s, long argc, t_atom *argv)
         x->chuck->setParam( CHUCK_PARAM_VM_HALT, (t_CKINT) 0 );
         x->chuck->setParam( CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT) 0 );
         // directory for compiled code
-        std::string globalDir = std::string(x->working_dir);
-        x->chuck->setParam( CHUCK_PARAM_WORKING_DIRECTORY, globalDir );
+        std::string global_dir = std::string(x->working_dir);
+        x->chuck->setParam( CHUCK_PARAM_WORKING_DIRECTORY, global_dir );
         std::list< std::string > chugin_search;
-        chugin_search.push_back(globalDir + "/Chugins" );
-        chugin_search.push_back(globalDir + "/ChuGins" );
-        chugin_search.push_back(globalDir + "/chugins" );
+        chugin_search.push_back(global_dir + "/Chugins" );
+        chugin_search.push_back(global_dir + "/ChuGins" );
+        chugin_search.push_back(global_dir + "/chugins" );
         x->chuck->setParam( CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, chugin_search );
 
         // init chuck
         x->chuck->init();
         x->chuck->start();
 
-        post("number of output channels: %d", x->chuck->vm()->m_num_dac_channels);
-        post("number of input channels: %d", x->chuck->vm()->m_num_adc_channels);
+        post("ChucK %s", x->chuck->version());
+        post("inputs: %d  outputs: %d ", 
+            x->chuck->vm()->m_num_adc_channels, 
+            x->chuck->vm()->m_num_dac_channels);
 
+        post("file: %s", x->filename->s_name);
+        // post("working dir: %s", x->working_dir);
+        // post("chugins dir: %s/chugins", x->working_dir);
     }
     return (x);
 }
@@ -201,6 +204,8 @@ void *ck_new(t_symbol *s, long argc, t_atom *argv)
 
 void ck_free(t_ck *x)
 {
+    delete[] x->in_chuck_buffer;
+    delete[] x->out_chuck_buffer;
     delete x->chuck;
     dsp_free((t_pxobject *)x);
 }
@@ -239,8 +244,8 @@ void ck_float(t_ck *x, double f)
 
 void ck_dsp64(t_ck *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-    post("sample rate: %f", samplerate);
-    post("maxvectorsize: %d", maxvectorsize);
+    // post("sample rate: %f", samplerate);
+    // post("maxvectorsize: %d", maxvectorsize);
 
     delete[] x->in_chuck_buffer;
     delete[] x->out_chuck_buffer;
