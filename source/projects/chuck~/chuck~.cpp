@@ -21,7 +21,7 @@
 
 // struct to represent the object's state
 typedef struct _ck {
-    t_pxobject ob;              // the object itself (t_pxobject in MSP instead of t_object)
+    t_pxobject ob;              // the object itself (t_pxobject in MSP)
 
     // chuck-related
     t_symbol* filename;         // name of chuck file in Max search path
@@ -47,6 +47,7 @@ t_max_err ck_run(t_ck* x, t_symbol* s);         // run chuck file
 t_max_err ck_reset(t_ck* x);                    // remove all shreds and clean vm
 t_max_err ck_signal(t_ck* x, t_symbol* s);      // signal global event
 t_max_err ck_broadcast(t_ck* x, t_symbol* s);   // broadcast global event
+t_max_err ck_remove(t_ck *x, t_symbol *s, long argc, t_atom *argv);   // remove all or last shreds or by #
 
 // helpers
 void ck_run_file(t_ck *x);
@@ -65,19 +66,20 @@ static t_class *ck_class = NULL;
 
 
 //-----------------------------------------------------------------------------------------------
+// core
+
 
 void ext_main(void *r)
 {
-    // object initialization, note the use of dsp_free for the freemethod, which is required
-    // unless you need to free allocated memory, in which case you should call dsp_free from
-    // your custom free function.
 
-    t_class *c = class_new("chuck~", (method)ck_new, (method)ck_free, (long)sizeof(t_ck), 0L, A_GIMME, 0);
+    t_class *c = class_new("chuck~", 
+        (method)ck_new, (method)ck_free, (long)sizeof(t_ck), 0L, A_GIMME, 0);
 
     class_addmethod(c, (method)ck_run,          "run",          A_SYM,   0);
     class_addmethod(c, (method)ck_reset,        "reset",                 0);
     class_addmethod(c, (method)ck_signal,       "signal",       A_SYM,   0);
     class_addmethod(c, (method)ck_broadcast,    "broadcast",    A_SYM,   0);
+    class_addmethod(c, (method)ck_remove,       "remove",       A_GIMME, 0);
 
     class_addmethod(c, (method)ck_bang,         "bang",                  0);
     class_addmethod(c, (method)ck_anything,     "anything",     A_GIMME, 0);
@@ -105,7 +107,6 @@ void *ck_new(t_symbol *s, long argc, t_atom *argv)
         }
 
         // chuck-related
-        x->gm = NULL; // Chuck Globals Manager
         x->filename = atom_getsymarg(0, argc, argv); // 1st arg of object
         x->working_dir = string_getptr(ck_get_path_from_package(ck_class, "/examples"));
         x->in_chuck_buffer = NULL;
@@ -163,7 +164,7 @@ void ck_assist(t_ck *x, void *b, long m, long a, char *s)
 
 
 //-----------------------------------------------------------------------------------------------
-
+// helpers
 
 t_string* ck_get_path_from_external(t_class* c, char* subpath)
 {
@@ -235,6 +236,24 @@ void ck_run_file(t_ck *x)
 }
 
 
+t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
+{    
+    Chuck_Msg * msg = new Chuck_Msg;
+    msg->type = msg_type;
+    
+    // null reply so that VM will delete for us when it's done
+    msg->reply = ( ck_msg_func )NULL;
+    
+    if (x->chuck->vm()->globals_manager()->execute_chuck_msg_with_globals(msg)) {
+        return MAX_ERR_NONE;
+    } else {
+        return MAX_ERR_GENERIC;
+    }
+}
+
+//-----------------------------------------------------------------------------------------------
+// message handlers
+
 
 t_max_err ck_bang(t_ck *x)
 {
@@ -249,7 +268,6 @@ t_max_err ck_run(t_ck* x, t_symbol* s)
         post("filename: %s", s->s_name);
         x->filename = s;
         ck_run_file(x);
-        x->gm = x->chuck->globals();
         return MAX_ERR_NONE;   
     }
     return MAX_ERR_GENERIC;
@@ -258,23 +276,26 @@ t_max_err ck_run(t_ck* x, t_symbol* s)
 
 t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv)
 {
+    // TODO:
+    //  - should check set op (true if succeed)
+    //  - handle case of 2 length array (maybe)
 
     if (s == NULL || argc == 0) {
         goto error;
     }
 
-    if (argc == 1) {
+    if (argc == 1) { // <param-name> <value>
         switch (argv->a_type) { // really argv[0]
         case A_FLOAT: {
             float p_float = atom_getfloat(argv);
             object_post((t_object*)x,"param %s: %f", s->s_name, p_float);
-            x->gm->setGlobalFloat(s->s_name, p_float);
+            x->chuck->vm()->globals_manager()->setGlobalFloat(s->s_name, p_float);
             break;
         }
         case A_LONG: {
             long p_long = atom_getlong(argv);
             object_post((t_object*)x,"param %s: %d", s->s_name, p_long);
-            x->gm->setGlobalInt(s->s_name, p_long);
+            x->chuck->vm()->globals_manager()->setGlobalInt(s->s_name, p_long);
             break;
         }
         case A_SYM: {
@@ -283,7 +304,7 @@ t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv)
                 goto error;
             }
             object_post((t_object*)x,"param %s: %s", s->s_name, p_sym->s_name);
-            x->gm->setGlobalString(s->s_name, p_sym->s_name);
+            x->chuck->vm()->globals_manager()->setGlobalString(s->s_name, p_sym->s_name);
             break;
         }
         default:
@@ -298,17 +319,59 @@ t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv)
             for (int i = 0; i < argc; i++) {
                 long_array[i] = atom_getlong(argv + i);
             }
-            x->gm->setGlobalIntArray(s->s_name, long_array, argc);
+            x->chuck->vm()->globals_manager()->setGlobalIntArray(s->s_name, long_array, argc);
             sysmem_freeptr(long_array);
         }
 
-        else if (argv->a_type == A_FLOAT) { // list of floats
+        else if (argv->a_type == A_FLOAT) { // list of doubles
             double *float_array = (double*)sysmem_newptr(sizeof(double*) * argc);
             for (int i = 0; i < argc; i++) {
                 float_array[i] = atom_getfloat(argv + i);
             }
-            x->gm->setGlobalFloatArray(s->s_name, float_array, argc);
+            x->chuck->vm()->globals_manager()->setGlobalFloatArray(s->s_name, float_array, argc);
             sysmem_freeptr(float_array);
+        }
+    }
+
+    if (argc == 2) { // <param-name> <index|key> <value
+        if (argv->a_type == A_LONG) { // int index
+            long index = atom_getlong(argv);           
+
+            switch ((argv+1)->a_type) { // really argv[1]
+            case A_FLOAT: {
+                float p_float = atom_getfloat(argv+1);
+                x->chuck->vm()->globals_manager()->setGlobalFloatArrayValue(s->s_name, index, p_float);
+                break;
+            }
+            case A_LONG: {
+                long p_long = atom_getlong(argv+1);
+                x->chuck->vm()->globals_manager()->setGlobalIntArrayValue(s->s_name, index, p_long);
+                break;
+            }
+            default:
+                goto error;
+                break;
+            }
+
+        } else if (argv->a_type == A_SYM) { // key/value
+            t_symbol* key = atom_getsym(argv);
+
+            switch ((argv+1)->a_type) { // really argv[1]
+            case A_FLOAT: {
+                float p_float = atom_getfloat(argv+1);
+                x->chuck->vm()->globals_manager()->setGlobalAssociativeFloatArrayValue(s->s_name, key->s_name, p_float);
+                break;
+            }
+            case A_LONG: {
+                long p_long = atom_getlong(argv+1);
+                x->chuck->vm()->globals_manager()->setGlobalAssociativeIntArrayValue(s->s_name, key->s_name, p_long);
+                break;
+            }
+            default:
+                goto error;
+                break;
+            }
+
         }
     }
 
@@ -320,25 +383,46 @@ t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv)
 }
 
 
-t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
-{    
+t_max_err ck_remove(t_ck *x, t_symbol *s, long argc, t_atom *argv) {
+
     Chuck_Msg * msg = new Chuck_Msg;
-    msg->type = msg_type;
-    
-    // null reply so that VM will delete for us when it's done
-    msg->reply = ( ck_msg_func )NULL;
-    
-    if (x->gm->execute_chuck_msg_with_globals(msg)) {
-        return MAX_ERR_NONE;
+
+    if (argc == 1) {
+
+        if (argv->a_type == A_LONG) {
+            long shred_id = atom_getlong(argv);
+            msg->type = MSG_REMOVE;
+            msg->param = shred_id;
+
+        } else if (argv->a_type == A_SYM) {
+
+            t_symbol* cmd = atom_getsym(argv);
+
+            if (cmd == gensym("all")) {
+                msg->type = MSG_REMOVEALL;
+            
+            } else if (cmd == gensym("last")) {
+                msg->type = MSG_REMOVE;
+                msg->param = 0xffffffff;
+            }
+        }
+
     } else {
-        return MAX_ERR_GENERIC;
+        // default to last
+        msg->type = MSG_REMOVE;
+        msg->param = 0xffffffff;
     }
+
+    msg->reply = ( ck_msg_func )0;
+    x->chuck->vm()->queue_msg( msg, 1 );
+    return MAX_ERR_NONE;
 }
+
 
 
 t_max_err ck_signal(t_ck* x, t_symbol* s)
 {
-    if (x->gm->signalGlobalEvent(s->s_name)) {
+    if (x->chuck->vm()->globals_manager()->signalGlobalEvent(s->s_name)) {
         return MAX_ERR_NONE;
     } else {
         error("[ck_signal] signal global event '%s' failed", s->s_name);
@@ -349,7 +433,7 @@ t_max_err ck_signal(t_ck* x, t_symbol* s)
 
 t_max_err ck_broadcast(t_ck* x, t_symbol* s)
 {
-    if (x->gm->broadcastGlobalEvent(s->s_name)) {
+    if (x->chuck->vm()->globals_manager()->broadcastGlobalEvent(s->s_name)) {
         return MAX_ERR_NONE;
     } else {
         error("[ck_broadcast] broadcast global event '%s' failed", s->s_name);
@@ -376,6 +460,10 @@ t_max_err ck_reset(t_ck* x)
 }
 
 
+//-----------------------------------------------------------------------------------------------
+// audio processing
+
+
 void ck_dsp64(t_ck *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
     // post("sample rate: %f", samplerate);
@@ -394,7 +482,8 @@ void ck_dsp64(t_ck *x, t_object *dsp64, short *count, double samplerate, long ma
 }
 
 
-void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, 
+                           long sampleframes, long flags, void *userparam)
 {
     float * in_ptr = x->in_chuck_buffer;
     float * out_ptr = x->out_chuck_buffer;

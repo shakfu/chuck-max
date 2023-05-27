@@ -40,6 +40,93 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"format" : 6,
+					"id" : "obj-17",
+					"maxclass" : "flonum",
+					"numinlets" : 1,
+					"numoutlets" : 2,
+					"outlettype" : [ "", "bang" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 180.5, 192.0, 50.0, 21.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"floatoutput" : 1,
+					"id" : "obj-18",
+					"maxclass" : "slider",
+					"numinlets" : 1,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 180.5, 96.0, 20.0, 85.0 ],
+					"size" : 1.0,
+					"varname" : "slider"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-14",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 180.5, 222.0, 43.0, 21.0 ],
+					"text" : "wet $1"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-13",
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 357.5, 179.0, 69.0, 19.0 ],
+					"text" : "test effect"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-23",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 324.5, 272.0, 56.0, 21.0 ],
+					"text" : "remove 2"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-16",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 324.5, 299.5, 61.0, 21.0 ],
+					"text" : "remove all"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-12",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 324.5, 327.0, 68.0, 21.0 ],
+					"text" : "remove last"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"id" : "obj-62",
 					"maxclass" : "message",
 					"numinlets" : 2,
@@ -285,7 +372,7 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-40",
-					"items" : [ "adc.ck", ",", "adsr.ck", ",", "alarm.ck", ",", "args.ck", ",", "bar.ck", ",", "bitcrush.ck", ",", "blit.ck", ",", "blit2.ck", ",", "chirp.ck", ",", "chirp2.ck", ",", "comb.ck", ",", "curly++.ck", ",", "curly.ck", ",", "delay.ck", ",", "demo0.ck", ",", "demo1.ck", ",", "demo2.ck", ",", "demo3.ck", ",", "echo.ck", ",", "envelope.ck", ",", "fm.ck", ",", "fm2.ck", ",", "fm3.ck", ",", "foo.ck", ",", "foo2.ck", ",", "func.ck", ",", "i-robot.ck", ",", "imp.ck", ",", "infnan.ck", ",", "larry++.ck", ",", "larry.ck", ",", "lfo.ck", ",", "maxtest.ck", ",", "moe++.ck", ",", "moe.ck", ",", "oscillatronx.ck", ",", "phasor.ck", ",", "pulse.ck", ",", "rec-auto-stereo.ck", ",", "rec-auto.ck", ",", "rec.ck", ",", "ring.ck", ",", "sine.ck", ",", "sndbuf.ck", ",", "step.ck", ",", "tick.ck", ",", "tick2.ck", ",", "unchuck.ck", ",", "valueat.ck", ",", "whirl.ck", ",", "whole.ck", ",", "wind.ck", ",", "wind2.ck", ",", "zerox.ck" ],
+					"items" : [ "adc.ck", ",", "adsr.ck", ",", "alarm.ck", ",", "args.ck", ",", "bar.ck", ",", "bitcrush.ck", ",", "blit.ck", ",", "blit2.ck", ",", "chirp.ck", ",", "chirp2.ck", ",", "comb.ck", ",", "curly++.ck", ",", "curly.ck", ",", "delay.ck", ",", "demo0.ck", ",", "demo1.ck", ",", "demo2.ck", ",", "demo3.ck", ",", "echo.ck", ",", "envelope.ck", ",", "fm.ck", ",", "fm2.ck", ",", "fm3.ck", ",", "foo.ck", ",", "foo2.ck", ",", "func.ck", ",", "i-robot.ck", ",", "imp.ck", ",", "infnan.ck", ",", "larry++.ck", ",", "larry.ck", ",", "lfo.ck", ",", "maxtest.ck", ",", "moe++.ck", ",", "moe.ck", ",", "oscillatronx.ck", ",", "phasor.ck", ",", "pulse.ck", ",", "rec-auto-stereo.ck", ",", "rec-auto.ck", ",", "rec.ck", ",", "ring.ck", ",", "sine.ck", ",", "sndbuf.ck", ",", "step.ck", ",", "test.ck", ",", "tick.ck", ",", "tick2.ck", ",", "unchuck.ck", ",", "valueat.ck", ",", "whirl.ck", ",", "whole.ck", ",", "wind.ck", ",", "wind2.ck", ",", "zerox.ck" ],
 					"maxclass" : "umenu",
 					"numinlets" : 1,
 					"numoutlets" : 3,
@@ -302,20 +389,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 238.0, 258.0, 102.0, 21.0 ],
+					"patching_rect" : [ 238.0, 222.0, 102.0, 21.0 ],
 					"text" : "freq_multiplier $1"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-14",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 108.0, 200.0, 84.0, 21.0 ],
-					"text" : "run maxtest.ck"
 				}
 
 			}
@@ -326,7 +401,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 373.5, 222.0, 67.0, 21.0 ],
+					"patching_rect" : [ 357.5, 200.0, 67.0, 21.0 ],
 					"text" : "run echo.ck"
 				}
 
@@ -338,7 +413,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 185.0, 347.0, 34.0, 21.0 ],
+					"patching_rect" : [ 258.0, 287.0, 34.0, 21.0 ],
 					"text" : "reset"
 				}
 
@@ -352,7 +427,7 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "", "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 238.0, 228.0, 50.0, 21.0 ]
+					"patching_rect" : [ 238.0, 192.0, 50.0, 21.0 ]
 				}
 
 			}
@@ -365,7 +440,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 238.0, 92.0, 20.0, 112.0 ],
+					"patching_rect" : [ 238.0, 96.0, 20.0, 85.0 ],
 					"size" : 20.0
 				}
 
@@ -423,11 +498,12 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-11",
+					"linecount" : 2,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 16.0, 49.0, 656.0, 32.0 ],
-					"text" : "This external is intended to demonstrate chuck running in Max's audio thread.\n"
+					"patching_rect" : [ 16.0, 49.0, 656.0, 43.0 ],
+					"text" : "This external is intended to demonstrate chuck running in Max's audio thread. Note that you can run multiple 'shreds' concurrently. Just hit bang more than once and you can remove the second by [remove 2] or [remove last] or just [remove]\n"
 				}
 
 			}
@@ -450,7 +526,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 170.5, 266.0, 48.5, 19.0 ],
+					"patching_rect" : [ 135.5, 266.0, 49.0, 19.0 ],
 					"text" : "(re)load"
 				}
 
@@ -463,7 +539,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 190.0, 287.0, 24.0, 24.0 ]
+					"patching_rect" : [ 155.0, 287.0, 24.0, 24.0 ]
 				}
 
 			}
@@ -486,8 +562,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 238.0, 397.0, 84.0, 21.0 ],
-					"text" : "chuck~ sine.ck"
+					"patching_rect" : [ 238.0, 397.0, 105.0, 21.0 ],
+					"text" : "chuck~ maxtest.ck"
 				}
 
 			}
@@ -518,6 +594,13 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-12", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
 					"source" : [ "obj-14", 0 ]
 				}
 
@@ -531,8 +614,36 @@
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-16", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-14", 0 ],
+					"source" : [ "obj-17", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-17", 0 ],
+					"source" : [ "obj-18", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-10", 0 ],
 					"source" : [ "obj-2", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-23", 0 ]
 				}
 
 			}
