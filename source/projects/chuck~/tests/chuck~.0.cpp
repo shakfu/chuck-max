@@ -15,13 +15,17 @@
 
 #define GAIN 0.5
 #define SAMPLE float
+#define MY_SRATE 44100
 #define N_IN_CHANNELS 1
 #define N_OUT_CHANNELS 1
 #define MAX_FILENAME 128
+// #define BUFFER_SIZE 256
+#define BUFFER_SIZE 64
 
 // struct to represent the object's state
 typedef struct _ck {
-    t_pxobject ob;              // the object itself (t_pxobject in MSP instead of t_object)
+    t_pxobject ob;              // the object itself (t_pxobject in MSP instead of t_object)    
+    double param1;              // the value of a property of our object
 
     // chuck-related
     t_symbol* filename;         // name of chuck file in Max search path
@@ -38,20 +42,15 @@ void *ck_new(t_symbol *s, long argc, t_atom *argv);
 void ck_free(t_ck *x);
 void ck_assist(t_ck *x, void *b, long m, long a, char *s);
 
-// general message handlers
-t_max_err ck_bang(t_ck *x);                     // (re)load chuck file
-t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv); // set global param by name, value
+// message handlers
+t_max_err ck_bang(t_ck *x);
+t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv);
 
-// special message handlers
-t_max_err ck_run(t_ck* x, t_symbol* s);         // run chuck file
-t_max_err ck_reset(t_ck* x);                    // remove all shreds and clean vm
-t_max_err ck_signal(t_ck* x, t_symbol* s);      // signal global event
-t_max_err ck_broadcast(t_ck* x, t_symbol* s);   // broadcast global event
-
-// helpers
+t_max_err ck_run(t_ck* x, t_symbol* s);
 void ck_run_file(t_ck *x);
 void ck_compile_file(t_ck *x, const char *filename);
-t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type);
+void ck_reset(t_ck* x);
+void ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type);
 
 void ck_dsp64(t_ck *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
 void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
@@ -74,16 +73,14 @@ void ext_main(void *r)
 
     t_class *c = class_new("chuck~", (method)ck_new, (method)ck_free, (long)sizeof(t_ck), 0L, A_GIMME, 0);
 
-    class_addmethod(c, (method)ck_run,          "run",          A_SYM,   0);
-    class_addmethod(c, (method)ck_reset,        "reset",                 0);
-    class_addmethod(c, (method)ck_signal,       "signal",       A_SYM,   0);
-    class_addmethod(c, (method)ck_broadcast,    "broadcast",    A_SYM,   0);
+    class_addmethod(c, (method)ck_run,      "run",      A_SYM,   0);
+    class_addmethod(c, (method)ck_reset,    "reset",             0);
 
-    class_addmethod(c, (method)ck_bang,         "bang",                  0);
-    class_addmethod(c, (method)ck_anything,     "anything",     A_GIMME, 0);
+    class_addmethod(c, (method)ck_anything, "anything", A_GIMME, 0);
+    class_addmethod(c, (method)ck_bang,     "bang",              0);
 
-    class_addmethod(c, (method)ck_dsp64,        "dsp64",        A_CANT,  0);
-    class_addmethod(c, (method)ck_assist,       "assist",       A_CANT,  0);
+    class_addmethod(c, (method)ck_dsp64,    "dsp64",    A_CANT,  0);
+    class_addmethod(c, (method)ck_assist,   "assist",   A_CANT,  0);
 
     class_dspinit(c);
     class_register(CLASS_BOX, c);
@@ -97,15 +94,13 @@ void *ck_new(t_symbol *s, long argc, t_atom *argv)
 
     if (x) {
         dsp_setup((t_pxobject *)x, N_IN_CHANNELS);  // MSP inlets: arg is # of inlets and is REQUIRED!
-                                                    // use 0 if you don't need inlets
+        // use 0 if you don't need inlets
 
         for (int i=0; i < N_OUT_CHANNELS; i++) {
             // post("created: outlet %d", i);
             outlet_new(x, "signal");        // signal outlet (note "signal" rather than NULL)            
         }
-
-        // chuck-related
-        x->gm = NULL; // Chuck Globals Manager
+        x->param1 = 0.0;
         x->filename = atom_getsymarg(0, argc, argv); // 1st arg of object
         x->working_dir = string_getptr(ck_get_path_from_package(ck_class, "/examples"));
         x->in_chuck_buffer = NULL;
@@ -136,7 +131,7 @@ void *ck_new(t_symbol *s, long argc, t_atom *argv)
         post("file: %s", x->filename->s_name);
         // post("working dir: %s", x->working_dir);
         // post("chugins dir: %s/chugins", x->working_dir);
-        
+        x->gm = NULL;
     }
     return (x);
 }
@@ -206,6 +201,7 @@ t_string* ck_get_path_from_package(t_class* c, char* subpath)
 }
 
 
+
 void ck_compile_file(t_ck *x, const char *filename)
 {
     if (x->chuck->compileFile(std::string(filename), "", 1)) {
@@ -226,7 +222,7 @@ void ck_run_file(t_ck *x)
         if (access(norm_path, F_OK) == 0) { // file exists in path
             ck_compile_file(x, norm_path);
         } else { // try in the example folder
-            t_string* path = ck_get_path_from_package(ck_class, (char*)"/examples/");
+            t_string* path = ck_get_path_from_package(ck_class, "/examples/");
             string_append(path, x->filename->s_name);
             const char* ck_file = string_getptr(path);
             ck_compile_file(x, ck_file);
@@ -259,57 +255,41 @@ t_max_err ck_run(t_ck* x, t_symbol* s)
 t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv)
 {
 
-    if (s == NULL || argc == 0) {
+    if (s == NULL || argv == NULL || argc == 0) {
         goto error;
     }
 
-    if (argc == 1) {
-        switch (argv->a_type) { // really argv[0]
-        case A_FLOAT: {
-            float p_float = atom_getfloat(argv);
-            object_post((t_object*)x,"param %s: %f", s->s_name, p_float);
-            x->gm->setGlobalFloat(s->s_name, p_float);
-            break;
-        }
-        case A_LONG: {
-            long p_long = atom_getlong(argv);
-            object_post((t_object*)x,"param %s: %d", s->s_name, p_long);
-            x->gm->setGlobalInt(s->s_name, p_long);
-            break;
-        }
-        case A_SYM: {
-            t_symbol* p_sym = atom_getsym(argv);
-            if (p_sym == NULL) {
-                goto error;
-            }
-            object_post((t_object*)x,"param %s: %s", s->s_name, p_sym->s_name);
-            x->gm->setGlobalString(s->s_name, p_sym->s_name);
-            break;
-        }
-        default:
+    switch (argv->a_type) { // really argv[0]
+    case A_FLOAT: {
+        float p_float = atom_getfloat(argv);
+        if (p_float == NULL) {
             goto error;
-            break;
         }
-
-    } else { // type is a list
-
-        if (argv->a_type == A_LONG) { // list of longs
-            long *long_array = (long*)sysmem_newptr(sizeof(long*) * argc);
-            for (int i = 0; i < argc; i++) {
-                long_array[i] = atom_getlong(argv + i);
-            }
-            x->gm->setGlobalIntArray(s->s_name, long_array, argc);
-            sysmem_freeptr(long_array);
+        object_post((t_object*)x,"param %s: %f", s->s_name, p_float);
+        x->gm->setGlobalFloat(s->s_name, p_float);
+        break;
+    }
+    case A_LONG: {
+        long p_long = atom_getlong(argv);
+        if (p_long == NULL) {
+            goto error;
         }
-
-        else if (argv->a_type == A_FLOAT) { // list of floats
-            double *float_array = (double*)sysmem_newptr(sizeof(double*) * argc);
-            for (int i = 0; i < argc; i++) {
-                float_array[i] = atom_getfloat(argv + i);
-            }
-            x->gm->setGlobalFloatArray(s->s_name, float_array, argc);
-            sysmem_freeptr(float_array);
+        object_post((t_object*)x,"param %s: %d", s->s_name, p_long);
+        x->gm->setGlobalInt(s->s_name, p_long);
+        break;
+    }
+    case A_SYM: {
+        t_symbol* p_sym = atom_getsym(argv);
+        if (p_sym == NULL) {
+            goto error;
         }
+        object_post((t_object*)x,"param %s: %s", s->s_name, p_sym->s_name);
+        x->gm->setGlobalString(s->s_name, p_sym->s_name);
+        break;
+    }
+    default:
+        goto error;
+        break;
     }
 
     return MAX_ERR_NONE;
@@ -319,60 +299,45 @@ t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv)
         return MAX_ERR_GENERIC;
 }
 
-
-t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
-{    
+void ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
+{
+    // enum Chuck_Msg_Type
+    // {
+    //     MSG_ADD = 1,
+    //     MSG_REMOVE,
+    //     MSG_REMOVEALL,
+    //     MSG_REPLACE,
+    //     MSG_STATUS,
+    //     MSG_PAUSE,
+    //     MSG_KILL,
+    //     MSG_TIME,
+    //     MSG_RESET_ID,
+    //     MSG_DONE,
+    //     MSG_ABORT,
+    //     MSG_ERROR, // added 1.3.0.0
+    //     MSG_CLEARVM,
+    //     MSG_CLEARGLOBALS,
+    // };
+    
     Chuck_Msg * msg = new Chuck_Msg;
     msg->type = msg_type;
     
     // null reply so that VM will delete for us when it's done
     msg->reply = ( ck_msg_func )NULL;
     
-    if (x->gm->execute_chuck_msg_with_globals(msg)) {
-        return MAX_ERR_NONE;
-    } else {
-        return MAX_ERR_GENERIC;
-    }
+    x->chuck->vm()->globals_manager()->execute_chuck_msg_with_globals( msg );
 }
 
 
-t_max_err ck_signal(t_ck* x, t_symbol* s)
+void ck_reset(t_ck* x)
 {
-    if (x->gm->signalGlobalEvent(s->s_name)) {
-        return MAX_ERR_NONE;
-    } else {
-        error("[ck_signal] signal global event '%s' failed", s->s_name);
-        return MAX_ERR_GENERIC;
-    }
-}
-
-
-t_max_err ck_broadcast(t_ck* x, t_symbol* s)
-{
-    if (x->gm->broadcastGlobalEvent(s->s_name)) {
-        return MAX_ERR_NONE;
-    } else {
-        error("[ck_broadcast] broadcast global event '%s' failed", s->s_name);
-        return MAX_ERR_GENERIC;
-    }
-}
-
-
-t_max_err ck_reset(t_ck* x)
-{
-    t_max_err err = MAX_ERR_NONE;
     // post("# of vms: %d", x->chuck->numVMs());
     
     // create a msg asking to clear the globals
-    err = ck_send_chuck_vm_msg(x, MSG_CLEARGLOBALS);
+    ck_send_chuck_vm_msg(x, MSG_CLEARGLOBALS);
 
     // create a msg asking to clear the VM
-    err = ck_send_chuck_vm_msg(x, MSG_CLEARVM);
-
-    if (err == MAX_ERR_GENERIC) {
-        error("[ck_reset] failed");
-    }
-    return err;
+    ck_send_chuck_vm_msg(x, MSG_CLEARVM);
 }
 
 
@@ -384,11 +349,11 @@ void ck_dsp64(t_ck *x, t_object *dsp64, short *count, double samplerate, long ma
     delete[] x->in_chuck_buffer;
     delete[] x->out_chuck_buffer;
 
-    x->in_chuck_buffer = new float[maxvectorsize * N_IN_CHANNELS];
-    x->out_chuck_buffer = new float[maxvectorsize * N_OUT_CHANNELS];
+    x->in_chuck_buffer = new float[BUFFER_SIZE * N_IN_CHANNELS];
+    x->out_chuck_buffer = new float[BUFFER_SIZE * N_OUT_CHANNELS];
 
-    memset(x->in_chuck_buffer, 0.f, sizeof(float) * maxvectorsize * N_IN_CHANNELS);
-    memset(x->out_chuck_buffer, 0.f, sizeof(float) * maxvectorsize * N_OUT_CHANNELS);
+    memset(x->in_chuck_buffer, 0.f, sizeof(float) * BUFFER_SIZE * N_IN_CHANNELS);
+    memset(x->out_chuck_buffer, 0.f, sizeof(float) * BUFFER_SIZE * N_OUT_CHANNELS);
 
     object_method(dsp64, gensym("dsp_add64"), x, ck_perform64, 0, NULL);
 }
@@ -396,23 +361,36 @@ void ck_dsp64(t_ck *x, t_object *dsp64, short *count, double samplerate, long ma
 
 void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-    float * in_ptr = x->in_chuck_buffer;
-    float * out_ptr = x->out_chuck_buffer;
-    int n = sampleframes; // n = 64
+    // SAMPLE * inL = (SAMPLE *)ins[0];     // we get audio for each inlet of the object from the **ins argument
+    // SAMPLE * outL = (SAMPLE *)outs[0];   // we get audio for each outlet of the object from the **outs argument
+    int n = sampleframes;                // n = 64
+    int numSamples;
 
-    if (ins) {
-        for (int i = 0; i < n; i++) {
-            for (int chan = 0; chan < numins; chan++) {
-                *(in_ptr++) = ins[chan][i];
+    int numOutSamples = n;
+    int inBufferNumSamples = n;
+
+    for (int i = 0; i < numOutSamples; i += BUFFER_SIZE) {
+
+        float* inPtr = x->in_chuck_buffer;
+
+        numSamples = min(BUFFER_SIZE, numOutSamples - i);
+
+        if (ins) {
+            for (int samp = i; samp < std::min<int>(inBufferNumSamples, i + BUFFER_SIZE); samp++) {
+                for (int chan = 0; chan < N_IN_CHANNELS; chan++) {
+                    *(inPtr++) = ins[chan][samp];
+                }
             }
         }
-    }
+        float* outPtr = x->out_chuck_buffer;
 
-    x->chuck->run(x->in_chuck_buffer, x->out_chuck_buffer, n);
+        x->chuck->run(x->in_chuck_buffer, x->out_chuck_buffer, numSamples);
 
-    for (int i = 0; i < n; i++) {
-        for (int chan = 0; chan < numouts; chan++) {
-            outs[chan][i] = *out_ptr++;
+        for (int samp = 0; samp < numSamples; samp++) {
+            for (int chan = 0; chan < N_OUT_CHANNELS; chan++) {
+                outs[chan][i + samp] = *outPtr++;
+            }
         }
+
     }
 }
