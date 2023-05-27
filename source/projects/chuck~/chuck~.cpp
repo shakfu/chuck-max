@@ -31,6 +31,7 @@ typedef struct _ck {
     t_symbol* filename;         // name of chuck file in Max search path
     const char *working_dir;    // chuck working directory
     ChucK *chuck;               // chuck instance
+    Chuck_Globals_Manager* gm;  // chuck globals mgr
     float *in_chuck_buffer;     // intermediate chuck input buffer
     float *out_chuck_buffer;    // intermediate chuck output buffer
 } t_ck;
@@ -42,10 +43,10 @@ void ck_free(t_ck *x);
 void ck_assist(t_ck *x, void *b, long m, long a, char *s);
 
 // message handlers
-void ck_bang(t_ck *x);
-void ck_float(t_ck *x, double f);
+t_max_err ck_bang(t_ck *x);
+t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv);
 
-void ck_run(t_ck* x, t_symbol* s);
+t_max_err ck_run(t_ck* x, t_symbol* s);
 void ck_run_file(t_ck *x);
 void ck_compile_file(t_ck *x, const char *filename);
 void ck_reset(t_ck* x);
@@ -58,10 +59,102 @@ t_string* ck_get_path_from_external(t_class* c, char* subpath);
 t_string* ck_get_path_from_package(t_class* c, char* subpath);
 
 
-
-
 // global class pointer variable
 static t_class *ck_class = NULL;
+
+
+//-----------------------------------------------------------------------------------------------
+
+void ext_main(void *r)
+{
+    // object initialization, note the use of dsp_free for the freemethod, which is required
+    // unless you need to free allocated memory, in which case you should call dsp_free from
+    // your custom free function.
+
+    t_class *c = class_new("chuck~", (method)ck_new, (method)ck_free, (long)sizeof(t_ck), 0L, A_GIMME, 0);
+
+    class_addmethod(c, (method)ck_run,      "run",      A_SYM,   0);
+    class_addmethod(c, (method)ck_reset,    "reset",             0);
+
+    class_addmethod(c, (method)ck_anything, "anything", A_GIMME, 0);
+    class_addmethod(c, (method)ck_bang,     "bang",              0);
+
+    class_addmethod(c, (method)ck_dsp64,    "dsp64",    A_CANT,  0);
+    class_addmethod(c, (method)ck_assist,   "assist",   A_CANT,  0);
+
+    class_dspinit(c);
+    class_register(CLASS_BOX, c);
+    ck_class = c;
+}
+
+
+void *ck_new(t_symbol *s, long argc, t_atom *argv)
+{
+    t_ck *x = (t_ck *)object_alloc(ck_class);
+
+    if (x) {
+        dsp_setup((t_pxobject *)x, N_IN_CHANNELS);  // MSP inlets: arg is # of inlets and is REQUIRED!
+        // use 0 if you don't need inlets
+
+        for (int i=0; i < N_OUT_CHANNELS; i++) {
+            // post("created: outlet %d", i);
+            outlet_new(x, "signal");        // signal outlet (note "signal" rather than NULL)            
+        }
+        x->param1 = 0.0;
+        x->filename = atom_getsymarg(0, argc, argv); // 1st arg of object
+        x->working_dir = string_getptr(ck_get_path_from_package(ck_class, "/examples"));
+        x->in_chuck_buffer = NULL;
+        x->out_chuck_buffer = NULL;
+
+        x->chuck = new ChucK();
+        x->chuck->setParam( CHUCK_PARAM_SAMPLE_RATE, (t_CKINT) sys_getsr() );
+        x->chuck->setParam( CHUCK_PARAM_INPUT_CHANNELS, (t_CKINT) N_IN_CHANNELS );
+        x->chuck->setParam( CHUCK_PARAM_OUTPUT_CHANNELS, (t_CKINT) N_OUT_CHANNELS );
+        x->chuck->setParam( CHUCK_PARAM_VM_HALT, (t_CKINT) 0 );
+        x->chuck->setParam( CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT) 0 );
+        // directory for compiled code
+        std::string global_dir = std::string(x->working_dir);
+        x->chuck->setParam( CHUCK_PARAM_WORKING_DIRECTORY, global_dir );
+        std::list< std::string > chugin_search;
+        chugin_search.push_back(global_dir + "/chugins" );
+        x->chuck->setParam( CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, chugin_search );
+
+        // init chuck
+        x->chuck->init();
+        x->chuck->start();
+
+        post("ChucK %s", x->chuck->version());
+        post("inputs: %d  outputs: %d ", 
+            x->chuck->vm()->m_num_adc_channels, 
+            x->chuck->vm()->m_num_dac_channels);
+
+        post("file: %s", x->filename->s_name);
+        // post("working dir: %s", x->working_dir);
+        // post("chugins dir: %s/chugins", x->working_dir);
+        x->gm = NULL;
+    }
+    return (x);
+}
+
+
+void ck_free(t_ck *x)
+{
+    delete[] x->in_chuck_buffer;
+    delete[] x->out_chuck_buffer;
+    delete x->chuck;
+    dsp_free((t_pxobject *)x);
+}
+
+
+void ck_assist(t_ck *x, void *b, long m, long a, char *s)
+{
+    if (m == ASSIST_INLET) { //inlet
+        sprintf(s, "I am inlet %ld", a);
+    }
+    else {  // outlet
+        sprintf(s, "I am outlet %ld", a);
+    }
+}
 
 
 //-----------------------------------------------------------------------------------------------
@@ -108,30 +201,6 @@ t_string* ck_get_path_from_package(t_class* c, char* subpath)
 }
 
 
-//-----------------------------------------------------------------------------------------------
-
-void ext_main(void *r)
-{
-    // object initialization, note the use of dsp_free for the freemethod, which is required
-    // unless you need to free allocated memory, in which case you should call dsp_free from
-    // your custom free function.
-
-    t_class *c = class_new("chuck~", (method)ck_new, (method)ck_free, (long)sizeof(t_ck), 0L, A_GIMME, 0);
-
-    class_addmethod(c, (method)ck_float,    "float",    A_FLOAT, 0);
-    class_addmethod(c, (method)ck_run,      "run",      A_SYM,   0);
-    class_addmethod(c, (method)ck_bang,     "bang",              0);
-    class_addmethod(c, (method)ck_reset,    "reset",             0);
-    class_addmethod(c, (method)ck_dsp64,    "dsp64",    A_CANT,  0);
-    class_addmethod(c, (method)ck_assist,   "assist",   A_CANT,  0);
-
-    class_dspinit(c);
-    class_register(CLASS_BOX, c);
-    ck_class = c;
-}
-
-
-
 
 void ck_compile_file(t_ck *x, const char *filename)
 {
@@ -163,87 +232,72 @@ void ck_run_file(t_ck *x)
 
 
 
-void *ck_new(t_symbol *s, long argc, t_atom *argv)
-{
-    t_ck *x = (t_ck *)object_alloc(ck_class);
-
-    if (x) {
-        dsp_setup((t_pxobject *)x, N_IN_CHANNELS);  // MSP inlets: arg is # of inlets and is REQUIRED!
-        // use 0 if you don't need inlets
-
-        for (int i=0; i < N_OUT_CHANNELS; i++) {
-            // post("created: outlet %d", i);
-            outlet_new(x, "signal");        // signal outlet (note "signal" rather than NULL)            
-        }
-        x->param1 = 0.0;
-        x->filename = atom_getsymarg(0, argc, argv); // 1st arg of object
-        x->working_dir = string_getptr(ck_get_path_from_package(ck_class, "/examples"));
-        x->in_chuck_buffer = NULL;
-        x->out_chuck_buffer = NULL;
-
-        x->chuck = new ChucK();
-        x->chuck->setParam( CHUCK_PARAM_SAMPLE_RATE, (t_CKINT) sys_getsr() );
-        x->chuck->setParam( CHUCK_PARAM_INPUT_CHANNELS, (t_CKINT) N_IN_CHANNELS );
-        x->chuck->setParam( CHUCK_PARAM_OUTPUT_CHANNELS, (t_CKINT) N_OUT_CHANNELS );
-        x->chuck->setParam( CHUCK_PARAM_VM_HALT, (t_CKINT) 0 );
-        x->chuck->setParam( CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT) 0 );
-        // directory for compiled code
-        std::string global_dir = std::string(x->working_dir);
-        x->chuck->setParam( CHUCK_PARAM_WORKING_DIRECTORY, global_dir );
-        std::list< std::string > chugin_search;
-        chugin_search.push_back(global_dir + "/chugins" );
-        x->chuck->setParam( CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, chugin_search );
-
-        // init chuck
-        x->chuck->init();
-        x->chuck->start();
-
-        post("ChucK %s", x->chuck->version());
-        post("inputs: %d  outputs: %d ", 
-            x->chuck->vm()->m_num_adc_channels, 
-            x->chuck->vm()->m_num_dac_channels);
-
-        post("file: %s", x->filename->s_name);
-        // post("working dir: %s", x->working_dir);
-        // post("chugins dir: %s/chugins", x->working_dir);
-    }
-    return (x);
-}
-
-
-void ck_free(t_ck *x)
-{
-    delete[] x->in_chuck_buffer;
-    delete[] x->out_chuck_buffer;
-    delete x->chuck;
-    dsp_free((t_pxobject *)x);
-}
-
-
-void ck_assist(t_ck *x, void *b, long m, long a, char *s)
-{
-    if (m == ASSIST_INLET) { //inlet
-        sprintf(s, "I am inlet %ld", a);
-    }
-    else {  // outlet
-        sprintf(s, "I am outlet %ld", a);
-    }
-}
-
-void ck_bang(t_ck *x)
+t_max_err ck_bang(t_ck *x)
 {
     ck_run_file(x);
+    return MAX_ERR_NONE;
 }
 
-void ck_run(t_ck* x, t_symbol* s)
+
+t_max_err ck_run(t_ck* x, t_symbol* s)
 {
     if (s != gensym("")) {
         post("filename: %s", s->s_name);
         x->filename = s;
         ck_run_file(x);
+        x->gm = x->chuck->globals();
+        return MAX_ERR_NONE;   
     }
+    return MAX_ERR_GENERIC;
 }
 
+
+t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv)
+{
+
+    if (s == NULL || argv == NULL || argc == 0) {
+        goto error;
+    }
+
+    switch (argv->a_type) { // really argv[0]
+    case A_FLOAT: {
+        float p_float = atom_getfloat(argv);
+        if (p_float == NULL) {
+            goto error;
+        }
+        object_post((t_object*)x,"param %s: %f", s->s_name, p_float);
+        x->gm->setGlobalFloat(s->s_name, p_float);
+        break;
+    }
+    case A_LONG: {
+        long p_long = atom_getlong(argv);
+        if (p_long == NULL) {
+            goto error;
+        }
+        object_post((t_object*)x,"param %s: %d", s->s_name, p_long);
+        x->gm->setGlobalInt(s->s_name, p_long);
+        break;
+    }
+    case A_SYM: {
+        t_symbol* p_sym = atom_getsym(argv);
+        if (p_sym == NULL) {
+            goto error;
+        }
+        object_post((t_object*)x,"param %s: %s", s->s_name, p_sym->s_name);
+        x->gm->setGlobalString(s->s_name, p_sym->s_name);
+        break;
+    }
+    default:
+        goto error;
+        break;
+    }
+
+    return MAX_ERR_NONE;
+
+    error:
+        error("[ck_anything] cannot set chuck global param");
+        return MAX_ERR_GENERIC;
+}
 
 void ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
 {
@@ -277,21 +331,13 @@ void ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
 
 void ck_reset(t_ck* x)
 {
-    post("# of vms: %d", x->chuck->numVMs());
-
+    // post("# of vms: %d", x->chuck->numVMs());
+    
     // create a msg asking to clear the globals
     ck_send_chuck_vm_msg(x, MSG_CLEARGLOBALS);
 
     // create a msg asking to clear the VM
     ck_send_chuck_vm_msg(x, MSG_CLEARVM);
-
-}
-
-
-void ck_float(t_ck *x, double f)
-{
-    x->param1 = f;
-    post("param1: %f", x->param1);
 }
 
 
@@ -315,8 +361,8 @@ void ck_dsp64(t_ck *x, t_object *dsp64, short *count, double samplerate, long ma
 
 void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
-    SAMPLE * inL = (SAMPLE *)ins[0];     // we get audio for each inlet of the object from the **ins argument
-    SAMPLE * outL = (SAMPLE *)outs[0];   // we get audio for each outlet of the object from the **outs argument
+    // SAMPLE * inL = (SAMPLE *)ins[0];     // we get audio for each inlet of the object from the **ins argument
+    // SAMPLE * outL = (SAMPLE *)outs[0];   // we get audio for each outlet of the object from the **outs argument
     int n = sampleframes;                // n = 64
     int numSamples;
 
