@@ -2,13 +2,21 @@
 
 A project to embed the [chuck](https://chuck.stanford.edu) engine in a Max/Msp external.
 
-It has the following features and limitations
+It has the following features and limitations:
 
 - Generate and process sound via an embedded chuck engine by running chuck files with the ability to set and control global parameters via Max messages. 
 
 - Layer sounds by running multiple chuck files concurrently.
 
 - Add and remove sounds on the fly via max messages.
+
+- Most of the [standard ccrma chugins](https://github.com/ccrma/chugins) except for the following are part of the cmake build and are available for use by the external: 
+
+	- Faust
+	- Fluidsynth
+	- MIAP
+	- Ladspa
+	- WarpBuf
 
 - As of this version, there is no support for callbacks and events except via the `signal` and `broadcast` messages.
 
@@ -38,7 +46,8 @@ Open the help file for a demo.
 ## Status
 
 - [ ] add support for events
-- [ ] add support for callbacks 
+- [ ] add support for callbacks
+- [x] build chugins with cmake
 - [x] can set param values
 - [x] fix sound input!
 - [x] fix sound output!
@@ -56,13 +65,11 @@ Open the help file for a demo.
 
 - [ ] Flesh out API (add all messages). Learn from the miniAudicle code.
 
-- [ ] Add support for events and callbacks: ChucKDesigner has python callbacks, perhaps lua or js via an extension?
-
-- [ ] Build chugins with cmake
-
-- [ ] Package chugins and scripts in external bundle
+- [ ] Add support for events and callbacks: ChucKDesigner has python callbacks, perhaps use lua or js via an extension?
 
 - [ ] Convert `chuginate` to python3
+
+- [ ] Package chugins and scripts in external bundle
 
 - ...
 

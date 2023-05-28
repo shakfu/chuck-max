@@ -2,6 +2,7 @@
 build
 externals/*
 archive/
+*.chug
 
 # Prerequisites
 *.d

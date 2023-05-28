@@ -1,5 +1,11 @@
 # Dev Notes
 
+
+## Converting chugins to cmake builds
+
+Pretty straigtforward, especially if currently only targeting one platform (macOS). While this is indicated as possible in the makefiles, compiled external with static libs of chugins did not work as chugins were not recognized when invoked via test scripts.
+
+
 ## Why isn't chuck a git submodule?
 
 The directories `chuck/src/core`, `chuck/src/host`, `chuck/src/host-embed` are directly included for the sake of practicality in the `chuck-max/source/projects/chuck~` folder. Typically the `chuck` repo would have been included as an external dependency and downloaded and built at build time.
