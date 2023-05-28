@@ -1,10 +1,21 @@
 # Dev Notes
 
+## Why isn't chuck a git submodule?
+
+The directories `chuck/src/core`, `chuck/src/host`, `chuck/src/host-embed` are directly included for the sake of practicality in the `chuck-max/source/projects/chuck~` folder. Typically the `chuck` repo would have been included as an external dependency and downloaded and built at build time.
+
+Indeed this is my usual practice and was the initial intention, however, I dropped this idea when I realized that the `chuck` repo, even at `--depth=1`, requires more than 1 GB of storage and can take ages to download. Half of this is repo history and the other half is due to the size of the `docs` directory which contains large media files.
+
+The other reason I included only the necessary code directories was that I wanted to try to build via cmake rather than chuck's makefiles.
+
+The project may still resort to git submodules in the future, but this will require a fork of the chuck repo.
+
+In addition, the `chugins` repo is also integrated into the examples, but this is likely to change.
 
 
 ## Audio Processing Block Evolution
 
-The initial processing algorithm was pretty much taken from David Braun's [ChucKDesigner](https://github.com/DBraun/ChucKDesigner) `processBlock` function in [Plugin_ChucK.cpp](https://github.com/DBraun/ChucKDesigner/blob/main/src/Plugin_ChucK.cpp)
+The initial audio processing algorithm was pretty much taken from David Braun's [ChucKDesigner](https://github.com/DBraun/ChucKDesigner) `processBlock` function in [Plugin_ChucK.cpp](https://github.com/DBraun/ChucKDesigner/blob/main/src/Plugin_ChucK.cpp)
 
 ```c++
 CHUCKDESIGNERSHARED_API bool processBlock(unsigned int chuckID, const float** inBuffer, int inBufferNumChannels, int inBufferNumSamples, float* inChucKBuffer, float* outChucKBuffer, float** outBuffer, int numOutSamples, int numOutChannels)

@@ -1,13 +1,18 @@
 # chuck-max
 
-A project to embed [chuck](https://chuck.stanford.edu) in a Max/Msp external.
+A project to embed the [chuck](https://chuck.stanford.edu) engine in a Max/Msp external.
 
-Currently, can both generate and process sound via the chuck engine by running chuck files with the ability to set and control global parameters via Max messages. Running files concurrently is possible to layer sound as well as various options for removing shreds.
+It has the following features and limitations
 
-But there as of this initial version, there is no support for callbacks and events except via the `signal` and `broadcast` messages.
+- Generate and process sound via an embedded chuck engine by running chuck files with the ability to set and control global parameters via Max messages. 
+
+- Layer sounds by running multiple chuck files concurrently.
+
+- Add and remove sounds on the fly via max messages.
+
+- As of this version, there is no support for callbacks and events except via the `signal` and `broadcast` messages.
 
 see `help/chuck~.maxhelp` for a demonstration of current features.
-
 
 ## Compilation
 
@@ -53,18 +58,20 @@ Open the help file for a demo.
 
 - [ ] Add support for events and callbacks: ChucKDesigner has python callbacks, perhaps lua or js via an extension?
 
+- [ ] Build chugins with cmake
+
 - [ ] Package chugins and scripts in external bundle
 
-- [ ] Convert `chuginate` to python3 
+- [ ] Convert `chuginate` to python3
 
-- etc..
+- ...
 
 
 ## Credits
 
-Some time before this project started I was persuaded to try to get [Brad Garton's](http://sites.music.columbia.edu/brad) original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5 running, but I couldn't get it to work in Max 8.
+Some time before this project started I was found [Brad Garton's](http://sites.music.columbia.edu/brad) original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5. I tried to build and run it, but I couldn't get it to work with Max 8.
 
-Then I unsuccessfully attempted to create a puredata external against the latest Chuck apis in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
+I then unsuccessfully attempted to create a puredata external against the latest Chuck apis in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
 
 In this last attempt, I couldn't get Chuck to work with puredata's audio model. I asked for help on chuck's github issue tracker and received none. I asked for help in the chuck electro-music forum and received only one post which was appreciative of the effort but none too helpful. So, I left it for another day.
 
@@ -75,4 +82,3 @@ David is a [CCRMA](https://github.com/CCRMA) (the home of chuck) alum and the au
 So in summary, this project owes a big thanks to two people: Brad Garton, for inspiring me with the original `chuck~` external which demonstrated that it could be done and for making his implementantion available to read and learn from.
 
 And finally, to David Braun, for creating and making the code to ChucKDesigner available. It has been the best guide to help me implement this external.
-

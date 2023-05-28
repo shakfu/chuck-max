@@ -78,6 +78,11 @@ set(LO_C_CORE
 	lo/timetag.c
 )
 
+# include_directories( 
+#     "${MAX_SDK_INCLUDES}"
+#     "${MAX_SDK_MSP_INCLUDES}"
+#     "${MAX_SDK_JIT_INCLUDES}"   
+# )
 
 add_library(chuck_lib
 	STATIC
