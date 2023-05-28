@@ -76,16 +76,13 @@ Open the help file for a demo.
 
 ## Credits
 
-Some time before this project started I was found [Brad Garton's](http://sites.music.columbia.edu/brad) original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5. I tried to build and run it, but I couldn't get it to work with Max 8.
+This project thanks the following:
 
-I then unsuccessfully attempted to create a puredata external against the latest Chuck apis in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
+- Professors GE Wang and Perry Cook and all chuck and chuggin contributors for creating the amazing ChucK language and the chuggin ecosystem!
 
-In this last attempt, I couldn't get Chuck to work with puredata's audio model. I asked for help on chuck's github issue tracker and received none. I asked for help in the chuck electro-music forum and received only one post which was appreciative of the effort but none too helpful. So, I left it for another day.
+- Professor Perry Cook for co-authoring Chuck and creating the [Synthesis Toolkit](https://github.com/thestk/stk) which is integrated with chuck.
 
-I'm not sure why I tried again with Max/MSP but it turned out to be a good idea because this time I just searched for prior art in Github, and found David Braun's excellent[ChucKDesigner](https://github.com/DBraun/ChucKDesigner) project which embeds chuck in a Touch Designer plugin.
+- Professor [Brad Garton](http://sites.music.columbia.edu/brad) for creating the original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5. I tried to build and run it, but I couldn't get it to work with Max 8. This motivated me to try again.
 
-David is a [CCRMA](https://github.com/CCRMA) (the home of chuck) alum and the author of the fantastic [DawDreamer](https://github.com/DBraun/DawDreamer) project which I am already a great fan of, and in this case, he had solved the same problem for Touch Designer that I was trying to solve for pd and Max/MSP which made his implementation invaluable to get this project going.
+- [David Braun] (the author of the very cool [DawDreamer](https://github.com/DBraun/DawDreamer) project which I am already a great fan of) for creating the excellent[ChucKDesigner](https://github.com/DBraun/ChucKDesigner) project which embeds chuck in a Touch Designer plugin. This project provides an excellent and super-clear blueprint on how to embed `libchuck` in another host or plugin system.
 
-So in summary, this project owes a big thanks to two people: Brad Garton, for inspiring me with the original `chuck~` external which demonstrated that it could be done and for making his implementantion available to read and learn from.
-
-And finally, to David Braun, for creating and making the code to ChucKDesigner available. It has been the best guide to help me implement this external.
