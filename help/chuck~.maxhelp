@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 216.0, 137.0, 705.0, 551.0 ],
+		"rect" : [ 216.0, 137.0, 705.0, 598.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -40,6 +40,16 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-19",
+					"maxclass" : "scope~",
+					"numinlets" : 2,
+					"numoutlets" : 0,
+					"patching_rect" : [ 415.0, 431.5, 130.0, 130.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"format" : 6,
 					"id" : "obj-17",
 					"maxclass" : "flonum",
@@ -56,6 +66,7 @@
 					"floatoutput" : 1,
 					"id" : "obj-18",
 					"maxclass" : "slider",
+					"mult" : 0.5,
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
@@ -132,7 +143,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 68.0, 347.0, 42.0, 21.0 ],
+					"patching_rect" : [ 76.5, 359.0, 42.0, 21.0 ],
 					"text" : "run $1"
 				}
 
@@ -143,7 +154,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 52.0, 247.0, 44.0, 19.0 ],
+					"patching_rect" : [ 23.5, 230.0, 44.0, 19.0 ],
 					"text" : "refresh"
 				}
 
@@ -156,7 +167,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 22.5, 243.0, 24.0, 24.0 ]
+					"patching_rect" : [ 23.5, 255.0, 24.0, 24.0 ]
 				}
 
 			}
@@ -357,7 +368,7 @@
  ]
 					}
 ,
-					"patching_rect" : [ 22.5, 281.0, 66.0, 21.0 ],
+					"patching_rect" : [ 23.5, 293.0, 66.0, 21.0 ],
 					"saved_object_attributes" : 					{
 						"description" : "",
 						"digest" : "",
@@ -372,13 +383,13 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-40",
-					"items" : [ "adc.ck", ",", "adsr.ck", ",", "alarm.ck", ",", "args.ck", ",", "bar.ck", ",", "bitcrush.ck", ",", "blit.ck", ",", "blit2.ck", ",", "chirp.ck", ",", "chirp2.ck", ",", "comb.ck", ",", "curly++.ck", ",", "curly.ck", ",", "delay.ck", ",", "demo0.ck", ",", "demo1.ck", ",", "demo2.ck", ",", "demo3.ck", ",", "echo.ck", ",", "envelope.ck", ",", "fm.ck", ",", "fm2.ck", ",", "fm3.ck", ",", "foo.ck", ",", "foo2.ck", ",", "func.ck", ",", "i-robot.ck", ",", "imp.ck", ",", "infnan.ck", ",", "larry++.ck", ",", "larry.ck", ",", "lfo.ck", ",", "maxtest.ck", ",", "moe++.ck", ",", "moe.ck", ",", "oscillatronx.ck", ",", "phasor.ck", ",", "pulse.ck", ",", "rec-auto-stereo.ck", ",", "rec-auto.ck", ",", "rec.ck", ",", "ring.ck", ",", "sine.ck", ",", "sndbuf.ck", ",", "step.ck", ",", "test.ck", ",", "tick.ck", ",", "tick2.ck", ",", "unchuck.ck", ",", "valueat.ck", ",", "whirl.ck", ",", "whole.ck", ",", "wind.ck", ",", "wind2.ck", ",", "zerox.ck" ],
+					"items" : [ "ABSaturator-test.ck", ",", "adc.ck", ",", "adsr.ck", ",", "alarm.ck", ",", "AmbPan3-CCRMA.ck", ",", "AmbPan3-test.ck", ",", "args.ck", ",", "autotune-test.ck", ",", "bar.ck", ",", "bitcrush.ck", ",", "Bitcrusher-test.ck", ",", "blit.ck", ",", "blit2.ck", ",", "chirp.ck", ",", "chirp2.ck", ",", "comb.ck", ",", "curly++.ck", ",", "curly.ck", ",", "delay.ck", ",", "demo0.ck", ",", "demo1.ck", ",", "demo2.ck", ",", "demo3.ck", ",", "echo.ck", ",", "elliptic-help.ck", ",", "envelope.ck", ",", "expdelay-help.ck", ",", "fm.ck", ",", "fm2.ck", ",", "fm3.ck", ",", "foldback-test-index.ck", ",", "foldback-test-threshold.ck", ",", "foo.ck", ",", "foo2.ck", ",", "func.ck", ",", "gverb-help.ck", ",", "i-robot.ck", ",", "imp.ck", ",", "infnan.ck", ",", "input-test.ck", ",", "interpolation-test.ck", ",", "KasFilter-test.ck", ",", "larry++.ck", ",", "larry.ck", ",", "lfo.ck", ",", "MagicSine-test.ck", ",", "maxtest.ck", ",", "mcsine.ck", ",", "mesh-help.ck", ",", "Modes.ck", ",", "moe++.ck", ",", "moe.ck", ",", "multicomb-help.ck", ",", "nhhall-help.ck", ",", "oscillatronx.ck", ",", "overdrive-help.ck", ",", "Pan4-test.ck", ",", "Pan8-test.ck", ",", "panB.ck", ",", "Patch-example.ck", ",", "Patch-pwm.ck", ",", "Patch-test.ck", ",", "perlin-test-gfx.ck", ",", "phasor.ck", ",", "pitchtrack-help.ck", ",", "poweradsr-feedback-beatings.ck", ",", "poweradsr-help.ck", ",", "poweradsr-test.ck", ",", "pulse.ck", ",", "Random-test.ck", ",", "Range-example.ck", ",", "Range-test.ck", ",", "README-KasFilter.ck", ",", "rec-auto-stereo.ck", ",", "rec-auto.ck", ",", "rec.ck", ",", "ring.ck", ",", "sigmund-help.ck", ",", "sigmund-tracks-test.ck", ",", "Sine-test.ck", ",", "sine.ck", ",", "sndbuf.ck", ",", "spectacle-help.ck", ",", "step.ck", ",", "test.ck", ",", "tick.ck", ",", "tick2.ck", ",", "unchuck.ck", ",", "valueat.ck", ",", "wavetable-help.ck", ",", "whirl.ck", ",", "whole.ck", ",", "wind.ck", ",", "wind2.ck", ",", "winfuncenv-help.ck", ",", "WPDiodeLadder-test.ck", ",", "WPKorg35-test.ck", ",", "zerox.ck" ],
 					"maxclass" : "umenu",
 					"numinlets" : 1,
 					"numoutlets" : 3,
 					"outlettype" : [ "int", "", "" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 22.5, 315.0, 110.0, 21.0 ]
+					"patching_rect" : [ 23.5, 327.0, 125.0, 21.0 ]
 				}
 
 			}
@@ -457,7 +468,7 @@
 					"parameter_enable" : 0,
 					"patching_rect" : [ 403.0, 261.5, 18.0, 50.0 ],
 					"size" : 3,
-					"value" : 1
+					"value" : 0
 				}
 
 			}
@@ -490,7 +501,7 @@
 					"numoutlets" : 1,
 					"offset" : [ 0.0, 0.0 ],
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 447.0, 216.5, 225.0, 95.0 ],
+					"patching_rect" : [ 447.0, 222.0, 225.0, 95.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -526,7 +537,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 135.5, 266.0, 49.0, 19.0 ],
+					"patching_rect" : [ 116.5, 234.0, 49.0, 19.0 ],
 					"text" : "(re)load"
 				}
 
@@ -539,7 +550,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 155.0, 287.0, 24.0, 24.0 ]
+					"patching_rect" : [ 120.0, 255.0, 24.0, 24.0 ]
 				}
 
 			}
@@ -570,7 +581,7 @@
  ],
 		"lines" : [ 			{
 				"patchline" : 				{
-					"destination" : [ "obj-4", 1 ],
+					"destination" : [ "obj-19", 0 ],
 					"order" : 0,
 					"source" : [ "obj-1", 0 ]
 				}
@@ -578,8 +589,16 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-4", 0 ],
+					"destination" : [ "obj-4", 1 ],
 					"order" : 1,
+					"source" : [ "obj-1", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-4", 0 ],
+					"order" : 2,
 					"source" : [ "obj-1", 0 ]
 				}
 
@@ -670,7 +689,7 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-4", 1 ],
+					"destination" : [ "obj-19", 0 ],
 					"order" : 0,
 					"source" : [ "obj-36", 1 ]
 				}
@@ -678,8 +697,16 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-4", 0 ],
+					"destination" : [ "obj-4", 1 ],
 					"order" : 1,
+					"source" : [ "obj-36", 1 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-4", 0 ],
+					"order" : 2,
 					"source" : [ "obj-36", 1 ]
 				}
 

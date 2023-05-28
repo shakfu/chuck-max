@@ -19,15 +19,13 @@
 #define N_OUT_CHANNELS 1
 #define MAX_FILENAME 128
 
-// struct to represent the object's state
 typedef struct _ck {
     t_pxobject ob;              // the object itself (t_pxobject in MSP)
 
     // chuck-related
+    ChucK *chuck;               // chuck instance
     t_symbol* filename;         // name of chuck file in Max search path
     const char *working_dir;    // chuck working directory
-    ChucK *chuck;               // chuck instance
-    Chuck_Globals_Manager* gm;  // chuck globals mgr
     float *in_chuck_buffer;     // intermediate chuck input buffer
     float *out_chuck_buffer;    // intermediate chuck output buffer
 } t_ck;
@@ -40,25 +38,25 @@ void ck_assist(t_ck *x, void *b, long m, long a, char *s);
 
 // general message handlers
 t_max_err ck_bang(t_ck *x);                     // (re)load chuck file
-t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv); // set global param by name, value
+t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv); // set global params by name, value
 
 // special message handlers
 t_max_err ck_run(t_ck* x, t_symbol* s);         // run chuck file
 t_max_err ck_reset(t_ck* x);                    // remove all shreds and clean vm
 t_max_err ck_signal(t_ck* x, t_symbol* s);      // signal global event
 t_max_err ck_broadcast(t_ck* x, t_symbol* s);   // broadcast global event
-t_max_err ck_remove(t_ck *x, t_symbol *s, long argc, t_atom *argv);   // remove all or last shreds or by #
+t_max_err ck_remove(t_ck *x, t_symbol *s, long argc, t_atom *argv);   // remove shreds (all, last or by #)
 
 // helpers
 void ck_run_file(t_ck *x);
 void ck_compile_file(t_ck *x, const char *filename);
 t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type);
-
-void ck_dsp64(t_ck *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
-void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
-
 t_string* ck_get_path_from_external(t_class* c, char* subpath);
 t_string* ck_get_path_from_package(t_class* c, char* subpath);
+
+// audio processing
+void ck_dsp64(t_ck *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
+void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 
 
 // global class pointer variable
@@ -71,7 +69,6 @@ static t_class *ck_class = NULL;
 
 void ext_main(void *r)
 {
-
     t_class *c = class_new("chuck~", 
         (method)ck_new, (method)ck_free, (long)sizeof(t_ck), 0L, A_GIMME, 0);
 

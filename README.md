@@ -1,16 +1,16 @@
 # chuck-max
 
-A project to embed the [chuck](https://chuck.stanford.edu) engine in a Max/Msp external.
+A project to minimally embed the [chuck](https://chuck.stanford.edu) engine in a Max/Msp external.
 
-It has the following features and limitations:
+It currently has the following features and limitations:
 
-- Generate and process sound via an embedded chuck engine by running chuck files with the ability to set and control global parameters via Max messages. 
+- Generate and process audio via an embedded chuck engine by running chuck files with `global` parameters adjusted and controlled in realtime via Max messages.
 
 - Layer sounds by running multiple chuck files concurrently.
 
-- Add and remove sounds on the fly via max messages.
+- Add and remove audio and audio processes on the fly via max messages.
 
-- Most of the [standard ccrma chugins](https://github.com/ccrma/chugins) except for the following are part of the cmake build and are available for use by the external: 
+- Includes most of the [standard ccrma chugins](https://github.com/ccrma/chugins) except for the following: 
 
 	- Faust
 	- Fluidsynth
@@ -48,7 +48,7 @@ Open the help file for a demo.
 - [ ] add support for events
 - [ ] add support for callbacks
 - [x] build chugins with cmake
-- [x] can set param values
+- [x] can set global param values
 - [x] fix sound input!
 - [x] fix sound output!
 - [x] initial attempt to embed (no sound yet) without compilation or max/msp errors
@@ -69,7 +69,7 @@ Open the help file for a demo.
 
 - [ ] Convert `chuginate` to python3
 
-- [ ] Package chugins and scripts in external bundle
+- [ ] Package chugins and scripts in a self-contained signed and notarized external bundle
 
 - ...
 
@@ -78,11 +78,11 @@ Open the help file for a demo.
 
 This project thanks the following:
 
-- Professors GE Wang and Perry Cook and all chuck and chuggin contributors for creating the amazing ChucK language and the chuggin ecosystem!
+- Professors GE Wang and Perry Cook and all chuck and chuggin contributors for creating the amazing ChucK language and chuggin ecosystem!
 
 - Professor Perry Cook for co-authoring Chuck and creating the [Synthesis Toolkit](https://github.com/thestk/stk) which is integrated with chuck.
 
-- Professor [Brad Garton](http://sites.music.columbia.edu/brad) for creating the original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5. I tried to build and run it, but I couldn't get it to work with Max 8. This motivated me to try again.
+- Professor [Brad Garton](http://sites.music.columbia.edu/brad) for creating the original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5. My failure to build and run on Max 8 his external on Max 8 motivated me to start this project.
 
-- [David Braun] (the author of the very cool [DawDreamer](https://github.com/DBraun/DawDreamer) project which I am already a great fan of) for creating the excellent[ChucKDesigner](https://github.com/DBraun/ChucKDesigner) project which embeds chuck in a Touch Designer plugin. This project provides an excellent and super-clear blueprint on how to embed `libchuck` in another host or plugin system.
+- [David Braun] (the author of the very cool [DawDreamer](https://github.com/DBraun/DawDreamer) project which I am already a great fan of) for creating the excellent[ChucKDesigner](https://github.com/DBraun/ChucKDesigner) project which embeds chuck in a Touch Designer plugin. His project provided a super-clear blueprint on how to embed `libchuck` in another host or plugin system and was essential to this project.
 
