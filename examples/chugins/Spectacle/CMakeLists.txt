@@ -4,6 +4,16 @@ cmake_path(GET path STEM PARENT_DIR)
 # chugin name
 set(CHUGIN_NAME ${PARENT_DIR})
 
+
+set(GENLIB_SRC
+	genlib/FFTReal.cpp
+	genlib/Obucket.cpp
+	genlib/Odelay.cpp
+	genlib/Offt.cpp
+	genlib/Ooscil.cpp
+	genlib/RandGen.cpp
+)
+
 # all of the c/cpp files that compose this chugin
 file(GLOB PROJECT_SRC
     "*.h"
@@ -17,7 +27,7 @@ set(CK_SRC_PATH
 )
 
 add_library(${CHUGIN_NAME}
-	# ${CHUGIN_SRC}
+	${GENLIB_SRC}
 	${PROJECT_SRC}
 	${CK_SRC_PATH}/chuck_dl.h
 )
@@ -47,6 +57,7 @@ target_compile_definitions(${CHUGIN_NAME}
 target_include_directories(${CHUGIN_NAME}
 	PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}/genlib
 	${CK_SRC_PATH}
 )
 

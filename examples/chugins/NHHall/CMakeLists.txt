@@ -22,6 +22,9 @@ add_library(${CHUGIN_NAME}
 	${CK_SRC_PATH}/chuck_dl.h
 )
 
+
+# set_property(TARGET ${CHUGIN_NAME} PROPERTY CXX_STANDARD 11)
+
 if(BUILD_SHARED_LIBS)
 	set_target_properties(${CHUGIN_NAME}
 		PROPERTIES
