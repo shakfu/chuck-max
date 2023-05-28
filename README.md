@@ -1,8 +1,8 @@
 # chuck-max
 
-A project to minimally embed the [chuck](https://chuck.stanford.edu) engine in a Max/Msp external.
+A project to minimally embed the [chuck](https://chuck.stanford.edu) engine in a Max/MSP external.
 
-It currently has the following features and limitations:
+It currently has one external (`chuck~`) with the following features and limitations:
 
 - Generate and process audio via an embedded chuck engine by running chuck files with `global` parameters adjusted and controlled in realtime via Max messages.
 
