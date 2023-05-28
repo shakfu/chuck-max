@@ -22,25 +22,53 @@ It currently has the following features and limitations:
 
 see `help/chuck~.maxhelp` for a demonstration of current features.
 
-## Compilation
+## Requirements
 
-Note that this external is currently only developed and tested on macOS. All dependencies are included in the repo, and the external is built 'statically' without any non-system dependencies.
+Note that this external is currently only developed and tested on macOS.
+
+It requires the following to be available on your system:
+
+1. Xcode from the App store or Xcode Command Line Tools via `xcode-select –install`
+
+2. cmake
+
+3. bison
+
+4. flex
+
+The last three can be installed via Homebrew as follows:
 
 ```bash
+
+brew install cmake bison flex
+
+```
+
+
+## Compilation
+
+All dependencies are included in the repo, and the external is built 'statically' without any non-system dependencies.
+
+Just clone the the repo and then
+
+```bash
+cd chuck-max
 make
 make setup
 ```
 
-Note: `make setup` does the following:
+Note: `make` builds everything and the `make setup` does the following:
 
 ```bash
 ln -s $(shell pwd) "$(HOME)/Documents/Max 8/Packages/$(shell basename `pwd`)"
 ```
 
+This makes the package and it's contents available in Max
+
 
 ## Usage
 
-Open the help file for a demo.
+Open the help file `help/chuck~.maxhelp` for a demo.
 
 
 ## Status
