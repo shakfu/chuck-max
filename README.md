@@ -48,8 +48,9 @@ brew install cmake bison flex
 ## Compilation
 
 All dependencies are included in the repo, and the external is built 'statically' without any non-system dependencies.
+The buildsystem consists of a minimal Makefile frontend with CMake driving the build on the backend.
 
-Just clone the the repo and then
+Just clone the repo and then:
 
 ```bash
 cd chuck-max
@@ -63,7 +64,7 @@ Note: `make` builds everything and the `make setup` does the following:
 ln -s $(shell pwd) "$(HOME)/Documents/Max 8/Packages/$(shell basename `pwd`)"
 ```
 
-This makes the package and it's contents available in Max
+This makes the package and it's contents available in Max.
 
 
 ## Usage
@@ -73,6 +74,7 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 
 ## Status
 
+- [ ] update to chuck-1.5.0.8
 - [ ] add support for events
 - [ ] add support for callbacks
 - [x] build chugins with cmake
@@ -87,6 +89,8 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 
 ## TODO
 
+- [ ] Update to latest chuck release: chuck-1.5.0.8
+      
 - [ ] More error checking!!! 
 
 - [ ] Add editor support for double-click to edit, etc.. or via filewatcher
@@ -110,7 +114,7 @@ This project thanks the following:
 
 - Professor Perry Cook for co-authoring Chuck and creating the [Synthesis Toolkit](https://github.com/thestk/stk) which is integrated with chuck.
 
-- Professor [Brad Garton](http://sites.music.columbia.edu/brad) for creating the original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5. My failure to build and run on Max 8 his external on Max 8 motivated me to start this project.
+- Professor [Brad Garton](http://sites.music.columbia.edu/brad) for creating the original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5. My failure to build and run on it Max 8 motivated me to start this project.
 
-- [David Braun] (the author of the very cool [DawDreamer](https://github.com/DBraun/DawDreamer) project which I am already a great fan of) for creating the excellent[ChucKDesigner](https://github.com/DBraun/ChucKDesigner) project which embeds chuck in a Touch Designer plugin. His project provided a super-clear blueprint on how to embed `libchuck` in another host or plugin system and was essential to this project.
+- David Braun, the author of the very cool [DawDreamer](https://github.com/DBraun/DawDreamer) project which I am already a great fan of, for creating the excellent[ChucKDesigner](https://github.com/DBraun/ChucKDesigner) project which embeds chuck in a Touch Designer plugin. His project provided a super-clear blueprint on how to embed `libchuck` in another host or plugin system and was essential to this project.
 
