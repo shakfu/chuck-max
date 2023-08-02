@@ -25,7 +25,7 @@ add_subdirectory(Multicomb)
 add_subdirectory(NHHall)
 add_subdirectory(Overdrive)
 add_subdirectory(PanN)
-# add_subdirectory(Patch) # not working
+add_subdirectory(Patch)
 add_subdirectory(Perlin)
 add_subdirectory(PitchTrack)
 add_subdirectory(PowerADSR)
