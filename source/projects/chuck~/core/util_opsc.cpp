@@ -35,6 +35,7 @@
 //chuck networking code
 #include "util_network.h"
 #include "util_thread.h"
+#include "util_platforms.h"
 
 #include "chuck_errmsg.h"
 #include "chuck_vm.h"
@@ -46,7 +47,7 @@ using namespace std;
 
 // FROM PLATFORM.H -UDP TRANSMITTER / RECEIVER
 
-#if defined(__PLATFORM_WIN32__)
+#if defined(__PLATFORM_WINDOWS__)
 // 2022 QTSIN added winsock2.h and wsw2tcpip.h
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -67,7 +68,7 @@ using namespace std;
 #define snprintf _snprintf
 #endif
 
-#if defined(__MACOSX_CORE__)
+#if defined(__PLATFORM_APPLE__)
 #define SOCKET int
 #define SOCKADDR_IN struct sockaddr_in
 #elif !defined(SOCKADDR_IN)
@@ -950,7 +951,7 @@ static int OSC_WritePadding(char *dest, int i)
 
 // FROM PLATFORM.H -UDP TRANSMITTER / RECEIVER
 
-#if defined(__PLATFORM_WIN32__)
+#if defined(__PLATFORM_WINDOWS__)
 #include <winsock.h>
 #else
 #include <sys/types.h>
@@ -963,7 +964,7 @@ static int OSC_WritePadding(char *dest, int i)
 #include <netdb.h>
 #endif
 
-#ifdef __MACOSX_CORE__
+#ifdef __PLATFORM_APPLE__
 #define SOCKET int
 #define SOCKADDR_IN struct sockaddr_in
 #endif
@@ -1156,7 +1157,7 @@ UDP_Port_Listener::~UDP_Port_Listener()
 {
     //CK_FPRINTF_STDERR( "port listener destructor\n" );
     close();
-    // usleep( 10 );    // do we need this ?
+    // ck_usleep( 10 );    // do we need this ?
     delete m_in;
     delete m_mutex;
     delete m_thread;
@@ -1231,7 +1232,7 @@ THREAD_RETURN (THREAD_TYPE udp_port_listener_thread)( void * data )
     int mLen;
     do {
         mLen = upl->recv_mesg();
-        usleep( 10 );
+        ck_usleep( 10 );
     } while( mLen != 0 );
 
     EM_log( CK_LOG_INFO, "UDP_Port_Listener:: receive loop terminated...\n" );
@@ -1693,8 +1694,8 @@ OSC_Receiver::~OSC_Receiver()
     free( _inbox );
 
     // clean up
-    SAFE_DELETE( _io_mutex );
-    SAFE_DELETE( _address_mutex );
+    CK_SAFE_DELETE( _io_mutex );
+    CK_SAFE_DELETE( _address_mutex );
 
     // TODO: do this thread-safely
     // if( m_event_buffer )
@@ -1716,7 +1717,7 @@ THREAD_RETURN (THREAD_TYPE osc_recv_thread)( void * data )
 
     do {
         oscar->recv_mesg();
-        usleep( 10 );
+        ck_usleep( 10 );
     }while( true );
 
     return (THREAD_RETURN)0;
@@ -2159,7 +2160,7 @@ OSC_Address_Space::~OSC_Address_Space()
     // clean up
     if( _queue ) free( _queue );
     // added 1.3.1.1
-    SAFE_DELETE( _buffer_mutex );
+    CK_SAFE_DELETE( _buffer_mutex );
 }
 
 void

@@ -30,6 +30,7 @@
 // date: summer 2006
 //-----------------------------------------------------------------------------
 #include "util_hid.h"
+#include "util_platforms.h"
 #include "chuck_errmsg.h"
 #include "hidio_sdl.h"
 
@@ -71,7 +72,7 @@ const t_CKUINT CK_HID_TABLET_ROTATION = 16;
 const t_CKUINT CK_HID_MULTITOUCH_TOUCH = 17;
 const t_CKUINT CK_HID_MSG_COUNT = 18;
 
-#if defined(__PLATFORM_MACOSX__) && !defined(__CHIP_MODE__)
+#if defined(__PLATFORM_APPLE__) && !defined(__CHIP_MODE__)
 #pragma mark OS X General HID support
 
 /* TODO: ***********************************************************************
@@ -86,7 +87,6 @@ Make Keyboard, Mouse dis/reattachment work *** DONE
 Hid Probe
 
 *******************************************************************************/
-
 
 #include <mach/mach.h>
 #include <mach/mach_error.h>
@@ -118,6 +118,10 @@ Hid Probe
 #include <IOBluetooth/IOBluetoothUserLib.h>
 #include "util_buffers.h"
 #endif // __CK_HID_WIIREMOTE__
+
+// 1.5.0.5 (ge) added
+#include "util_platforms.h"
+
 
 class lockable
 {
@@ -1446,7 +1450,12 @@ void Hid_init2()
     CFDictionarySetValue( hidMatchDictionary,
                           CFSTR( kIOHIDPrimaryUsagePageKey ), refCF );*/
 
+    // 1.5.0.7 (ge) updated kIOMasterPortDefault (deprecated as of macOS 12) to kIOMainPortDefault
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 120000 // before macOS 12
     newDeviceNotificationPort = IONotificationPortCreate( kIOMasterPortDefault );
+#else
+    newDeviceNotificationPort = IONotificationPortCreate( kIOMainPortDefault );
+#endif
 
     result = IOServiceAddMatchingNotification( newDeviceNotificationPort,
                                                kIOFirstMatchNotification,
@@ -2580,7 +2589,8 @@ int Keyboard_send( int k, const HidMsg * msg )
 
     eventStruct.type = kIOHIDElementTypeOutput;
     eventStruct.elementCookie = output->cookie;
-    eventStruct.timestamp = UpTime();
+    // eventStruct.timestamp = UpTime(); // deprecated in macOS
+    eventStruct.timestamp = ck_macOS_uptime(); // 1.5.0.5 (ge) updated
     eventStruct.longValueSize = 0;
     eventStruct.longValue = NULL;
 
@@ -2708,7 +2718,7 @@ t_CKINT SMSManager::y = 0;
 t_CKINT SMSManager::z = 0;
 
 
-#if !defined(__PLATFORM_WIN32__) || defined(__WINDOWS_PTHREAD__)
+#if !defined(__PLATFORM_WINDOWS__) || defined(__WINDOWS_PTHREAD__)
 static void * sms_loop( void * )
 #else
 static unsigned int __stdcall sms_loop( void * )
@@ -2741,17 +2751,17 @@ static unsigned int __stdcall sms_loop( void * )
                 SMSManager::z = TiltSensor_data.data.macbookpro.z;
             }
             // wait
-            usleep( SMSManager::wait_time );
+            ck_usleep( SMSManager::wait_time );
         }
         else
         {
             // wait
-            usleep( 1000 );
+            ck_usleep( 1000 );
         }
     }
 
     // TODO: hack!
-    SAFE_DELETE( SMSManager::the_thread );
+    CK_SAFE_DELETE( SMSManager::the_thread );
 
     return 0;
 }
@@ -2814,7 +2824,12 @@ static int TiltSensor_test( int kernFunc, const char * servMatch, int dataType )
 
     CFMutableDictionaryRef matchingDictionary = IOServiceMatching( servMatch );
 
+    // 1.5.0.7 (ge) updated kIOMasterPortDefault to kIOMainPortDefault
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 120000 // before macOS 12
     result = IOServiceGetMatchingServices( kIOMasterPortDefault, matchingDictionary, &iterator );
+#else
+    result = IOServiceGetMatchingServices( kIOMainPortDefault, matchingDictionary, &iterator );
+#endif
 
     if( result != KERN_SUCCESS )
         return 0;
@@ -2922,24 +2937,28 @@ static int TiltSensor_do_read()
 
 static int TiltSensor_detect()
 {
-    // try different interfaces until we find one that works
-
-    SInt32 osx_version;
-    int powerbookKernFunc = 0;
-
     // log
     EM_log( CK_LOG_FINE, "detecting SMS sensor..." );
 
-    Gestalt( gestaltSystemVersion, &osx_version );
+    // try different interfaces until we find one that works
+    int powerbookKernFunc = 0;
 
-    if( osx_version == 0x1040 ||
-        osx_version == 0x1041 ||
-        osx_version == 0x1042 ||
-        osx_version == 0x1043 )
-        powerbookKernFunc = 24;
+    // get macOS release version | 1.5.0.5 (ge) new way
+    ck_OSVersion v = ck_macOS_version();
+    // check 10.4.[0,3]
+    if( v.major == 10 & v.minor == 4 && v.patch <= 3 ) powerbookKernFunc = 24;
+    else powerbookKernFunc = 21;
 
-    else
-        powerbookKernFunc = 21;
+    // old way
+    // SInt32 osx_version = 0;
+    // Gestalt( gestaltSystemVersion, &osx_version );
+    // if( osx_version == 0x1040 ||
+    //     osx_version == 0x1041 ||
+    //     osx_version == 0x1042 ||
+    //     osx_version == 0x1043 )
+    //     powerbookKernFunc = 24;
+    // else
+    //     powerbookKernFunc = 21;
 
     // 1.3.1.0: added cast to t_CKINT
     // CK_FPRINTF_STDOUT( "osx_version = %ld \n", (t_CKINT)osx_version );
@@ -3670,11 +3689,11 @@ t_CKINT WiiRemote::control_init()
 
     enable_peripherals( FALSE, TRUE, TRUE, TRUE );
 
-    usleep( 1000 );
+    ck_usleep( 1000 );
     enable_leds( ( num % 4 ) == 0, ( ( num - 1 ) % 4 ) == 0,
                  ( ( num - 2 ) % 4 ) == 0, ( ( num - 3 ) % 4 ) == 0 );
 
-    usleep( 1000 );
+    ck_usleep( 1000 );
     enable_speaker( FALSE );
 
     HidMsg msg;
@@ -4235,27 +4254,27 @@ void WiiRemote::initialize_ir_sensor()
 
     unsigned char en0[] = { 0x01 };
     write_memory( en0, 1, 0x04b00030 );
-    //usleep(10000);
+    //ck_usleep(10000);
 
     unsigned char en[] = { 0x08 };
     write_memory( en, 1, 0x04b00030 );
-    //usleep(10000);
+    //ck_usleep(10000);
 
     unsigned char sensitivity_block1[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x90, 0x00, 0xc0 };
     write_memory( sensitivity_block1, 9, 0x04b00000 );
-    //usleep(10000);
+    //ck_usleep(10000);
 
     unsigned char sensitivity_block2[] = { 0x40, 0x00 };
     write_memory( sensitivity_block2, 2, 0x04b0001a );
-    //usleep(10000);
+    //ck_usleep(10000);
 
     unsigned char mode[] = { 0x03 };
     write_memory( mode, 1, 0x04b00033 );
-    // usleep(10000);
+    //ck_usleep(10000);
 
     unsigned char what[] = { 0x08 };
     write_memory( what, 1, 0x04b00030 );
-    //usleep(10000);
+    //ck_usleep(10000);
 }
 
 void WiiRemote::enable_extension( t_CKBOOL enable )
@@ -4704,11 +4723,11 @@ void WiiRemote_quit()
     for( xvector< WiiRemote * >::size_type i = 0; i < wiiremotes->size(); i++ )
     {
         if( ( *wiiremotes )[i] )
-            SAFE_DELETE( ( *wiiremotes )[i] );
+            CK_SAFE_DELETE( ( *wiiremotes )[i] );
     }
-    SAFE_DELETE( wiiremotes );
-    SAFE_DELETE( wr_addresses );
-    SAFE_DELETE( WiiRemoteOp_cbuf );
+    CK_SAFE_DELETE( wiiremotes );
+    CK_SAFE_DELETE( wr_addresses );
+    CK_SAFE_DELETE( WiiRemoteOp_cbuf );
 
     Hid_quit2();
 #endif // __CK_HID_WIIREMOTE__
@@ -4811,7 +4830,7 @@ const char * WiiRemote_name( int wr )
 #endif // __CK_HID_WIIREMOTE__
 }
 
-#elif ( defined( __PLATFORM_WIN32__ ) || defined( __WINDOWS_PTHREAD__ ) ) && !defined( USE_RAWINPUT )
+#elif ( defined(__PLATFORM_WINDOWS__) || defined(__WINDOWS_PTHREAD__) ) && !defined( USE_RAWINPUT )
 /*****************************************************************************
 Windows general HID support
 *****************************************************************************/
@@ -4819,9 +4838,12 @@ Windows general HID support
 
 #include <windows.h>
 #include <winuser.h>
-#ifdef __WINDOWS_MODERN__ // REFACTOR-2017
+
+// 1.5.0.7 (ge) make "__WINDOWS_MODERN__" default
+// previously: #ifdef __WINDOWS_MODERN__
+#ifndef __WINDOWS_OLDSCHOOL__ // REFACTOR-2017
 #define DIRECTINPUT_VERSION 0x0800
-#else
+#else // earlier windows
 #ifdef __USE_DINPUT8LIB__
 #define DIRECTINPUT_VERSION 0x0800
 #else
@@ -4841,7 +4863,7 @@ static void (*g_wait_function)() = NULL;
 
 static void Hid_wait_usleep()
 {
-    usleep( 10 );
+    ck_usleep( 10 );
 }
 
 static void Hid_wait_event()
@@ -5017,7 +5039,19 @@ void Joystick_init()
 #if DIRECTINPUT_VERSION <= 0x700 // REFACTOR-2017
     if( lpdi->EnumDevices( DIDEVTYPE_JOYSTICK, DIEnumJoystickProc,
 #else
-    if( lpdi->EnumDevices( DI8DEVTYPE_JOYSTICK, DIEnumJoystickProc,
+    // fix 1.5.0.1 (Spencer 2023): use DI8DEVCLASS_GAMECTRL instead of DI8DEVTYPE_JOYSTICK
+    // cf. EnumDevices documentation https://learn.microsoft.com/en-us/previous-versions/windows/desktop/ee417804(v=vs.85)
+    // this seems to fix joystick usage in general, but Xbox One controller still fails
+    // XBox One controller workaround from otherTom#4512
+    // *** open up Device Manager, expand "Human Interface Devices",
+    // right click "XINPUT compatible HID device", "Update driver",
+    // "Browse my computer", "Let me pick". should be three options.
+    // Try "HID-compliant game controller". If you want to undo the
+    // change, same thing but update "HID-compliant game controller"
+    // and pick the XINPUT ***
+    // https://www.snes9x.com/phpbb3/viewtopic.php?t=27510&sid=661fbbc1609037a8ec2e5f10e003f5a0
+    // was: if (lpdi->EnumDevices(DI8DEVTYPE_JOYSTICK, DIEnumJoystickProc,
+    if( lpdi->EnumDevices( DI8DEVCLASS_GAMECTRL, DIEnumJoystickProc,
 #endif
                            NULL, DIEDFL_ATTACHEDONLY ) != DI_OK )
     {
@@ -6239,7 +6273,7 @@ const char * Mouse_name( int m )
     return mice->at( m )->name;
 }
 
-#elif defined( __PLATFORM_WIN32__ ) || defined( __WINDOWS_PTHREAD__ ) && defined( USE_RAWINPUT )
+#elif defined(__PLATFORM_WINDOWS__) || defined(__WINDOWS_PTHREAD__) && defined( USE_RAWINPUT )
 
 void Joystick_init()
 {
@@ -7763,7 +7797,7 @@ const char * Keyboard_name( int k )
 
 #pragma mark Hid graveyard
 /***** empty functions for stuff that isn't yet cross platform *****/
-#ifndef __PLATFORM_MACOSX__
+#ifndef __PLATFORM_APPLE__
 /*** empty functions for Mac-only stuff ***/
 
 int Joystick_count_elements( int js, int type ) { return -1; }

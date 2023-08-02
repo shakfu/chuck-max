@@ -1,8 +1,6 @@
-set(CHUCK_DIR ${CMAKE_SOURCE_DIR}/source/projects/chuck~)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-
-
+set(CHUCK_DIR ${CMAKE_SOURCE_DIR}/source/projects/chuck~)
 
 set(CXX_HOST
 	chuck_main.cpp
@@ -26,6 +24,8 @@ target_compile_definitions(chuck
 	HAVE_CONFIG_H
 
 )
+
+
 
 target_include_directories(chuck
 	PUBLIC

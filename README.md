@@ -1,6 +1,6 @@
 # chuck-max
 
-A project to minimally embed the [chuck](https://chuck.stanford.edu) engine in a Max/MSP external.
+A project to minimally embed the [chuck](https://chuck.stanford.edu) engine in a Max/MSP external. 
 
 It currently has one external (`chuck~`) with the following features and limitations:
 
@@ -21,6 +21,8 @@ It currently has one external (`chuck~`) with the following features and limitat
 - As of this version, there is no support for callbacks and events except via the `signal` and `broadcast` messages.
 
 see `help/chuck~.maxhelp` for a demonstration of current features.
+
+Also note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
 
 ## Requirements
 
@@ -48,11 +50,13 @@ brew install cmake bison flex
 ## Compilation
 
 All dependencies are included in the repo, and the external is built 'statically' without any non-system dependencies.
+
 The buildsystem consists of a minimal Makefile frontend with CMake driving the build on the backend.
 
-Just clone the repo and then:
+To get up and running:
 
 ```bash
+git clone https://github.com/shakfu/chuck-max.git
 cd chuck-max
 make
 make setup
@@ -64,7 +68,7 @@ Note: `make` builds everything and the `make setup` does the following:
 ln -s $(shell pwd) "$(HOME)/Documents/Max 8/Packages/$(shell basename `pwd`)"
 ```
 
-This makes the package and it's contents available in Max.
+This makes the package and its contents available in Max.
 
 
 ## Usage
@@ -74,7 +78,7 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 
 ## Status
 
-- [ ] update to chuck-1.5.0.8
+- [x] updated to chuck-1.5.0.8
 - [ ] add linux support
 - [ ] add windows support
 - [ ] add support for events
@@ -91,8 +95,8 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 
 ## TODO
 
-- [ ] Update to latest chuck release: chuck-1.5.0.8
-      
+- [ ] Fix `chugin/Patch` regression
+
 - [ ] More error checking!!! 
 
 - [ ] Add editor support for double-click to edit, etc.. or via filewatcher

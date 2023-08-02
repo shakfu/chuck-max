@@ -38,7 +38,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <ctype.h>
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
  #include <unistd.h>
  #include <sys/param.h>
  #include <sys/types.h>
@@ -168,7 +168,7 @@ void tokenize_string( string str, vector< string > & tokens)
 // desc: replacement for broken tmpnam() on Windows Vista + 7
 // file_path should be at least MAX_PATH characters.
 //-----------------------------------------------------------------------------
-#ifdef __PLATFORM_WIN32__
+#ifdef __PLATFORM_WINDOWS__
 
 #include <windows.h>
 
@@ -217,10 +217,10 @@ Chuck_Shell::~Chuck_Shell()
 
     //iterate through commands, delete the associated heap data
     for( i = 0; i != len; i++ )
-        SAFE_DELETE( allocated_commands[i] );
+        CK_SAFE_DELETE( allocated_commands[i] );
 
     // delete ui
-    SAFE_DELETE( ui );
+    CK_SAFE_DELETE( ui );
 
     // flag
     initialized = FALSE;
@@ -260,7 +260,7 @@ t_CKBOOL Chuck_Shell::init( Chuck_VM * vm, Chuck_Shell_UI * ui )
     if( !cspv->init( "localhost", 8888 ) )
     {
         CK_FPRINTF_STDERR( "[chuck](via shell): error initializing process VM..." );
-        SAFE_DELETE( cspv );
+        CK_SAFE_DELETE( cspv );
         return FALSE;
     }
 
@@ -561,7 +561,7 @@ void Chuck_Shell::continue_code( string & in )
     {
         char buf[16];
         scope++;
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
         snprintf( buf, 16, "code %2d> ", (int)scope );
 #else
         snprintf( buf, 16, "code %2ld> ", (long)scope);
@@ -574,7 +574,7 @@ void Chuck_Shell::continue_code( string & in )
     {
         char buf[16];
         scope--;
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
         snprintf( buf, 16, "code %2d> ", (int)scope );
 #else
         snprintf( buf, 16, "code %2ld> ", (long)scope);
@@ -600,7 +600,7 @@ void Chuck_Shell::continue_code( string & in )
 void Chuck_Shell::do_code( string & code, string & out, string command )
 {
     // open a temporary file
-#if defined(__PLATFORM_LINUX__) || defined(__MACOSX_CORE__)
+#if defined(__PLATFORM_LINUX__) || defined(__PLATFORM_APPLE__)
     char tmp_dir[] = "/tmp";
     char * tmp_filepath = new char [32];
     // 1.4.1.0: changed chuck_file.XXXXXX to chuck_shell.XXXXXX
@@ -655,11 +655,11 @@ void Chuck_Shell::do_code( string & code, string & out, string command )
     //    ;
 
     // delete the file
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
     unlink( tmp_filepath );
 #else
     DeleteFile( tmp_filepath );
-#endif // __PLATFORM_WIN32__
+#endif // __PLATFORM_WINDOWS__
 
 #if defined(__PLATFORM_LINUX__)
     delete[] tmp_filepath;
@@ -1100,7 +1100,7 @@ t_CKINT Chuck_Shell::Command_Add::execute( vector< string > & argv,
 //-----------------------------------------------------------------------------
 string Chuck_Shell::Command_Add::usage()
 {
-    return "add file ...";
+    return "add file...";
 }
 
 
@@ -1142,7 +1142,7 @@ t_CKINT Chuck_Shell::Command_Remove::execute( vector< string > & argv,
 //-----------------------------------------------------------------------------
 string Chuck_Shell::Command_Remove::usage()
 {
-    return "remove shred_number ...";
+    return "remove shred_number...";
 }
 
 
@@ -1252,7 +1252,7 @@ t_CKINT Chuck_Shell::Command_Replace::execute( vector< string > & argv,
 //-----------------------------------------------------------------------------
 string Chuck_Shell::Command_Replace::usage()
 {
-    return "replace shred_id file ...";
+    return "replace shred_id file...";
 }
 
 
@@ -1326,7 +1326,7 @@ t_CKINT Chuck_Shell::Command_Close::execute( vector< string > & argv,
 {
     caller->close();
 
-    out += "closing chuck shell...  bye!\n";
+    out += "closing chuck shell...bye!\n";
 
     // REFACTOR-2017: removed: this needs to be done outside
     // if( g_shell != NULL )
@@ -1365,7 +1365,7 @@ t_CKINT Chuck_Shell::Command_Exit::execute( vector< string > & argv,
 t_CKINT Chuck_Shell::Command_Ls::execute( vector< string > & argv,
                                           string & out )
 {
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
 
     if( argv.size() == 0 )
     {
@@ -1429,7 +1429,7 @@ t_CKINT Chuck_Shell::Command_Ls::execute( vector< string > & argv,
 
         if( i >= k )
         {
-            SAFE_DELETE_ARRAY( cwd );
+            CK_SAFE_DELETE_ARRAY( cwd );
             cwd = new char [i + 2];
             GetCurrentDirectory( i, cwd );
         }
@@ -1481,7 +1481,7 @@ t_CKINT Chuck_Shell::Command_Ls::execute( vector< string > & argv,
 
 
 
-#endif // __PLATFORM_WIN32__
+#endif // __PLATFORM_WINDOWS__
     return 0;
 }
 
@@ -1495,7 +1495,7 @@ t_CKINT Chuck_Shell::Command_Ls::execute( vector< string > & argv,
 t_CKINT Chuck_Shell::Command_Cd::execute( vector< string > & argv,
                                           string & out )
 {
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
     if( argv.size() < 1 )
     {
         if( chdir( getenv( "HOME" ) ) )
@@ -1518,7 +1518,7 @@ t_CKINT Chuck_Shell::Command_Cd::execute( vector< string > & argv,
             out += "cd: error: command failed\n";
     }
 
-#endif //__PLATFORM_WIN32__
+#endif //__PLATFORM_WINDOWS__
     return 0;
 }
 
@@ -1532,7 +1532,7 @@ t_CKINT Chuck_Shell::Command_Cd::execute( vector< string > & argv,
 t_CKINT Chuck_Shell::Command_Pwd::execute( vector< string > & argv,
                                            string & out )
 {
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
     char * cwd = getcwd( NULL, 0 );
     out += string( cwd ) + "\n";
     free( cwd );
@@ -1543,14 +1543,14 @@ t_CKINT Chuck_Shell::Command_Pwd::execute( vector< string > & argv,
 
     if( i >= k )
     {
-        SAFE_DELETE_ARRAY( cwd );
+        CK_SAFE_DELETE_ARRAY( cwd );
         cwd = new char [i];
         GetCurrentDirectory( i, cwd );
     }
 
     out += string( cwd ) + "\n";
 
-    SAFE_DELETE_ARRAY( cwd );
+    CK_SAFE_DELETE_ARRAY( cwd );
 #endif
 
     if( argv.size() > 0 )
@@ -1745,7 +1745,7 @@ Chuck_Shell::Command_VM::~Command_VM()
 
     //iterate through commands, delete the associated heap data
     for( i = 0; i != len; i++ )
-        SAFE_DELETE( allocated_commands[i] );
+        CK_SAFE_DELETE( allocated_commands[i] );
 }
 
 
@@ -1844,11 +1844,11 @@ t_CKINT Chuck_Shell::Command_VMAttach::execute( vector < string > & argv,
 
         /*if( !new_vm->status( temp ) )
         {
-            SAFE_DELETE( new_vm );
+            CK_SAFE_DELETE( new_vm );
             result = -1;
         }*/
 
-        SAFE_DELETE( caller->current_vm );
+        CK_SAFE_DELETE( caller->current_vm );
         caller->current_vm = new_vm;
         out += argv[0] + " is now current VM\n";
         result = 0;
@@ -1886,11 +1886,11 @@ t_CKINT Chuck_Shell::Command_VMAdd::execute( vector< string > & argv,
 
     caller->vms.push_back( caller->current_vm->copy() );
 
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
     snprintf( buf, 16, "%lu", caller->vms.size() - 1 );
 #else
     snprintf( buf, 16, "%lu", (long)caller->vms.size() - 1 );
-#endif // __PLATFORM_WIN32__
+#endif // __PLATFORM_WINDOWS__
 
     out += caller->current_vm->fullname() + " saved as VM " + buf + "\n";
 
@@ -1922,7 +1922,7 @@ t_CKINT Chuck_Shell::Command_VMRemove::execute( vector< string > & argv,
         }
         else
         {
-            SAFE_DELETE( caller->vms[vm_no] );
+            CK_SAFE_DELETE( caller->vms[vm_no] );
         }
     }
 
@@ -1954,7 +1954,7 @@ t_CKINT Chuck_Shell::Command_VMSwap::execute( vector< string > & argv,
         return -1;
     }
 
-    SAFE_DELETE( caller->current_vm );
+    CK_SAFE_DELETE( caller->current_vm );
     caller->current_vm = caller->vms[new_vm]->copy();
     out += "current VM is now " + caller->current_vm->fullname() + "\n";
 
@@ -1974,7 +1974,9 @@ t_CKINT Chuck_Shell::Command_VMSwap::execute( vector< string > & argv,
 t_CKINT Chuck_Shell::Command_VMList::execute( vector< string > & argv,
                                               string & out )
 {
-    char buf[16];
+    // 1.5.0.1 (ge) changed from 16 to 32;
+    // the former not long enough for big 64-bit numbers
+    char buf[32];
     vector<string>::size_type i, len = caller->vms.size();
 
     if( caller->current_vm != NULL )
@@ -1984,11 +1986,11 @@ t_CKINT Chuck_Shell::Command_VMList::execute( vector< string > & argv,
     {
         if( caller->vms[i] != NULL )
         {
-#ifndef __PLATFORM_WIN32__
-            snprintf( buf, 16, "%lu", i );
+#ifndef __PLATFORM_WINDOWS__
+            snprintf( buf, 32, "%lu", i );
 #else
-            snprintf( buf, 16, "%lu", (long)i );
-#endif // __PLATFORM_WIN32__
+            snprintf( buf, 32, "%lu", (long)i );
+#endif // __PLATFORM_WINDOWS__
             out += string( "VM " ) + buf + ": " +
                    caller->vms[i]->fullname() + "\n";
         }
@@ -2094,7 +2096,7 @@ Chuck_Shell::Command_Code::~Command_Code()
 
     //iterate through commands, delete the associated heap data
     for( i = 0; i != len; i++ )
-        SAFE_DELETE( allocated_commands[i] );
+        CK_SAFE_DELETE( allocated_commands[i] );
 }
 
 

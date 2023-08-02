@@ -24,15 +24,25 @@
 
 //-----------------------------------------------------------------------------
 // file: chuck.cpp
-// desc: chuck engine chasis; VM + compiler + state; independent of audio I/O
-//       REFACTOR-2017
+// desc: interface for ChucK core: compiler + virtual machine + synthesis
+//       |- possible to instantiate multiple ChucK instances
+//       |- each ChucK instance contains a fully functioning ChucK runtime
+//       |- the ChucK class interface is primary point of integration between
+//          ChucK core and ChucK hosts (e.g., command-line ChucK,
+//          miniAudicle, WebChucK, Chunity, Chunreal, and any C++ program
+//          using ChucK core as a component).
+//       |- see src/host-examples/ for sample integration code for ChucK core
+//       |- see chuck, miniAudicle, WebChucK, Chunity etc. for their
+//          respective integration of ChucK core
 //
 // author: Ge Wang (https://ccrma.stanford.edu/~ge/)
-// date: fall 2017
+//   date: fall 2017
 //
 // additional authors:
 //       Jack Atherton (lja@ccrma.stanford.edu)
 //       Spencer Salazar (spencer@ccrma.stanford.edu)
+//
+// (part of The Big Refactor of 2017; codename `numchucks`; #REFACTOR-2017)
 //-----------------------------------------------------------------------------
 #include "chuck.h"
 #include "chuck_errmsg.h"
@@ -48,16 +58,17 @@
 #include "util_network.h"
 #endif
 
+#include "util_platforms.h"
 #include "util_string.h"
 #include "ugen_stk.h"
 
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #else
 #include <direct.h>      // added 1.3.0.0
-#endif // #ifndef __PLATFORM_WIN32__
+#endif // #ifndef __PLATFORM_WINDOWS__
 
 
 
@@ -75,18 +86,22 @@
 #define CHUCK_PARAM_DEPRECATE_LEVEL_DEFAULT        "1"
 #define CHUCK_PARAM_WORKING_DIRECTORY_DEFAULT      ""
 #define CHUCK_PARAM_CHUGIN_ENABLE_DEFAULT          "1"
-#define CHUCK_PARAM_HINT_IS_REALTIME_AUDIO_DEFAULT "0"
-#ifndef __PLATFORM_WIN32__
+#define CHUCK_PARAM_IS_REALTIME_AUDIO_HINT_DEFAULT "0"
+#ifndef __PLATFORM_WINDOWS__
 // 1.4.1.0 (ge) changed to ""; was "/usr/local/lib/chuck"
 // redundant with g_default_chugin_path, which already contains
 #define CHUCK_PARAM_CHUGIN_DIRECTORY_DEFAULT       ""
-#else // __PLATFORM_WIN32__
+#else // __PLATFORM_WINDOWS__
 // 1.4.1.0 (ge) changed to ""; "C:\\Program Files\\ChucK\\chugins"
 // redundant with g_default_chugin_path, which already contains
 #define CHUCK_PARAM_CHUGIN_DIRECTORY_DEFAULT       ""
-#endif // __PLATFORM_WIN32__
+#endif // __PLATFORM_WINDOWS__
 #define CHUCK_PARAM_USER_CHUGINS_DEFAULT        std::list<std::string>()
 #define CHUCK_PARAM_USER_CHUGIN_DIRECTORIES_DEFAULT std::list<std::string>()
+#define CHUCK_PARAM_COMPILER_HIGHLIGHT_ON_ERROR_DEFAULT "1"
+#define CHUCK_PARAM_TTY_COLOR_DEFAULT              "0"
+#define CHUCK_PARAM_TTY_WIDTH_HINT_DEFAULT         "80"
+
 
 
 
@@ -162,30 +177,8 @@ ChucK::~ChucK()
     // decrement the numChucKs
     o_numVMs--;
     // clean up the carrier
-    SAFE_DELETE( m_carrier );
+    CK_SAFE_DELETE( m_carrier );
 }
-
-
-
-
-// REFACTOR-2017: TODO Ge: Implementation of this?
-//-----------------------------------------------------------------------------
-// name: ck_param_type
-// desc: enum for type of param (int, float, string)
-//-----------------------------------------------------------------------------
-enum ck_param_type
-{
-    ck_param_int, ck_param_float, ck_param_string, ck_param_string_list
-};
-
-
-
-
-//-----------------------------------------------------------------------------
-// name: ck_param_types
-// desc: storage for types of param (int, float, string)
-//-----------------------------------------------------------------------------
-std::map< std::string, ck_param_type> ck_param_types;
 
 
 
@@ -196,39 +189,98 @@ std::map< std::string, ck_param_type> ck_param_types;
 //-----------------------------------------------------------------------------
 void ChucK::initDefaultParams()
 {
-    m_params[CHUCK_PARAM_SAMPLE_RATE] = CHUCK_PARAM_SAMPLE_RATE_DEFAULT;
-    m_params[CHUCK_PARAM_INPUT_CHANNELS] = CHUCK_PARAM_INPUT_CHANNELS_DEFAULT;
-    m_params[CHUCK_PARAM_OUTPUT_CHANNELS] = CHUCK_PARAM_OUTPUT_CHANNELS_DEFAULT;
-    m_params[CHUCK_PARAM_VM_ADAPTIVE] = CHUCK_PARAM_VM_ADAPTIVE_DEFAULT;
-    m_params[CHUCK_PARAM_VM_HALT] = CHUCK_PARAM_VM_HALT_DEFAULT;
-    m_params[CHUCK_PARAM_OTF_ENABLE] = CHUCK_PARAM_OTF_ENABLE_DEFAULT;
-    m_params[CHUCK_PARAM_OTF_PORT] = CHUCK_PARAM_OTF_PORT_DEFAULT;
-    m_params[CHUCK_PARAM_DUMP_INSTRUCTIONS] = CHUCK_PARAM_DUMP_INSTRUCTIONS_DEFAULT;
-    m_params[CHUCK_PARAM_AUTO_DEPEND] = CHUCK_PARAM_AUTO_DEPEND_DEFAULT;
-    m_params[CHUCK_PARAM_DEPRECATE_LEVEL] = CHUCK_PARAM_DEPRECATE_LEVEL_DEFAULT;
-    m_params[CHUCK_PARAM_WORKING_DIRECTORY] = CHUCK_PARAM_WORKING_DIRECTORY_DEFAULT;
-    m_params[CHUCK_PARAM_CHUGIN_DIRECTORY] = CHUCK_PARAM_CHUGIN_DIRECTORY_DEFAULT;
-    m_params[CHUCK_PARAM_CHUGIN_ENABLE] = CHUCK_PARAM_CHUGIN_ENABLE_DEFAULT;
-    m_listParams[CHUCK_PARAM_USER_CHUGINS] = CHUCK_PARAM_USER_CHUGINS_DEFAULT;
-    m_listParams[CHUCK_PARAM_USER_CHUGIN_DIRECTORIES] = CHUCK_PARAM_USER_CHUGIN_DIRECTORIES_DEFAULT;
-    m_params[CHUCK_PARAM_HINT_IS_REALTIME_AUDIO] = CHUCK_PARAM_HINT_IS_REALTIME_AUDIO_DEFAULT;
+    initParam( CHUCK_PARAM_VERSION, CHUCK_VERSION_STRING, ck_param_string, TRUE );
+    initParam( CHUCK_PARAM_SAMPLE_RATE, CHUCK_PARAM_SAMPLE_RATE_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_INPUT_CHANNELS, CHUCK_PARAM_INPUT_CHANNELS_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_OUTPUT_CHANNELS, CHUCK_PARAM_OUTPUT_CHANNELS_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_VM_ADAPTIVE, CHUCK_PARAM_VM_ADAPTIVE_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_VM_HALT, CHUCK_PARAM_VM_HALT_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_OTF_ENABLE, CHUCK_PARAM_OTF_ENABLE_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_OTF_PORT, CHUCK_PARAM_OTF_PORT_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_DUMP_INSTRUCTIONS, CHUCK_PARAM_DUMP_INSTRUCTIONS_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_AUTO_DEPEND, CHUCK_PARAM_AUTO_DEPEND_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_DEPRECATE_LEVEL, CHUCK_PARAM_DEPRECATE_LEVEL_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_WORKING_DIRECTORY, CHUCK_PARAM_WORKING_DIRECTORY_DEFAULT, ck_param_string );
+    initParam( CHUCK_PARAM_CHUGIN_DIRECTORY, CHUCK_PARAM_CHUGIN_DIRECTORY_DEFAULT, ck_param_string );
+    initParam( CHUCK_PARAM_CHUGIN_ENABLE, CHUCK_PARAM_CHUGIN_ENABLE_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_IS_REALTIME_AUDIO_HINT, CHUCK_PARAM_IS_REALTIME_AUDIO_HINT_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_COMPILER_HIGHLIGHT_ON_ERROR, CHUCK_PARAM_COMPILER_HIGHLIGHT_ON_ERROR_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_TTY_COLOR, CHUCK_PARAM_TTY_COLOR_DEFAULT, ck_param_int );
+    initParam( CHUCK_PARAM_TTY_WIDTH_HINT, CHUCK_PARAM_TTY_WIDTH_HINT_DEFAULT, ck_param_int );
 
-    ck_param_types[CHUCK_PARAM_SAMPLE_RATE]             = ck_param_int;
-    ck_param_types[CHUCK_PARAM_INPUT_CHANNELS]          = ck_param_int;
-    ck_param_types[CHUCK_PARAM_OUTPUT_CHANNELS]         = ck_param_int;
-    ck_param_types[CHUCK_PARAM_VM_ADAPTIVE]             = ck_param_int;
-    ck_param_types[CHUCK_PARAM_VM_HALT]                 = ck_param_int;
-    ck_param_types[CHUCK_PARAM_OTF_ENABLE]              = ck_param_int;
-    ck_param_types[CHUCK_PARAM_OTF_PORT]                = ck_param_int;
-    ck_param_types[CHUCK_PARAM_DUMP_INSTRUCTIONS]       = ck_param_int;
-    ck_param_types[CHUCK_PARAM_AUTO_DEPEND]             = ck_param_int;
-    ck_param_types[CHUCK_PARAM_DEPRECATE_LEVEL]         = ck_param_int;
-    ck_param_types[CHUCK_PARAM_WORKING_DIRECTORY]       = ck_param_string;
-    ck_param_types[CHUCK_PARAM_CHUGIN_DIRECTORY]        = ck_param_string;
-    ck_param_types[CHUCK_PARAM_CHUGIN_ENABLE]           = ck_param_int;
-    ck_param_types[CHUCK_PARAM_USER_CHUGINS]            = ck_param_string_list;
-    ck_param_types[CHUCK_PARAM_USER_CHUGIN_DIRECTORIES] = ck_param_string_list;
-    ck_param_types[CHUCK_PARAM_HINT_IS_REALTIME_AUDIO]  = ck_param_int;
+    // initialize list params manually (take care to use tolower())
+    m_listParams[tolower(CHUCK_PARAM_USER_CHUGINS)]             = CHUCK_PARAM_USER_CHUGINS_DEFAULT;
+    m_param_types[tolower(CHUCK_PARAM_USER_CHUGINS)]            = ck_param_string_list;
+    m_listParams[tolower(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES)]  = CHUCK_PARAM_USER_CHUGIN_DIRECTORIES_DEFAULT;
+    m_param_types[tolower(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES)] = ck_param_string_list;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: initParam()
+// desc: internal helper -- initialize a param
+//-----------------------------------------------------------------------------
+void ChucK::initParam( const std::string & name, const std::string & value,
+                       ck_param_type typeEnum, t_CKBOOL isReadOnly )
+{
+    // get lowercase version
+    std::string n = tolower(name);
+    // insert into map
+    m_params[n] = value;
+    // remember type
+    m_param_types[n] = typeEnum;
+    // read only?
+    if( isReadOnly ) m_readOnly[n] = isReadOnly;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: readOnlyParam()
+// desc: internal helper -- check read-only
+//-----------------------------------------------------------------------------
+t_CKBOOL ChucK::readOnlyParam( const std::string & name )
+{
+    // check
+    return m_readOnly.find(tolower(name)) != m_readOnly.end();
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: matchParam()
+// desc: internal helper -- match parameter name (case-insensitive)
+//-----------------------------------------------------------------------------
+t_CKBOOL ChucK::matchParam( const std::string & lhs, const std::string & rhs )
+{
+    // return lower-case equal
+    return tolower(lhs) == tolower(rhs);
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: enactParam()
+// desc: enact processing, as needed, for certain params
+//-----------------------------------------------------------------------------
+void ChucK::enactParam( const std::string & name, t_CKINT value )
+{
+    // check and set
+    if( matchParam(name,CHUCK_PARAM_TTY_COLOR) )
+    {
+        // set the global override switch
+        TC::globalDisableOverride( !value );
+    }
+    else if( matchParam(name,CHUCK_PARAM_TTY_WIDTH_HINT) )
+    {
+        // set default
+        ck_ttywidth_setdefault( value );
+    }
 }
 
 
@@ -240,11 +292,17 @@ void ChucK::initDefaultParams()
 //-----------------------------------------------------------------------------
 t_CKBOOL ChucK::setParam( const std::string & name, t_CKINT value )
 {
-    if( m_params.count( name ) > 0 && ck_param_types[name] == ck_param_int )
+    // lower case for consistency
+    std::string key = tolower(name);
+    // check read-only
+    if( readOnlyParam(key) ) return FALSE;
+    // check key
+    if( m_params.count(key) > 0 && m_param_types[key] == ck_param_int )
     {
-        std::ostringstream s;
-        s << value;
-        m_params[name] = s.str();
+        // enact processing, as needed
+        enactParam( key, value );
+        // insert into map
+        m_params[key] = itoa(value);
         return TRUE;
     }
     else
@@ -262,11 +320,15 @@ t_CKBOOL ChucK::setParam( const std::string & name, t_CKINT value )
 //-----------------------------------------------------------------------------
 t_CKBOOL ChucK::setParamFloat( const std::string & name, t_CKFLOAT value )
 {
-    if( m_params.count( name ) > 0 && ck_param_types[name] == ck_param_float )
+    // lower case for consistency
+    std::string key = tolower(name);
+    // check read-only
+    if( readOnlyParam(key) ) return FALSE;
+    // check
+    if( m_params.count( key ) > 0 && m_param_types[key] == ck_param_float )
     {
-        std::ostringstream s;
-        s << value;
-        m_params[name] = s.str();
+        // insert into map
+        m_params[key] = ftoa( value, 32 );
         return TRUE;
     }
     else
@@ -284,9 +346,14 @@ t_CKBOOL ChucK::setParamFloat( const std::string & name, t_CKFLOAT value )
 //-----------------------------------------------------------------------------
 t_CKBOOL ChucK::setParam( const std::string & name, const std::string & value )
 {
-    if( m_params.count( name ) > 0 && ck_param_types[name] == ck_param_string )
+    // lower case for consistency
+    std::string key = tolower(name);
+    // check read-only
+    if( readOnlyParam(key) ) return FALSE;
+    // check
+    if( m_params.count(key) > 0 && m_param_types[key] == ck_param_string )
     {
-        m_params[name] = value;
+        m_params[key] = value;
         return TRUE;
     }
     else
@@ -304,10 +371,15 @@ t_CKBOOL ChucK::setParam( const std::string & name, const std::string & value )
 //-----------------------------------------------------------------------------
 t_CKBOOL ChucK::setParam( const std::string & name, const std::list< std::string > & value )
 {
-    if( m_listParams.count( name ) > 0 &&
-        ck_param_types[name] == ck_param_string_list )
+    // lower case for consistency
+    std::string key = tolower(name);
+    // check read-only
+    if( readOnlyParam(key) ) return FALSE;
+    // check
+    if( m_listParams.count( key ) > 0 &&
+        m_param_types[key] == ck_param_string_list )
     {
-        m_listParams[name] = value;
+        m_listParams[key] = value;
         return TRUE;
     }
     else
@@ -323,10 +395,13 @@ t_CKBOOL ChucK::setParam( const std::string & name, const std::list< std::string
 // name: getParamInt()
 // desc: get an int param
 //-----------------------------------------------------------------------------
-t_CKINT ChucK::getParamInt( const std::string & key )
+t_CKINT ChucK::getParamInt( const std::string & name )
 {
+    // lower case for consistency
+    std::string key = tolower(name);
     t_CKINT result = 0;
-    if( m_params.count( key ) > 0 && ck_param_types[key] == ck_param_int )
+    // check
+    if( m_params.count( key ) > 0 && m_param_types[key] == ck_param_int )
     {
         std::istringstream s( m_params[key] );
         s >> result;
@@ -341,10 +416,13 @@ t_CKINT ChucK::getParamInt( const std::string & key )
 // name: getParamFloat()
 // desc: get a float param
 //-----------------------------------------------------------------------------
-t_CKFLOAT ChucK::getParamFloat( const std::string & key )
+t_CKFLOAT ChucK::getParamFloat( const std::string & name )
 {
+    // lower case for consistency
+    std::string key = tolower(name);
     t_CKFLOAT result = 0;
-    if( m_params.count( key ) > 0 && ck_param_types[key] == ck_param_float )
+    // check
+    if( m_params.count( key ) > 0 && m_param_types[key] == ck_param_float )
     {
         std::istringstream s( m_params[key] );
         s >> result;
@@ -359,9 +437,12 @@ t_CKFLOAT ChucK::getParamFloat( const std::string & key )
 // name: getParamString()
 // desc: get a string param
 //-----------------------------------------------------------------------------
-std::string ChucK::getParamString( const std::string & key )
+std::string ChucK::getParamString( const std::string & name )
 {
-    if( m_params.count( key ) > 0 && ck_param_types[key] == ck_param_string )
+    // lower case for consistency
+    std::string key = tolower(name);
+    // check
+    if( m_params.count( key ) > 0 && m_param_types[key] == ck_param_string )
     {
         return m_params[key];
     }
@@ -378,10 +459,13 @@ std::string ChucK::getParamString( const std::string & key )
 // name: getParamStringList()
 // desc: get a string param
 //-----------------------------------------------------------------------------
-std::list< std::string > ChucK::getParamStringList( const std::string & key )
+std::list< std::string > ChucK::getParamStringList( const std::string & name )
 {
+    // lower case for consistency
+    std::string key = tolower(name);
+    // check
     if( m_listParams.count( key ) > 0 &&
-        ck_param_types[key] == ck_param_string_list )
+        m_param_types[key] == ck_param_string_list )
     {
         return m_listParams[key];
     }
@@ -403,7 +487,7 @@ t_CKBOOL ChucK::init()
     // sanity check
     if( m_init == TRUE )
     {
-        CK_FPRINTF_STDERR( "[chuck]: VM already initialized...\n" );
+        EM_error2( 0, "VM already initialized..." );
         return false;
     }
 
@@ -454,7 +538,7 @@ t_CKBOOL ChucK::initVM()
     // initialize VM
     if( !m_carrier->vm->initialize( srate, outs, ins, adaptiveSize, halt ) )
     {
-        CK_FPRINTF_STDERR( "[chuck]: %s\n", m_carrier->vm->last_error() );
+        EM_error2( 0, "%s", m_carrier->vm->last_error() );
         return false;
     }
 
@@ -489,7 +573,7 @@ t_CKBOOL ChucK::initCompiler()
     // initialize compiler
     if( !m_carrier->compiler->initialize() )
     {
-        CK_FPRINTF_STDERR( "[chuck]: compiler failed to initialize...\n" );
+        EM_error2( 0, "compiler failed to initialize..." );
         return false;
     }
     // set dump flag
@@ -509,7 +593,7 @@ t_CKBOOL ChucK::initCompiler()
     // VM + type system integration (needs to be done after compiler)
     if( !m_carrier->vm->initialize_synthesis() )
     {
-        CK_FPRINTF_STDERR( "[chuck]: %s\n", m_carrier->vm->last_error() );
+        EM_error2( 0, "%s", m_carrier->vm->last_error() );
         return false;
     }
 
@@ -533,7 +617,7 @@ t_CKBOOL ChucK::initCompiler()
         // make c++ string
         cwd = std::string(cstr_cwd);
         // reclaim memory from getcwd
-        SAFE_FREE(cstr_cwd);
+        CK_SAFE_FREE(cstr_cwd);
         // add trailing "/"
         cwd += '/';
         // deferring this step until later, and only for Windows
@@ -567,7 +651,7 @@ t_CKBOOL ChucK::initCompiler()
             workingDir = cwd + workingDir;
         }
 
-#ifdef __PLATFORM_WIN32__
+#ifdef __PLATFORM_WINDOWS__
         // normalize path separators, only for windows; in case UNIX-style paths contains actual backslashes
         workingDir = normalize_directory_separator(workingDir);
 #endif
@@ -607,6 +691,9 @@ t_CKBOOL ChucK::initChugins()
     Chuck_VM_Code * code = NULL;
     Chuck_VM_Shred * shred = NULL;
 
+    // print whether chugins enabled
+    EM_log( CK_LOG_SYSTEM, "chugin system: %s", getParamInt( CHUCK_PARAM_CHUGIN_ENABLE ) ? "ON" : "OFF" );
+
     // whether or not chug should be enabled (added 1.3.0.0)
     if( getParamInt( CHUCK_PARAM_CHUGIN_ENABLE ) != 0 )
     {
@@ -621,6 +708,11 @@ t_CKBOOL ChucK::initChugins()
         // list of individually named chug-ins (added 1.3.0.0)
         std::list<std::string> named_dls = getParamStringList( CHUCK_PARAM_USER_CHUGINS );
 
+        EM_pushlog();
+        // print host version
+        EM_log( CK_LOG_SEVERE, TC::green("host version: %d.%d", true).c_str(), CK_DLL_VERSION_MAJOR, CK_DLL_VERSION_MINOR );
+        EM_poplog();
+
         //---------------------------------------------------------------------
         // set origin hint | 1.5.0.0 (ge) added
         m_carrier->compiler->m_originHint = te_originChugin;
@@ -628,24 +720,22 @@ t_CKBOOL ChucK::initChugins()
         // log
         EM_log( CK_LOG_SYSTEM, "loading chugins..." );
         // push indent level
-        EM_pushlog();
-        // load external libs
-        if( !compiler()->load_external_modules( ".chug", dl_search_path, named_dls ) )
+        // EM_pushlog();
+        // load external libs | 1.5.0.4 (ge) enabled recursive search
+        if( !compiler()->load_external_modules( ".chug", dl_search_path, named_dls, TRUE ) )
         {
-            // pop indent level
-            EM_poplog();
             // clean up
             goto error;
         }
         // pop log
-        EM_poplog();
+        // EM_poplog();
 
         //---------------------------------------------------------------------
         // set origin hint | 1.5.0.0 (ge) added
         m_carrier->compiler->m_originHint = te_originImport;
         //---------------------------------------------------------------------
         // log
-        EM_log( CK_LOG_SYSTEM, "pre-loading ChucK libs..." );
+        EM_log( CK_LOG_SYSTEM, "loading chuck extensions..." );
         EM_pushlog();
 
         // iterate over list of ck files that the compiler found
@@ -665,7 +755,7 @@ t_CKBOOL ChucK::initChugins()
             std::string full_path = filename;
 
             // parse, type-check, and emit
-            if( compiler()->go( filename, NULL, NULL, full_path ) )
+            if( compiler()->go( filename, full_path ) )
             {
                 // TODO: how to compilation handle?
                 //return 1;
@@ -673,7 +763,7 @@ t_CKBOOL ChucK::initChugins()
                 // get the code
                 code = compiler()->output();
                 // name it - TODO?
-                // code->name += string(argv[i]);
+                // code->name = string(argv[i]);
 
                 // spork it
                 shred = vm()->spork( code, NULL, TRUE );
@@ -717,6 +807,77 @@ error: // 1.4.1.0 (ge) added
 
 
 //-----------------------------------------------------------------------------
+// name: probeChugins()
+// desc: probe chugin system and print output
+//-----------------------------------------------------------------------------
+void ChucK::probeChugins()
+{
+    // ck files to pre load
+    std::list<std::string> ck_libs_to_preload;
+
+    // print whether chugins enabled
+    EM_log( CK_LOG_SYSTEM, "chugin system: %s", getParamInt( CHUCK_PARAM_CHUGIN_ENABLE ) ? "ON" : "OFF" );
+    // print host version
+    EM_log( CK_LOG_SYSTEM, TC::green("host version: %d.%d", true).c_str(), CK_DLL_VERSION_MAJOR, CK_DLL_VERSION_MINOR );
+    // push
+    EM_pushlog();
+    // print host version
+    EM_log( CK_LOG_SYSTEM, "chugin major version must == host major version" );
+    EM_log( CK_LOG_SYSTEM, "chugin minor version must <= host major version" );
+    // pop
+    EM_poplog();
+
+    // chugin dur
+    std::string chuginDir = getParamString( CHUCK_PARAM_CHUGIN_DIRECTORY );
+    // list of search pathes (added 1.3.0.0)
+    std::list<std::string> dl_search_path = getParamStringList( CHUCK_PARAM_USER_CHUGIN_DIRECTORIES );
+    if( chuginDir != "" )
+    {
+        // add to search path
+        dl_search_path.push_back( chuginDir );
+    }
+    // list of individually named chug-ins (added 1.3.0.0)
+    std::list<std::string> named_dls = getParamStringList( CHUCK_PARAM_USER_CHUGINS );
+
+    // log
+    EM_log( CK_LOG_SYSTEM, "probing chugins (.chug)..." );
+    // push indent level
+    // EM_pushlog();
+    // load external libs
+    if( !Chuck_Compiler::probe_external_modules( ".chug", dl_search_path, named_dls, TRUE, ck_libs_to_preload ) )
+    {
+        // warning
+        EM_log( CK_LOG_SYSTEM, "error probing chugins..." );
+    }
+    // pop log
+    // EM_poplog();
+
+    // log
+    EM_log( CK_LOG_SYSTEM, "probing auto-load chuck files (.ck)..." );
+    EM_pushlog();
+
+    // iterate over list of ck files that the compiler found
+    for( std::list<std::string>::iterator j = ck_libs_to_preload.begin();
+         j != ck_libs_to_preload.end(); j++ )
+    {
+        // the filename
+        std::string filename = *j;
+        // log
+        EM_log( CK_LOG_SYSTEM, "[%s] '%s'...", TC::green("FOUND",true).c_str(), filename.c_str() );
+    }
+
+    // check
+    if( ck_libs_to_preload.size() == 0 )
+        EM_log( CK_LOG_INFO, "(no auto-load chuck files found)" );
+
+    // pop log
+    EM_poplog();
+}
+
+
+
+
+//-----------------------------------------------------------------------------
 // name: initOTF()
 // desc: init OTF programming system
 //-----------------------------------------------------------------------------
@@ -737,13 +898,13 @@ t_CKBOOL ChucK::initOTF()
             !ck_bind( m_carrier->otf_socket, (int)m_carrier->otf_port ) ||
             !ck_listen( m_carrier->otf_socket, 10 ) )
         {
-            CK_FPRINTF_STDERR( "[chuck]: cannot bind to tcp port %li...\n", m_carrier->otf_port );
+            EM_error2( 0, "cannot bind to tcp port %li...", m_carrier->otf_port );
             ck_close( m_carrier->otf_socket );
             m_carrier->otf_socket = NULL;
         }
         else
         {
-#if !defined(__PLATFORM_WIN32__) || defined(__WINDOWS_PTHREAD__)
+#if !defined(__PLATFORM_WINDOWS__) || defined(__WINDOWS_PTHREAD__)
             pthread_create( &m_carrier->otf_thread, NULL, otf_cb, m_carrier );
 #else
             m_carrier->otf_thread = CreateThread( NULL, 0,
@@ -783,7 +944,7 @@ t_CKBOOL ChucK::shutdown()
         // wait for it to stop...
         while( m_carrier->vm->running() )
         {
-            usleep(1000);
+            ck_usleep(1000);
         }
     }
 
@@ -796,35 +957,51 @@ t_CKBOOL ChucK::shutdown()
 
 #ifndef __DISABLE_OTF_SERVER__
     // cancel otf thread
-    if( m_carrier->otf_thread )
+    if( m_carrier!= NULL )
     {
-#if !defined(__PLATFORM_WIN32__) || defined(__WINDOWS_PTHREAD__)
-        pthread_cancel( m_carrier->otf_thread );
+        // stop otf thread
+        if( m_carrier->otf_thread )
+        {
+#if !defined(__PLATFORM_WINDOWS__) || defined(__WINDOWS_PTHREAD__)
+            pthread_cancel( m_carrier->otf_thread );
 #else
-        CloseHandle( m_carrier->otf_thread ); // doesn't cancel thread
+            CloseHandle( m_carrier->otf_thread ); // doesn't cancel thread
 #endif
-        m_carrier->otf_thread = 0; // signals thread shutdown
+            m_carrier->otf_thread = 0; // signals thread shutdown
+        }
+
+        // close otf socket
+        if( m_carrier->otf_socket )
+        {
+            ck_close( m_carrier->otf_socket );
+        }
+
+        // reset
+        m_carrier->otf_socket = NULL;
+        m_carrier->otf_port = 0;
     }
-
-    // close otf socket
-    if( m_carrier->otf_socket ) ck_close( m_carrier->otf_socket );
-
-    // reset
-    m_carrier->otf_socket = NULL;
-    m_carrier->otf_port = 0;
 #endif // __DISABLE_OTF_SERVER__
 
     // TODO: a different way to unlock?
     // unlock all objects to delete chout, cherr
     Chuck_VM_Object::unlock_all();
-    SAFE_RELEASE( m_carrier->chout );
-    SAFE_RELEASE( m_carrier->cherr );
+    // ensure we have a carrier
+    if( m_carrier != NULL )
+    {
+        CK_SAFE_RELEASE( m_carrier->chout );
+        CK_SAFE_RELEASE( m_carrier->cherr );
+    }
     // relock
     Chuck_VM_Object::lock_all();
-    // clean up vm, compiler
-    SAFE_DELETE( m_carrier->vm );
-    SAFE_DELETE( m_carrier->compiler );
-    m_carrier->env = NULL;
+
+    // ensure we have a carrier
+    if( m_carrier != NULL )
+    {
+        // clean up vm, compiler
+        CK_SAFE_DELETE( m_carrier->vm );
+        CK_SAFE_DELETE( m_carrier->compiler );
+        m_carrier->env = NULL;
+    }
 
     // clear flag
     m_init = FALSE;
@@ -845,22 +1022,39 @@ t_CKBOOL ChucK::shutdown()
 
 //-----------------------------------------------------------------------------
 // name: compileFile()
-// desc: compile a file (can be called anytime)
+// desc: compile a file -> chuck bytecode -> spork as new shred
+//       `argsTogether` is appended to `path` as additional arguments
+//       the format of `argsTogether` is ':'-separated items e.g., "1:foo:5"
+//       NOTE: `path` could have arguments already, e.g., "program.ck:5.5:bar"
+//       if `immediate` == TRUE, the new shred(s) is shreduled immediately
+//           (on the calling thread)
+//       if `immediate` == FALSE, the new shreds(s) is queued and shreduled on
+//           the next time step (by the VM compute/audio thread)
+//       `count` specifies how many instances of the new shred to spork
+//       returns TRUE if compilation successful (even if count == 0)
+//       returns FALSE if compilation unsuccessful
 //-----------------------------------------------------------------------------
-t_CKBOOL ChucK::compileFile( const std::string & path, const std::string & argsTogether, t_CKINT count )
+t_CKBOOL ChucK::compileFile( const std::string & path,
+                             const std::string & argsTogether,
+                             t_CKUINT count, t_CKBOOL immediate,
+                             std::vector<t_CKUINT> * shredIDs)
 {
+    // clear | 1.5.0.8
+    if( shredIDs ) shredIDs->clear();
+
     // sanity check
     if( !m_carrier->compiler )
     {
         // error
-        CK_FPRINTF_STDERR( "[chuck]: compileFile() invoked before initialization ...\n" );
-        return false;
+        EM_error2( 0, "compileFile() invoked before initialization..." );
+        return FALSE;
     }
 
     std::string filename;
     std::vector<std::string> args;
     Chuck_VM_Code * code = NULL;
     Chuck_VM_Shred * shred = NULL;
+    std::string thePath;
     std::string full_path;
 
     //-------------------------------------------------------------------------
@@ -869,12 +1063,18 @@ t_CKBOOL ChucK::compileFile( const std::string & path, const std::string & argsT
     //-------------------------------------------------------------------------
 
     // log
-    EM_log( CK_LOG_FINE, "compiling '%s'...", path.c_str() );
+    EM_log( CK_LOG_INFO, "compiling '%s'...", path.c_str() );
     // push indent
     EM_pushlog();
 
+    // path expansion (e.g., ~ for unix systems)
+    thePath = expand_filepath(path);
+    // log if the path exansion is different
+    if( path != thePath )
+    { EM_log( CK_LOG_FINE, "expanding path '%s'...", thePath.c_str() ); }
+
     // append
-    std::string theThing = path + ":" + argsTogether;
+    std::string theThing = thePath + ":" + argsTogether;
 #ifdef __ANDROID__
     if( theThing.rfind("jar:", 0) == 0 )
     {
@@ -897,8 +1097,8 @@ t_CKBOOL ChucK::compileFile( const std::string & path, const std::string & argsT
     if( !extract_args( theThing, filename, args ) )
     {
         // error
-        CK_FPRINTF_STDERR( "[chuck]: malformed filename with argument list...\n" );
-        CK_FPRINTF_STDERR( "    -->  '%s'", theThing.c_str() );
+        EM_error2( 0, "malformed filename with argument list..." );
+        EM_error2( 0, "    -->  '%s'", theThing.c_str() );
         goto error;
     }
 
@@ -907,52 +1107,49 @@ t_CKBOOL ChucK::compileFile( const std::string & path, const std::string & argsT
     full_path = get_full_path(filename);
 
     // parse, type-check, and emit (full_path added 1.3.0.0)
-    if( !m_carrier->compiler->go( filename, NULL, NULL, full_path ) )
+    if( !m_carrier->compiler->go( filename, full_path ) )
         goto error;
 
     // get the code
     code = m_carrier->compiler->output();
-    // name it
-    code->name += path;
+    // (re) name it | 1.5.0.5 (ge) update from '+=' to '='
+    code->name = path;
 
     // log
     EM_log( CK_LOG_FINE, "sporking %d %s...", count,
            count == 1 ? "instance" : "instances" );
 
     // spork it
-    while( count > 0 ) // 1.5.0.0 (ge) | added changed to check for > 0, in case of negative count
+    while( count > 0 )
     {
-        #ifndef __EMSCRIPTEN__
-        // spork (for now, spork_immediate arg is always false)
-        shred = m_carrier->vm->spork( code, NULL, FALSE );
-        #else
-        // spork (in emscripten, need to spork immediately so can get shred id)
-        shred = m_carrier->vm->spork( code, NULL, TRUE );
-        #endif
+        // spork shred from code; shredule immediately or deferred;
+        // as of 1.5.0.8, spork allocates the shred ID regardless...
+        // previously for emscripten `immediate` => TRUE; this is no longer necessary
+        shred = m_carrier->vm->spork( code, NULL, immediate );
 
         // add args
         shred->args = args;
+        // append the new ID | 1.5.0.8
+        if( shredIDs ) shredIDs->push_back( shred->xid );
         // decrement count
         count--;
     }
 
     // pop indent
     EM_poplog();
-
-    // reset the parser
-    reset_parse();
-
     // unset origin hint | 1.5.0.0 (ge) added
     m_carrier->compiler->m_originHint = te_originUnknown;
 
-    return true;
+    return TRUE;
 
 error: // 1.5.0.0 (ge) added
 
+    // pop indent
+    EM_poplog();
     // unset origin hint | 1.5.0.0 (ge) added
     m_carrier->compiler->m_originHint = te_originUnknown;
 
-    return false;
+    return FALSE;
 }
 
 
@@ -960,16 +1157,30 @@ error: // 1.5.0.0 (ge) added
 
 //-----------------------------------------------------------------------------
 // name: compileCode()
-// desc: compile code directly
+// desc: compile code/text -> chuck bytecode -> spork as new shred
+//       `argsTogether` is appended to `path` as arguments
+//       the format of `argsTogether` is ':'-separated items e.g., "1:foo:5"
+//       if `immediate` == TRUE, the new shred(s) is shreduled immediately
+//           (on the calling thread)
+//       if `immediate` == FALSE, the new shreds(s) is queued and shreduled on
+//           the next time step (on the VM compute/audio thread)
+//       returns TRUE if compilation successful (even if count == 0)
+//       returns FALSE if compilation unsuccessful
 //-----------------------------------------------------------------------------
-t_CKBOOL ChucK::compileCode( const std::string & code, const std::string & argsTogether, t_CKINT count)
+t_CKBOOL ChucK::compileCode( const std::string & code,
+                             const std::string & argsTogether,
+                             t_CKUINT count, t_CKBOOL immediate,
+                             std::vector<t_CKUINT> * shredIDs )
 {
+    // clear | 1.5.0.8
+    if( shredIDs ) shredIDs->clear();
+
     // sanity check
     if( !m_carrier->compiler )
     {
         // error
-        CK_FPRINTF_STDERR( "[chuck]: compileCode() invoked before initialization ...\n" );
-        return false;
+        EM_error2( 0, "compileCode() invoked before initialization..." );
+        return FALSE;
     }
 
     std::vector<std::string> args;
@@ -996,8 +1207,8 @@ t_CKBOOL ChucK::compileCode( const std::string & code, const std::string & argsT
     if( !extract_args( theThing, fakefakeFilename, args ) )
     {
         // error
-        CK_FPRINTF_STDERR( "[chuck]: malformed filename with argument list...\n" );
-        CK_FPRINTF_STDERR( "    -->  '%s'", theThing.c_str() );
+        EM_error2( 0, "malformed filename with argument list..." );
+        EM_error2( 0, "    -->  '%s'", theThing.c_str() );
         goto error;
     }
 
@@ -1010,49 +1221,49 @@ t_CKBOOL ChucK::compileCode( const std::string & code, const std::string & argsT
     EM_log( CK_LOG_FINE, "full path: %s...", full_path.c_str() );
 
     // parse, type-check, and emit (full_path added 1.3.0.0)
-    if( !m_carrier->compiler->go( "<compiled.code>", NULL, code.c_str(), full_path ) )
+    if( !m_carrier->compiler->go( "<compiled.code>", full_path, code ) )
        goto error;
 
     // get the code
     vm_code = m_carrier->compiler->output();
-    // name it (no path to append)
-    vm_code->name += "compiled.code";
+    // (re) name it (no path to append) | 1.5.0.5 (ge) update from '+=' to '='
+    vm_code->name = "compiled.code";
 
     // log
     EM_log( CK_LOG_FINE, "sporking %d %s...", count,
             count == 1 ? "instance" : "instances" );
 
     // spork it
-    while( count-- )
+    while( count > 0 )
     {
-#ifndef __EMSCRIPTEN__
-        // spork (for now, spork_immediate arg is always false)
-        shred = m_carrier->vm->spork( vm_code, NULL, FALSE );
-#else
-        // spork (in emscripten, need to spork immediately so can get shred id)
-        shred = m_carrier->vm->spork( vm_code, NULL, TRUE );
-#endif
+        // spork shred from code; shredule immediately or deferred;
+        // as of 1.5.0.8, spork allocates the shred ID regardless...
+        // previously for emscripten `immediate` => TRUE; this is no longer necessary
+        shred = m_carrier->vm->spork( vm_code, NULL, immediate );
+
         // add args
         shred->args = args;
+        // append the new ID | 1.5.0.8
+        if( shredIDs ) shredIDs->push_back( shred->xid );
+        // decrement count
+        count--;
     }
 
     // pop indent
     EM_poplog();
-
-    // reset the parser
-    reset_parse();
-
     // unset origin hint | 1.5.0.0 (ge) added
     m_carrier->compiler->m_originHint = te_originUnknown;
 
-    return true;
+    return TRUE;
 
 error: // 1.5.0.0 (ge) added
 
+    // pop indent
+    EM_poplog();
     // unset origin hint | 1.5.0.0 (ge) added
     m_carrier->compiler->m_originHint = te_originUnknown;
 
-    return false;
+    return FALSE;
 }
 
 
@@ -1067,7 +1278,7 @@ t_CKBOOL ChucK::start()
     // sanity check
     if( m_carrier->vm == NULL )
     {
-        CK_FPRINTF_STDERR( "[chuck]: cannot start, VM not initialized...\n" );
+        EM_error2( 0, "cannot start, VM not initialized..." );
         return false;
     }
 
@@ -1093,9 +1304,12 @@ t_CKBOOL ChucK::start()
 
 //-----------------------------------------------------------------------------
 // name: run()
-// desc: run engine (call from host callback)
+// desc: run ChucK and synthesize audio for `numFrames`
+//       `input`: the incoming input array of audio samples
+//       `output`: the outgoing output array of audio samples
+//       `numFrames` : the number of audio frames to run
 //-----------------------------------------------------------------------------
-void ChucK::run( SAMPLE * input, SAMPLE * output, t_CKINT numFrames )
+void ChucK::run( const SAMPLE * input, SAMPLE * output, t_CKINT numFrames )
 {
     // make sure we started...
     if( !m_started ) this->start();
@@ -1103,6 +1317,7 @@ void ChucK::run( SAMPLE * input, SAMPLE * output, t_CKINT numFrames )
     // call the callback
     m_carrier->vm->run( numFrames, input, output );
 }
+
 
 
 
@@ -1302,4 +1517,17 @@ t_CKBOOL ChucK::setMainThreadHook(Chuck_DL_MainThreadHook * hook)
 Chuck_DL_MainThreadHook * ChucK::getMainThreadHook()
 {
     return m_hook;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: toggleGlobalColorTextoutput
+// set whether chuck will generate color output for its messages
+// this will set the corresponding parameter as well
+//-----------------------------------------------------------------------------
+void ChucK::toggleGlobalColorTextoutput( t_CKBOOL onOff )
+{
+    this->setParam( CHUCK_PARAM_TTY_COLOR, onOff );
 }

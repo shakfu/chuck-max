@@ -244,7 +244,7 @@ string type2url( const string & type, const vector<CKDocGroup *> & groups )
             // check
             if( groups[i]->types[j] == NULL ) continue;
             // compare
-            if( type == groups[i]->types[j]->name )
+            if( type == groups[i]->types[j]->base_name )
             {
                 // file + location within file: basically: 'group.html#type'
                 return groups[i]->shortName + ".html#" + type;
@@ -275,7 +275,7 @@ private:
 
 public:
     CKDocHTMLOutput( Chuck_VM * vm )
-        : m_vm_ref(vm), m_func(NULL)
+      : m_func(NULL), m_vm_ref(vm)
     {
         // get the env
         m_env_ref = vm != NULL ? vm->env() : NULL;
@@ -342,9 +342,9 @@ public:
 
     void toc_class(Chuck_Type * type)
     {
-        m_outputStr += "<p class=\"toc_class\"><a href=\"#" + type->name
+        m_outputStr += "<p class=\"toc_class\"><a href=\"#" + type->base_name
                      + "\" class=\"" + css_class_for_type(m_env_ref, type)
-                     + "\">" + type->name + "</a></p>\n";
+                     + "\">" + type->base_name + "</a></p>\n";
     }
 
     void end_toc()
@@ -365,8 +365,8 @@ public:
 
     void begin_class(Chuck_Type * type, const vector<CKDocGroup *> & groups )
     {
-        m_outputStr += "<a name=\"" + type->name + "\" /><div class=\"class\">\n";
-        m_outputStr += "<h2 class=\"class_title\" name=\"" + type->name + "\">" + type->name + "</h2>\n";
+        m_outputStr += "<a name=\"" + type->base_name + "\" /><div class=\"class\">\n";
+        m_outputStr += "<h2 class=\"class_title\" name=\"" + type->base_name + "\">" + type->base_name + "</h2>\n";
 
         // type heirarchy
         Chuck_Type * parent = type->parent;
@@ -380,9 +380,9 @@ public:
         // iterate over parents
         while( parent != NULL )
         {
-            m_outputStr += ": <a href=\"" + type2url(parent->name, groups)
+            m_outputStr += ": <a href=\"" + type2url(parent->base_name, groups)
                          + "\" class=\"" + css_class_for_type(m_env_ref, parent)
-                         + "\">" + parent->name + "</a> ",
+                         + "\">" + parent->base_name + "</a> ",
             // go up the inheritance chain
             parent = parent->parent;
         }
@@ -463,7 +463,7 @@ public:
     {
         m_outputStr += "<div class=\"member\">\n<p class=\"member_declaration\"><span class=\""
                      + css_class_for_type(m_env_ref, var->type) + "\">"
-                     + var->type->name;
+                     + var->type->base_name;
         // check array depth
         if( var->type->array_depth )
         {
@@ -488,7 +488,7 @@ public:
     void member_var(Chuck_Value * var)
     {
         m_outputStr += "<div class=\"member\">\n<p class=\"member_declaration\"><span class=\""
-                     + css_class_for_type(m_env_ref, var->type) + "\">" + var->type->name;
+                     + css_class_for_type(m_env_ref, var->type) + "\">" + var->type->base_name;
         // check array depth
         if( var->type->array_depth )
         {
@@ -514,20 +514,20 @@ public:
     {
         // return type
         m_outputStr += "<div class=\"member\">\n<p class=\"member_declaration\"><span class=\""
-                     + css_class_for_type(m_env_ref, func->def->ret_type) + "\">"
-                    + func->def->ret_type->name;
+                     + css_class_for_type(m_env_ref, func->def()->ret_type) + "\">"
+                    + func->def()->ret_type->base_name;
         // check array
-        if( func->def->ret_type->array_depth )
+        if( func->def()->ret_type->array_depth )
         {
             m_outputStr += "</span>";
             m_outputStr += "<span class=\"typename\">";
-            for(int i = 0; i < func->def->ret_type->array_depth; i++)
+            for(int i = 0; i < func->def()->ret_type->array_depth; i++)
                 m_outputStr += "[]";
         }
         m_outputStr += "</span> ";
 
         // function name
-        m_outputStr += "<span class=\"membername\">" + string(S_name(func->def->name)) + "</span>(";
+        m_outputStr += "<span class=\"membername\">" + string(S_name(func->def()->name)) + "</span>(";
 
         m_func = func;
     }
@@ -550,20 +550,20 @@ public:
     {
         // return type
         m_outputStr += "<div class=\"member\">\n<p class=\"member_declaration\"><span class=\""
-                     + css_class_for_type(m_env_ref, func->def->ret_type)
-                     + "\">" + func->def->ret_type->name.c_str();
+                     + css_class_for_type(m_env_ref, func->def()->ret_type)
+                     + "\">" + func->def()->ret_type->base_name.c_str();
         // check array
-        if( func->def->ret_type->array_depth )
+        if( func->def()->ret_type->array_depth )
         {
             m_outputStr += "</span>";
             m_outputStr += "<span class=\"typename\">";
-            for(int i = 0; i < func->def->ret_type->array_depth; i++)
+            for(int i = 0; i < func->def()->ret_type->array_depth; i++)
                 m_outputStr += "[]";
         }
         m_outputStr += "</span> ";
 
         // function name
-        m_outputStr += "<span class=\"membername\">" + string(S_name(func->def->name)) + "</span>(";
+        m_outputStr += "<span class=\"membername\">" + string(S_name(func->def()->name)) + "</span>(";
 
         m_func = func;
     }
@@ -585,7 +585,7 @@ public:
     void func_arg(a_Arg_List arg)
     {
         // argument type
-        m_outputStr += "<span class=\"" + css_class_for_type(m_env_ref, arg->type) + "\">" + arg->type->name;
+        m_outputStr += "<span class=\"" + css_class_for_type(m_env_ref, arg->type) + "\">" + arg->type->base_name;
         // check array
         if( arg->type->array_depth )
         {
@@ -694,7 +694,7 @@ string CKDocHTMLOutput::renderIndex( const string & title, const vector<CKDocGro
             if( !type ) continue;
             string cssClass = css_class_for_type( m_env_ref, type );
             // TODO: check for array_depth
-            sout << "<a href=\"" << group->shortName << ".html#" << type->name << "\" class=\"" << cssClass << "\">" << type->name << "</a>\n";
+            sout << "<a href=\"" << group->shortName << ".html#" << type->base_name << "\" class=\"" << cssClass << "\">" << type->base_name << "</a>\n";
         }
         sout << "</p>\n";
         sout << "</div>\n";
@@ -759,10 +759,10 @@ void CKDoc::clearGroups()
         for( t_CKINT j = 0; j < m_groups[i]->types.size(); j++ )
         {
             // release ref count
-            SAFE_RELEASE( m_groups[i]->types[j] );
+            CK_SAFE_RELEASE( m_groups[i]->types[j] );
         }
         // deallocate the group struct
-        SAFE_DELETE( m_groups[i] );
+        CK_SAFE_DELETE( m_groups[i] );
     }
 
     // clear the arrar
@@ -781,7 +781,7 @@ void CKDoc::clearOutput()
     // reste
     m_format = FORMAT_NONE;
     // deallocate
-    SAFE_DELETE( m_output );
+    CK_SAFE_DELETE( m_output );
 }
 
 
@@ -831,7 +831,7 @@ t_CKBOOL CKDoc::addGroup( const vector<Chuck_Type *> & types, const string & nam
         if( types[i] == NULL ) continue;
 
         // ref count
-        SAFE_ADD_REF( types[i] );
+        CK_SAFE_ADD_REF( types[i] );
         // append
         group->types.push_back( types[i] );
     }
@@ -1046,7 +1046,7 @@ string CKDoc::genGroup( CKDocGroup * group, t_CKBOOL clearOutput )
             // get the current type
             Chuck_Type * type = *t;
             // skip
-            // if( skip(type->name) ) continue;
+            // if( skip(type->base_name) ) continue;
             // output the type in TOC
             output->toc_class( type );
         }
@@ -1062,7 +1062,7 @@ string CKDoc::genGroup( CKDocGroup * group, t_CKBOOL clearOutput )
     for( vector<Chuck_Type *>::const_iterator t = group->types.begin(); t != group->types.end(); t++ )
     {
         // skip
-        // if( skip(type->name) ) continue;
+        // if( skip(type->base_name) ) continue;
         // gen type, don't clear output
         genType( *t, FALSE );
     }
@@ -1171,7 +1171,7 @@ string CKDoc::genType( Chuck_Type * type, t_CKBOOL clearOutput )
             if(value->name[0] == '@')
                 continue;
             // value is a function
-            if( value->type->name == "[function]" )
+            if( value->type->base_name == "[function]" )
                 continue;
 
             // static or instance?
@@ -1193,7 +1193,7 @@ string CKDoc::genType( Chuck_Type * type, t_CKBOOL clearOutput )
             // first one
             func_names[func->name] = 1;
             // static or instance?
-            if(func->def->static_decl == ae_key_static) sfuncs.push_back(func);
+            if(func->def()->static_decl == ae_key_static) sfuncs.push_back(func);
             else mfuncs.push_back(func);
         }
 
@@ -1240,7 +1240,7 @@ string CKDoc::genType( Chuck_Type * type, t_CKBOOL clearOutput )
                 // begin output
                 output->begin_static_member_func(func);
                 // argument list
-                a_Arg_List args = func->def->arg_list;
+                a_Arg_List args = func->def()->arg_list;
                 while(args != NULL)
                 {
                     // output argument
@@ -1267,7 +1267,7 @@ string CKDoc::genType( Chuck_Type * type, t_CKBOOL clearOutput )
                 // begin the func
                 output->begin_member_func(func);
                 // argument list
-                a_Arg_List args = func->def->arg_list;
+                a_Arg_List args = func->def()->arg_list;
                 while(args != NULL)
                 {
                     // output argument
@@ -1370,7 +1370,7 @@ CK_DLL_CTOR( CKDoc_ctor )
 CK_DLL_DTOR( CKDoc_dtor )
 {
     CKDoc * ckdoc = (CKDoc *)OBJ_MEMBER_UINT( SELF, CKDoc_offset_data );
-    SAFE_DELETE( ckdoc );
+    CK_SAFE_DELETE( ckdoc );
     OBJ_MEMBER_UINT( SELF, CKDoc_offset_data ) = 0;
 }
 
@@ -1517,7 +1517,7 @@ CK_DLL_CTRL( CKDoc_examplesRoot_set )
 CK_DLL_CGET( CKDoc_examplesRoot_get )
 {
     CKDoc * ckdoc = (CKDoc *)OBJ_MEMBER_UINT(SELF, CKDoc_offset_data);
-    Chuck_String * str = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->t_string, SHRED );
+    Chuck_String * str = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->ckt_string, SHRED );
     str->set( ckdoc->getExamplesRoot() );
     RETURN->v_string = str;
 }
@@ -1543,7 +1543,7 @@ CK_DLL_MFUN( CKDoc_genIndex )
 {
     CKDoc * ckdoc = (CKDoc *)OBJ_MEMBER_UINT(SELF, CKDoc_offset_data);
     Chuck_String * indexTitle = GET_NEXT_STRING(ARGS);
-    Chuck_String * str = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->t_string, SHRED );
+    Chuck_String * str = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->ckt_string, SHRED );
     str->set( ckdoc->genIndex( indexTitle != NULL ? indexTitle->str() : "" ) );
     RETURN->v_string = str;
 }
@@ -1551,7 +1551,7 @@ CK_DLL_MFUN( CKDoc_genIndex )
 CK_DLL_MFUN( CKDoc_genCSS )
 {
     CKDoc * ckdoc = (CKDoc *)OBJ_MEMBER_UINT(SELF, CKDoc_offset_data);
-    Chuck_String * str = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->t_string, SHRED );
+    Chuck_String * str = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->ckt_string, SHRED );
     str->set( ckdoc->genCSS() );
     RETURN->v_string = str;
 }
@@ -1572,7 +1572,7 @@ CK_DLL_MFUN( CKDoc_genGroups )
     for( t_CKINT i = 0; i < results.size(); i++ )
     {
         // instantiate chuck string
-        Chuck_String * str = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->t_string, SHRED );
+        Chuck_String * str = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->ckt_string, SHRED );
         // set into chuck string
         str->set( ckdoc->genCSS() );
         // push back
@@ -1585,7 +1585,7 @@ CK_DLL_MFUN( CKDoc_genType_type )
     CKDoc * ckdoc = (CKDoc *)OBJ_MEMBER_UINT(SELF, CKDoc_offset_data);
     Chuck_Type * type = (Chuck_Type *)GET_NEXT_OBJECT(ARGS);
     // return something
-    Chuck_String * str = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->t_string, SHRED );
+    Chuck_String * str = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->ckt_string, SHRED );
     // gen type
     str->set( type ? ckdoc->genType( type ) : "" );
     // set return
@@ -1601,7 +1601,7 @@ CK_DLL_MFUN( CKDoc_genType_str )
     // chuck type
     Chuck_Type * type = type_engine_find_type( VM->env(), typeName->str() );
     // return something
-    Chuck_String * str = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->t_string, SHRED );
+    Chuck_String * str = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->ckt_string, SHRED );
     // gen type
     str->set( type ? ckdoc->genType( type ) : "" );
     // set return

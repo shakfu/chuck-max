@@ -37,7 +37,7 @@
 #include "chuck_errmsg.h"
 #include "chuck_vm.h"
 
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
 #include <unistd.h>
 #else
 #include "chuck_def.h"
@@ -273,7 +273,7 @@ t_CKBOOL PhyHidDevIn::remove_vm( Chuck_VM * vm )
     }
 
     // delete cbufs[vm] and remove from map
-    SAFE_DELETE( cbufs[vm] );
+    CK_SAFE_DELETE( cbufs[vm] );
     cbufs.erase( vm );
 
     return TRUE;
@@ -293,7 +293,7 @@ t_CKBOOL PhyHidDevIn::close()
         if( cbuf != NULL )
         {
             // delete
-            SAFE_DELETE( cbuf );
+            CK_SAFE_DELETE( cbuf );
             // REFACTOR-2017: copied over this TODO from previous edition:
             // TODO: release references from cbuf
         }
@@ -389,7 +389,7 @@ HidOut::HidOut()
 HidOut::~HidOut()
 {
     if( phout ) this->close();
-    SAFE_DELETE( phout );
+    CK_SAFE_DELETE( phout );
 }
 
 
@@ -470,7 +470,7 @@ HidIn::HidIn()
 HidIn::~HidIn( )
 {
     this->close();
-    // SAFE_DELETE( min );
+    // CK_SAFE_DELETE( min );
 }
 
 
@@ -532,9 +532,9 @@ void HidInManager::init()
         msg_buffer = new CBufferSimple;
         msg_buffer->initialize( 1000, sizeof( HidMsg ) );
 
-#ifndef __MACOSX_CORE__
+#ifndef __PLATFORM_APPLE__
         Hid_init();
-#endif // __MACOSX_CORE__
+#endif
 
         for( size_t j = 0; j < CK_HID_DEV_COUNT; j++ )
         {
@@ -542,7 +542,7 @@ void HidInManager::init()
                 default_drivers[j].init();
         }
 
-#ifdef __MACOSX_CORE__
+#ifdef __PLATFORM_APPLE__
         // start thread
         if( the_thread == NULL )
         {
@@ -636,7 +636,7 @@ void HidInManager::cleanup()
             for( vector<PhyHidDevIn *>::size_type j = 0; j < the_matrix[i].size(); j++ )
             {
                 // deallocate devices
-                SAFE_DELETE( the_matrix[i][j] );
+                CK_SAFE_DELETE( the_matrix[i][j] );
             }
         }
 
@@ -648,7 +648,7 @@ void HidInManager::cleanup()
 
         // clean up
         if( the_thread != NULL )
-            SAFE_DELETE( the_thread );
+            CK_SAFE_DELETE( the_thread );
 
         // clean up subsystems
         for( size_t j = 0; j < CK_HID_DEV_COUNT; j++ )
@@ -660,7 +660,7 @@ void HidInManager::cleanup()
         if( msg_buffer )
         {
             msg_buffer->cleanup();
-            SAFE_DELETE( msg_buffer );
+            CK_SAFE_DELETE( msg_buffer );
         }
 
         for( std::map< Chuck_VM *, CBufferSimple * >::iterator it =
@@ -727,7 +727,7 @@ t_CKBOOL HidInManager::open( HidIn * hin, Chuck_VM * vm, t_CKINT device_type, t_
             // should this use EM_log instead, with a higher log level?
             EM_error2( 0, "HidIn: couldn't open %s %d...",
                        default_drivers[device_type].driver_name, device_num );
-            SAFE_DELETE( phin );
+            CK_SAFE_DELETE( phin );
             return FALSE;
         }
 
@@ -993,13 +993,13 @@ extern "C" void push_message( HidMsg msg )
 // name: cb_hid_input
 // desc: call back
 //-----------------------------------------------------------------------------
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
 void * HidInManager::cb_hid_input( void * stuff )
 #else
 unsigned __stdcall HidInManager::cb_hid_input( void * stuff )
 #endif
 {
-#ifdef __MACOSX_CORE__
+#ifdef __PLATFORM_APPLE__
     Hid_init();
 #endif
 
@@ -1034,9 +1034,9 @@ void HidInManager::probeHidIn()
         if( count == 0 )
             continue;
 
-        EM_error2b( 0, "------( %s device%s: %i )------",
-                    default_drivers[i].driver_name,
-                    count > 1 ? "s" : "", count );
+        EM_print2blue( "------( %i %s device%s )------",
+                        count, default_drivers[i].driver_name,
+                        count > 1 ? "s" : "" );
 
         for( int j = 0; j < count; j++ )
         {

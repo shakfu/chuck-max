@@ -32,12 +32,14 @@
 #include "util_serial.h"
 #include "chuck_errmsg.h"
 
-#if defined(__MACOSX_CORE__) && !defined(__CHIP_MODE__)
+#if defined(__PLATFORM_APPLE__) && !defined(__CHIP_MODE__)
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <IOKit/IOKitLib.h>
 #include <IOKit/serial/IOSerialKeys.h>
 #include <IOKit/IOBSD.h>
+
+#include <Availability.h> // 1.5.0.7 (ge) added; __MAC_OS_X_VERSION_MIN_REQUIRED
 
 using namespace std;
 
@@ -47,7 +49,7 @@ vector<string> SerialIOManager::availableSerialDevices()
 
     io_iterator_t serialIterator = 0; // NULL;
     kern_return_t kernResult;
-    mach_port_t masterPort;
+    mach_port_t mainPort;
     CFMutableDictionaryRef classesToMatch = NULL;
 
     io_object_t serialObject;
@@ -56,18 +58,31 @@ vector<string> SerialIOManager::availableSerialDevices()
     CFStringRef dialinCFKeyName = CFStringCreateWithCString(kCFAllocatorDefault, kIODialinDeviceKey, kCFStringEncodingUTF8);
 
     // ge: changed NULL to 0 below to get rid of warning 1.3.2.0
-    if((kernResult = IOMasterPort(0, &masterPort)) != KERN_SUCCESS)
+    // ge: updated kIOMasterPort (deprecated as of macOS 12) to kIOMainPort 1.5.0.7
+#if __MAC_OS_X_VERSION_MIN_REQUIRED <= 120000 // before macOS 12
+    if( (kernResult = IOMasterPort(0, &mainPort)) != KERN_SUCCESS )
+#else
+    if( (kernResult = IOMainPort(0, &mainPort)) != KERN_SUCCESS )
+#endif
     {
         EM_log(CK_LOG_WARNING, "[SerialIOManager] IOMasterPort returned %d\n", kernResult);
         goto error;
     }
+
+// curious about how the version macro above works?
+// in src/core/ try `make mac` (uses OS target, e.g., 1090) vs. `make vanilla` (uses current version 130000)
+// uncomment the next three lines to print the preprocessor value at compile time
+//#define STRING2(x) #x
+//#define STRING(x) STRING2(x)
+//#pragma message ("__MAC_OS_X_VERSION_MIN_REQUIRED = " STRING(__MAC_OS_X_VERSION_MIN_REQUIRED))
+
     if((classesToMatch = IOServiceMatching(kIOSerialBSDServiceValue)) == NULL)
     {
         EM_log(CK_LOG_WARNING, "[SerialIOManager] IOServiceMatching returned NULL\n" );
         goto error;
     }
     CFDictionarySetValue(classesToMatch, CFSTR(kIOSerialBSDTypeKey), CFSTR(kIOSerialBSDAllTypes));
-    kernResult = IOServiceGetMatchingServices(masterPort, classesToMatch, &serialIterator);
+    kernResult = IOServiceGetMatchingServices(mainPort, classesToMatch, &serialIterator);
     classesToMatch = NULL;
     if(kernResult != KERN_SUCCESS)
     {
@@ -126,10 +141,17 @@ using namespace std;
 vector<string> SerialIOManager::availableSerialDevices()
 {
     vector<string> devices;
-    const int buf_size = PATH_MAX;
+
+    // two sizes | 1.5.0.1 (ge) updated, as pointed out by linux compilation warning
+    const int link_buf_size = 4096+256;
+    const int path_buf_size = 4096;
+    // was PATH_MAX, which apparently isn't
+    // https://stackoverflow.com/questions/9449241/where-is-path-max-defined-in-linux
+    // https://insanecoding.blogspot.com/2007/11/pathmax-simply-isnt.html
+    // https://news.ycombinator.com/item?id=14194681
     const char * serial_dir = "/dev/serial/by-id";
-    char link_buf[buf_size];
-    char path_buf[buf_size];
+    char link_buf[link_buf_size];
+    char path_buf[path_buf_size];
 
     DIR * dir = opendir(serial_dir);
 
@@ -146,8 +168,8 @@ vector<string> SerialIOManager::availableSerialDevices()
         if(strcmp(dir_info->d_name, ".") == 0 ||
            strcmp(dir_info->d_name, "..") == 0)
             continue;
-        snprintf(link_buf, buf_size, "%s/%s", serial_dir, dir_info->d_name);
-        int link_size = readlink(link_buf, path_buf, buf_size-1);
+        snprintf(link_buf, link_buf_size, "%s/%s", serial_dir, dir_info->d_name);
+        int link_size = readlink(link_buf, path_buf, path_buf_size-1);
         if(link_size <= 0)
         {
             EM_log(CK_LOG_INFO, "(SerialIOManager): readlink failed on '%s'", link_buf);
@@ -160,7 +182,7 @@ vector<string> SerialIOManager::availableSerialDevices()
         if(path_buf[0] != '/')
         {
             // normalize path
-            snprintf(link_buf, buf_size, "%s/%s", serial_dir, path_buf);
+            snprintf(link_buf, link_buf_size, "%s/%s", serial_dir, path_buf);
 
             if(!realpath(link_buf, path_buf))
                 goto error;
@@ -178,7 +200,7 @@ cleanup:
     return devices;
 }
 
-#elif defined(__PLATFORM_WIN32__)
+#elif defined(__PLATFORM_WINDOWS__)
 
 #include <windows.h>
 
@@ -246,4 +268,4 @@ vector<string> SerialIOManager::availableSerialDevices()
 }
 
 
-#endif /* __MACOSX_CORE__ */
+#endif // __PLATFORM_APPLE__

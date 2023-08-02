@@ -35,7 +35,8 @@
 // lo.h ----> lo_osc_types.h needs to import <cstdint> before running itself,
 // but ONLY when compiling this file, and NOT when compiling liblo .c files
 // so, set a flag | REFACTOR-2017
-#ifdef __PLATFORM_WIN32__
+#include "chuck_def.h" // to pick up platform macros
+#ifdef __PLATFORM_WINDOWS__
 #define ULIB_OPSC_CPP
 #endif
 
@@ -45,16 +46,16 @@
 #include "lo/lo.h"
 #endif
 
+// on windows, the above must remain above these includes, else winsock errors
 #include "ulib_opsc.h"
+#include "chuck_compile.h"
+#include "chuck_instr.h"
 #include "chuck_type.h"
 #include "chuck_vm.h"
-#include "chuck_compile.h"
-#include "chuck_dl.h"
-#include "util_opsc.h"
-#include "chuck_instr.h"
-#include "util_thread.h"
 #include "util_buffers.h"
+#include "util_opsc.h"
 #include "util_string.h"
+#include "util_thread.h"
 
 
 #if _MSC_VER
@@ -158,19 +159,19 @@ private:
 
     static std::map<int, OscInServer *> s_oscIn;
 
-#ifdef WIN32
+#ifdef __PLATFORM_WINDOWS__
     static unsigned int __stdcall s_server_cb(void *data)
 #else
     static void *s_server_cb(void *data)
-#endif // WIN32
+#endif // __PLATFORM_WINDOWS__
     {
         OscInServer * _this = (OscInServer *) data;
 
-#ifdef WIN32
+#ifdef __PLATFORM_WINDOWS__
         return (t_CKINT)_this->server_cb();
 #else
         return _this->server_cb();
-#endif
+#endif // __PLATFORM_WINDOWS__
     }
 
     static void s_err_handler(int num, const char *msg, const char *where)
@@ -644,7 +645,7 @@ CK_DLL_CTOR(oscout_ctor)
 CK_DLL_DTOR(oscout_dtor)
 {
     OscOut * out = (OscOut *) OBJ_MEMBER_INT(SELF, oscout_offset_data);
-    SAFE_DELETE(out);
+    CK_SAFE_DELETE(out);
     OBJ_MEMBER_INT(SELF, oscout_offset_data) = 0;
 }
 
@@ -804,25 +805,25 @@ error:
 
 CK_DLL_CTOR(oscarg_ctor)
 {
-    Chuck_String *type = (Chuck_String *) instantiate_and_initialize_object(SHRED->vm_ref->env()->t_string, SHRED);
-    SAFE_ADD_REF(type);
+    Chuck_String *type = (Chuck_String *) instantiate_and_initialize_object(SHRED->vm_ref->env()->ckt_string, SHRED);
+    CK_SAFE_ADD_REF(type);
     OBJ_MEMBER_STRING(SELF, oscarg_offset_type) = type;
 
     OBJ_MEMBER_INT(SELF, oscarg_offset_i) = 0;
 
     OBJ_MEMBER_FLOAT(SELF, oscarg_offset_f) = 0.0;
 
-    Chuck_String *s = (Chuck_String *) instantiate_and_initialize_object(SHRED->vm_ref->env()->t_string, SHRED);
-    SAFE_ADD_REF(s);
+    Chuck_String *s = (Chuck_String *) instantiate_and_initialize_object(SHRED->vm_ref->env()->ckt_string, SHRED);
+    CK_SAFE_ADD_REF(s);
     OBJ_MEMBER_STRING(SELF, oscarg_offset_s) = s;
 }
 
 CK_DLL_DTOR(oscarg_dtor)
 {
-    SAFE_RELEASE(OBJ_MEMBER_STRING(SELF, oscarg_offset_type));
+    CK_SAFE_RELEASE(OBJ_MEMBER_STRING(SELF, oscarg_offset_type));
     OBJ_MEMBER_STRING(SELF, oscarg_offset_type) = NULL;
 
-    SAFE_RELEASE(OBJ_MEMBER_STRING(SELF, oscarg_offset_s));
+    CK_SAFE_RELEASE(OBJ_MEMBER_STRING(SELF, oscarg_offset_s));
     OBJ_MEMBER_STRING(SELF, oscarg_offset_s) = NULL;
 }
 
@@ -842,7 +843,7 @@ CK_DLL_CTOR(oscin_ctor)
 CK_DLL_DTOR(oscin_dtor)
 {
     OscIn * in = (OscIn *) OBJ_MEMBER_INT(SELF, oscin_offset_data);
-    SAFE_DELETE(in);
+    CK_SAFE_DELETE(in);
     OBJ_MEMBER_INT(SELF, oscin_offset_data) = 0;
 }
 
@@ -996,30 +997,30 @@ error:
 
 CK_DLL_CTOR(oscmsg_ctor)
 {
-    Chuck_String *address = (Chuck_String *) instantiate_and_initialize_object(SHRED->vm_ref->env()->t_string, SHRED);
-    SAFE_ADD_REF(address);
+    Chuck_String *address = (Chuck_String *) instantiate_and_initialize_object(SHRED->vm_ref->env()->ckt_string, SHRED);
+    CK_SAFE_ADD_REF(address);
     OBJ_MEMBER_STRING(SELF, oscmsg_offset_address) = address;
 
-    Chuck_String *typetag = (Chuck_String *) instantiate_and_initialize_object(SHRED->vm_ref->env()->t_string, SHRED);
-    SAFE_ADD_REF(typetag);
+    Chuck_String *typetag = (Chuck_String *) instantiate_and_initialize_object(SHRED->vm_ref->env()->ckt_string, SHRED);
+    CK_SAFE_ADD_REF(typetag);
     OBJ_MEMBER_STRING(SELF, oscmsg_offset_typetag) = typetag;
 
     Chuck_Array4 *args = new Chuck_Array4(TRUE);
-    initialize_object(args, SHRED->vm_ref->env()->t_array);
+    initialize_object(args, SHRED->vm_ref->env()->ckt_array);
     args->clear();
-    SAFE_ADD_REF(args);
+    CK_SAFE_ADD_REF(args);
     OBJ_MEMBER_OBJECT(SELF, oscmsg_offset_args) = args;
 }
 
 CK_DLL_DTOR(oscmsg_dtor)
 {
-    SAFE_RELEASE(OBJ_MEMBER_STRING(SELF, oscmsg_offset_address));
+    CK_SAFE_RELEASE(OBJ_MEMBER_STRING(SELF, oscmsg_offset_address));
     OBJ_MEMBER_STRING(SELF, oscmsg_offset_address) = NULL;
 
-    SAFE_RELEASE(OBJ_MEMBER_STRING(SELF, oscmsg_offset_typetag));
+    CK_SAFE_RELEASE(OBJ_MEMBER_STRING(SELF, oscmsg_offset_typetag));
     OBJ_MEMBER_STRING(SELF, oscmsg_offset_typetag) = NULL;
 
-    SAFE_RELEASE(OBJ_MEMBER_OBJECT(SELF, oscmsg_offset_args));
+    CK_SAFE_RELEASE(OBJ_MEMBER_OBJECT(SELF, oscmsg_offset_args));
     OBJ_MEMBER_OBJECT(SELF, oscmsg_offset_args) = NULL;
 }
 
@@ -1406,7 +1407,7 @@ CK_DLL_CTOR( osc_send_ctor ) {
 //-----------------------------------------------
 CK_DLL_DTOR( osc_send_dtor ) {
     OSC_Transmitter* xmit = (OSC_Transmitter *)OBJ_MEMBER_INT(SELF, osc_send_offset_data);
-    SAFE_DELETE(xmit);
+    CK_SAFE_DELETE(xmit);
     OBJ_MEMBER_UINT(SELF, osc_send_offset_data) = 0;
 }
 
@@ -1583,7 +1584,7 @@ CK_DLL_MFUN( osc_address_next_string  ) {
     OSC_Address_Space * addr = (OSC_Address_Space *)OBJ_MEMBER_INT( SELF, osc_address_offset_data );
     char * cs = addr->next_string();
     Chuck_String * ckstr = ( cs ) ? new Chuck_String( cs ) : new Chuck_String("");
-    initialize_object( ckstr, SHRED->vm_ref->env()->t_string );
+    initialize_object( ckstr, SHRED->vm_ref->env()->ckt_string );
     RETURN->v_string = ckstr;
 }
 
@@ -1608,7 +1609,7 @@ CK_DLL_CTOR( osc_recv_ctor )
 CK_DLL_DTOR( osc_recv_dtor )
 {
     OSC_Receiver * recv = (OSC_Receiver *)OBJ_MEMBER_INT(SELF, osc_recv_offset_data);
-    SAFE_DELETE(recv);
+    CK_SAFE_DELETE(recv);
     OBJ_MEMBER_INT(SELF, osc_recv_offset_data) = 0;
 }
 
@@ -1738,6 +1739,6 @@ CK_DLL_MFUN( osc_recv_new_address_type )
 }
 
 // No longer compiling ulib_opsc.cpp | REFACTOR-2017
-#ifdef __PLATFORM_WIN32__
+#ifdef __PLATFORM_WINDOWS__
 #undef ULIB_OPSC_CPP
 #endif

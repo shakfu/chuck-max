@@ -32,9 +32,11 @@
 #include "chuck_otf.h"
 #include "chuck_compile.h"
 #include "chuck_errmsg.h"
+#include "chuck.h"
 #include "util_math.h"
 #include "util_thread.h"
 #include "util_string.h"
+#include "util_platforms.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -43,7 +45,7 @@
 #include <signal.h>
 #include <time.h>
 
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
 #include <unistd.h>
 #else // 2022 QTSIN
 #include <winsock2.h>
@@ -52,8 +54,6 @@
 #endif
 
 using namespace std;
-
-// extern "C" void signal_int( int );
 
 // log level
 t_CKUINT g_otf_log = CK_LOG_INFO;
@@ -105,8 +105,15 @@ FILE * recv_file( const Net_Msg & msg, ck_socket sock )
 
     // what is left
     // t_CKUINT left = msg.param2;
+
     // make a temp file
-    FILE * fd = tmpfile();
+    FILE * fd = ck_tmpfile();
+    // check if successful
+    if( !fd )
+    {
+        EM_error2( 0, "OTF nable to create temp file, skipping..." );
+        return NULL;
+    }
 
     do {
         // msg
@@ -150,7 +157,7 @@ t_CKUINT otf_process_msg( Chuck_VM * vm, Chuck_Compiler * compiler,
     t_CKUINT ret = 0;
 
     // CK_FPRINTF_STDERR( "UDP message recv...\n" );
-    if( msg->type == MSG_REPLACE || msg->type == MSG_ADD )
+    if( msg->type == CK_MSG_REPLACE || msg->type == CK_MSG_ADD )
     {
         string filename;
         vector<string> args;
@@ -159,9 +166,9 @@ t_CKUINT otf_process_msg( Chuck_VM * vm, Chuck_Compiler * compiler,
         if( !extract_args( msg->buffer, filename, args ) )
         {
             // error
-            CK_FPRINTF_STDERR( "[chuck]: malformed filename with argument list...\n" );
-            CK_FPRINTF_STDERR( "    -->  '%s'", msg->buffer );
-            SAFE_DELETE(cmd);
+            EM_error2( 0, "malformed filename with argument list..." );
+            EM_error2( 0, "    -->  '%s'", msg->buffer );
+            CK_SAFE_DELETE(cmd);
             goto cleanup;
         }
 
@@ -180,9 +187,9 @@ t_CKUINT otf_process_msg( Chuck_VM * vm, Chuck_Compiler * compiler,
             fd = recv_file( *msg, (ck_socket)data );
             if( !fd )
             {
-                CK_FPRINTF_STDERR( "[chuck]: incoming source transfer '%s' failed...\n",
+                EM_error2( 0, "incoming source transfer '%s' failed...",
                     mini(msg->buffer) );
-                SAFE_DELETE(cmd);
+                CK_SAFE_DELETE(cmd);
                 goto cleanup;
             }
         }
@@ -190,50 +197,56 @@ t_CKUINT otf_process_msg( Chuck_VM * vm, Chuck_Compiler * compiler,
         // construct full path to be associated with the file so me.sourceDir() works
         // (added 1.3.5.2)
         std::string full_path = get_full_path( msg->buffer );
+
+        // special FILE descriptor mode; set autoClose to true
+        compiler->set_file2parse( fd, TRUE );
         // parse, type-check, and emit
-        if( !compiler->go( msg->buffer, fd, NULL, full_path.c_str() ) )
+        if( !compiler->go( msg->buffer, full_path ) )
         {
-            SAFE_DELETE(cmd);
+            CK_SAFE_DELETE(cmd);
             goto cleanup;
         }
 
         // get the code
         code = compiler->output();
-        // name it
-        code->name += string(msg->buffer);
+        // (re) name it | 1.5.0.5 (ge) update from '+=' to '='
+        code->name = string(msg->buffer);
 
         // set the flags for the command
         cmd->type = msg->type;
         cmd->code = code;
-        if( msg->type == MSG_REPLACE )
+        if( msg->type == CK_MSG_REPLACE )
             cmd->param = msg->param;
     }
-    else if( msg->type == MSG_STATUS || msg->type == MSG_REMOVE || msg->type == MSG_REMOVEALL
-             || msg->type == MSG_KILL || msg->type == MSG_TIME || msg->type == MSG_RESET_ID
-             || msg->type == MSG_CLEARVM )
+    else if( msg->type == CK_MSG_STATUS || msg->type == CK_MSG_REMOVE || msg->type == CK_MSG_REMOVEALL
+             || msg->type == CK_MSG_EXIT || msg->type == CK_MSG_TIME || msg->type == CK_MSG_RESET_ID
+             || msg->type == CK_MSG_CLEARVM )
     {
         cmd->type = msg->type;
         cmd->param = msg->param;
     }
-    else if( msg->type == MSG_ABORT )
+    else if( msg->type == CK_MSG_ABORT )
     {
         // halt and clear current shred
         vm->abort_current_shred();
         // short circuit
         ret = 1;
-        SAFE_DELETE(cmd);
+        CK_SAFE_DELETE(cmd);
         goto cleanup;
     }
     else
     {
-        CK_FPRINTF_STDERR( "[chuck]: unrecognized incoming command from network: '%li'\n", cmd->type );
-        SAFE_DELETE(cmd);
+        EM_error2( 0, "unrecognized incoming command from network: '%li'", cmd->type );
+        CK_SAFE_DELETE(cmd);
         goto cleanup;
     }
 
     // immediate
     if( immediate )
+    {
+        // process message immediately
         ret = vm->process_msg( cmd );
+    }
     else
     {
         // queue message
@@ -263,14 +276,14 @@ t_CKINT otf_send_file( const char * fname, Net_Msg & msg, const char * op,
     struct stat fs;
     string filename;
     vector<string> args;
-    char buf[1024];
+    string buf;
 
     // parse out command line arguments
     if( !extract_args( fname, filename, args ) )
     {
         // error
-        CK_FPRINTF_STDERR( "[chuck]: malformed filename + argument list...\n" );
-        CK_FPRINTF_STDERR( "    -->  '%s'", fname );
+        EM_error2( 0, "malformed filename + argument list..." );
+        EM_error2( 0, "    -->  '%s'", fname );
         return FALSE;
     }
 
@@ -278,24 +291,24 @@ t_CKINT otf_send_file( const char * fname, Net_Msg & msg, const char * op,
     strcpy( msg.buffer, fname );
 
     // test it
-    strcpy( buf, filename.c_str() );
-    fd = open_cat_ck( buf );
+    buf = filename;
+    fd = ck_openFileAutoExt( buf, ".ck" );
     if( !fd )
     {
-        CK_FPRINTF_STDERR( "[chuck]: cannot open file '%s' for [%s]...\n", filename.c_str(), op );
+        EM_error2( 0, "cannot open file '%s' for [%s]...", filename.c_str(), op );
         return FALSE;
     }
 
-    if( !chuck_parse( (char *)filename.c_str(), fd ) )
+    if( !chuck_parse( filename ) )
     {
-        CK_FPRINTF_STDERR( "[chuck]: skipping file '%s' for [%s]...\n", filename.c_str(), op );
+        EM_error2( 0, "skipping file '%s' for [%s]...", filename.c_str(), op );
         fclose( fd );
         return FALSE;
     }
 
     // stat it
     memset( &fs, 0, sizeof(fs) );
-    stat( buf, &fs );
+    stat( buf.c_str(), &fs );
     fseek( fd, 0, SEEK_SET );
 
     // log
@@ -314,7 +327,7 @@ t_CKINT otf_send_file( const char * fname, Net_Msg & msg, const char * op,
     while( left )
     {
         // log
-        EM_log( CK_LOG_FINER, "%03d bytes left ... ", left );
+        EM_log( CK_LOG_FINER, "%03d bytes left...", left );
         // amount to send
         msg.length = left > NET_BUFFER_SIZE ? NET_BUFFER_SIZE : left;
         // read
@@ -323,7 +336,7 @@ t_CKINT otf_send_file( const char * fname, Net_Msg & msg, const char * op,
         if( !msg.param3 )
         {
             // error encountered
-            CK_FPRINTF_STDERR( "[chuck]: error while reading '%s'...\n", filename.c_str() );
+            EM_error2( 0, "error while reading '%s'...", filename.c_str() );
             // mark done
             left = 0;
             // error flag
@@ -368,7 +381,7 @@ ck_socket otf_send_connect( const char * host, t_CKINT port )
     ck_socket sock = ck_tcp_create( 0 );
     if( !sock )
     {
-        CK_FPRINTF_STDERR( "[chuck]: cannot open socket to send command...\n" );
+        EM_error2( 0, "cannot open socket to send command..." );
         return NULL;
     }
 
@@ -377,7 +390,7 @@ ck_socket otf_send_connect( const char * host, t_CKINT port )
 
     if( !ck_connect( sock, host, (int)port ) )
     {
-        CK_FPRINTF_STDERR( "cannot open TCP socket on %s:%i...\n", host, port );
+        EM_error2( 0, "cannot open TCP socket on %s:%i...", host, port );
         ck_close( sock );
         return NULL;
     }
@@ -411,7 +424,7 @@ t_CKINT otf_send_cmd( t_CKINT argc, const char ** argv, t_CKINT & i,
     {
         if( ++i >= argc )
         {
-            CK_FPRINTF_STDERR( "[chuck]: not enough arguments following [add]...\n" );
+            EM_error2( 0, "not enough arguments following [add]..." );
             goto error;
         }
 
@@ -419,8 +432,8 @@ t_CKINT otf_send_cmd( t_CKINT argc, const char ** argv, t_CKINT & i,
         EM_pushlog();
         do {
             // log
-            EM_log( CK_LOG_INFO, "sending file:args '%s' for add...", mini(argv[i]) );
-            msg.type = MSG_ADD;
+            EM_log( CK_LOG_INFO, "sending file:args '%s' for ADD...", mini(argv[i]) );
+            msg.type = CK_MSG_ADD;
             msg.param = 1;
             tasks_done += otf_send_file( argv[i], msg, "add", dest );
             tasks_total++;
@@ -435,7 +448,7 @@ t_CKINT otf_send_cmd( t_CKINT argc, const char ** argv, t_CKINT & i,
     {
         if( ++i >= argc )
         {
-            CK_FPRINTF_STDERR( "[chuck]: not enough arguments following [remove]...\n" );
+            EM_error2( 0, "not enough arguments following [remove]..." );
             goto error;
         }
 
@@ -443,9 +456,9 @@ t_CKINT otf_send_cmd( t_CKINT argc, const char ** argv, t_CKINT & i,
         EM_pushlog();
         do {
             // log
-            EM_log( CK_LOG_INFO, "requesting removal of shred '%i'..." );
+            EM_log( CK_LOG_INFO, "requesting REMOVE of shred '%i'..." );
             msg.param = atoi( argv[i] );
-            msg.type = MSG_REMOVE;
+            msg.type = CK_MSG_REMOVE;
             otf_hton( &msg );
             ck_send( dest, (char *)&msg, sizeof(msg) );
         } while( ++i < argc );
@@ -457,9 +470,9 @@ t_CKINT otf_send_cmd( t_CKINT argc, const char ** argv, t_CKINT & i,
         if( !(dest = otf_send_connect( host, port )) ) return 0;
         EM_pushlog();
         // log
-        EM_log( CK_LOG_INFO, "requesting removal of last shred..." );
+        EM_log( CK_LOG_INFO, "requesting REMOVE LAST shred..." );
         msg.param = CK_NO_VALUE;
-        msg.type = MSG_REMOVE;
+        msg.type = CK_MSG_REMOVE;
         otf_hton( &msg );
         ck_send( dest, (char *)&msg, sizeof(msg) );
         // log
@@ -469,7 +482,7 @@ t_CKINT otf_send_cmd( t_CKINT argc, const char ** argv, t_CKINT & i,
     {
         if( ++i >= argc )
         {
-            CK_FPRINTF_STDERR( "[chuck]: not enough arguments following [replace]...\n" );
+            EM_error2( 0, "not enough arguments following [replace]..." );
             goto error;
         }
 
@@ -480,14 +493,14 @@ t_CKINT otf_send_cmd( t_CKINT argc, const char ** argv, t_CKINT & i,
 
         if( ++i >= argc )
         {
-            CK_FPRINTF_STDERR( "[chuck]: not enough arguments following [replace]...\n" );
+            EM_error2( 0, "not enough arguments following [replace]..." );
             goto error;
         }
 
         if( !(dest = otf_send_connect( host, port )) ) return 0;
         EM_pushlog();
-        EM_log( CK_LOG_INFO, "requesting replace shred '%i' with '%s'...", msg.param, mini(argv[i]) );
-        msg.type = MSG_REPLACE;
+        EM_log( CK_LOG_INFO, "requesting REPLACE shred '%i' with '%s'...", msg.param, mini(argv[i]) );
+        msg.type = CK_MSG_REPLACE;
         if( !otf_send_file( argv[i], msg, "replace", dest ) )
             goto error;
         EM_poplog();
@@ -496,67 +509,82 @@ t_CKINT otf_send_cmd( t_CKINT argc, const char ** argv, t_CKINT & i,
     {
         if( !(dest = otf_send_connect( host, port )) ) return 0;
         EM_pushlog();
-        EM_log( CK_LOG_INFO, "requesting removeall..." );
-        msg.type = MSG_REMOVEALL;
+        EM_log( CK_LOG_INFO, "requesting REMOVE ALL..." );
+        msg.type = CK_MSG_REMOVEALL;
         msg.param = 0;
         otf_hton( &msg );
         ck_send( dest, (char *)&msg, sizeof(msg) );
         EM_poplog();
     }
-    else if( !strcmp( argv[i], "--clear.vm" ) )
+    else if( !strcmp( argv[i], "--clear.vm" ) || !strcmp( argv[i], "--clear-vm" ) )
     {
         if( !(dest = otf_send_connect( host, port )) ) return 0;
         EM_pushlog();
-        EM_log( CK_LOG_INFO, "requesting clearvm..." );
-        msg.type = MSG_CLEARVM;
+        EM_log( CK_LOG_INFO, "requesting CLEAR VM..." );
+        msg.type = CK_MSG_CLEARVM;
         msg.param = 0;
         otf_hton( &msg );
         ck_send( dest, (char *)&msg, sizeof(msg) );
         EM_poplog();
     }
-    else if( !strcmp( argv[i], "--kill" ) )
+    else if( !strcmp( argv[i], "--kill" ) || !strcmp( argv[i], "--exit" ) )
     {
         if( !(dest = otf_send_connect( host, port )) ) return 0;
-        msg.type = MSG_REMOVEALL;
+        EM_pushlog();
+        EM_log( CK_LOG_INFO, "requesting EXIT..." );
+        msg.type = CK_MSG_REMOVEALL;
         msg.param = 0;
         otf_hton( &msg );
         ck_send( dest, (char *)&msg, sizeof(msg) );
-        msg.type = MSG_KILL;
+        msg.type = CK_MSG_EXIT;
         msg.param = (i+1)<argc ? atoi(argv[++i]) : 0;
         otf_hton( &msg );
         ck_send( dest, (char *)&msg, sizeof(msg) );
+        EM_poplog();
     }
     else if( !strcmp( argv[i], "--time" ) )
     {
         if( !(dest = otf_send_connect( host, port )) ) return 0;
-        msg.type = MSG_TIME;
+        EM_pushlog();
+        EM_log( CK_LOG_INFO, "requesting TIME..." );
+        msg.type = CK_MSG_TIME;
         msg.param = 0;
         otf_hton( &msg );
         ck_send( dest, (char *)&msg, sizeof(msg) );
+        EM_poplog();
     }
-    else if( !strcmp( argv[i], "--rid" ) )
+    else if( !strcmp( argv[i], "--rid" ) || !strcmp( argv[i], "--reset.id" ) || !strcmp( argv[i], "--reset-id" ) )
     {
         if( !(dest = otf_send_connect( host, port )) ) return 0;
-        msg.type = MSG_RESET_ID;
+        EM_pushlog();
+        EM_log( CK_LOG_INFO, "requesting RESET ID..." );
+        msg.type = CK_MSG_RESET_ID;
         msg.param = 0;
         otf_hton( &msg );
         ck_send( dest, (char *)&msg, sizeof(msg) );
+        EM_poplog();
     }
     else if( !strcmp( argv[i], "--status" ) || !strcmp( argv[i], "^" ) )
     {
         if( !(dest = otf_send_connect( host, port )) ) return 0;
-        msg.type = MSG_STATUS;
+        EM_pushlog();
+        EM_log( CK_LOG_INFO, "requesting STATUS..." );
+        msg.type = CK_MSG_STATUS;
         msg.param = 0;
         otf_hton( &msg );
         ck_send( dest, (char *)&msg, sizeof(msg) );
+        EM_poplog();
     }
-    else if( !strcmp( argv[i], "--abort.shred" ) )
+    else if( !strcmp( argv[i], "--abort.shred" ) || !strcmp( argv[i], "--abort-shred" ) )
     {
         if( !(dest = otf_send_connect( host, port )) ) return 0;
-        msg.type = MSG_ABORT;
+        EM_pushlog();
+        EM_log( CK_LOG_INFO, "requesting ABORT SHRED..." );
+        msg.type = CK_MSG_ABORT;
         msg.param = 0;
         otf_hton( &msg );
         ck_send( dest, (char *)&msg, sizeof(msg) );
+        EM_poplog();
     }
     else
     {
@@ -565,7 +593,7 @@ t_CKINT otf_send_cmd( t_CKINT argc, const char ** argv, t_CKINT & i,
     }
 
     // send
-    msg.type = MSG_DONE;
+    msg.type = CK_MSG_DONE;
     otf_hton( &msg );
     // log
     EM_log( CK_LOG_INFO, "otf sending request..." );
@@ -581,8 +609,8 @@ t_CKINT otf_send_cmd( t_CKINT argc, const char ** argv, t_CKINT & i,
         otf_ntoh( &msg );
         if( !msg.param )
         {
-            CK_FPRINTF_STDERR( "[chuck(remote)]:operation failed (sorry)" );
-            CK_FPRINTF_STDERR( "...(reason: %s)\n",
+            EM_error2( 0, "REMOTE oeration failed..." );
+            EM_error2( 0, "reason: %s",
                 ( strstr( (char *)msg.buffer, ":" ) ? strstr( (char *)msg.buffer, ":" ) + 1 : (char *)msg.buffer ) );
         }
         else
@@ -592,7 +620,7 @@ t_CKINT otf_send_cmd( t_CKINT argc, const char ** argv, t_CKINT & i,
     }
     else
     {
-        CK_FPRINTF_STDERR( "[chuck]: remote operation timed out...\n" );
+        EM_error2( 0, "remote operation timed out..." );
     }
     // close the sock
     ck_close( dest );
@@ -607,7 +635,7 @@ error:
     // if sock was opened
     if( dest )
     {
-        msg.type = MSG_DONE;
+        msg.type = CK_MSG_DONE;
         otf_hton( &msg );
         ck_send( dest, (char *)&msg, sizeof(msg) );
         ck_close( dest );
@@ -637,7 +665,7 @@ void * otf_cb( void * p )
 
     // catch SIGINT
     // signal( SIGINT, signal_int );
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
     // catch SIGPIPE
 // REFACTOR 2017: TODO register global signal_pipe function
 //    signal( SIGPIPE, signal_pipe );
@@ -655,8 +683,8 @@ void * otf_cb( void * p )
         if( !client )
         {
             if( carrier->vm )
-                EM_log( CK_LOG_INFO, "[chuck]: socket error during accept()...\n" );
-            usleep( 40000 );
+                EM_log( CK_LOG_INFO, "[chuck]: socket error during accept()..." );
+            ck_usleep( 40000 );
             // ck_close( client );  don't close NULL client
             continue;
         }
@@ -667,20 +695,20 @@ void * otf_cb( void * p )
         otf_ntoh( &msg );
         if( n != sizeof(msg) )
         {
-            CK_FPRINTF_STDERR( "[chuck]: 0-length packet...\n" );
-            usleep( 40000 );
+            EM_error2( 0, "0-length packet..." );
+            ck_usleep( 40000 );
             ck_close( client );
             continue;
         }
 
         if( msg.header != NET_HEADER )
         {
-            CK_FPRINTF_STDERR( "[chuck]: header mismatch - possible endian lunacy...\n" );
+            EM_error2( 0, "header mismatch - possible endian lunacy..." );
             ck_close( client );
             continue;
         }
 
-        while( msg.type != MSG_DONE )
+        while( msg.type != CK_MSG_DONE )
         {
             if( carrier->vm )
             {
@@ -688,7 +716,7 @@ void * otf_cb( void * p )
                 {
                     ret.param = FALSE;
                     strcpy( (char *)ret.buffer, EM_lasterror() );
-                    while( msg.type != MSG_DONE && n )
+                    while( msg.type != CK_MSG_DONE && n )
                     {
                         n = ck_recv( client, (char *)&msg, sizeof(msg) );
                         otf_ntoh( &msg );
@@ -705,7 +733,7 @@ void * otf_cb( void * p )
             }
             else
             {
-                usleep( 10000 );
+                ck_usleep( 10000 );
             }
         }
 
@@ -733,8 +761,8 @@ const char * poop[] = {
     "[chuck]: an unknown fatal error has occurred. please restart your computer...",
     "[chuck]: an unknown fatal error has occurred. please reinstall something...",
     "[chuck]: an unknown fatal error has occurred. please update to chuck-3.0",
-    "[chuck]: internal error: unknown error",
-    "[chuck]: internal error: too many errors!!!",
+    "[chuck]: (internal error) unknown error",
+    "[chuck]: (internal error) too many errors!!!",
     "[chuck]: error printing error message. cannot continue 2#%%HGAFf9a0x"
 };
 
@@ -754,6 +782,6 @@ void uh( )
     {
         int n = (int)(ck_random() / (float)CK_RANDOM_MAX * poop_size);
         printf( "%s\n", poop[n] );
-        usleep( (unsigned int)(ck_random() / (float)CK_RANDOM_MAX * 2000000) / 10 );
+        ck_usleep( (unsigned int)(ck_random() / (float)CK_RANDOM_MAX * 2000000) / 10 );
     }
 }

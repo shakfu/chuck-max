@@ -58,7 +58,7 @@ struct Chuck_Instr
 {
 public:
     Chuck_Instr();
-    virtual ~Chuck_Instr() { SAFE_DELETE(m_codestr); }
+    virtual ~Chuck_Instr();
 
 public:
     virtual void execute( Chuck_VM * vm, Chuck_VM_Shred * shred ) = 0;
@@ -73,10 +73,16 @@ public:
     void set_linepos( t_CKUINT linepos );
     t_CKUINT m_linepos;
 
-    // set codestr associated with this instruction
-    void set_codestr( const std::string & str );
+    // prepend codestr associated with this instruction
+    void prepend_codestr( const std::string & str );
+    // append codestr associated with this instruction
+    void append_codestr( const std::string & str );
     // (used in instruction dump) | 1.5.0.0 (ge) added
-    std::string * m_codestr;
+    // (1.5.0.8) made this vector to support cases where there
+    // may be multiple code str, e.g., top of for-loops
+    std::vector<std::string> * m_codestr_pre;
+    // pre prints before the instruction; post prints after
+    std::vector<std::string> * m_codestr_post;
 };
 
 
@@ -89,6 +95,7 @@ public:
 struct Chuck_Instr_Branch_Op : public Chuck_Instr
 {
 public:
+    Chuck_Instr_Branch_Op() : m_jmp(0) { }
     inline void set( t_CKUINT jmp ) { m_jmp = jmp; }
 
 public:
@@ -109,6 +116,7 @@ protected:
 struct Chuck_Instr_Unary_Op : public Chuck_Instr
 {
 public:
+    Chuck_Instr_Unary_Op() : m_val(0) { }
     inline void set( t_CKUINT val ) { m_val = val; }
     inline t_CKUINT get() { return m_val; }
 
@@ -130,6 +138,7 @@ protected:
 struct Chuck_Instr_Unary_Op2 : public Chuck_Instr
 {
 public:
+    Chuck_Instr_Unary_Op2() : m_val(0) { }
     inline void set( t_CKFLOAT val ) { m_val = val; }
     inline t_CKFLOAT get() { return m_val; }
 
@@ -2702,8 +2711,10 @@ struct Chuck_Instr_Alloc_Word_Global : public Chuck_Instr_Unary_Op
 public:
     // (added 1.3.0.0 -- is_object)
     Chuck_Instr_Alloc_Word_Global()
-    { this->set( 0 ); m_stack_offset = 0; m_chuck_type = NULL;
-      m_should_execute_ctors = FALSE; m_is_array = FALSE; }
+        : m_type(te_globalTypeNone), m_is_array(FALSE),
+        m_should_execute_ctors(FALSE),
+        m_stack_offset(0), m_chuck_type(NULL)
+    { this->set( 0 ); }
 
     virtual const char * params() const
     { static char buffer[CK_PRINT_BUF_LENGTH];
@@ -3971,6 +3982,33 @@ struct Chuck_Instr_Pop_Loop_Counter : public Chuck_Instr
 {
 public:
     virtual void execute( Chuck_VM * vm, Chuck_VM_Shred * shred );
+};
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: struct Chuck_Instr_ForEach_Inc_And_Branch
+// desc: for( VAR: ARRAY ) increment VAR, test against ARRAY size; branch
+//-----------------------------------------------------------------------------
+struct Chuck_Instr_ForEach_Inc_And_Branch : public Chuck_Instr_Branch_Op
+{
+public:
+    // constructor
+    Chuck_Instr_ForEach_Inc_And_Branch( t_CKUINT kind, t_CKUINT size )
+    { m_dataKind = kind; m_dataSize = size; this->set( 0 ); }
+    virtual void execute( Chuck_VM * vm, Chuck_VM_Shred * shred );
+
+protected:
+    // type of VAR (will determine which array to operate on):
+    // kindof_INT
+    // kindof_FLOAT
+    // kindof_COMPLEX
+    // kindof_VEC3
+    // kindof_VEC4
+    t_CKUINT m_dataKind;
+    // size of VAR
+    t_CKUINT m_dataSize;
 };
 
 

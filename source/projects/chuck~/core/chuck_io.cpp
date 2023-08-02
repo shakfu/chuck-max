@@ -34,6 +34,7 @@
 #include "chuck_instr.h"
 #include "chuck_type.h"
 #include "chuck_vm.h"
+#include "util_platforms.h"
 
 #ifndef __DISABLE_HID__
 #include "hidio_sdl.h"
@@ -47,37 +48,36 @@
 #include "util_serial.h"
 #endif
 
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
 #include <sys/select.h>
 #include <poll.h>
 #include <termios.h>
 #include <unistd.h>
 #else
 #include <io.h>
-#endif // __PLATFORM_WIN32__
+#include "dirent_win32.h"
+#endif // __PLATFORM_WINDOWS__
+
 #include <fcntl.h>
 #include <math.h>
+#include <stdint.h> // 1.5.0.5
 
 #include <iomanip>
-#include <sstream>
 #include <iostream>
-#include <fstream>
 using namespace std;
 
 
-#ifdef __PLATFORM_WIN32__
+#ifdef __PLATFORM_WINDOWS__
 typedef BYTE uint8_t;
 typedef WORD uint16_t;
 // ge: this needed in earlier/some versions of windows
-#ifndef __WINDOWS_MODERN__
+// 1.5.0.7 (ge) make "__WINDOWS_MODERN__" default
+#ifdef __WINDOWS_OLDSCHOOL__ // was: #ifndef __WINDOWS_MODERN__
 typedef __int32 int32_t; // 1.4.1.0 (ge) added
 typedef DWORD uint32_t;
 #endif
 #endif
 
-#ifdef __PLATFORM_LINUX__
-#include <stdint.h>
-#endif
 
 // global
 static Chuck_String * g_newline = new Chuck_String();
@@ -105,93 +105,78 @@ t_CKBOOL init_class_io( Chuck_Env * env, Chuck_Type * type )
         return FALSE;
 
     // add good()
-    func = make_new_mfun( "int", "good", io_dummy );
+    func = make_new_mfun( "int", "good", io_dummy_int );
     func->doc = "Returns whether IO is ready for reading.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add close()
-    func = make_new_mfun( "void", "close", io_dummy );
+    func = make_new_mfun( "void", "close", io_dummy_void );
     func->doc = "Close the currently open IO.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add flush()
-    func = make_new_mfun( "void", "flush", io_dummy );
+    func = make_new_mfun( "void", "flush", io_dummy_void );
     func->doc = "Write any buffered output.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add mode(int)
-    func = make_new_mfun( "int", "mode", io_dummy );
+    func = make_new_mfun( "int", "mode", io_dummy_int );
     func->add_arg( "int", "flag" );
     func->doc = "Set the current IO mode; either IO.MODE_ASYNC or IO.MODE_SYNC.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add mode()
-    func = make_new_mfun( "int", "mode", io_dummy );
+    func = make_new_mfun( "int", "mode", io_dummy_int );
     func->doc = "Get the current IO mode; either IO.MODE_ASYNC or IO.MODE_SYNC.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // TODO: add this later?
     // add read()
-    // func = make_new_mfun( "string", "read", io_dummy );
+    // func = make_new_mfun( "string", "read", io_dummy_string );
     // func->add_arg( "int", "length" );
     // if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add readLine()
-    func = make_new_mfun( "string", "readLine", io_dummy );
+    func = make_new_mfun( "string", "readLine", io_dummy_string );
     func->doc = "Read until an end-of-line character.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add readInt()
-    func = make_new_mfun( "int", "readInt", io_dummy );
+    func = make_new_mfun( "int", "readInt", io_dummy_int );
     func->add_arg( "int", "flags" );
-    func->doc = "Read and return the next integer (binary mode); 'flags' denotes the bit-size of int (IO.INT8, IO.INT16, or IO.INT32).";
+    func->doc = "Read and return the next integer; binary mode: 'flags' denotes the bit-size of int (IO.INT8, IO.INT16, or IO.INT32).";
     if( !type_engine_import_mfun( env, func ) ) goto error;
-
-    /*
-    // add readInt()
-    func = make_new_mfun( "int", "readInt8", io_dummy );
-    func->add_arg( "int", "flags" );
-    if( !type_engine_import_mfun( env, func ) ) goto error;
-
-    // add readInt()
-    func = make_new_mfun( "int", "readInt16", io_dummy );
-    func->add_arg( "int", "flags" );
-    if( !type_engine_import_mfun( env, func ) ) goto error;
-
-    // add readInt()
-    func = make_new_mfun( "int", "readInt32", io_dummy );
-    func->add_arg( "int", "flags" );
-    if( !type_engine_import_mfun( env, func ) ) goto error;
-    */
 
     // add readFloat()
-    // func = make_new_mfun( "float", "readFloat", io_dummy );
-    // if( !type_engine_import_mfun( env, func ) ) goto error;
+    func = make_new_mfun( "float", "readFloat", io_dummy_float );
+    func->add_arg( "int", "flags" );
+    func->doc = "Read and return the next floating point value; binary mode: 'flags' denotes the size of float to read (IO.FLOAT32 or IO.FLOAT64).";
+    if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add eof()
-    func = make_new_mfun( "int", "eof", io_dummy );
+    func = make_new_mfun( "int", "eof", io_dummy_int );
     func->doc = "Return whether end-of-file has been reached; the opposite of .more().";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add more()
-    func = make_new_mfun( "int", "more", io_dummy );
+    func = make_new_mfun( "int", "more", io_dummy_int );
     func->doc = "Return whether there is more to read; the opposite of .eof().";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add write(string)
-    func = make_new_mfun( "void", "write", io_dummy );
+    func = make_new_mfun( "void", "write", io_dummy_void );
     func->add_arg( "string", "val" );
     func->doc = "Write string 'val'.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add write(int)
-    func = make_new_mfun( "void", "write", io_dummy );
+    func = make_new_mfun( "void", "write", io_dummy_void );
     func->add_arg( "int", "val" );
     func->doc = "Write integer 'val'.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add write(float)
-    func = make_new_mfun( "void", "write", io_dummy );
+    func = make_new_mfun( "void", "write", io_dummy_void );
     func->add_arg( "float", "val" );
     func->doc = "Write floating point number 'val'.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
@@ -209,7 +194,7 @@ t_CKBOOL init_class_io( Chuck_Env * env, Chuck_Type * type )
     // func->doc = "_";
     // if( !type_engine_import_sfun( env, func ) ) goto error;
     // new line string
-    initialize_object( g_newline, env->t_string );
+    initialize_object( g_newline, env->ckt_string );
     g_newline->set( "\n" );
 
     // add TYPE_ASCII
@@ -224,18 +209,51 @@ t_CKBOOL init_class_io( Chuck_Env * env, Chuck_Type * type )
     // add INT16
     if( !type_engine_import_svar( env, "int", "INT16",
                                  TRUE, (t_CKUINT)&Chuck_IO::INT16, "Flag denoting 16-bit integer type." ) ) goto error;
+    // add INT24 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "INT24",
+                                 TRUE, (t_CKUINT)&Chuck_IO::INT24, "Flag denoting 24-bit integer type." ) ) goto error;
     // add INT32
     if( !type_engine_import_svar( env, "int", "INT32",
                                  TRUE, (t_CKUINT)&Chuck_IO::INT32, "Flag denoting 32-bit integer type." ) ) goto error;
-//    // add READ_INT8
-//    if( !type_engine_import_svar( env, "int", "READ_INT8",
-//                                 TRUE, (t_CKUINT)&Chuck_IO::INT8, "Flag denoting 8-bit integer type (same as INT8)." ) ) goto error;
-//    // add READ_INT16
-//    if( !type_engine_import_svar( env, "int", "READ_INT16",
-//                                 TRUE, (t_CKUINT)&Chuck_IO::INT16, "Flag denoting 16-bit integer type (same as INT16)." ) ) goto error;
-//    // add READ_INT32
-//    if( !type_engine_import_svar( env, "int", "READ_INT32",
-//                                 TRUE, (t_CKUINT)&Chuck_IO::INT32, "Flag denoting 32-bit integer type (same as INT32)." ) ) goto error;
+    // add INT64 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "INT64",
+                                 TRUE, (t_CKUINT)&Chuck_IO::INT64, "Flag denoting 64-bit integer type." ) ) goto error;
+    // add SINT8 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "SINT8",
+                                 TRUE, (t_CKUINT)&Chuck_IO::SINT8, "Flag denoting 8-bit signed integer type." ) ) goto error;
+    // add SINT16 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "SINT16",
+                                 TRUE, (t_CKUINT)&Chuck_IO::SINT16, "Flag denoting 16-bit signed integer type." ) ) goto error;
+    // add SINT24 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "SINT24",
+                                 TRUE, (t_CKUINT)&Chuck_IO::SINT24, "Flag denoting 24-bit signed integer type." ) ) goto error;
+    // add SINT32 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "SINT32",
+                                 TRUE, (t_CKUINT)&Chuck_IO::SINT32, "Flag denoting 32-bit signed integer type." ) ) goto error;
+    // add SINT64 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "SINT64",
+                                 TRUE, (t_CKUINT)&Chuck_IO::SINT64, "Flag denoting 64-bit signed integer type." ) ) goto error;
+    // add UINT8 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "UINT8",
+                                 TRUE, (t_CKUINT)&Chuck_IO::UINT8, "Flag denoting 8-bit unsigned integer type." ) ) goto error;
+    // add UINT16 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "UINT16",
+                                 TRUE, (t_CKUINT)&Chuck_IO::UINT16, "Flag denoting 16-bit unsigned integer type." ) ) goto error;
+    // add UINT24 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "UINT24",
+                                 TRUE, (t_CKUINT)&Chuck_IO::UINT24, "Flag denoting 24-bit unsigned integer type." ) ) goto error;
+    // add UINT32 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "UINT32",
+                                 TRUE, (t_CKUINT)&Chuck_IO::UINT32, "Flag denoting 32-bit unsigned integer type." ) ) goto error;
+    // add UINT64 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "UINT64",
+                                 TRUE, (t_CKUINT)&Chuck_IO::UINT64, "Flag denoting 64-bit unsigned integer type." ) ) goto error;
+    // add FLOAT32 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "FLOAT32",
+                                 TRUE, (t_CKUINT)&Chuck_IO::FLOAT32, "Flag denoting 32-bit floating point type." ) ) goto error;
+    // add FLOAT64 | 1.5.0.1 (ge) added
+    if( !type_engine_import_svar( env, "int", "FLOAT64",
+                                 TRUE, (t_CKUINT)&Chuck_IO::FLOAT64, "Flag denoting 64-bit floating point type." ) ) goto error;
     // add MODE_SYNC
     if( !type_engine_import_svar( env, "int", "MODE_SYNC",
                                  TRUE, (t_CKUINT)&Chuck_IO::MODE_SYNC, "Flag denoting synchronous IO." ) ) goto error;
@@ -375,34 +393,19 @@ t_CKBOOL init_class_fileio( Chuck_Env * env, Chuck_Type * type )
     // add readInt(int)
     func = make_new_mfun( "int", "readInt", fileio_readintflags );
     func->add_arg( "int", "flags" );
-    func->doc = "Read and return an integer by size (binary mode) as specified in 'flags' (IO.INT8, IO.INT16, IO.INT32).";
+    func->doc = "Read and return an integer; binary mode: 'flags' specifies int size to read (IO.INT8, IO.INT16, IO.INT32 default to unsigned values; for signed integers use IO.SINT8, IO.SINT16, IO.SINT32).";
     if( !type_engine_import_mfun( env, func ) ) goto error;
-
-    /*
-    // add readByte()
-    func = make_new_mfun( "int", "readByte", fileio_readint8 );
-    func->add_arg( "int", "flags" );
-    if( !type_engine_import_mfun( env, func ) ) goto error;
-
-    // add readInt8()
-    func = make_new_mfun( "int", "readInt8", fileio_readint8 );
-    func->add_arg( "int", "flags" );
-    if( !type_engine_import_mfun( env, func ) ) goto error;
-
-    // add readInt16()
-    func = make_new_mfun( "int", "readInt16", fileio_readint16 );
-    func->add_arg( "int", "flags" );
-    if( !type_engine_import_mfun( env, func ) ) goto error;
-
-    // add readInt32()
-    func = make_new_mfun( "int", "readInt32", fileio_readint32 );
-    func->add_arg( "int", "flags" );
-    if( !type_engine_import_mfun( env, func ) ) goto error;
-    */
 
     // add readFloat()
-    // func = make_new_mfun( "float", "readFloat", fileio_readfloat );
-    // if( !type_engine_import_mfun( env, func ) ) goto error;
+    func = make_new_mfun( "float", "readFloat", fileio_readfloat );
+    func->doc = "Read and return the next floating point value.";
+    if( !type_engine_import_mfun( env, func ) ) goto error;
+
+    // add readFloat()
+    func = make_new_mfun( "float", "readFloat", fileio_readfloatflags );
+    func->add_arg( "int", "flags" );
+    func->doc = "Read and return the next floating point value; if binary mode: 'flags' denotes the size of float to read (IO.FLOAT32 or IO.FLOAT64).";
+    if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add eof()
     func = make_new_mfun( "int", "eof", fileio_eof );
@@ -430,13 +433,20 @@ t_CKBOOL init_class_fileio( Chuck_Env * env, Chuck_Type * type )
     func = make_new_mfun( "void", "write", fileio_writeintflags );
     func->add_arg( "int", "val" );
     func->add_arg( "int", "flags" );
-    func->doc = "Write integer to file (binary mode) by size as specified by 'flags' (IO.INT8, IO.INT16, IO.INT32).";
+    func->doc = "Write integer value to file; binary mode: int size specified by 'flags' (IO.INT8, IO.INT16, IO.INT32).";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add write(float)
     func = make_new_mfun( "void", "write", fileio_writefloat );
     func->add_arg( "float", "val" );
-    func->doc = "Write integer to file.";
+    func->doc = "Write floating point value to file.";
+    if( !type_engine_import_mfun( env, func ) ) goto error;
+
+    // add write(float)
+    func = make_new_mfun( "void", "write", fileio_writefloatflags );
+    func->add_arg( "float", "val" );
+    func->add_arg( "int", "flags" );
+    func->doc = "Write floating point value to file; binary mode: flags indicate float size (IO.FLOAT32 or IO.FLOAT64).";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add examples
@@ -510,10 +520,6 @@ t_CKBOOL init_class_chout( Chuck_Env * env, Chuck_Type * type )
     func = make_new_mfun( "string", "readLine", chout_readline );
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
-    // add readInt()
-    // func = make_new_mfun( "int", "readInt", chout_readint );
-    // if( !type_engine_import_mfun( env, func ) ) goto error;
-
     // add readInt(int)
     func = make_new_mfun( "int", "readInt", chout_readintflags );
     func->add_arg( "int", "flags" );
@@ -521,6 +527,7 @@ t_CKBOOL init_class_chout( Chuck_Env * env, Chuck_Type * type )
 
     // add readFloat()
     // func = make_new_mfun( "float", "readFloat", chout_readfloat );
+    // func->add_arg( "int", "flags" );
     // if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add eof()
@@ -603,17 +610,14 @@ t_CKBOOL init_class_cherr( Chuck_Env * env, Chuck_Type * type )
     func = make_new_mfun( "string", "readLine", cherr_readline );
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
-    // add readInt()
-    // func = make_new_mfun( "int", "readInt", cherr_readint );
-    // if( !type_engine_import_mfun( env, func ) ) goto error;
-
     // add readInt(int)
-    func = make_new_mfun( "int", "readInt", cherr_readintflags );
-    func->add_arg( "int", "flags" );
-    if( !type_engine_import_mfun( env, func ) ) goto error;
+    // func = make_new_mfun( "int", "readInt", cherr_readintflags );
+    // func->add_arg( "int", "flags" );
+    // if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add readFloat()
     // func = make_new_mfun( "float", "readFloat", cherr_readfloat );
+    // func->add_arg( "int", "flags" );
     // if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add eof()
@@ -1495,12 +1499,29 @@ error:
 //-----------------------------------------------------------------------------
 // IO API
 //-----------------------------------------------------------------------------
-CK_DLL_MFUN( io_dummy )
+CK_DLL_MFUN( io_dummy_int )
 {
-    EM_error3( "(IO): internal error! inside an abstract function! help!" );
-    EM_error3( "    note: please hunt down someone (e.g., Ge) to fix this..." );
-    assert( FALSE );
+    // EM_error3( "(IO): internal error! inside an abstract function! help!" );
+    // EM_error3( "    note: please hunt down someone (e.g., Ge) to fix this..." );
+    // assert( FALSE );
     RETURN->v_int = 0;
+}
+
+CK_DLL_MFUN( io_dummy_float )
+{
+    // return 0.0
+    RETURN->v_float = 0;
+}
+
+CK_DLL_MFUN( io_dummy_string )
+{
+    // return NULL
+    RETURN->v_string = NULL;
+}
+
+CK_DLL_MFUN( io_dummy_void )
+{
+    // do nothing
 }
 
 CK_DLL_SFUN( io_newline )
@@ -1669,21 +1690,18 @@ CK_DLL_MFUN( fileio_readintflags )
 
 CK_DLL_MFUN( fileio_readint8 )
 {
-    t_CKINT flags = GET_NEXT_INT(ARGS);
     Chuck_IO_File * f = (Chuck_IO_File *)SELF;
     RETURN->v_int = f->readInt( Chuck_IO::INT8 );
 }
 
 CK_DLL_MFUN( fileio_readint16 )
 {
-    t_CKINT flags = GET_NEXT_INT(ARGS);
     Chuck_IO_File * f = (Chuck_IO_File *)SELF;
     RETURN->v_int = f->readInt( Chuck_IO::INT16 );
 }
 
 CK_DLL_MFUN( fileio_readint32 )
 {
-    t_CKINT flags = GET_NEXT_INT(ARGS);
     Chuck_IO_File * f = (Chuck_IO_File *)SELF;
     RETURN->v_int = f->readInt( Chuck_IO::INT32 );
 }
@@ -1691,8 +1709,14 @@ CK_DLL_MFUN( fileio_readint32 )
 CK_DLL_MFUN( fileio_readfloat )
 {
     Chuck_IO_File * f = (Chuck_IO_File *)SELF;
-    t_CKFLOAT ret = f->readFloat();
-    RETURN->v_float = ret;
+    RETURN->v_float = f->readFloat();
+}
+
+CK_DLL_MFUN( fileio_readfloatflags )
+{
+    Chuck_IO_File * f = (Chuck_IO_File *)SELF;
+    t_CKINT flags = GET_NEXT_INT(ARGS);
+    RETURN->v_float = f->readFloat( flags );
 }
 
 CK_DLL_MFUN( fileio_eof )
@@ -1823,6 +1847,7 @@ CK_DLL_MFUN( fileio_writeintflags )
 CK_DLL_MFUN( fileio_writefloat )
 {
     t_CKFLOAT val = GET_NEXT_FLOAT(ARGS);
+    t_CKINT flagsDefault = Chuck_IO::FLOAT32;
     Chuck_IO_File * f = (Chuck_IO_File *)SELF;
 
 #ifndef __DISABLE_FILEIO__  // 1.5.0.0 (ge) | made more granular (e.g., for WebChucK)
@@ -1833,6 +1858,7 @@ CK_DLL_MFUN( fileio_writefloat )
         args->RETURN = (void *)RETURN;
         args->fileio_obj = f;
         args->floatArg = val;
+        args->intArg = flagsDefault; // 1.5.0.1 (ge) add default
         // set shred to wait for I/O completion
         assert( SHRED != NULL );
         f->m_asyncEvent->wait( SHRED, SHRED->vm_ref );
@@ -1849,10 +1875,48 @@ CK_DLL_MFUN( fileio_writefloat )
             }
         }
     } else {
-        f->write(val);
+        f->write( val, flagsDefault );
     }
 #else
-    f->write(val);
+    f->write( val, flagsDefault );
+#endif //__DISABLE_FILEIO__
+}
+
+CK_DLL_MFUN( fileio_writefloatflags )
+{
+    t_CKFLOAT val = GET_NEXT_FLOAT(ARGS);
+    t_CKINT flags = GET_NEXT_INT(ARGS);
+    Chuck_IO_File * f = (Chuck_IO_File *)SELF;
+
+#ifndef __DISABLE_FILEIO__  // 1.5.0.0 (ge) | made more granular (e.g., for WebChucK)
+    if (f->mode() == Chuck_IO::MODE_ASYNC)
+    {
+        // set up arguments
+        Chuck_IO::async_args *args = new Chuck_IO::async_args;
+        args->RETURN = (void *)RETURN;
+        args->fileio_obj = f;
+        args->floatArg = val;
+        args->intArg = flags; // 1.5.0.1 (ge) added
+        // set shred to wait for I/O completion
+        assert( SHRED != NULL );
+        f->m_asyncEvent->wait( SHRED, SHRED->vm_ref );
+        // start thread
+        bool ret = f->m_thread->start( f->writeFloat_thread, (void *)args );
+        if (!ret) {
+            // for some reason, the XThread object needs to be
+            // deleted and reconstructed every time after call #375
+            delete f->m_thread;
+            f->m_thread = new XThread;
+            ret = f->m_thread->start( f->writeFloat_thread, (void *)args );
+            if (!ret) {
+                EM_error3( "(FileIO): failed to start thread for asynchronous mode I/O" );
+            }
+        }
+    } else {
+        f->write( val,flags );
+    }
+#else
+    f->write( val,flags );
 #endif //__DISABLE_FILEIO__
 }
 
@@ -2157,7 +2221,7 @@ CK_DLL_MFUN( MidiIn_name )
 {
     MidiIn * min = (MidiIn *)OBJ_MEMBER_INT(SELF, MidiIn_offset_data);
     // TODO: memory leak, please fix, Thanks.
-    Chuck_String * a = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->t_string, SHRED );
+    Chuck_String * a = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->ckt_string, SHRED );
     // only if valid
     if( min->good() )
         a->set( min->min->getPortName( min->num() ) );
@@ -2230,7 +2294,7 @@ CK_DLL_MFUN( MidiOut_name )
 {
     MidiOut * mout = (MidiOut *)OBJ_MEMBER_INT(SELF, MidiOut_offset_data);
     // TODO: memory leak, please fix, Thanks.
-    Chuck_String * a = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->t_string, SHRED );
+    Chuck_String * a = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->ckt_string, SHRED );
     // only if valid
     if( mout->good() )
         a->set( mout->mout->getPortName( mout->num() ) );
@@ -2381,12 +2445,12 @@ CK_DLL_MFUN( HidIn_name )
 {
     HidIn * min = (HidIn *)OBJ_MEMBER_INT(SELF, HidIn_offset_data);
     // TODO: memory leak, please fix, Thanks.
-    // Chuck_String * a = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->t_string, SHRED );
+    // Chuck_String * a = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->ckt_string, SHRED );
     // only if valid
     // if( min->good() )
     //     a->str = min->phin->getPortName( min->num() );
     // TODO: is null problem?
-    RETURN->v_string = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->t_string, SHRED );
+    RETURN->v_string = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->ckt_string, SHRED );
     RETURN->v_string->set( min->name() );
 }
 
@@ -2512,7 +2576,7 @@ CK_DLL_SFUN( HidIn_read_tilt_sensor )
     static t_CKBOOL hi_good = TRUE;
 
     Chuck_Array4 * array = new Chuck_Array4( FALSE, 3 );
-    initialize_object( array, VM->env()->t_array ); // 1.5.0.0 (ge) added
+    initialize_object( array, VM->env()->ckt_array ); // 1.5.0.0 (ge) added
     array->set( 0, 0 );
     array->set( 1, 0 );
     array->set( 2, 0 );
@@ -2633,7 +2697,7 @@ CK_DLL_MFUN( HidOut_name )
 {
     // HidOut * mout = (HidOut *)OBJ_MEMBER_INT(SELF, HidOut_offset_data);
     // TODO: memory leak, please fix, Thanks.
-    Chuck_String * a = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->t_string, SHRED );
+    Chuck_String * a = (Chuck_String *)instantiate_and_initialize_object( SHRED->vm_ref->env()->ckt_string, SHRED );
     // only if valid
     // if( mout->good() )
     //     a->str = mout->mout->getPortName( mout->num() );
@@ -2830,6 +2894,1461 @@ CK_DLL_MFUN( MidiMsgIn_read )
 
 
 
+// constants
+const t_CKINT Chuck_IO::TYPE_ASCII = 0x1;
+const t_CKINT Chuck_IO::TYPE_BINARY = 0x2;
+const t_CKINT Chuck_IO::FLOAT32 = 0x10;
+const t_CKINT Chuck_IO::FLOAT64 = 0x20;
+const t_CKINT Chuck_IO::INT8 = 0x100;
+const t_CKINT Chuck_IO::INT16 = 0x200;
+const t_CKINT Chuck_IO::INT24 = 0x400;
+const t_CKINT Chuck_IO::INT32 = 0x800;
+const t_CKINT Chuck_IO::INT64 = 0x1000;
+const t_CKINT Chuck_IO::SINT8 = 0x2000;
+const t_CKINT Chuck_IO::SINT16 = 0x4000;
+const t_CKINT Chuck_IO::SINT24 = 0x8000;
+const t_CKINT Chuck_IO::SINT32 = 0x10000;
+const t_CKINT Chuck_IO::SINT64 = 0x20000;
+const t_CKINT Chuck_IO::UINT8 = 0x40000;
+const t_CKINT Chuck_IO::UINT16 = 0x80000;
+const t_CKINT Chuck_IO::UINT24 = 0x100000;
+const t_CKINT Chuck_IO::UINT32 = 0x200000;
+const t_CKINT Chuck_IO::UINT64 = 0x400000;
+const t_CKINT Chuck_IO::FLAG_READONLY = 0x100;
+const t_CKINT Chuck_IO::FLAG_WRITEONLY = 0x200;
+const t_CKINT Chuck_IO::FLAG_READ_WRITE = 0x400;
+const t_CKINT Chuck_IO::FLAG_APPEND = 0x800;
+
+#ifndef __DISABLE_THREADS__
+const t_CKINT Chuck_IO::MODE_SYNC = 0;
+const t_CKINT Chuck_IO::MODE_ASYNC = 1;
+#else
+const t_CKINT Chuck_IO::MODE_SYNC = 1;
+const t_CKINT Chuck_IO::MODE_ASYNC = 0;
+#endif
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: Chuck_IO Constructor
+// desc: Empty because you cannot construct a Chuck_IO object
+//-----------------------------------------------------------------------------
+Chuck_IO::Chuck_IO() : m_asyncEvent( NULL )
+{
+#ifndef __DISABLE_THREADS__
+    m_thread = NULL;
+#endif
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: Chuck_IO Destructor
+// desc: Empty becuase you cannot destruct a Chuck_IO object
+//-----------------------------------------------------------------------------
+Chuck_IO::~Chuck_IO()
+{ }
+
+
+
+
+// #ifndef __DISABLE_FILEIO__
+//-----------------------------------------------------------------------------
+// name: Chuck_IO_File()
+// desc: constructor
+//-----------------------------------------------------------------------------
+Chuck_IO_File::Chuck_IO_File( Chuck_VM * vm )
+{
+    m_vmRef = vm;
+    // zero things out
+    m_flags = 0;
+    m_iomode = MODE_SYNC;
+    m_path = "";
+    m_dir = NULL;
+    m_dir_start = 0;
+    m_asyncEvent = new Chuck_Event;
+    initialize_object( m_asyncEvent, vm->env()->ckt_event );
+#ifndef __DISABLE_THREADS__
+    m_thread = new XThread;
+#endif
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: ~Chuck_IO_File()
+// desc: destructor
+//-----------------------------------------------------------------------------
+Chuck_IO_File::~Chuck_IO_File()
+{
+    // clean up
+    this->close();
+    delete m_asyncEvent;
+#ifndef __DISABLE_THREADS__
+    delete m_thread;
+#endif
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: open
+// desc: open file from disk
+//-----------------------------------------------------------------------------
+t_CKBOOL Chuck_IO_File::open( const string & path, t_CKINT flags )
+{
+    // log
+    EM_log( CK_LOG_INFO, "FileIO: opening file from disk..." );
+    EM_log( CK_LOG_INFO, "FileIO: path: %s", path.c_str() );
+    EM_pushlog();
+
+    // if no flag specified, make it READ by default
+    if( !(flags & FLAG_READ_WRITE) &&
+        !(flags & FLAG_READONLY) &&
+        !(flags & FLAG_WRITEONLY) &&
+        !(flags & FLAG_APPEND) )
+    {
+        flags |= FLAG_READONLY;
+    }
+
+    // if both read and write, enable read and write
+    if( flags & FLAG_READONLY && flags & FLAG_WRITEONLY )
+    {
+        flags ^= FLAG_READONLY;
+        flags ^= FLAG_WRITEONLY;
+        flags |= FLAG_READ_WRITE;
+    }
+
+    // set open flags
+    ios_base::openmode theMode;
+
+    // check flags for errors
+    if( (flags & TYPE_ASCII) &&
+        (flags & TYPE_BINARY) )
+    {
+        EM_error3( "[chuck](via FileIO): cannot open file in both ASCII and binary mode" );
+        goto error;
+    }
+
+    if( (flags & FLAG_READ_WRITE) &&
+        (flags & FLAG_READONLY) )
+    {
+        EM_error3( "[chuck](via FileIO): conflicting flags: READ_WRITE and READ" );
+        goto error;
+    }
+
+    if( (flags & FLAG_READ_WRITE) &&
+        (flags & FLAG_WRITEONLY) )
+    {
+        EM_error3( "[chuck](via FileIO): conflicting flags: READ_WRITE and WRITE" );
+        goto error;
+    }
+
+    if( (flags & FLAG_READ_WRITE) &&
+        (flags & FLAG_APPEND) )
+    {
+        EM_error3( "[chuck](via FileIO): conflicting flags: READ_WRITE and APPEND" );
+        goto error;
+    }
+
+    if( (flags & FLAG_WRITEONLY) &&
+        (flags & FLAG_READONLY) )
+    {
+        EM_error3( "[chuck](via FileIO): conflicting flags: WRITE and READ" );
+        goto error;
+    }
+
+    if( (flags & FLAG_APPEND) &&
+        (flags & FLAG_READONLY) )
+    {
+        EM_error3( "[chuck](via FileIO): conflicting flags: APPEND and FLAG_READ" );
+        goto error;
+    }
+
+    if( flags & FLAG_READ_WRITE )
+        theMode = ios_base::in | ios_base::out;
+    else if( flags & FLAG_READONLY )
+        theMode = ios_base::in;
+    else if( flags & FLAG_APPEND )
+        theMode = ios_base::out | ios_base::app;
+    else if( flags & FLAG_WRITEONLY )
+        theMode = ios_base::out | ios_base::trunc;
+
+    if( flags & TYPE_BINARY )
+        theMode |= ios_base::binary;
+
+    // close first
+    if( m_io.is_open() )
+        this->close();
+
+    // try to open as a dir first (fixed 1.3.0.0 removed warning)
+    m_dir = opendir( path.c_str() );
+    if( m_dir )
+    {
+        EM_poplog();
+        return TRUE;
+    }
+
+    // not a dir, create file if it does not exist unless flag is
+    // readonly
+    if( !(flags & FLAG_READONLY) )
+    {
+        m_io.open( path.c_str(), ios_base::in );
+        if( m_io.fail() )
+        {
+            m_io.clear();
+            m_io.open( path.c_str(), ios_base::out | ios_base::trunc );
+            m_io.close();
+        }
+        else
+            m_io.close();
+    }
+
+    //open file
+    m_io.open( path.c_str(), theMode );
+
+    // seek to beginning if necessary
+    if( flags & FLAG_READ_WRITE )
+    {
+        m_io.seekp( 0 );
+        m_io.seekg( 0 );
+    }
+
+    /* ATODO: Ge's code
+     // windows sucks for being creative in the wrong places
+     #ifdef __PLATFORM_WINDOWS__
+     // if( flags ^ Chuck_IO::TRUNCATE && flags | Chuck_IO::READ ) nMode |= ios::nocreate;
+     m_io.open( path.c_str(), nMode );
+     #else
+     m_io.open( path.c_str(), (_Ios_Openmode)nMode );
+     #endif
+     */
+
+     // check for error
+    if( !(m_io.is_open()) )
+    {
+        // EM_error3( "[chuck](via FileIO): cannot open file: '%s'", path.c_str() );
+        goto error;
+    }
+
+    // set path
+    m_path = path;
+    // set flags
+    m_flags = flags;
+    if( !(flags & TYPE_BINARY) )
+        m_flags |= Chuck_IO_File::TYPE_ASCII; // ASCII is default
+    // set mode
+    m_iomode = MODE_SYNC;
+
+    // pop
+    EM_poplog();
+
+    return TRUE;
+
+error:
+
+    // pop
+    EM_poplog();
+
+    // reset
+    m_path = "";
+    m_flags = 0;
+    m_iomode = MODE_SYNC;
+    m_io.clear();
+    m_io.close();
+
+    return FALSE;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: close
+// desc: close file
+//-----------------------------------------------------------------------------
+void Chuck_IO_File::close()
+{
+    // log
+    EM_log( CK_LOG_INFO, "FileIO: closing file '%s'...", m_path.c_str() );
+    // close it
+    m_io.close();
+    m_flags = 0;
+    m_path = "";
+    m_iomode = Chuck_IO::MODE_SYNC;
+    if( m_dir ) {
+        closedir( m_dir );
+        m_dir = NULL;
+        m_dir_start = 0;
+    }
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: good()
+// desc: ...
+//-----------------------------------------------------------------------------
+t_CKBOOL Chuck_IO_File::good()
+{
+    return m_dir || m_io.is_open();
+    // return (!m_dir) && (!m_io.is_open());
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: flush()
+// desc: ...
+//-----------------------------------------------------------------------------
+void Chuck_IO_File::flush()
+{
+    // sanity
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot flush on directory" );
+        return;
+    }
+    m_io.flush();
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: mode()
+// desc: ...
+//-----------------------------------------------------------------------------
+t_CKINT Chuck_IO_File::mode()
+{
+    // sanity
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot get mode on directory" );
+        return -1;
+    }
+    return m_iomode;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: mode( t_CKINT flag )
+// desc: ...
+//-----------------------------------------------------------------------------
+void Chuck_IO_File::mode( t_CKINT flag )
+{
+    // sanity
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot set mode on directory" );
+        return;
+    }
+    if( (flag != Chuck_IO::MODE_ASYNC) && (flag != Chuck_IO::MODE_SYNC) )
+    {
+        EM_error3( "[chuck](via FileIO): invalid mode flag" );
+        return;
+    }
+
+    m_iomode = flag;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: size()
+// desc: Returns the size of the file in bytes, or -1 if no file is opened or
+//       if a directory is opened.
+//-----------------------------------------------------------------------------
+t_CKINT Chuck_IO_File::size()
+{
+    if( !(m_io.is_open()) ) return -1;
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot get size on a directory" );
+        return -1;
+    }
+
+    // no easy way to find file size in C++
+    // have to seek to end, report position
+    FILE * stream = fopen( m_path.c_str(), "r" );
+    fseek( stream, 0L, SEEK_END );
+    long endPos = ftell( stream );
+    fclose( stream );
+    return endPos;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: seek( t_CKINT pos )
+// desc: Seeks to the specified byte offset in the file.
+//-----------------------------------------------------------------------------
+void Chuck_IO_File::seek( t_CKINT pos )
+{
+    if( !(m_io.is_open()) )
+    {
+        EM_error3( "[chuck](via FileIO): cannot seek: no file is open" );
+        return;
+    }
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot seek on a directory" );
+        return;
+    }
+    // 1.5.0.0 (ge) | added since seekg fails if EOF already reached
+    m_io.clear();
+    m_io.seekg( pos );
+    m_io.seekp( pos );
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: tell()
+// desc: Returns the byte offset into the file, or -1 if no file is opened.
+//-----------------------------------------------------------------------------
+t_CKINT Chuck_IO_File::tell()
+{
+    if( !(m_io.is_open()) )
+        return -1;
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot tell on directory" );
+        return -1;
+    }
+
+    return m_io.tellg();
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: isDir()
+// desc: ...
+//-----------------------------------------------------------------------------
+t_CKINT Chuck_IO_File::isDir()
+{
+    return m_dir != NULL;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: dirList()
+// desc: ...
+//-----------------------------------------------------------------------------
+Chuck_Array4 * Chuck_IO_File::dirList()
+{
+    // sanity
+    if( !m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot get list: no directory open" );
+        Chuck_Array4 * ret = new Chuck_Array4( TRUE, 0 );
+        initialize_object( ret, m_vmRef->env()->ckt_array );
+        return ret;
+    }
+
+    // fill vector with entry names
+    rewinddir( m_dir );
+    std::vector<Chuck_String *> entrylist;
+
+    // 1.5.0.0 (ge) | #chunreal UE-forced refactor
+    struct dirent * ent = readdir( m_dir );
+    // was: while( (ent = readdir( m_dir ) ) <-- in ge's opinion this is cleaner splitting readir() into two places
+    while( ent != NULL ) // fixed 1.3.0.0: removed warning
+    {
+        // pass NULL as shred ref
+        Chuck_String * s = (Chuck_String *)instantiate_and_initialize_object( m_vmRef->env()->ckt_string, NULL, m_vmRef );
+        s->set( std::string( ent->d_name ) );
+        if( s->str() != ".." && s->str() != "." )
+        {
+            // don't include .. and . in the list
+            entrylist.push_back( s );
+        }
+        // #chunreal refactor
+        ent = readdir( m_dir );
+    }
+
+    // make array
+    Chuck_Array4 * array = new Chuck_Array4( true, entrylist.size() );
+    initialize_object( array, m_vmRef->env()->ckt_array );
+    for( int i = 0; i < entrylist.size(); i++ )
+        array->set( i, (t_CKUINT)entrylist[i] );
+    return array;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: read( t_CKINT length )
+// desc: ...
+//-----------------------------------------------------------------------------
+/*Chuck_String * Chuck_IO_File::read( t_CKINT length )
+{
+    // sanity
+    if (!(m_io.is_open())) {
+        EM_error3( "[chuck](via FileIO): cannot read: no file open" );
+        return new Chuck_String( "" );
+    }
+
+    if (m_io.fail()) {
+        EM_error3( "[chuck](via FileIO): cannot read: I/O stream failed" );
+        return new Chuck_String( "" );
+    }
+
+    if ( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot read on a directory" );
+        return new Chuck_String( "" );
+    }
+
+    char buf[length+1];
+    m_io.read( buf, length );
+    buf[m_io.gcount()] = '\0';
+    string s( buf );
+    return new Chuck_String( s );
+}*/
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: readLine()
+// desc: read line
+//-----------------------------------------------------------------------------
+Chuck_String * Chuck_IO_File::readLine()
+{
+    // sanity
+    if( !(m_io.is_open()) ) {
+        EM_error3( "[chuck](via FileIO): cannot readLine: no file open" );
+        return new Chuck_String( "" );
+    }
+
+    if( m_io.fail() ) {
+        EM_error3( "[chuck](via FileIO): cannot readLine: I/O stream failed" );
+        return new Chuck_String( "" );
+    }
+
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot readLine on directory" );
+        return new Chuck_String( "" );
+    }
+
+    string s;
+    getline( m_io, s );
+
+    // chuck str
+    Chuck_String * str = new Chuck_String( s );
+    // initialize | 1.5.0.0 (ge) | added initialize_object
+    initialize_object( str, m_vmRef->env()->ckt_string );
+
+    // note this chuck string still needs to be initialized
+    return str;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: readInt( t_CKINT flags )
+// desc: ...
+//-----------------------------------------------------------------------------
+t_CKINT Chuck_IO_File::readInt( t_CKINT flags )
+{
+    // sanity
+    if( !(m_io.is_open()) ) {
+        EM_error3( "[chuck](via FileIO): cannot readInt: no file open" );
+        return 0;
+    }
+
+    if( m_io.eof() ) {
+        EM_error3( "[chuck](via FileIO): cannot readInt: EOF reached" );
+        return 0;
+    }
+
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot read on directory" );
+        return 0;
+    }
+
+    if( m_io.fail() ) {
+        EM_error3( "[chuck](via FileIO): cannot readInt: I/O stream failed" );
+        return 0;
+    }
+
+    // check mode ASCII vs. binary
+    if( m_flags & TYPE_ASCII )
+    {
+        // ASCII
+        t_CKINT val = 0;
+        m_io >> val;
+        // if (m_io.fail())
+        //     EM_error3( "[chuck](via FileIO): cannot readInt: I/O stream failed" );
+        return val;
+    }
+    else if( m_flags & TYPE_BINARY )
+    {
+        // binary
+        if( flags & Chuck_IO::INT8 || flags & Chuck_IO::UINT8 ) // 1.5.0.1 (ge) added UINT
+        {
+            // unsigned 8-bit
+            uint8_t i; // 1.5.0.1 (ge) changed to int8_t from unsigned char
+            m_io.read( (char *)&i, 1 );
+            if( m_io.gcount() != 1 )
+                EM_error3( "[chuck](via FileIO): cannot readInt: not enough bytes left" );
+            else if( m_io.fail() )
+                EM_error3( "[chuck](via FileIO): cannot readInt: I/O stream failed" );
+            return (t_CKINT)i;
+        }
+        else if( flags & Chuck_IO::INT16 || flags & Chuck_IO::UINT16 ) // 1.5.0.1 (ge) added UINT
+        {
+            // unsigned 16-bit
+            uint16_t i; // 1.5.0.1 (ge) changed to uint16_t from t_CKINT
+            m_io.read( (char *)&i, 2 );
+            if( m_io.gcount() != 2 )
+                EM_error3( "[chuck](via FileIO): cannot readInt: not enough bytes left" );
+            else if( m_io.fail() )
+                EM_error3( "[chuck](via FileIO): cannot readInt: I/O stream failed" );
+            return (t_CKINT)i;
+        }
+        else if( flags & Chuck_IO::INT32 || flags & Chuck_IO::UINT32 ) // 1.5.0.1 (ge) added UINT
+        {
+            // unsigned 32-bit
+            uint32_t i; // 1.5.0.1 (ge) changed to uint32_t from t_CKINT
+            m_io.read( (char *)&i, 4 );
+            if( m_io.gcount() != 4 )
+                EM_error3( "[chuck](via FileIO): cannot readInt: not enough bytes left" );
+            else if( m_io.fail() )
+                EM_error3( "[chuck](via FileIO): cannot readInt: I/O stream failed" );
+            return (t_CKINT)i;
+        }
+        else if( flags & Chuck_IO::INT64 || flags & Chuck_IO::UINT64 ) // 1.5.0.1 (ge) added 64-bit
+        {
+            // unsigned 64-bit
+            uint64_t i; // 1.5.0.1 (ge) added
+            m_io.read( (char *)&i, 8 );
+            if( m_io.gcount() != 8 )
+                EM_error3( "[chuck](via FileIO): cannot readInt: not enough bytes left" );
+            else if( m_io.fail() )
+                EM_error3( "[chuck](via FileIO): cannot readInt: I/O stream failed" );
+            return (t_CKINT)i; // TODO: handle signed vs unsigned
+        }
+        else if( flags & Chuck_IO::SINT8 ) // 1.5.0.1 (ge) added SINT
+        {
+            // signed 8-bit
+            int8_t i;
+            m_io.read( (char *)&i, 1 );
+            if( m_io.gcount() != 1 )
+                EM_error3( "[chuck](via FileIO): cannot readInt: not enough bytes left" );
+            else if( m_io.fail() )
+                EM_error3( "[chuck](via FileIO): cannot readInt: I/O stream failed" );
+            return (t_CKINT)i;
+        }
+        else if( flags & Chuck_IO::SINT16 ) // 1.5.0.1 (ge) added SINT
+        {
+            // signed 16-bit
+            int16_t i;
+            m_io.read( (char *)&i, 2 );
+            if( m_io.gcount() != 2 )
+                EM_error3( "[chuck](via FileIO): cannot readInt: not enough bytes left" );
+            else if( m_io.fail() )
+                EM_error3( "[chuck](via FileIO): cannot readInt: I/O stream failed" );
+            return (t_CKINT)i;
+        }
+        else if( flags & Chuck_IO::SINT32 ) // 1.5.0.1 (ge) added SINT
+        {
+            // signed 32-bit
+            int32_t i;
+            m_io.read( (char *)&i, 4 );
+            if( m_io.gcount() != 4 )
+                EM_error3( "[chuck](via FileIO): cannot readInt: not enough bytes left" );
+            else if( m_io.fail() )
+                EM_error3( "[chuck](via FileIO): cannot readInt: I/O stream failed" );
+            return (t_CKINT)i;
+        }
+        else if( flags & Chuck_IO::SINT64 ) // 1.5.0.1 (ge) added SINT
+        {
+            // signed 64-bit
+            int64_t i;
+            m_io.read( (char *)&i, 4 );
+            if( m_io.gcount() != 8 )
+                EM_error3( "[chuck](via FileIO): cannot readInt: not enough bytes left" );
+            else if( m_io.fail() )
+                EM_error3( "[chuck](via FileIO): cannot readInt: I/O stream failed" );
+            return (t_CKINT)i;
+        }
+        else
+        {
+            EM_error3( "[chuck](via FileIO): readInt error: invalid/unsupported int size flag" );
+            return 0;
+        }
+    }
+    else
+    {
+        EM_error3( "[chuck](via FileIO): readInt error: invalid ASCII/binary flag" );
+        return 0;
+    }
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: readFloat()
+// desc: read next as floating point value; could be ASCII or BINARY
+//-----------------------------------------------------------------------------
+t_CKFLOAT Chuck_IO_File::readFloat()
+{
+    return this->readFloat( Chuck_IO::FLOAT32 );
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: readFloat()
+// desc: read next as floating point value; could be ASCII or BINARY
+//-----------------------------------------------------------------------------
+t_CKFLOAT Chuck_IO_File::readFloat( t_CKINT flags )
+{
+    // sanity
+    if( !(m_io.is_open()) ) {
+        EM_error3( "[chuck](via FileIO): cannot readFloat: no file open" );
+        return 0;
+    }
+    if( m_io.eof() ) {
+        EM_error3( "[chuck](via FileIO): cannot readFloat: EOF reached" );
+        return 0;
+    }
+    if( m_io.fail() ) {
+        EM_error3( "[chuck](via FileIO): cannot readFloat: I/O stream failed" );
+        return 0;
+    }
+    if( m_dir ) {
+        EM_error3( "[chuck](via FileIO): cannot read a directory" );
+        return 0;
+    }
+
+    // check mode
+    if( m_flags & TYPE_ASCII )
+    {
+        // ASCII
+        t_CKFLOAT val = 0;
+        m_io >> val;
+        // if (m_io.fail())
+        //     EM_error3( "[chuck](via FileIO): cannot readFloat: I/O stream failed" );
+        return val;
+
+    }
+    else if( m_flags & TYPE_BINARY )
+    {
+        // 1.5.0.1
+        if( flags & Chuck_IO::FLOAT32 )
+        {
+            float i;
+            m_io.read( (char *)&i, sizeof( float ) );
+            if( m_io.gcount() != sizeof( float ) )
+                EM_error3( "[chuck](via FileIO): cannot readFloat: not enough bytes left" );
+            else if( m_io.fail() )
+                EM_error3( "[chuck](via FileIO): cannot readFloat: I/O stream failed" );
+            return (t_CKFLOAT)i;
+        }
+        else if( flags & Chuck_IO::FLOAT64 )
+        {
+            double i;
+            m_io.read( (char *)&i, sizeof( double ) );
+            if( m_io.gcount() != sizeof( double ) )
+                EM_error3( "[chuck](via FileIO): cannot readFloat: not enough bytes left" );
+            else if( m_io.fail() )
+                EM_error3( "[chuck](via FileIO): cannot readFloat: I/O stream failed" );
+            return (t_CKFLOAT)i;
+        }
+        else
+        {
+            EM_error3( "[chuck](via FileIO): readFloat error: invalid/unsupported datatype size flag" );
+            return 0;
+        }
+    }
+    else
+    {
+        EM_error3( "[chuck](via FileIO): readFloat error: invalid ASCII/binary flag" );
+        return 0;
+    }
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: readString()
+// desc: ...
+//-----------------------------------------------------------------------------
+t_CKBOOL Chuck_IO_File::readString( std::string & str )
+{
+    // set
+    str = "";
+
+    // sanity
+    if( !(m_io.is_open()) ) {
+        EM_error3( "[chuck](via FileIO): cannot readString: no file open" );
+        return FALSE;
+    }
+
+    if( m_io.eof() ) {
+        EM_error3( "[chuck](via FileIO): cannot readString: EOF reached" );
+        return FALSE;
+    }
+
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot read on directory" );
+        return FALSE;
+    }
+
+    if( m_io.fail() ) {
+        EM_error3( "[chuck](via FileIO): cannot readString: I/O stream failed" );
+        return FALSE;
+    }
+
+    if( m_flags & TYPE_ASCII ) {
+        // ASCII
+        m_io >> str;
+        return TRUE;
+    }
+    else if( m_flags & TYPE_BINARY ) {
+        EM_error3( "[chuck](via FileIO): readString not supported for binary mode" );
+        return FALSE;
+    }
+    else {
+        EM_error3( "[chuck](via FileIO): readInt error: invalid ASCII/binary flag" );
+        return FALSE;
+    }
+}
+
+
+
+
+/* (ATODO: doesn't look like asynchronous reads will work)
+
+THREAD_RETURN( THREAD_TYPE Chuck_IO_File::read_thread ) (void * data)
+{
+    // (ATODO: test this)
+    cerr << "In thread" << endl;
+    async_args * args = (async_args *)data;
+    Chuck_String * ret = (Chuck_String *)(args->RETURN);
+    ret = args->fileio_obj->read( args->intArg );
+    cerr << "Called FileIO.read(int)" << endl;
+    args->fileio_obj->m_asyncEvent->broadcast(); // wake up
+    cerr << "Broadcasted on event" << endl;
+    cerr << "Sleeping" << endl;
+    sleep( 5 );
+    cerr << "Woke up" << endl;
+    delete args;
+    cerr << "Deleted args" << endl;
+
+    return (THREAD_RETURN)0;
+}
+
+THREAD_RETURN( THREAD_TYPE Chuck_IO_File::readLine_thread ) (void * data)
+{
+    // not yet implemented
+    return NULL;
+}
+
+THREAD_RETURN( THREAD_TYPE Chuck_IO_File::readInt_thread ) (void * data)
+{
+    // (ATODO: test this)
+    async_args * args = (async_args *)data;
+    Chuck_DL_Return * ret = (Chuck_DL_Return *)(args->RETURN);
+    ret->v_int = args->fileio_obj->readInt( args->intArg );
+    cerr << "Called readInt, set ret->v_int to " << ret->v_int << endl;
+    args->fileio_obj->m_asyncEvent->broadcast(); // wake up
+    cerr << "Called broadcast" << endl;
+    delete args;
+
+    return (THREAD_RETURN)0;
+}
+
+THREAD_RETURN( THREAD_TYPE Chuck_IO_File::readFloat_thread ) (void * data)
+{
+    // not yet implemented
+    return NULL;
+}
+*/
+
+ //-----------------------------------------------------------------------------
+ // name: eof()
+ // desc: end of file?
+ //-----------------------------------------------------------------------------
+t_CKBOOL Chuck_IO_File::eof()
+{
+    if( !m_io.is_open() )
+    {
+        // EM_error3( "[chuck](via FileIO): cannot check eof: no file open" );
+        return TRUE;
+    }
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot check eof on directory" );
+        return TRUE;
+    }
+
+    // return EOF conditions (1.5.0.0: peek() was added since eof() is set
+    // ONLY AFTER an effort is made to read and no more data is left)
+    // https://stackoverflow.com/questions/4533063/how-does-ifstreams-eof-work
+    return m_io.eof() || m_io.fail() || m_io.peek() == EOF;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: write( const std::string & val )
+// desc: ...
+//-----------------------------------------------------------------------------
+void Chuck_IO_File::write( const std::string & val )
+{
+    // sanity
+    if( !(m_io.is_open()) ) {
+        EM_error3( "[chuck](via FileIO): cannot write: no file open" );
+        return;
+    }
+
+    if( m_io.fail() ) {
+        EM_error3( "[chuck](via FileIO): cannot write: I/O stream failed" );
+        return;
+    }
+
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot write to a directory" );
+        return;
+    }
+
+    m_io.write( val.c_str(), val.size() );
+
+    if( m_io.fail() ) { // check both before and after write if stream is ok
+        EM_error3( "[chuck](via FileIO): cannot write: I/O stream failed" );
+    }
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: write( t_CKINT val )
+// desc: ...
+//-----------------------------------------------------------------------------
+void Chuck_IO_File::write( t_CKINT val )
+{
+    // sanity
+    if( !(m_io.is_open()) ) {
+        EM_error3( "[chuck](via FileIO): cannot write: no file open" );
+        return;
+    }
+
+    if( m_io.fail() ) {
+        EM_error3( "[chuck](via FileIO): cannot write: I/O stream failed" );
+        return;
+    }
+
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot write on directory" );
+        return;
+    }
+
+    if( m_flags & TYPE_ASCII ) {
+        m_io << val;
+    }
+    else if( m_flags & TYPE_BINARY ) {
+        m_io.write( (char *)&val, sizeof( t_CKINT ) );
+    }
+    else {
+        EM_error3( "[chuck](via FileIO): write error: invalid ASCII/binary flag" );
+    }
+
+    if( m_io.fail() ) { // check both before and after write if stream is ok
+        EM_error3( "[chuck](via FileIO): cannot write: I/O stream failed" );
+    }
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: write( t_CKINT val )
+// desc: ...
+//-----------------------------------------------------------------------------
+void Chuck_IO_File::write( t_CKINT val, t_CKINT flags )
+{
+    // sanity
+    if( !(m_io.is_open()) ) {
+        EM_error3( "[chuck](via FileIO): cannot write: no file open" );
+        return;
+    }
+
+    if( m_io.fail() ) {
+        EM_error3( "[chuck](via FileIO): cannot write: I/O stream failed" );
+        return;
+    }
+
+    if( m_dir )
+    {
+        EM_error3( "[chuck](via FileIO): cannot write on directory" );
+        return;
+    }
+
+    // check file mode
+    if( m_flags & TYPE_ASCII ) // ASCII mode
+    {
+        // insert into file stream
+        m_io << val;
+    }
+    else if( m_flags & TYPE_BINARY ) // BINARY mode
+    {
+        // check datatype size flags
+        // 1.5.0.1 (ge) modified to new signed/unsigned handling
+        if( flags & Chuck_IO::INT8 || flags & Chuck_IO::UINT8 )
+        {
+            // unsigned 8-bit
+            uint8_t v = val;
+            m_io.write( (char *)&v, 1 );
+        }
+        else if( flags & Chuck_IO::INT16 || flags & Chuck_IO::UINT16 )
+        {
+            // unsigned 16-bit
+            uint16_t v = val;
+            m_io.write( (char *)&v, 2 );
+        }
+        else if( flags & Chuck_IO::INT32 || flags & Chuck_IO::UINT32 )
+        {
+            // unsigned 32-bit
+            uint32_t v = (uint32_t)val;
+            m_io.write( (char *)&v, 4 );
+        }
+        else if( flags & Chuck_IO::INT64 || flags & Chuck_IO::UINT64 )
+        {
+            // unsigned 64-bit
+            uint64_t v = val;
+            m_io.write( (char *)&v, 8 );
+        }
+        else if( flags & Chuck_IO::SINT8 )
+        {
+            // signed 8-bit
+            int8_t v = val;
+            m_io.write( (char *)&v, 1 );
+        }
+        else if( flags & Chuck_IO::SINT16 )
+        {
+            // signed 16-bit
+            int16_t v = val;
+            m_io.write( (char *)&v, 2 );
+        }
+        else if( flags & Chuck_IO::SINT32 )
+        {
+            // signed 32-bit
+            int32_t v = (uint32_t)val;
+            m_io.write( (char *)&v, 4 );
+        }
+        else if( flags & Chuck_IO::SINT64 )
+        {
+            // signed 32-bit
+            int64_t v = val;
+            m_io.write( (char *)&v, 8 );
+        }
+    }
+    else {
+        EM_error3( "[chuck](via FileIO): write error: invalid ASCII/binary flag" );
+    }
+
+    if( m_io.fail() ) { // check both before and after write if stream is ok
+        EM_error3( "[chuck](via FileIO): cannot write: I/O stream failed" );
+    }
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: write( t_CKFLOAT val )
+// desc: write a floating point value
+//-----------------------------------------------------------------------------
+void Chuck_IO_File::write( t_CKFLOAT val )
+{
+    this->write( val, Chuck_IO::FLOAT32 );
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: write( t_CKFLOAT val, t_CKINT flags )
+// desc: write a floating point value; binary mode will heed flags for size
+//-----------------------------------------------------------------------------
+void Chuck_IO_File::write( t_CKFLOAT val, t_CKINT flags )
+{
+    // sanity
+    if( !(m_io.is_open()) ) {
+        EM_error3( "[chuck](via FileIO): cannot write: no file open" );
+        return;
+    }
+    if( m_io.fail() ) {
+        EM_error3( "[chuck](via FileIO): cannot write: I/O stream failed" );
+        return;
+    }
+    if( m_dir ) {
+        EM_error3( "[chuck](via FileIO): cannot write to a directory" );
+        return;
+    }
+
+    // check ASCII or BINARY
+    if( m_flags & TYPE_ASCII )
+    {
+        // insert into stream
+        m_io << val;
+    }
+    else if( m_flags & TYPE_BINARY )
+    {
+        // 1.5.0.1 (ge) add distinction between different float sizes
+        if( flags & Chuck_IO::FLOAT32 )
+        {
+            // 32-bit
+            float v = (float)val;
+            m_io.write( (char *)&v, 4 );
+        }
+        else if( flags & Chuck_IO::FLOAT64 )
+        {
+            // 64-bit
+            double v = (double)val;
+            m_io.write( (char *)&v, 8 );
+        }
+        else
+        {
+            EM_error3( "[chuck](via FileIO): writeFloat error: invalid/unsupport datatype size flag" );
+        }
+    }
+    else
+    {
+        EM_error3( "[chuck](via FileIO): write error: invalid ASCII/binary flag" );
+    }
+
+    if( m_io.fail() ) { // check both before and after write if stream is ok
+        EM_error3( "[chuck](via FileIO): cannot write: I/O stream failed" );
+    }
+}
+
+
+
+
+#ifndef __DISABLE_THREADS__
+// static helper functions for writing asynchronously
+THREAD_RETURN( THREAD_TYPE Chuck_IO_File::writeStr_thread ) (void * data)
+{
+    async_args * args = (async_args *)data;
+    args->fileio_obj->write( args->stringArg );
+    Chuck_Event * e = args->fileio_obj->m_asyncEvent;
+    delete args;
+    e->broadcast_local(); // wake up
+    e->broadcast_global();
+
+    return (THREAD_RETURN)0;
+}
+
+THREAD_RETURN( THREAD_TYPE Chuck_IO_File::writeInt_thread ) (void * data)
+{
+    async_args * args = (async_args *)data;
+    args->fileio_obj->write( args->intArg );
+    args->fileio_obj->m_asyncEvent->broadcast_local(); // wake up
+    args->fileio_obj->m_asyncEvent->broadcast_global();
+    delete args;
+
+    return (THREAD_RETURN)0;
+}
+
+THREAD_RETURN( THREAD_TYPE Chuck_IO_File::writeFloat_thread ) (void * data)
+{
+    async_args * args = (async_args *)data;
+    args->fileio_obj->write( args->floatArg, args->intArg );
+    args->fileio_obj->m_asyncEvent->broadcast_local(); // wake up
+    args->fileio_obj->m_asyncEvent->broadcast_global();
+    delete args;
+
+    return (THREAD_RETURN)0;
+}
+#endif // __DISABLE_THREADS__
+// #endif // __DISABLE_FILEIO__
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: Chuck_IO_Chout()
+// desc: constructor
+//-----------------------------------------------------------------------------
+Chuck_IO_Chout::Chuck_IO_Chout( Chuck_Carrier * carrier )
+{
+    // store
+    carrier->chout = this;
+    // add ref
+    this->add_ref();
+    // zero out
+    m_callback = NULL;
+    // initialize (added 1.3.0.0)
+    initialize_object( this, carrier->env->ckt_chout );
+    // lock so can't be deleted conventionally
+    this->lock();
+}
+
+Chuck_IO_Chout::~Chuck_IO_Chout()
+{
+    m_callback = NULL;
+}
+
+void Chuck_IO_Chout::set_output_callback( void (*fp)(const char *) )
+{
+    m_callback = fp;
+}
+
+t_CKBOOL Chuck_IO_Chout::good()
+{
+    return m_callback != NULL || cout.good();
+}
+
+void Chuck_IO_Chout::close()
+{ /* uh can't do it */
+}
+
+void Chuck_IO_Chout::flush()
+{
+    if( m_callback )
+    {
+        // send to callback
+        m_callback( m_buffer.str().c_str() );
+    }
+    else
+    {
+        // print to cout
+        cout << m_buffer.str().c_str();
+        cout.flush();
+    }
+    // clear buffer
+    m_buffer.str( std::string() );
+}
+
+t_CKINT Chuck_IO_Chout::mode()
+{
+    return 0;
+}
+
+void Chuck_IO_Chout::mode( t_CKINT flag )
+{ }
+
+Chuck_String * Chuck_IO_Chout::readLine()
+{
+    return NULL;
+}
+
+t_CKINT Chuck_IO_Chout::readInt( t_CKINT flags )
+{
+    return 0;
+}
+
+t_CKFLOAT Chuck_IO_Chout::readFloat()
+{
+    return 0;
+}
+
+t_CKFLOAT Chuck_IO_Chout::readFloat( t_CKINT flags )
+{
+    return 0;
+}
+
+t_CKBOOL Chuck_IO_Chout::readString( std::string & str )
+{
+    str = "";
+    return FALSE;
+}
+
+t_CKBOOL Chuck_IO_Chout::eof()
+{
+    return TRUE;
+}
+
+void Chuck_IO_Chout::write( const std::string & val )
+// added 1.3.0.0: the flush
+{
+    m_buffer << val;
+    if( val == "\n" ) flush();
+}
+
+void Chuck_IO_Chout::write( t_CKINT val )
+{
+    m_buffer << val;
+}
+
+void Chuck_IO_Chout::write( t_CKINT val, t_CKINT flags )
+{
+    m_buffer << val;
+}
+
+void Chuck_IO_Chout::write( t_CKFLOAT val )
+{
+    m_buffer << val;
+}
+
+void Chuck_IO_Chout::write( t_CKFLOAT val, t_CKINT flags )
+{
+    // ignore flags for chout
+    m_buffer << val;
+}
+
+
+
+//-----------------------------------------------------------------------------
+// name: Chuck_IO_Cherr()
+// desc: constructor
+//-----------------------------------------------------------------------------
+Chuck_IO_Cherr::Chuck_IO_Cherr( Chuck_Carrier * carrier )
+{
+    // store
+    carrier->cherr = this;
+    // add ref
+    this->add_ref();
+    // zero out
+    m_callback = NULL;
+    // initialize (added 1.3.0.0)
+    initialize_object( this, carrier->env->ckt_cherr );
+    // lock so can't be deleted conventionally
+    this->lock();
+}
+
+Chuck_IO_Cherr::~Chuck_IO_Cherr()
+{
+    m_callback = NULL;
+}
+
+void Chuck_IO_Cherr::set_output_callback( void (*fp)(const char *) )
+{
+    m_callback = fp;
+}
+
+t_CKBOOL Chuck_IO_Cherr::good()
+{
+    return m_callback != NULL || cerr.good();
+}
+
+void Chuck_IO_Cherr::close()
+{ /* uh can't do it */
+}
+
+void Chuck_IO_Cherr::flush()
+{
+    if( m_callback )
+    {
+        // send to callback
+        m_callback( m_buffer.str().c_str() );
+    }
+    else
+    {
+        // send to cerr
+        cerr << m_buffer.str().c_str();
+        cerr.flush();
+    }
+    // clear buffer
+    m_buffer.str( std::string() );
+}
+
+t_CKINT Chuck_IO_Cherr::mode()
+{
+    return 0;
+}
+
+void Chuck_IO_Cherr::mode( t_CKINT flag )
+{ }
+
+Chuck_String * Chuck_IO_Cherr::readLine()
+{
+    return NULL;
+}
+
+t_CKINT Chuck_IO_Cherr::readInt( t_CKINT flags )
+{
+    return 0;
+}
+
+t_CKFLOAT Chuck_IO_Cherr::readFloat()
+{
+    return 0;
+}
+
+t_CKFLOAT Chuck_IO_Cherr::readFloat( t_CKINT flags )
+{
+    return 0;
+}
+
+t_CKBOOL Chuck_IO_Cherr::readString( std::string & str )
+{
+    str = "";
+    return FALSE;
+}
+
+t_CKBOOL Chuck_IO_Cherr::eof()
+{
+    return TRUE;
+}
+
+void Chuck_IO_Cherr::write( const std::string & val )
+{
+    m_buffer << val;
+    flush(); // always flush for cerr | 1.5.0.0 (ge) added
+    // if( val == "\n" ) flush();
+}
+
+void Chuck_IO_Cherr::write( t_CKINT val )
+{
+    m_buffer << val;
+    flush(); // always flush for cerr | 1.5.0.0 (ge) added
+}
+
+void Chuck_IO_Cherr::write( t_CKINT val, t_CKINT flags )
+{
+    m_buffer << val;
+    flush(); // always flush for cerr | 1.5.0.0 (ge) added
+}
+
+void Chuck_IO_Cherr::write( t_CKFLOAT val )
+{
+    m_buffer << val;
+    flush(); // always flush for cerr | 1.5.0.0 (ge) added
+}
+
+void Chuck_IO_Cherr::write( t_CKFLOAT val, t_CKINT flags )
+{
+    // ignore flags for cherr
+    m_buffer << val;
+    flush(); // always flush for cerr | 1.5.0.0 (ge) added
+}
+
+
+
+
 #ifndef __DISABLE_SERIAL__
 // available baud rates
 const t_CKUINT Chuck_IO_Serial::CK_BAUD_2400   = 2400;
@@ -2932,17 +4451,17 @@ Chuck_IO_Serial::~Chuck_IO_Serial()
 {
     m_do_read_thread = FALSE;
     m_do_write_thread = FALSE;
-    SAFE_DELETE(m_read_thread);
+    CK_SAFE_DELETE(m_read_thread);
     if( m_event_buffer )
         m_vmRef->destroy_event_buffer( m_event_buffer );
 
     close();
 
-    SAFE_DELETE(m_io_buf);
+    CK_SAFE_DELETE(m_io_buf);
     m_io_buf_max = 0;
     m_io_buf_pos = m_io_buf_available = 0;
 
-    SAFE_DELETE(m_tmp_buf);
+    CK_SAFE_DELETE(m_tmp_buf);
     m_tmp_buf_max = 0;
 
     s_serials.remove(this);
@@ -2950,7 +4469,7 @@ Chuck_IO_Serial::~Chuck_IO_Serial()
 
 t_CKBOOL Chuck_IO_Serial::ready()
 {
-#ifndef __PLATFORM_WIN32__
+#ifndef __PLATFORM_WINDOWS__
     struct pollfd pollfds;
     pollfds.fd = m_fd;
     pollfds.events = POLLIN;
@@ -3016,7 +4535,7 @@ t_CKBOOL Chuck_IO_Serial::open( const std::string & path, t_CKINT flags, t_CKUIN
 
     m_cfd = fdopen(fd, "a+");
     m_iomode = MODE_ASYNC;
-#ifndef WIN32
+#ifndef __PLATFORM_WINDOWS__
     fcntl(m_fd, F_SETFL, O_NONBLOCK);
 #endif
     m_eof = FALSE;
@@ -3039,7 +4558,7 @@ void Chuck_IO_Serial::close()
     else
     {
         m_do_exit = TRUE;
-#ifdef WIN32
+#ifdef __PLATFORM_WINDOWS__
         m_read_thread->wait(-1, TRUE);
         close_int();
 #else
@@ -3111,7 +4630,7 @@ t_CKINT Chuck_IO_Serial::readInt( t_CKINT flags )
 
     if( m_flags & Chuck_IO::TYPE_BINARY )
     {
-        if( flags & INT8 )
+        if( flags & Chuck_IO::INT8 || flags & Chuck_IO::UINT8 ) // 1.5.0.1 (ge) added UINT
         {
             uint8_t byte = 0;
             if(!fread(&byte, 1, 1, m_cfd))
@@ -3119,7 +4638,7 @@ t_CKINT Chuck_IO_Serial::readInt( t_CKINT flags )
 
             i = byte;
         }
-        else if( flags & INT16 )
+        else if( flags & Chuck_IO::INT16 || flags & Chuck_IO::UINT16 ) // 1.5.0.1 (ge) added UINT
         {
             uint16_t word = 0;
             if(!fread(&word, 2, 1, m_cfd))
@@ -3127,13 +4646,53 @@ t_CKINT Chuck_IO_Serial::readInt( t_CKINT flags )
 
             i = word;
         }
-        else if( flags & INT32 )
+        else if( flags & Chuck_IO::INT32 || flags & Chuck_IO::UINT32 ) // 1.5.0.1 (ge) added UINT
         {
             uint32_t dword = 0;
             if(!fread(&dword, 4, 1, m_cfd))
                 EM_log(CK_LOG_WARNING, "(Serial.readInt): error: read failed");
 
             i = dword;
+        }
+        else if( flags & Chuck_IO::INT64 || flags & Chuck_IO::UINT64 ) // 1.5.0.1 (ge) added UINT and 64-bit
+        {
+            uint64_t val = 0;
+            if(!fread(&val, 8, 1, m_cfd))
+                EM_log(CK_LOG_WARNING, "(Serial.readInt): error: read failed");
+
+            i = val;
+        }
+        else if( flags & Chuck_IO::SINT8 ) // 1.5.0.1 (ge) added SINT
+        {
+            int8_t byte = 0;
+            if(!fread(&byte, 1, 1, m_cfd))
+                EM_log(CK_LOG_WARNING, "(Serial.readInt): error: read failed");
+
+            i = byte;
+        }
+        else if( flags & Chuck_IO::SINT16 ) // 1.5.0.1 (ge) added SINT
+        {
+            int16_t word = 0;
+            if(!fread(&word, 2, 1, m_cfd))
+                EM_log(CK_LOG_WARNING, "(Serial.readInt): error: read failed");
+
+            i = word;
+        }
+        else if( flags & Chuck_IO::SINT32 ) // 1.5.0.1 (ge) added SINT
+        {
+            int32_t dword = 0;
+            if(!fread(&dword, 4, 1, m_cfd))
+                EM_log(CK_LOG_WARNING, "(Serial.readInt): error: read failed");
+
+            i = dword;
+        }
+        else if( flags & Chuck_IO::SINT64 ) // 1.5.0.1 (ge) added SINT and 64-bit
+        {
+            int64_t val = 0;
+            if(!fread(&val, 8, 1, m_cfd))
+                EM_log(CK_LOG_WARNING, "(Serial.readInt): error: read failed");
+
+            i = val;
         }
     }
     else
@@ -3145,7 +4704,13 @@ t_CKINT Chuck_IO_Serial::readInt( t_CKINT flags )
     return i;
 }
 
-t_CKFLOAT Chuck_IO_Serial::readFloat()
+t_CKFLOAT Chuck_IO_Serial::readFloat( )
+{
+    // 1.5.0.1 (ge) redirect
+    return readFloat( Chuck_IO::FLOAT32 );
+}
+
+t_CKFLOAT Chuck_IO_Serial::readFloat( t_CKINT flags )
 {
     if( !good() )
     {
@@ -3163,8 +4728,26 @@ t_CKFLOAT Chuck_IO_Serial::readFloat()
 
     if( m_flags & Chuck_IO::TYPE_BINARY )
     {
-        if(!fread(&f, 4, 1, m_cfd))
-            EM_log(CK_LOG_WARNING, "(Serial.readFloat): error: read failed");
+        // check size
+        if( flags & Chuck_IO::FLOAT32 )
+        {
+            float v = 0.0f;
+            if(!fread(&v, 4, 1, m_cfd))
+                EM_log(CK_LOG_WARNING, "(Serial.readFloat): error: read failed");
+            f = v;
+        }
+        else if( flags & Chuck_IO::FLOAT64 )
+        {
+            double v = 0.0;
+            if( !fread(&v, 8, 1, m_cfd) )
+                EM_log(CK_LOG_WARNING, "(Serial.readFloat): error: read failed");
+            f = v;
+        }
+        else
+        {
+            // error message
+            EM_log(CK_LOG_WARNING, "(Serial.readFloat): invalid or unsupported size flag");
+        }
     }
     else
     {
@@ -3201,7 +4784,7 @@ t_CKBOOL Chuck_IO_Serial::readString( std::string & str )
         return FALSE;
     }
 
-    str = (char *) m_tmp_buf;
+    str = (char *)  m_tmp_buf;
 
     return TRUE;
 }
@@ -3234,7 +4817,7 @@ Chuck_String * Chuck_IO_Serial::readLine()
     }
 
     Chuck_String * str = new Chuck_String;
-    initialize_object(str, m_vmRef->env()->t_string);
+    initialize_object(str, m_vmRef->env()->ckt_string);
 
     str->set( string((char *)m_tmp_buf) );
 
@@ -3292,11 +4875,11 @@ void Chuck_IO_Serial::write( const std::string & val )
 
 void Chuck_IO_Serial::write( t_CKINT val )
 {
-    write( val, 4 );
+    write( val, Chuck_IO::INT32 );
 }
 
 
-void Chuck_IO_Serial::write( t_CKINT val, t_CKINT size )
+void Chuck_IO_Serial::write( t_CKINT val, t_CKINT flags )
 {
     if( !good() )
     {
@@ -3304,9 +4887,11 @@ void Chuck_IO_Serial::write( t_CKINT val, t_CKINT size )
         return;
     }
 
-    if(!(size == 1 || size == 2 || size == 4 || size == 8))
+    // check flags
+    if( (flags & Chuck_IO::INT8 ) || (flags & Chuck_IO::INT16) ||
+        (flags & Chuck_IO::INT32) || (flags & Chuck_IO::INT64) )
     {
-        EM_log(CK_LOG_WARNING, "(Serial.write): warning: invalid int size %li, ignoring write request", size);
+        EM_log( CK_LOG_WARNING, "(Serial.write): warning: invalid int size flag, ignoring write request" );
         return;
     }
 
@@ -3317,7 +4902,7 @@ void Chuck_IO_Serial::write( t_CKINT val, t_CKINT size )
         if( m_flags & Chuck_IO::TYPE_ASCII )
         {
             // TODO: don't use m_tmp_buf (thread safety?)
-#ifdef WIN32
+#ifdef __PLATFORM_WINDOWS__
             _snprintf((char *)m_tmp_buf, m_tmp_buf_max, "%li", (long)val);
             m_tmp_buf[m_tmp_buf_max - 1] = '\0'; // force NULL terminator -- see http://www.di-mgt.com.au/cprog.html#snprintf
 #else
@@ -3338,11 +4923,23 @@ void Chuck_IO_Serial::write( t_CKINT val, t_CKINT size )
         }
         else
         {
-            char * buf = (char *)&val;
+            // 1.5.0.1 (ge) check and handle individually
+            uint8_t v8 = (uint8_t)val;
+            uint16_t v16 = (uint16_t)val;
+            uint32_t v32 = (uint32_t)val;
+            uint64_t v64 = (uint64_t)val;
+            char * buf = NULL;
+            t_CKINT size = 0;
 
-            // assume 4-byte int
+            if( flags & Chuck_IO::INT8 ) { buf = (char *)&v8; size = 1; }
+            else if( flags & Chuck_IO::INT16 ) { buf = (char *)&v16; size = 2; }
+            else if( flags & Chuck_IO::INT32 ) { buf = (char *)&v32; size = 4; }
+            else if( flags & Chuck_IO::INT64 ) { buf = (char *)&v64; size = 8; }
+            // other size values should be caught above
+
+            // put into write buffer
             for(int i = 0; i < size; i++)
-                m_writeBuffer.put(buf[i]);
+                m_writeBuffer.put( buf[i] );
 
             Request r;
             r.m_type = TYPE_WRITE;
@@ -3361,14 +4958,38 @@ void Chuck_IO_Serial::write( t_CKINT val, t_CKINT size )
         }
         else
         {
-            // assume 4-byte int
-            char * buf = (char *) &val;
-            fwrite(buf, 1, size, m_cfd);
+            // 1.5.0.1 (ge) check and handle individually
+            if( flags & Chuck_IO::INT8 )
+            {
+                uint8_t v = (uint8_t)val;
+                fwrite( (char*)&v, 1, 1, m_cfd );
+            }
+            else if( flags & Chuck_IO::INT16 )
+            {
+                uint16_t v = (uint16_t)val;
+                fwrite( (char*)&v, 1, 2, m_cfd );
+            }
+            else if( flags & Chuck_IO::INT32 )
+            {
+                uint32_t v = (uint32_t)val;
+                fwrite( (char*)&v, 1, 4, m_cfd );
+            }
+            else if( flags & Chuck_IO::INT64 )
+            {
+                uint64_t v = (uint64_t)val;
+                fwrite( (char*)&v, 1, 8, m_cfd );
+            }
+            // other size values should be caught above
         }
     }
 }
 
 void Chuck_IO_Serial::write( t_CKFLOAT val )
+{
+    this->write( val, Chuck_IO::FLOAT32 );
+}
+
+void Chuck_IO_Serial::write( t_CKFLOAT val, t_CKINT flags )
 {
     if( !good() )
     {
@@ -3382,7 +5003,7 @@ void Chuck_IO_Serial::write( t_CKFLOAT val )
 
         if( m_flags & Chuck_IO::TYPE_ASCII )
         {
-#ifdef WIN32
+#ifdef __PLATFORM_WINDOWS__
             _snprintf((char *)m_tmp_buf, m_tmp_buf_max, "%f", val);
             m_tmp_buf[m_tmp_buf_max - 1] = '\0'; // force NULL terminator -- see http://www.di-mgt.com.au/cprog.html#snprintf
 #else
@@ -3404,11 +5025,26 @@ void Chuck_IO_Serial::write( t_CKFLOAT val )
         }
         else
         {
-            char * buf = (char *) &val;
-
-            // assume 4-byte float
-            for(int i = 0; i < 4; i++)
-                m_writeBuffer.put(buf[i]);
+            // 1.5.0.1 (ge) check datatype size flag
+            if( flags & Chuck_IO::FLOAT32 )
+            {
+                float v = (float)val;
+                char * buf = (char *)&v;
+                for(int i = 0; i < sizeof(v); i++)
+                    m_writeBuffer.put(buf[i]);
+            }
+            else if( flags & Chuck_IO::FLOAT64 )
+            {
+                double v = (double)val;
+                char * buf = (char *)&v;
+                for(int i = 0; i < sizeof(v); i++)
+                    m_writeBuffer.put(buf[i]);
+            }
+            else
+            {
+                // error message
+                EM_log(CK_LOG_WARNING, "(Serial.write): invalid or unsupported size flag");
+            }
 
             Request r;
             r.m_type = TYPE_WRITE;
@@ -3425,12 +5061,28 @@ void Chuck_IO_Serial::write( t_CKFLOAT val )
         {
             fprintf( m_cfd, "%f", val );
         }
-        else
+        else // BINARY
         {
-            // assume 4-byte int
-            char * buf = (char *) &val;
-            // 1.5.0.0 (ge) | fixed from size to sizeof
-            fwrite(buf, 1, sizeof(val), m_cfd);
+            // 1.5.0.1 (ge) check datatype size flag
+            if( flags & Chuck_IO::FLOAT32 )
+            {
+                float v = (float)val;
+                char * buf = (char *)&v;
+                for(int i = 0; i < sizeof(v); i++)
+                    m_writeBuffer.put(buf[i]);
+            }
+            else if( flags & Chuck_IO::FLOAT64 )
+            {
+                double v = (double)val;
+                char * buf = (char *)&v;
+                for(int i = 0; i < sizeof(v); i++)
+                    m_writeBuffer.put(buf[i]);
+            }
+            else
+            {
+                // error message
+                EM_log(CK_LOG_WARNING, "(Serial.write): invalid or unsupported size flag");
+            }
         }
     }
 }
@@ -3483,7 +5135,7 @@ void Chuck_IO_Serial::start_read_thread()
     if(m_read_thread == NULL)
     {
         m_read_thread = new XThread();
-#ifdef WIN32
+#ifdef __PLATFORM_WINDOWS__
         m_read_thread->start((unsigned int (__stdcall *)(void*))shell_read_cb, this);
 #else
         m_read_thread->start(shell_read_cb, this);
@@ -3586,7 +5238,7 @@ Chuck_Array * Chuck_IO_Serial::getBytes()
        r.m_status == Request::RQ_STATUS_SUCCESS)
     {
         arr = (Chuck_Array *) r.m_val;
-        initialize_object(arr, m_vmRef->env()->t_array);
+        initialize_object(arr, m_vmRef->env()->ckt_array);
         m_asyncResponses.get(r);
     }
 
@@ -3609,7 +5261,7 @@ Chuck_Array * Chuck_IO_Serial::getInts()
        r.m_type == TYPE_INT && r.m_status == Request::RQ_STATUS_SUCCESS)
     {
         arr = (Chuck_Array *) r.m_val;
-        initialize_object(arr, m_vmRef->env()->t_array);
+        initialize_object(arr, m_vmRef->env()->ckt_array);
         m_asyncResponses.get(r);
     }
 
@@ -3632,7 +5284,7 @@ Chuck_Array * Chuck_IO_Serial::getFloats()
        r.m_type == TYPE_FLOAT && r.m_status == Request::RQ_STATUS_SUCCESS)
     {
         arr = (Chuck_Array *) r.m_val;
-        initialize_object(arr, m_vmRef->env()->t_array);
+        initialize_object(arr, m_vmRef->env()->ckt_array);
         m_asyncResponses.get(r);
     }
 
@@ -3664,7 +5316,7 @@ Chuck_String * Chuck_IO_Serial::getString()
 
 t_CKBOOL Chuck_IO_Serial::get_buffer(t_CKINT timeout_ms)
 {
-#ifndef WIN32
+#ifndef __PLATFORM_WINDOWS__
     fd_set fds;
     FD_ZERO(&fds);
     FD_SET(m_fd, &fds);
@@ -3821,7 +5473,7 @@ error:
     r.m_val = 0;
     r.m_status = Chuck_IO_Serial::Request::RQ_STATUS_FAILURE;
 
-#ifdef WIN32
+#ifdef __PLATFORM_WINDOWS__
     HANDLE hFile = (HANDLE) _get_osfhandle(m_fd);
     DWORD error;
     ClearCommError(hFile, &error, NULL);
@@ -3882,7 +5534,7 @@ t_CKBOOL Chuck_IO_Serial::handle_float_ascii(Chuck_IO_Serial::Request & r)
     return TRUE;
 
 error:
-    SAFE_DELETE(array);
+    CK_SAFE_DELETE(array);
     r.m_val = 0;
     r.m_status = Chuck_IO_Serial::Request::RQ_STATUS_FAILURE;
 
@@ -3894,7 +5546,7 @@ t_CKBOOL Chuck_IO_Serial::handle_int_ascii(Chuck_IO_Serial::Request & r)
     t_CKINT val = 0;
     int numRead = 0;
     Chuck_Array4 * array = new Chuck_Array4(FALSE, 0);
-    initialize_object( array, m_vmRef->env()->t_array ); // 1.5.0.0 (ge) added
+    initialize_object( array, m_vmRef->env()->ckt_array ); // 1.5.0.0 (ge) added
     for(int i = 0; i < r.m_num; i++)
     {
         t_CKUINT len = 0;
@@ -3933,7 +5585,7 @@ t_CKBOOL Chuck_IO_Serial::handle_int_ascii(Chuck_IO_Serial::Request & r)
     return TRUE;
 
 error:
-    SAFE_DELETE(array);
+    CK_SAFE_DELETE(array);
     r.m_val = 0;
     r.m_status = Chuck_IO_Serial::Request::RQ_STATUS_FAILURE;
 
@@ -3944,7 +5596,7 @@ t_CKBOOL Chuck_IO_Serial::handle_byte(Chuck_IO_Serial::Request & r)
 {
     // binary
     int size = 1;
-    int num = r.m_num;
+    t_CKUINT num = r.m_num;
     t_CKUINT val = 0;
 
     if(size*num > m_tmp_buf_max)
@@ -3967,7 +5619,7 @@ t_CKBOOL Chuck_IO_Serial::handle_byte(Chuck_IO_Serial::Request & r)
     else
     {
         Chuck_Array4 * array = new Chuck_Array4(FALSE, r.m_num);
-        initialize_object( array, m_vmRef->env()->t_array ); // 1.5.0.0 (ge) added
+        initialize_object( array, m_vmRef->env()->ckt_array ); // 1.5.0.0 (ge) added
         for(int i = 0; i < r.m_num; i++)
         {
             array->set(i, m_tmp_buf[i]);
@@ -3994,7 +5646,7 @@ t_CKBOOL Chuck_IO_Serial::handle_float_binary(Chuck_IO_Serial::Request & r)
     int size = 4; // SPENCERTODO: should these be based on arch (64 bit)?
     assert(sizeof(t_CKSINGLE) == 4);
 
-    int num = r.m_num;
+    t_CKUINT num = r.m_num;
 
     if(size*num > m_tmp_buf_max)
     {
@@ -4028,7 +5680,7 @@ t_CKBOOL Chuck_IO_Serial::handle_int_binary(Chuck_IO_Serial::Request & r)
     // binary
     int size = 4; // SPENCERTODO: should these be based on arch (64 bit)?
 
-    int num = r.m_num;
+    t_CKUINT num = r.m_num;
 
     if(size*num > m_tmp_buf_max)
     {
@@ -4044,7 +5696,7 @@ t_CKBOOL Chuck_IO_Serial::handle_int_binary(Chuck_IO_Serial::Request & r)
     uint32_t * m_ints = (uint32_t *) m_tmp_buf;
 
     Chuck_Array4 * array = new Chuck_Array4(FALSE, r.m_num);
-    initialize_object( array, m_vmRef->env()->t_array ); // 1.5.0.0 (ge) added
+    initialize_object( array, m_vmRef->env()->ckt_array ); // 1.5.0.0 (ge) added
     for(int i = 0; i < r.m_num; i++)
     {
         array->set(i, m_ints[i]);
@@ -4064,7 +5716,7 @@ void Chuck_IO_Serial::read_cb()
     m_do_read_thread = TRUE;
 
     m_write_thread = new XThread;
-#ifdef WIN32
+#ifdef __PLATFORM_WINDOWS__
     m_read_thread->start((unsigned int (__stdcall *)(void*))shell_write_cb, this);
 #else
     m_write_thread->start(shell_write_cb, this);
@@ -4144,7 +5796,7 @@ void Chuck_IO_Serial::read_cb()
         if(m_asyncResponses.numElements() > 0)
             queue_broadcast(m_event_buffer);
 
-        usleep(100);
+        ck_usleep(100);
     }
 
     m_write_thread->wait(-1);
@@ -4186,7 +5838,7 @@ void Chuck_IO_Serial::write_cb()
         }
 
         // todo: replace with semaphore?
-        usleep(100);
+        ck_usleep(100);
     }
 
     delete[] tmp_writethread_buf;
@@ -4196,7 +5848,7 @@ void Chuck_IO_Serial::write_cb()
 
 t_CKBOOL Chuck_IO_Serial::setBaudRate( t_CKUINT rate )
 {
-#ifndef WIN32
+#ifndef __PLATFORM_WINDOWS__
     // set serial IO baud rate
     struct termios tios;
     tcgetattr(m_fd, &tios);
@@ -4293,7 +5945,7 @@ error:
 
 t_CKUINT Chuck_IO_Serial::getBaudRate()
 {
-#ifndef WIN32
+#ifndef __PLATFORM_WINDOWS__
     // set serial IO baud rate
     struct termios tios;
     tcgetattr(m_fd, &tios);
@@ -4529,12 +6181,12 @@ CK_DLL_SFUN( serialio_list )
 
     // ISSUE: 64-bit
     Chuck_Array4 * array = new Chuck_Array4(TRUE, 0);
-    initialize_object( array, SHRED->vm_ref->env()->t_array );
+    initialize_object( array, SHRED->vm_ref->env()->ckt_array );
 
     for(vector<string>::iterator i = devices.begin(); i != devices.end(); i++)
     {
         Chuck_String * name = new Chuck_String(*i);
-        initialize_object(name, SHRED->vm_ref->env()->t_string);
+        initialize_object(name, SHRED->vm_ref->env()->ckt_string);
         array->push_back((t_CKUINT) name);
     }
 

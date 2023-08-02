@@ -66,7 +66,7 @@ CK_DLL_SFUN( machine_refcount_impl);
 
 //-----------------------------------------------------------------------------
 // name: machine_query()
-// desc: query entry point
+// desc: query entry point for Machine class library
 //-----------------------------------------------------------------------------
 DLL_QUERY machine_query( Chuck_DL_Query * QUERY )
 {
@@ -145,20 +145,20 @@ DLL_QUERY machine_query( Chuck_DL_Query * QUERY )
     // add eval
     //! evaluate a string as ChucK code, compiling it and adding it to the the virtual machine
     QUERY->add_sfun( QUERY, machine_eval_impl, "int", "eval" );
-    QUERY->doc_func( QUERY, "evaluate a string as ChucK code, compiling it and spork it as a child shred of the current shred." );
+    QUERY->doc_func( QUERY, "evaluate a string as ChucK code, compile it and immediately spork it as a new independent shred, and automatically yield the current shred to give the new shred a chance to run, without advancing time." );
     QUERY->add_arg( QUERY, "string", "code" );
 
     // add eval
     //! evaluate a string as ChucK code, compiling it and adding it to the the virtual machine
     QUERY->add_sfun( QUERY, machine_eval2_impl, "int", "eval" );
-    QUERY->doc_func( QUERY, "evaluate a string as ChucK code, with optional arguments (bundled in 'args' as \"ARG1:ARG2:...\", compiling it and spork it as a child shred of the current shred." );
+    QUERY->doc_func( QUERY, "evaluate a string as ChucK code, with arguments (bundled in 'args' as \"ARG1:ARG2:...\", compile it and immediately spork it as a new independent shred, and automatically yield the current shred to give the new shred a chance to run, without advancing time." );
     QUERY->add_arg( QUERY, "string", "code" );
     QUERY->add_arg( QUERY, "string", "args" );
 
     // add eval
     //! evaluate a string as ChucK code, compiling it and adding it to the the virtual machine
     QUERY->add_sfun( QUERY, machine_eval3_impl, "int", "eval" );
-    QUERY->doc_func( QUERY, "evaluate a string as ChucK code, with optional arguments (bundled in 'args' as \"ARG1:ARG2:...\", compiling it and sporking 'count' instances as a child shreds of the current shred." );
+    QUERY->doc_func( QUERY, "evaluate a string as ChucK code, with optional arguments (bundled in 'args' as \"ARG1:ARG2:...\", compile it and immediately spork 'count' independent shreds; and automatically yield the current shred to give all new shreds a chance to run, without advancing time." );
     QUERY->add_arg( QUERY, "string", "code" );
     QUERY->add_arg( QUERY, "string", "args" );
     QUERY->add_arg( QUERY, "int", "count" );
@@ -207,9 +207,11 @@ DLL_QUERY machine_query( Chuck_DL_Query * QUERY )
 
     // add examples
     QUERY->add_ex( QUERY, "machine/eval.ck" );
+    QUERY->add_ex( QUERY, "machine/eval-global.ck" );
     QUERY->add_ex( QUERY, "machine/intsize.ck" );
     QUERY->add_ex( QUERY, "machine/is-realtime.ck" );
     QUERY->add_ex( QUERY, "machine/machine-shred.ck" );
+    QUERY->add_ex( QUERY, "machine/version.ck" );
     QUERY->add_ex( QUERY, "book/digital-artists/chapter9/DrumMachine" );
     QUERY->add_ex( QUERY, "book/digital-artists/chapter9/SmartMandolin/initialize.ck" );
 
@@ -251,11 +253,13 @@ t_CKUINT machine_realtime( Chuck_VM * vm )
 // desc: evaluate a string as ChucK code, compiling it and adding it to the the virtual machine
 //-----------------------------------------------------------------------------
 t_CKUINT machine_eval( Chuck_String * codeStr, Chuck_String * argsTogether,
-                       t_CKINT count, Chuck_VM * vm )
+                       t_CKINT count, Chuck_VM_Shred * evaluator )
 {
     // check if null
     if( codeStr == NULL ) return FALSE;
 
+    // get VM
+    Chuck_VM * vm = evaluator->vm_ref;
     // get ChucK instance
     ChucK * chuck = vm->carrier()->chuck;
     // get code as string
@@ -263,7 +267,13 @@ t_CKUINT machine_eval( Chuck_String * codeStr, Chuck_String * argsTogether,
     // get args, if there
     string args = argsTogether ? argsTogether->str() : "";
 
-    return chuck->compileCode( code, args, count );
+    // compile and spork | 1.5.0.5 (ge) immediate=TRUE
+    t_CKUINT retval = chuck->compileCode( code, args, count, TRUE );
+    // automatically yield current shred to let new code run | 1.5.0.5 (ge)
+    evaluator->yield();
+
+    // return
+    return retval;
 }
 
 
@@ -275,7 +285,7 @@ static Chuck_Compiler * the_compiler = NULL;
 static proc_msg_func the_func = NULL;
 //-----------------------------------------------------------------------------
 // name: machine_init()
-// desc: ...
+// desc: initialize Machine class library
 //-----------------------------------------------------------------------------
 t_CKBOOL machine_init( Chuck_Compiler * compiler, proc_msg_func proc_msg )
 {
@@ -291,7 +301,7 @@ CK_DLL_SFUN( machine_add_impl )
     const char * v = GET_CK_STRING(ARGS)->str().c_str();
     Net_Msg msg;
 
-    msg.type = MSG_ADD;
+    msg.type = CK_MSG_ADD;
     strcpy( msg.buffer, v );
     RETURN->v_int = (int)the_func( SHRED->vm_ref, the_compiler, &msg, TRUE, NULL );
 }
@@ -302,7 +312,7 @@ CK_DLL_SFUN( machine_remove_impl )
     t_CKINT v = GET_CK_INT(ARGS);
     Net_Msg msg;
 
-    msg.type = MSG_REMOVE;
+    msg.type = CK_MSG_REMOVE;
     msg.param = v;
     RETURN->v_int = (int)the_func( SHRED->vm_ref, the_compiler, &msg, TRUE, NULL );
 }
@@ -314,7 +324,7 @@ CK_DLL_SFUN( machine_replace_impl )
     const char * v2 = GET_NEXT_STRING(ARGS)->str().c_str();
     Net_Msg msg;
 
-    msg.type = MSG_REPLACE;
+    msg.type = CK_MSG_REPLACE;
     msg.param = v;
     strcpy( msg.buffer, v2 );
     RETURN->v_int = (int)the_func( SHRED->vm_ref, the_compiler, &msg, TRUE, NULL );
@@ -325,7 +335,7 @@ CK_DLL_SFUN( machine_status_impl )
 {
     Net_Msg msg;
 
-    msg.type = MSG_STATUS;
+    msg.type = CK_MSG_STATUS;
     RETURN->v_int = (int)the_func( SHRED->vm_ref, the_compiler, &msg, TRUE, NULL );
 }
 
@@ -352,7 +362,7 @@ CK_DLL_SFUN( machine_silent_impl )
 CK_DLL_SFUN( machine_shreds_impl )
 {
     Chuck_Array4 *array = new Chuck_Array4(FALSE);
-    initialize_object(array, SHRED->vm_ref->env()->t_array);
+    initialize_object(array, SHRED->vm_ref->env()->ckt_array);
     array->clear();
 
     Chuck_VM_Status status;
@@ -371,7 +381,7 @@ CK_DLL_SFUN( machine_eval_impl )
     // get arguments
     Chuck_String * code = GET_NEXT_STRING(ARGS);
 
-    RETURN->v_int = machine_eval( code, NULL, 1, VM );
+    RETURN->v_int = machine_eval( code, NULL, 1, SHRED );
 }
 
 CK_DLL_SFUN( machine_eval2_impl )
@@ -380,7 +390,7 @@ CK_DLL_SFUN( machine_eval2_impl )
     Chuck_String * code = GET_NEXT_STRING(ARGS);
     Chuck_String * argsTogether = GET_NEXT_STRING(ARGS);
 
-    RETURN->v_int = machine_eval( code, argsTogether, 1, VM );
+    RETURN->v_int = machine_eval( code, argsTogether, 1, SHRED );
 }
 
 CK_DLL_SFUN( machine_eval3_impl )
@@ -390,7 +400,7 @@ CK_DLL_SFUN( machine_eval3_impl )
     Chuck_String * argsTogether = GET_NEXT_STRING(ARGS);
     t_CKINT count = GET_NEXT_INT(ARGS);
 
-    RETURN->v_int = machine_eval( code, argsTogether, count, VM );
+    RETURN->v_int = machine_eval( code, argsTogether, count, SHRED );
 }
 
 CK_DLL_SFUN( machine_version_impl )
@@ -400,7 +410,7 @@ CK_DLL_SFUN( machine_version_impl )
     // make chuck string
     Chuck_String * s = new Chuck_String( vs );
     // initialize
-    initialize_object(s, VM->carrier()->env->t_string );
+    initialize_object(s, VM->carrier()->env->ckt_string );
     // return
     RETURN->v_string = s;
 }

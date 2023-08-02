@@ -239,7 +239,7 @@ t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
     msg->type = msg_type;
     
     // null reply so that VM will delete for us when it's done
-    msg->reply = ( ck_msg_func )NULL;
+    msg->reply_cb = ( ck_msg_func )NULL;
     
     if (x->chuck->vm()->globals_manager()->execute_chuck_msg_with_globals(msg)) {
         return MAX_ERR_NONE;
@@ -388,7 +388,7 @@ t_max_err ck_remove(t_ck *x, t_symbol *s, long argc, t_atom *argv) {
 
         if (argv->a_type == A_LONG) {
             long shred_id = atom_getlong(argv);
-            msg->type = MSG_REMOVE;
+            msg->type = CK_MSG_REMOVE;
             msg->param = shred_id;
 
         } else if (argv->a_type == A_SYM) {
@@ -396,21 +396,21 @@ t_max_err ck_remove(t_ck *x, t_symbol *s, long argc, t_atom *argv) {
             t_symbol* cmd = atom_getsym(argv);
 
             if (cmd == gensym("all")) {
-                msg->type = MSG_REMOVEALL;
+                msg->type = CK_MSG_REMOVEALL;
             
             } else if (cmd == gensym("last")) {
-                msg->type = MSG_REMOVE;
+                msg->type = CK_MSG_REMOVE;
                 msg->param = 0xffffffff;
             }
         }
 
     } else {
         // default to last
-        msg->type = MSG_REMOVE;
+        msg->type = CK_MSG_REMOVE;
         msg->param = 0xffffffff;
     }
 
-    msg->reply = ( ck_msg_func )0;
+    msg->reply_cb = ( ck_msg_func )0;
     x->chuck->vm()->queue_msg( msg, 1 );
     return MAX_ERR_NONE;
 }
@@ -445,10 +445,10 @@ t_max_err ck_reset(t_ck* x)
     // post("# of vms: %d", x->chuck->numVMs());
     
     // create a msg asking to clear the globals
-    err = ck_send_chuck_vm_msg(x, MSG_CLEARGLOBALS);
+    err = ck_send_chuck_vm_msg(x, CK_MSG_CLEARGLOBALS);
 
     // create a msg asking to clear the VM
-    err = ck_send_chuck_vm_msg(x, MSG_CLEARVM);
+    err = ck_send_chuck_vm_msg(x, CK_MSG_CLEARVM);
 
     if (err == MAX_ERR_GENERIC) {
         error("[ck_reset] failed");

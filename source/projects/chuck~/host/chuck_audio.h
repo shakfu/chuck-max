@@ -44,29 +44,30 @@
 //-----------------------------------------------------------------------------
 // define, defaults, forward references
 //-----------------------------------------------------------------------------
-#define NUM_CHANNELS_DEFAULT         2       // number of channels
-#define NUM_BUFFERS_DEFAULT          8       // number buffers
 // sample rate defaults by platform
-#if defined(__PLATFORM_LINUX__)
-  #define SAMPLE_RATE_DEFAULT      48000
-  #define BUFFER_SIZE_DEFAULT        256
-#elif defined(__PLATFORM_MACOSX__)
-  #define SAMPLE_RATE_DEFAULT      44100
-  #define BUFFER_SIZE_DEFAULT        256
-#else
-  #define SAMPLE_RATE_DEFAULT      44100
-  #define BUFFER_SIZE_DEFAULT        512
+#if defined(__PLATFORM_LINUX__)         // linux
+  #define CK_SAMPLE_RATE_DEFAULT        48000
+  #define CK_BUFFER_SIZE_DEFAULT        256
+#elif defined(__PLATFORM_APPLE__)      // macOS
+  #define CK_SAMPLE_RATE_DEFAULT        44100
+  #define CK_BUFFER_SIZE_DEFAULT        256
+#else                                   // windows & everywhere else
+  #define CK_SAMPLE_RATE_DEFAULT        44100
+  #define CK_BUFFER_SIZE_DEFAULT        512
 #endif
 
+// number of channels
+#define CK_NUM_CHANNELS_DEFAULT         2
+// number buffers
+#define CK_NUM_BUFFERS_DEFAULT          8
 
 
-
+//-----------------------------------------------------------------------------
 // audio callback definition
+//-----------------------------------------------------------------------------
 typedef void (* f_audio_cb)( SAMPLE * input, SAMPLE * output,
     t_CKUINT numFrames, t_CKUINT numInChans, t_CKUINT numOutChans,
     void * userData );
-
-
 
 
 // real-time watch dog
@@ -76,6 +77,31 @@ extern t_CKUINT g_watchdog_countermeasure_priority;
 // watchdog timeout
 extern t_CKFLOAT g_watchdog_timeout;
 
+
+
+
+//-----------------------------------------------------------------------------
+// name: class ChuckAudioDriverInfo
+// desc: info pertaining to an audio driver
+//-----------------------------------------------------------------------------
+struct ChuckAudioDriverInfo
+{
+    // driver API ID; e.g., RtAudio::Api values
+    // RtAudio::MACOSX_CORE or RtAudio::WINDOWS_DS or RtAudio::UNIX_JACK
+    // (see RtAudio.h for full list)
+    t_CKUINT driver;
+    // a short name of the driver, e.g., "DS"
+    std::string name;
+    // a longer name of the driver, e.g., "DirectSound"
+    std::string userFriendlyName;
+
+    // constructor
+    ChuckAudioDriverInfo()
+        : driver(0),
+        name("(unspecified)"),
+        userFriendlyName("(unspecified driver")
+    {  }
+};
 
 
 
@@ -97,7 +123,7 @@ public:
                                 f_audio_cb callback,
                                 void * data,
                                 t_CKBOOL force_srate, // force_srate | 1.3.1.2 (added)
-                                char const * driver // NULL means default for build | 1.5.0.0 (added)
+                                const char * driver // NULL means default for build | 1.5.0.0 (added)
                                 );
     static void shutdown();
     static t_CKBOOL start();
@@ -107,12 +133,26 @@ public: // watchdog stuff
     static t_CKBOOL watchdog_start();
     static t_CKBOOL watchdog_stop();
 
-public: // device info
-    // probe audio devices
-    static void probe(char const *driver); // NULL means default for build
+public: // driver related operations
+    // default audio driver number
+    static RtAudio::Api defaultDriverApi();
+    // default audio driver name
+    static const char * defaultDriverName();
+    // get API/driver enum from name
+    static RtAudio::Api driverNameToApi( const char * driver = NULL );
+    // get API/drive name from int assumed to be RtAudio::Api enum
+    static const char * driverApiToName( t_CKUINT driverNum );
+    // get number of compiled audio driver APIs
+    static t_CKUINT numDrivers();
+    // get info on a particular driver
+    static ChuckAudioDriverInfo getDriverInfo( t_CKUINT n );
+
+public: // audio device related operations
+    // probe audio devices; NULL for driver means default for build
+    static void probe( const char * driver );
     // get device number by name?
     // 1.4.2.0: changed return type from t_CKUINT to t_CKINT
-    static t_CKINT device_named( char const *driver,
+    static t_CKINT device_named( const char * driver,
                                  const std::string & name,
                                  t_CKBOOL needs_dac = FALSE,
                                  t_CKBOOL needs_adc = FALSE );
@@ -152,10 +192,11 @@ public: // data
     static SAMPLE * m_extern_out; // for things like audicle
 
     static RtAudio * m_rtaudio;
-    static t_CKUINT m_dac_n;
-    static t_CKUINT m_adc_n;
+    static t_CKINT m_dac_n; // 1.5.0.3 (ge) changed to signed
+    static t_CKINT m_adc_n; // 1.5.0.3 (ge) changed to signed
     static std::string m_dac_name;
     static std::string m_adc_name;
+    static std::string m_driver_name;
     static f_audio_cb m_audio_cb;
     static void * m_cb_user_data;
 };

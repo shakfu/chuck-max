@@ -1,4 +1,6 @@
 
+set(CMAKE_CXX_STANDARD 14)
+
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 execute_process(
@@ -10,7 +12,6 @@ execute_process(
 set(C_CORE
 	chuck.tab.c
 	chuck.yy.c
-	util_math.c
 	util_network.c
 	util_raw.c
 	util_xforms.c
@@ -59,6 +60,8 @@ set(CXX_CORE
 	util_buffers.cpp
 	util_console.cpp
 	util_hid.cpp
+	util_math.cpp
+	util_platforms.cpp
 	util_opsc.cpp
 	util_serial.cpp
 	util_string.cpp
@@ -90,6 +93,7 @@ add_library(chuck_lib
 
 target_compile_options(chuck_lib
 	PUBLIC
+	-stdlib=libc++
 	-O3
 )
 

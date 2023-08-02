@@ -269,9 +269,9 @@ DLL_QUERY xxx_query( Chuck_DL_Query * QUERY )
     //---------------------------------------------------------------------
     // init as base class: dac
     //---------------------------------------------------------------------
-    env->t_dac = type_engine_import_ugen_begin( env, "DAC", "UGen_Stereo", env->global(),
+    env->ckt_dac = type_engine_import_ugen_begin( env, "DAC", "UGen_Stereo", env->global(),
                                                 NULL, NULL, NULL, NULL, 2, 2 );
-    if( !env->t_dac )
+    if( !env->ckt_dac )
         return FALSE;
 
     // end import
@@ -284,10 +284,10 @@ DLL_QUERY xxx_query( Chuck_DL_Query * QUERY )
     //---------------------------------------------------------------------
     // init as base class: adc
     //---------------------------------------------------------------------
-    env->t_adc = type_engine_import_ugen_begin( env, "ADC", "UGen_Stereo", env->global(),
+    env->ckt_adc = type_engine_import_ugen_begin( env, "ADC", "UGen_Stereo", env->global(),
                                                 (f_ctor)NULL, (f_dtor)NULL, (f_tick)NULL,
                                                 (f_pmsg)NULL, 0, 2 );
-    if( !env->t_adc )
+    if( !env->ckt_adc )
         return FALSE;
 
     // end import
@@ -700,6 +700,12 @@ DLL_QUERY xxx_query( Chuck_DL_Query * QUERY )
         return FALSE;
 
     if( !type_engine_import_add_ex( env, "basic/sndbuf.ck" ) ) goto error;
+    if( !type_engine_import_add_ex( env, "basic/doh.ck" ) ) goto error;
+    if( !type_engine_import_add_ex( env, "basic/valueat.ck" ) ) goto error;
+    if( !type_engine_import_add_ex( env, "otf_01.ck" ) ) goto error;
+    if( !type_engine_import_add_ex( env, "otf_02.ck" ) ) goto error;
+    if( !type_engine_import_add_ex( env, "otf_03.ck" ) ) goto error;
+    if( !type_engine_import_add_ex( env, "otf_04.ck" ) ) goto error;
 
     // add member variable
     sndbuf_offset_data = type_engine_import_mvar( env, "int", "@sndbuf_data", FALSE );
@@ -1551,13 +1557,13 @@ CK_DLL_CTOR( foogen_ctor )
         Chuck_Func * func = ugen->vtable->funcs[i];
         if(func->name.find("tick") == 0 &&
            // ensure has one argument
-           func->def->arg_list != NULL &&
+           func->def()->arg_list != NULL &&
            // ensure first argument is float
-           func->def->arg_list->type == SHRED->vm_ref->env()->t_float &&
+           func->def()->arg_list->type == SHRED->vm_ref->env()->ckt_float &&
            // ensure has only one argument
-           func->def->arg_list->next == NULL &&
+           func->def()->arg_list->next == NULL &&
            // ensure returns float
-           func->def->ret_type == SHRED->vm_ref->env()->t_float )
+           func->def()->ret_type == SHRED->vm_ref->env()->ckt_float )
         {
             tick_fun_index = i;
             break;
@@ -1606,7 +1612,7 @@ CK_DLL_CTOR( foogen_ctor )
     {
         // SPENCERTODO: warn on Chugen definition instead of instantiation?
         EM_log(CK_LOG_WARNING, "ChuGen '%s' does not define a suitable tick function",
-               ugen->type_ref->name.c_str());
+               ugen->type_ref->base_name.c_str());
     }
 }
 
@@ -1619,7 +1625,7 @@ CK_DLL_DTOR( foogen_dtor )
 {
     FooGen_Data * data = (FooGen_Data *) OBJ_MEMBER_UINT(SELF, foogen_offset_data);
     OBJ_MEMBER_UINT(SELF, foogen_offset_data) = 0;
-    SAFE_DELETE(data);
+    CK_SAFE_DELETE(data);
 }
 
 //-----------------------------------------------------------------------------
@@ -1706,7 +1712,7 @@ CK_DLL_CGET( multi_cget_chan )
 void pan_eq_power( Chuck_UGen * left, Chuck_UGen * right, t_CKFLOAT pan)
 {
     // remap pan from [-1,1] to [0,pi/2]
-    t_CKFLOAT panme = (pan+1.0)/2 * ONE_PI/2;
+    t_CKFLOAT panme = (pan+1.0)/2 * CK_ONE_PI/2;
     // pan it (NEW: constant-power panning; fixed 1.4.1.0)
     left->m_pan = ::cos(panme);
     right->m_pan = ::sin(panme);
@@ -1909,9 +1915,8 @@ CK_DLL_CTOR( pan2_ctor )
 //-----------------------------------------------------------------------------
 CK_DLL_TICK( noise_tick )
 {
-    *out = -1.0 + 2.0 * (SAMPLE)rand() / RAND_MAX;
-    // for now keep synthesis using rand() instead of ck_random()
-    // *out = -1.0 + 2.0 * (SAMPLE)ck_random() / CK_RANDOM_MAX;
+    // 1.5.0.4 (ge) updated to use ck_random_f()
+    *out = (SAMPLE)( -1.0 + 2.0 * ck_random_f() );
     return TRUE;
 }
 
@@ -1941,20 +1946,23 @@ public:
     pink_depth = 24;
     pink_array = NULL;
     counter = 1;
-    scale = 2.0 / (double) RAND_MAX ;
-    bias = -1.0;
+    scale = 2.0 / (double) CK_RANDOM_MAX ;
+    bias = -1.0; // 1.5.0.1 (anthonyhawes) changed from 0.0, removing a DC bias
     pink_rand = false;
-    t_CKINT randt = RAND_MAX;
+    t_CKINT randt = CK_RANDOM_MAX;
     rand_bits = 0;
-    fprob = (t_CKINT)( (double)RAND_MAX * 1.0 / 32.0 );
+    fprob = (t_CKINT)( (double)CK_RANDOM_MAX * 1.0 / 32.0 );
     while ( randt > 0 ) {
       rand_bits++;
       randt = randt >> 1;
     }
     // CK_FPRINTF_STDERR( "random bits - %d", rand_bits );
     setMode ( "pink" );
+  } 
+  ~CNoise_Data() {
+      // 1.5.0.1 (anthonyhawes) added
+      CK_SAFE_FREE( pink_array );
   }
-  ~CNoise_Data() {}
 
   t_CKINT fprob;
   t_CKUINT mode;
@@ -2013,10 +2021,12 @@ t_CKINT CNoise_Data::pink_tick( SAMPLE * out )
   if ( pink_array == NULL ) {
     pink_array = (t_CKINT *) malloc ( sizeof ( t_CKINT ) * pink_depth );
     last = 0;
-    for ( t_CKINT i = 0 ; i < pink_depth ; i++ ) { pink_array[i] = rand(); last += pink_array[i]; }
-    scale = 2.0 / ((double)RAND_MAX  * ( pink_depth + 1.0 ) );
-    bias = 0.0;
-    // CK_FPRINTF_STDERR( "scale %f %f %d %d \n", scale, bias, RAND_MAX, pink_depth + 1 );
+    // 1.5.0.1 (ge) updated to ck_random()
+    for ( t_CKINT i = 0 ; i < pink_depth ; i++ )
+    { pink_array[i] = ck_random(); last += pink_array[i]; }
+    scale = 2.0 / ((double)CK_RANDOM_MAX  * ( pink_depth + 1.0 ) );
+    bias = -1.0;
+    // CK_FPRINTF_STDERR( "scale %f %f %d %d \n", scale, bias, CK_RANDOM_MAX, pink_depth + 1 );
   }
 
   t_CKINT pind = 0;
@@ -2027,14 +2037,14 @@ t_CKINT CNoise_Data::pink_tick( SAMPLE * out )
   //  fprintf (stderr, "counter %d pink - %d \n", counter, pind );
 
   if ( pind < pink_depth ) {
-    t_CKINT diff = rand() - pink_array[pind];
+    t_CKINT diff = ck_random() - pink_array[pind];
     pink_array[pind] += diff;
     last += diff;
   }
 
-  *out = bias + scale * ( rand() + last );
+  *out = bias + scale * ( ck_random() + last );
   counter++;
-  if ( pink_rand ) counter = rand();
+  if ( pink_rand ) counter = ck_random();
   return TRUE;
 }
 
@@ -2042,7 +2052,7 @@ t_CKINT CNoise_Data::xor_tick( SAMPLE * out )
 {
   t_CKINT mask = 0;
   for ( t_CKINT i = 0; i < rand_bits ; i++ )
-    if ( rand() <= fprob )
+    if ( ck_random() <= fprob )
       mask |= ( ((t_CKINT)1) << i );
   last = last ^ mask;
   *out = bias + scale * (SAMPLE)last;
@@ -2051,7 +2061,7 @@ t_CKINT CNoise_Data::xor_tick( SAMPLE * out )
 
 t_CKINT CNoise_Data::flip_tick( SAMPLE * out )
 {
-  t_CKINT ind = (t_CKINT)( (double)rand_bits * rand() / ( RAND_MAX + 1.0 ) );
+  t_CKINT ind = (t_CKINT)( (double)rand_bits * ck_random() / ( CK_RANDOM_MAX + 1.0 ) );
   last = last ^ ( ((t_CKINT)1) << ind );
   //  fprintf ( stderr, "ind - %d %d %f %f", ind, last, bias, scale );
   *out = bias + scale * (SAMPLE)last;
@@ -2077,37 +2087,37 @@ CNoise_Data::setMode( const char * c ) {
   if ( strcmp ( c, "white" ) == 0 ) {
     // CK_FPRINTF_STDERR( "white noise\n" );
     mode = NOISE_WHITE;
-    scale = 2.0 / (t_CKFLOAT)RAND_MAX;
+    scale = 2.0 / (t_CKFLOAT)CK_RANDOM_MAX;
     bias = -1.0;
   }
   if ( strcmp ( c, "pink" ) == 0 ) {
     // CK_FPRINTF_STDERR( "pink noise\n" );
     mode = NOISE_PINK;
-    scale = 2.0 / (double)(RAND_MAX  * ( pink_depth + 1 ) );
+    scale = 2.0 / (double)(CK_RANDOM_MAX  * ( pink_depth + 1 ) );
     bias = -1.0;
   }
   if ( strcmp ( c, "flip" ) == 0) {
     // CK_FPRINTF_STDERR( "bitflip noise\n" );
     mode = NOISE_FLIP;
-    scale = 2.0 / (t_CKFLOAT)RAND_MAX;
+    scale = 2.0 / (t_CKFLOAT)CK_RANDOM_MAX;
     bias = -1.0;
   }
   if ( strcmp ( c, "xor" ) == 0) {
     // CK_FPRINTF_STDERR( "xor noise\n" );
     mode = NOISE_XOR;
-    scale = 2.0 / (t_CKFLOAT)RAND_MAX;
+    scale = 2.0 / (t_CKFLOAT)CK_RANDOM_MAX;
     bias = -1.0;
   }
   if ( strcmp ( c, "brown" ) == 0) {
     // CK_FPRINTF_STDERR( "brownian noise\n" );
     mode = NOISE_BROWN;
-    scale = 2.0 / (t_CKFLOAT)RAND_MAX;
+    scale = 2.0 / (t_CKFLOAT)CK_RANDOM_MAX;
     bias = -1.0;
   }
   if ( strcmp ( c, "fbm" ) == 0) {
     // CK_FPRINTF_STDERR( "fbm noise\n" );
     mode = NOISE_FBM;
-    scale = 2.0 / (t_CKFLOAT)RAND_MAX;
+    scale = 2.0 / (t_CKFLOAT)CK_RANDOM_MAX;
     bias = -1.0;
   }
 
@@ -2125,7 +2135,7 @@ CK_DLL_CTRL( cnoise_ctrl_fprob )
 {
     CNoise_Data * d = ( CNoise_Data * )OBJ_MEMBER_UINT(SELF, cnoise_offset_data);
     t_CKFLOAT p= GET_CK_FLOAT(ARGS);
-    d->fprob = (t_CKINT) ( (double)RAND_MAX * p );
+    d->fprob = (t_CKINT) ( (double)CK_RANDOM_MAX * p );
 }
 
 
@@ -2412,7 +2422,7 @@ struct delayp_data
 
     ~delayp_data()
     {
-        SAFE_DELETE_ARRAY( buffer );
+        CK_SAFE_DELETE_ARRAY( buffer );
     }
 };
 
@@ -2424,7 +2434,7 @@ CK_DLL_CTOR( delayp_ctor )
 CK_DLL_DTOR( delayp_dtor )
 {
     delayp_data * d = (delayp_data *)OBJ_MEMBER_UINT(SELF, delayp_offset_data);
-    SAFE_DELETE(d);
+    CK_SAFE_DELETE(d);
     OBJ_MEMBER_UINT(SELF, delayp_offset_data) = 0;
 }
 
@@ -2896,13 +2906,13 @@ struct sndbuf_data
 
     ~sndbuf_data()
     {
-        SAFE_DELETE_ARRAY( buffer );
+        CK_SAFE_DELETE_ARRAY( buffer );
 
         if( chunk_map )
         {
             for(int i = 0; i < chunk_num; i++)
-                SAFE_DELETE_ARRAY(chunk_map[i]);
-            SAFE_DELETE_ARRAY(chunk_map);
+                CK_SAFE_DELETE_ARRAY(chunk_map[i]);
+            CK_SAFE_DELETE_ARRAY(chunk_map);
         }
     }
 
@@ -2928,7 +2938,7 @@ CK_DLL_CTOR( sndbuf_ctor )
 CK_DLL_DTOR( sndbuf_dtor )
 {
     sndbuf_data * d = (sndbuf_data *)OBJ_MEMBER_UINT(SELF, sndbuf_offset_data);
-    SAFE_DELETE(d);
+    CK_SAFE_DELETE(d);
     OBJ_MEMBER_UINT(SELF, sndbuf_offset_data) = 0;
 }
 
@@ -3137,13 +3147,13 @@ void sndbuf_make_sinc( sndbuf_data * d )
     t_CKINT i;
     // CK_FPRINTF_STDERR( "building sinc table\n" );
     double temp, win_freq, win;
-    win_freq = ONE_PI / d->sinc_width / d->sinc_samples_per_zero_crossing;
+    win_freq = CK_ONE_PI / d->sinc_width / d->sinc_samples_per_zero_crossing;
     t_CKINT tabsize = d->sinc_width * d->sinc_samples_per_zero_crossing;
 
     d->sinc_table = (double *) realloc( d->sinc_table, tabsize * sizeof(double) );
     d->sinc_table[0] = 1.0;
     for( i = 1; i < tabsize; i++ ) {
-        temp = (double) i * ONE_PI / d->sinc_samples_per_zero_crossing;
+        temp = (double) i * CK_ONE_PI / d->sinc_samples_per_zero_crossing;
         d->sinc_table[i] = (float)(sin(temp) / temp);
         win = 0.5 + 0.5 * cos(win_freq * i);
         d->sinc_table[i] *= (float)win;
@@ -3182,7 +3192,7 @@ double sndbuf_sinc( sndbuf_data * d, double x )
     else {
         if( x == 0.0 ) return 1.0;
         else {
-            temp = ONE_PI * x;
+            temp = CK_ONE_PI * x;
             return sin(temp) / (temp);
         }
     }
@@ -3371,13 +3381,13 @@ CK_DLL_CTRL( sndbuf_ctrl_read )
     RETURN->v_string = ckfilename;
 
     // cleanup
-    SAFE_DELETE_ARRAY(d->buffer);
+    CK_SAFE_DELETE_ARRAY(d->buffer);
     // clean up chunk map
     if( d->chunk_map )
     {
         for(int i = 0; i < d->chunk_num; i++)
-            SAFE_DELETE_ARRAY(d->chunk_map[i]);
-        SAFE_DELETE_ARRAY(d->chunk_map);
+            CK_SAFE_DELETE_ARRAY(d->chunk_map[i]);
+        CK_SAFE_DELETE_ARRAY(d->chunk_map);
         d->chunk_num = 0;
     }
     // close file descriptor
@@ -3419,7 +3429,7 @@ CK_DLL_CTRL( sndbuf_ctrl_read )
         else if( strstr(filename, "special:britestk") ) {
             rawsize = britestk_size; rawdata = britestk_data;
         }
-        else if( strstr(filename, "special:dope") ) {
+        else if( strstr(filename, "special:doh") || strstr(filename, "special:dope") ) {
             rawsize = dope_size; rawdata = dope_data;
         }
         else if( strstr(filename, "special:eee") ) {
@@ -3504,7 +3514,7 @@ CK_DLL_CTRL( sndbuf_ctrl_read )
         else if( strstr(filename, "special:sinewave") ) {
             d->buffer = new SAMPLE[rawsize+1];
             for( t_CKUINT j = 0; j < rawsize; j++ )
-                d->buffer[j] = sin(2*ONE_PI*j/rawsize);
+                d->buffer[j] = sin(2*CK_ONE_PI*j/rawsize);
         }
         else {
             CK_FPRINTF_STDERR( "[chuck](via SndBuf): cannot load '%s'\n", filename );
@@ -3544,7 +3554,8 @@ CK_DLL_CTRL( sndbuf_ctrl_read )
         const char * format = (const char *)strrchr( filename, '.');
         if( format && strcmp( format, ".raw" ) == 0 )
         {
-            CK_FPRINTF_STDERR( "[chuck](via SndBuf) %s :: type is '.raw'...\n    assuming 16 bit signed mono (PCM)\n", filename );
+            CK_FPRINTF_STDERR( "[chuck](via SndBuf) %s :: type is '.raw'...\n", filename );
+            CK_FPRINTF_STDERR( "[chuck](via SndBuf)  |- assuming 16 bit signed mono (PCM)\n]" );
             info.format = SF_FORMAT_RAW | SF_FORMAT_PCM_16 | SF_ENDIAN_CPU ;
             info.channels = 1;
             info.samplerate = 44100;
@@ -3565,7 +3576,7 @@ CK_DLL_CTRL( sndbuf_ctrl_read )
         if( er )
         {
             CK_FPRINTF_STDERR( "[chuck](via SndBuf): sndfile error '%li' opening '%s'...\n", er, filename );
-            CK_FPRINTF_STDERR( "[chuck](via SndBuf): (reason: %s)\n", sf_strerror( d->fd ) );
+            CK_FPRINTF_STDERR( "[chuck](via SndBuf):  |- reason: %s\n", sf_strerror( d->fd ) );
             if( d->fd )
             {
                 sf_close( d->fd );
@@ -4227,7 +4238,7 @@ struct LiSaMulti_data
     void cleanup()
     {
         // deallocate
-        SAFE_FREE( mdata );
+        CK_SAFE_FREE( mdata );
     }
 
     // allocate memory, length in samples
@@ -4611,9 +4622,9 @@ CK_DLL_DTOR( LiSaMulti_dtor )
     // get data
     LiSaMulti_data * d = (LiSaMulti_data *)OBJ_MEMBER_UINT(SELF, LiSaMulti_offset_data);
     // clean up | 1.5.0.0 (ge) added
-    SAFE_DELETE_ARRAY( d->outsamples );
+    CK_SAFE_DELETE_ARRAY( d->outsamples );
     // delete
-    SAFE_DELETE(d);
+    CK_SAFE_DELETE(d);
     // set
     OBJ_MEMBER_UINT(SELF, LiSaMulti_offset_data) = 0;
 }

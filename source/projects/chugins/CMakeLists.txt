@@ -1,10 +1,10 @@
 project(chugins)
 
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_BUILD_TYPE Release)
 set(BUILD_SHARED_LIBS ON)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/chugins)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/chuck~/examples/chugins)
 # set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/chugins)
 
 
@@ -25,7 +25,7 @@ add_subdirectory(Multicomb)
 add_subdirectory(NHHall)
 add_subdirectory(Overdrive)
 add_subdirectory(PanN)
-add_subdirectory(Patch)
+# add_subdirectory(Patch) # not working
 add_subdirectory(Perlin)
 add_subdirectory(PitchTrack)
 add_subdirectory(PowerADSR)

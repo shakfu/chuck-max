@@ -1,6 +1,5 @@
 # Dev Notes
 
-
 ## Converting chugins to cmake builds
 
 This has been pretty straightforward, especially as the project is currently only targeting one platform (macOS). 

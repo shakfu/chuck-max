@@ -78,7 +78,7 @@ MidiOut::MidiOut()
 MidiOut::~MidiOut()
 {
     if( mout ) this->close();
-//    SAFE_DELETE( mout );
+//    CK_SAFE_DELETE( mout );
 }
 
 
@@ -320,7 +320,7 @@ MidiIn::MidiIn()
 MidiIn::~MidiIn( )
 {
     this->close();
-    // SAFE_DELETE( min );
+    // CK_SAFE_DELETE( min );
 }
 
 
@@ -672,7 +672,7 @@ void probeMidiIn()
 
     // get num
     t_CKUINT num = min->getPortCount();
-    EM_error2b( 0, "------( MIDI inputs: %i )------", num );
+    EM_print2blue( "------( %i MIDI input%s  )------", num, num > 1 ? "s" : "" );
     EM_reset_msg();
 
     std::string s;
@@ -707,7 +707,7 @@ void probeMidiOut()
 
     // get num
     t_CKUINT num = mout->getPortCount();
-    EM_error2b( 0, "------( MIDI outputs: %i )-----", num );
+    EM_print2blue( "------( %i MIDI output%s )-----", num, num > 1 ? "s" : "" );
     std::string s;
     for( t_CKUINT i = 0; i < num; i++ )
     {
