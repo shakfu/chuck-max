@@ -75,6 +75,8 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 ## Status
 
 - [ ] update to chuck-1.5.0.8
+- [ ] add linux support
+- [ ] add windows support
 - [ ] add support for events
 - [ ] add support for callbacks
 - [x] build chugins with cmake
@@ -116,5 +118,5 @@ This project thanks the following:
 
 - Professor [Brad Garton](http://sites.music.columbia.edu/brad) for creating the original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5. My failure to build and run on it Max 8 motivated me to start this project.
 
-- David Braun, the author of the very cool [DawDreamer](https://github.com/DBraun/DawDreamer) project which I am already a great fan of, for creating the excellent[ChucKDesigner](https://github.com/DBraun/ChucKDesigner) project which embeds chuck in a Touch Designer plugin. His project provided a super-clear blueprint on how to embed `libchuck` in another host or plugin system and was essential to this project.
+- David Braun, the author of the very cool [DawDreamer](https://github.com/DBraun/DawDreamer) project (which I am a great fan of), for creating the excellent [ChucKDesigner](https://github.com/DBraun/ChucKDesigner) project which embeds chuck in a Touch Designer plugin. His project provided a super-clear blueprint on how to embed `libchuck` in another host or plugin system and was essential to this project.
 
