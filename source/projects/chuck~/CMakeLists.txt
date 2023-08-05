@@ -41,15 +41,15 @@ target_include_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
-    "-framework CoreAudio"
-    "-framework CoreMIDI"
-    "-framework CoreFoundation"
-    "-framework IOKit"
-    "-framework Carbon"
-    "-framework AppKit"
-    "-framework Foundation"
-    "-F/System/Library/PrivateFrameworks"
-    "-weak_framework MultitouchSupport"
+    "$<$<PLATFORM_ID:Darwin>:-framework CoreAudio>"
+    "$<$<PLATFORM_ID:Darwin>:-framework CoreMIDI>"
+    "$<$<PLATFORM_ID:Darwin>:-framework CoreFoundation>"    
+    "$<$<PLATFORM_ID:Darwin>:-framework IOKit>"
+    "$<$<PLATFORM_ID:Darwin>:-framework Carbon>"
+    "$<$<PLATFORM_ID:Darwin>:-framework AppKit>"
+    "$<$<PLATFORM_ID:Darwin>:-framework Foundation>"
+    "$<$<PLATFORM_ID:Darwin>:-F/System/Library/PrivateFrameworks>"
+    "$<$<PLATFORM_ID:Darwin>:-weak_framework MultitouchSupport>"
     -lc++
     -lm
     chuck_lib
