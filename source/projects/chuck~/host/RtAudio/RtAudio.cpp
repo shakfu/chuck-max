@@ -561,6 +561,12 @@ struct CoreHandle {
     :deviceBuffer(0), drainCounter(0), internalDrain(false) { nStreams[0] = 1; nStreams[1] = 1; id[0] = 0; id[1] = 0; procId[0] = 0; procId[1] = 0; xrun[0] = false; xrun[1] = false; xrunListenerAdded[0] = false; xrunListenerAdded[1] = false; disconnectListenerAdded[0] = false; disconnectListenerAdded[1] = false; }
 };
 
+// kAudioObjectPropertyElementMaster (deprecated as of macOS 12)
+// renamed to kAudioObjectPropertyElementMain | chuck-1.5.1.1
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 120000 // before macOS 12
+#define kAudioObjectPropertyElementMain kAudioObjectPropertyElementMaster
+#endif
+
 RtApiCore:: RtApiCore()
 {
 #if defined( AVAILABLE_MAC_OS_X_VERSION_10_6_AND_LATER )
