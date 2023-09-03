@@ -5,12 +5,11 @@
 # This script updates to latest clones of chuck and chugins
 # optionally apply some patches or remove old code
 
+REMOVE_OLD=false
+
 CHUCK_REPO=https://github.com/ccrma/chuck.git
 CHUGINS_REPO=https://github.com/ccrma/chugins.git
-
 PROJECTS_DIR=source/projects
-
-REMOVE_OLD=false
 
 
 function update_chuck() {
@@ -19,9 +18,10 @@ function update_chuck() {
 	mv chuck-src/src/core ${PROJECTS_DIR}/chuck-new/ && \
 	mv chuck-src/src/host ${PROJECTS_DIR}/chuck-new/ && \
 	rm -rf chuck-src && \
+	cp ${PROJECTS_DIR}/chuck/CMakeLists.txt ${PROJECTS_DIR}/chuck-new/ && \
 	cp ${PROJECTS_DIR}/chuck/core/CMakeLists.txt ${PROJECTS_DIR}/chuck-new/core/ && \
 	cp ${PROJECTS_DIR}/chuck/host/CMakeLists.txt ${PROJECTS_DIR}/chuck-new/host/ && \
-	cp ${PROJECTS_DIR}/chuck/host_embed/CMakeLists.txt ${PROJECTS_DIR}/chuck-new/host_embed/ && \
+	cp -rf cp ${PROJECTS_DIR}/chuck/host_embed ${PROJECTS_DIR}/chuck-new/ &&  \
 	mv ${PROJECTS_DIR}/chuck ${PROJECTS_DIR}/chuck-old && \
 	mv ${PROJECTS_DIR}/chuck-new ${PROJECTS_DIR}/chuck
 }
@@ -96,10 +96,10 @@ function update_chugins() {
 
 function update() {
 	update_chuck
-	update_chugins
-	if [ "${REMOVE_OLD}" = true ] ; then
-    rm -rf thirdpary/*-old
-	fi
+	# update_chugins
+	# if [ "${REMOVE_OLD}" = true ] ; then
+    # rm -rf thirdpary/*-old
+	# fi
 }
 
 update

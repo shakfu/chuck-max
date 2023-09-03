@@ -97,7 +97,7 @@ static const char * g_str[] = {
     "NONE",         // 0
     "CKCORE",       // 1
     "SYSTEM",       // 2
-    "SEVERE",       // 3
+    "HERALD",       // 3 <-- 1.5.1.3 changed from "SEVERE" to "HERALD"
     "WARN!!",       // 4
     "INFORM",       // 5
     "DEBUG!",       // 6 <-- 1.5.0.5 changed from "CONFIG" to "DEBUG!"
@@ -516,9 +516,22 @@ void EM_error2( t_CKINT pos, const char * message, ... )
 
     if( pos )
     {
+        // check for special message types | 1.5.1.3
+        const char * msgType = "error: ";
+        // copy into c++ string
+        string msg = message;
+        // look for special strings
+        if( msg.find("deprecated: ") == 0 )
+        {
+            // update msgType
+            msgType = "deprecated: ";
+            // skip the msgType
+            message += string(msgType).length();
+        }
+
         // print error only if there is non-zero line number
-        CK_FPRINTF_STDERR( "%s", TC::red("error: ", true).c_str() );
-        lastErrorCat( "error: " );
+        CK_FPRINTF_STDERR( "%s", TC::red(msgType,true).c_str() );
+        lastErrorCat( msgType );
     }
 
     va_start( ap, message );
@@ -1219,17 +1232,22 @@ ChuckOutStream::~ChuckOutStream()
 {
 }
 
-ChuckOutStream& ChuckOutStream::operator<<( const std::string val )
+ChuckOutStream& ChuckOutStream::operator<<( const std::string & val )
 {
     m_stream << val;
-    if( m_isErr || (val == CK_STDENDL) ) { this->flush(); }
+    if( m_isErr || (val == CK_STDENDL)
+        /* || val.find("\n") != std::string::npos */ )
+    { this->flush(); }
     return *this;
 }
 
 ChuckOutStream& ChuckOutStream::operator<<( const char * val )
 {
     m_stream << val;
-    if( m_isErr || std::string(val) == CK_STDENDL ) { this->flush(); }
+    string s = val;
+    if( m_isErr || s == CK_STDENDL
+        /* || s.find("\n") != std::string::npos */ )
+    { this->flush(); }
     return *this;
 }
 

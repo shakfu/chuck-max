@@ -106,7 +106,8 @@ a_Program g_program = NULL;
 // 1.3.6.0: changed to 40 for external keyword
 // 1.4.0.0: changed to 41 for global keyword
 // 1.4.0.1: changed to 79 for left recursion
-%expect 79
+// 1.5.1.1: changed to 80 for trailing comma in array literals
+%expect 80
 
 %token <sval> ID STRING_LIT CHAR_LIT
 %token <ival> INT_VAL
@@ -395,8 +396,11 @@ arrow_expression
 
 array_exp
         : LBRACK expression RBRACK          { $$ = new_array_sub( $2, @1.first_line, @1.first_column ); }
+        | LBRACK expression COMMA RBRACK    { $$ = new_array_sub( $2, @1.first_line, @1.first_column ); }
         | LBRACK expression RBRACK array_exp
             { $$ = prepend_array_sub( $4, $2, @1.first_line, @1.first_column ); }
+        | LBRACK expression COMMA RBRACK array_exp
+            { $$ = prepend_array_sub( $5, $2, @1.first_line, @1.first_column ); }
         ;
 
 array_empty
@@ -406,12 +410,12 @@ array_empty
 
 decl_expression
         : conditional_expression            { $$ = $1; }
-        | type_decl var_decl_list           { $$ = new_exp_decl( $1, $2, 0, @1.first_line, @1.first_column ); }
-        | EXTERNAL type_decl var_decl_list  { $$ = new_exp_decl_external( $2, $3, 0, @1.first_line, @1.first_column ); }
-        | GLOBAL type_decl var_decl_list    { $$ = new_exp_decl_global( $2, $3, 0, @1.first_line, @1.first_column ); }
-        | STATIC type_decl var_decl_list    { $$ = new_exp_decl( $2, $3, 1, @1.first_line, @1.first_column ); }
-        | SAME var_decl_list                { $$ = new_exp_decl( NULL, $2, 0, @1.first_line, @1.first_column ); }
-        | STATIC SAME var_decl_list         { $$ = new_exp_decl( NULL, $3, 1, @1.first_line, @1.first_column ); }
+        | type_decl var_decl_list           { $$ = new_exp_decl( $1, $2, 0, 0, @1.first_line, @1.first_column ); }
+        | EXTERNAL type_decl var_decl_list  { $$ = new_exp_decl_external( $2, $3, 0, 0, @1.first_line, @1.first_column ); }
+        | GLOBAL type_decl var_decl_list    { $$ = new_exp_decl_global( $2, $3, 0, 0, @1.first_line, @1.first_column ); }
+        | STATIC type_decl var_decl_list    { $$ = new_exp_decl( $2, $3, 1, 0, @1.first_line, @1.first_column ); }
+        | SAME var_decl_list                { $$ = new_exp_decl( NULL, $2, 0, 0, @1.first_line, @1.first_column ); }
+        | STATIC SAME var_decl_list         { $$ = new_exp_decl( NULL, $3, 1, 0, @1.first_line, @1.first_column ); }
         ;
 
 var_decl_list

@@ -123,18 +123,22 @@ Chuck_Compiler::~Chuck_Compiler()
 //-----------------------------------------------------------------------------
 t_CKBOOL Chuck_Compiler::initialize()
 {
+    // this should have been set by initialization
+    assert( m_carrier != NULL );
+
     // set origin hint
     m_originHint = te_originBuiltin;
 
     // allocate the type checker
-    Chuck_Env * env = type_engine_init( m_carrier );
-    // add reference
-    env->add_ref();
+    if( !type_engine_init( m_carrier ) )
+        goto error;
+    // ensure carrier's env is set in type_engine_init
+    assert( m_carrier->env != NULL );
 
     // allocate the emitter
-    emitter = emit_engine_init( env );
+    emitter = emit_engine_init( m_carrier->env );
     // add reference
-    emitter->add_ref();
+    CK_SAFE_ADD_REF( emitter );
     // set auto depend to 0
     m_auto_depend = FALSE;
 
@@ -171,21 +175,35 @@ void Chuck_Compiler::shutdown()
     // push indent
     EM_pushlog();
 
-    // TODO: free
-    type_engine_shutdown( env() );
-    // TODO: check if emitter gets cleaned up
-    // emit_engine_shutdown( emitter );
-    emitter = NULL;
+    // need an actual carrier
+    if( m_carrier != NULL )
+    {
+        // free type engine env
+        type_engine_shutdown( m_carrier );
+        // check the pointer is now NULL
+        assert( m_carrier->env == NULL );
+        // zero out the carrier reference | 1.5.1.1
+        m_carrier = NULL;
+    }
+
+    // free emitter (and set emitter to NULL)
+    emit_engine_shutdown( emitter );
+    // check the pointer is now NULL
+    assert( emitter == NULL );
+
+    // clear more state
     code = NULL;
     m_auto_depend = FALSE;
     m_recent.clear();
 
-    for(std::list<Chuck_DLL *>::iterator i = m_dlls.begin();
-        i != m_dlls.end(); i++)
+    // clean up DLLs
+    std::list<Chuck_DLL *>::iterator iter;
+    for( iter = m_dlls.begin(); iter != m_dlls.end(); iter++ )
     {
-        delete (*i);
+        // delete each DLL
+        CK_SAFE_DELETE( *iter );
     }
-
+    // clear the list
     m_dlls.clear();
 
     // pop indent
@@ -659,7 +677,7 @@ t_CKBOOL load_module( Chuck_Compiler * compiler, Chuck_Env * env, f_ck_query que
         EM_error2( 0, "internal error loading module '%s.%s'...",
                    nspc, name );
         if( query_failed )
-        EM_error2( 0, " |- reason: %s", dll->last_error() );
+        EM_error2( 0, "...(reason: %s)", dll->last_error() );
 
         return FALSE;
     }
@@ -719,9 +737,6 @@ t_CKBOOL load_internal_modules( Chuck_Compiler * compiler )
     // load
     EM_log( CK_LOG_SEVERE, "module 'machine'" );
     if( !load_module( compiler, env, machine_query, "Machine", "global" ) ) goto error;
-    #ifndef __DISABLE_OTF_SERVER__
-    machine_init( compiler, otf_process_msg );
-    #endif
 
     #ifndef __DISABLE_NETWORK__
     EM_log( CK_LOG_SEVERE, "module 'opsc'" );

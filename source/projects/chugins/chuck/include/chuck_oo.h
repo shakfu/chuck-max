@@ -102,10 +102,6 @@ public:
     t_CKBOOL m_pooled; // if true, this allocates from a pool
     t_CKBOOL m_locked; // if true, this should never be deleted
 
-public:
-    // where
-    std::vector<Chuck_VM_Object *> * m_v_ref;
-
 private:
     void init_ref();
 };
@@ -183,7 +179,7 @@ struct Chuck_Array : public Chuck_Object
 {
 public:
     // constructor
-    Chuck_Array() : m_array_type(NULL) { }
+    Chuck_Array();
     // destructor
     virtual ~Chuck_Array();
 
@@ -220,6 +216,8 @@ public: // interface common to all Chuck_Arary*
     virtual void reverse() = 0;
     // reverse array order | added (1.5.0.0) kunwoo, nshaheed, azaday, ge
     virtual void shuffle() = 0;
+    // sort contents of array in ascending order | added (1.5.1.0) ge
+    virtual void sort() = 0;
 
     // typed as Object array? | 1.5.0.8 (ge) moved to common
     virtual t_CKBOOL contains_objects() { return FALSE; }
@@ -233,7 +231,7 @@ public: // map-only operations
     virtual t_CKINT map_erase( const std::string & key ) = 0;
 
 public:
-    Chuck_Type * m_array_type;
+    // Chuck_Type * m_array_type;
 };
 
 
@@ -306,6 +304,8 @@ public: // array interface implementation
     virtual void reverse();
     // reverse array order
     virtual void shuffle();
+    // sort contents of array in ascending order
+    virtual void sort();
 
     // typed as Object array?
     virtual t_CKBOOL contains_objects() { return m_is_obj; }
@@ -399,6 +399,8 @@ public: // array interface implementation
     virtual void reverse();
     // reverse array order
     virtual void shuffle();
+    // sort contents of array in ascending order
+    virtual void sort();
 
 public: // map only
     // get all keys in map
@@ -485,6 +487,8 @@ public: // array interface implementation
     virtual void reverse();
     // reverse array order
     virtual void shuffle();
+    // sort contents of array in ascending order
+    virtual void sort();
 
 public: // map only
     // get all keys in map
@@ -497,8 +501,9 @@ public: // map only
 public:
     std::vector<t_CKCOMPLEX> m_vector;
     std::map<std::string, t_CKCOMPLEX> m_map;
-    // t_CKINT m_size;
-    // t_CKINT m_capacity;
+    // semantic hint; in certain situations (like sorting)
+    // need to distinguish between complex and polar | 1.5.1.0
+    t_CKBOOL m_isPolarType;
 };
 
 
@@ -571,6 +576,8 @@ public: // array interface implementation
     virtual void reverse();
     // reverse array order
     virtual void shuffle();
+    // sort contents of array in ascending order
+    virtual void sort();
 
 public: // map only
     // get all keys in map
@@ -655,6 +662,8 @@ public: // array interface implementation
     virtual void reverse();
     // reverse array order
     virtual void shuffle();
+    // sort contents of array in ascending order
+    virtual void sort();
 
 public: // map only
     // get all keys in map

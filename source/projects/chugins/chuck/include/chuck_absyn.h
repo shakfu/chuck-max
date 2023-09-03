@@ -51,14 +51,14 @@ typedef int a_Pos;
 
 // enum oper
 typedef enum {
-    ae_op_plus, ae_op_minus, ae_op_times, ae_op_divide,
+    ae_op_plus = 0, ae_op_minus, ae_op_times, ae_op_divide,
     ae_op_eq, ae_op_neq, ae_op_lt, ae_op_le, ae_op_gt,
     ae_op_ge, ae_op_and, ae_op_or, ae_op_s_or, ae_op_s_and,
     ae_op_shift_left, ae_op_shift_right, ae_op_percent,
     ae_op_s_xor, ae_op_chuck, ae_op_plus_chuck, ae_op_minus_chuck,
     ae_op_times_chuck, ae_op_divide_chuck, ae_op_s_and_chuck,
     ae_op_s_or_chuck, ae_op_s_xor_chuck, ae_op_shift_right_chuck,
-    ae_op_shift_left_chuck, ae_op_percent_chuck, ae_op_s_chuck,
+    ae_op_shift_left_chuck, ae_op_percent_chuck,
     ae_op_plusplus, ae_op_minusminus, ae_op_tilda, ae_op_exclamation,
     ae_op_at_chuck, ae_op_unchuck, ae_op_upchuck, ae_op_spork,
     ae_op_typeof, ae_op_sizeof, ae_op_new, ae_op_arrow_left, ae_op_arrow_right
@@ -182,9 +182,9 @@ a_Exp new_exp_from_if( a_Exp cond, a_Exp lhs, a_Exp rhs, uint32_t line, uint32_t
 a_Exp new_exp_from_complex( a_Complex, uint32_t line, uint32_t where );
 a_Exp new_exp_from_polar( a_Polar, uint32_t line, uint32_t where );
 a_Exp new_exp_from_vec( a_Vec, uint32_t line, uint32_t where ); // ge: added 1.3.5.3
-a_Exp new_exp_decl_external( a_Type_Decl type_decl, a_Var_Decl_List var_decl_list, int is_static, uint32_t line, uint32_t where );
-a_Exp new_exp_decl_global( a_Type_Decl type_decl, a_Var_Decl_List var_decl_list, int is_static, uint32_t line, uint32_t where );
-a_Exp new_exp_decl( a_Type_Decl type_decl, a_Var_Decl_List var_decl_list, int is_static, uint32_t line, uint32_t where );
+a_Exp new_exp_decl_external( a_Type_Decl type_decl, a_Var_Decl_List var_decl_list, int is_static, int is_const, uint32_t line, uint32_t where );
+a_Exp new_exp_decl_global( a_Type_Decl type_decl, a_Var_Decl_List var_decl_list, int is_static, int is_const, uint32_t line, uint32_t where );
+a_Exp new_exp_decl( a_Type_Decl type_decl, a_Var_Decl_List var_decl_list, int is_static, int is_const, uint32_t line, uint32_t where );
 a_Exp new_exp_from_hack( a_Exp exp, uint32_t line, uint32_t where );
 a_Exp new_exp_from_nil( uint32_t line, uint32_t where );
 a_Var_Decl_List new_var_decl_list( a_Var_Decl var_decl, uint32_t line, uint32_t where );
@@ -295,7 +295,7 @@ struct a_Exp_Func_Call_ { a_Exp func; a_Exp args; t_CKTYPE ret_type;
 struct a_Exp_Dot_Member_ { a_Exp base; t_CKTYPE t_base; S_Symbol xid; uint32_t line; uint32_t where; a_Exp self; };
 struct a_Exp_If_ { a_Exp cond; a_Exp if_exp; a_Exp else_exp; uint32_t line; uint32_t where; a_Exp self; };
 struct a_Exp_Decl_ { a_Type_Decl type; a_Var_Decl_List var_decl_list; int num_var_decls; int is_static; int is_global;
-                     t_CKTYPE ck_type; int is_auto; uint32_t line; uint32_t where; a_Exp self; };
+                     int is_const; t_CKTYPE ck_type; int is_auto; uint32_t line; uint32_t where; a_Exp self; };
 struct a_Exp_Hack_ { a_Exp exp; uint32_t line; uint32_t where; a_Exp self; };
 struct a_Var_Decl_List_ { a_Var_Decl var_decl; a_Var_Decl_List next; uint32_t line; uint32_t where; a_Exp self; };
 // 1.4.2.0 (ge) added ck_type and ref, to handle multiple array decl (e.g., int x, y[], z[1];)
@@ -384,7 +384,6 @@ struct a_Stmt_Until_ { int is_do; a_Exp cond; a_Stmt body; uint32_t line; uint32
 struct a_Stmt_For_ { a_Stmt c1; a_Stmt c2; a_Exp c3; a_Stmt body; uint32_t line; uint32_t where; a_Stmt self; };
 struct a_Stmt_ForEach_ { a_Exp theIter; a_Exp theArray; a_Stmt body; uint32_t line; uint32_t where; a_Stmt self; };
 struct a_Stmt_Loop_ { a_Exp cond; a_Stmt body; uint32_t line; uint32_t where; a_Stmt self; };
-struct a_Stmt_Code_ { a_Stmt_List stmt_list; uint32_t line; uint32_t where; a_Stmt self; };
 struct a_Stmt_If_ { a_Exp cond; a_Stmt if_body; a_Stmt else_body; uint32_t line; uint32_t where; a_Stmt self; };
 struct a_Stmt_Switch_ { a_Exp val; uint32_t line; uint32_t where; a_Stmt self; };
 struct a_Stmt_Break_ { uint32_t line; uint32_t where; a_Stmt self; };
@@ -392,6 +391,15 @@ struct a_Stmt_Continue_ { uint32_t line; uint32_t where; a_Stmt self; };
 struct a_Stmt_Return_ { a_Exp val; uint32_t line; uint32_t where; a_Stmt self; };
 struct a_Stmt_Case_ { a_Exp exp; uint32_t line; uint32_t where; a_Stmt self; };
 struct a_Stmt_GotoLabel_ { S_Symbol name; uint32_t line; uint32_t where; a_Stmt self; };
+struct a_Stmt_Code_
+{
+    // statement list
+    a_Stmt_List stmt_list;
+    // used to track control paths in non-void functions
+    t_CKBOOL allControlPathsReturn; // 1.5.1.0 (ge) added
+    // code position
+    uint32_t line; uint32_t where; a_Stmt self;
+};
 
 // enum values for stmt type
 typedef enum { ae_stmt_exp, ae_stmt_while, ae_stmt_until, ae_stmt_for, ae_stmt_foreach,
@@ -399,11 +407,15 @@ typedef enum { ae_stmt_exp, ae_stmt_while, ae_stmt_until, ae_stmt_for, ae_stmt_f
                ae_stmt_continue, ae_stmt_return, ae_stmt_case, ae_stmt_gotolabel
              } ae_Stmt_Type;
 
+// a statement
 struct a_Stmt_
 {
+    // type of the statement
     ae_Stmt_Type s_type;
-    int skip;
+    // used to track control paths in non-void functions
+    t_CKBOOL allControlPathsReturn; // 1.5.1.0 (ge) added
 
+    // mushed into one!
     union
     {
         a_Exp stmt_exp;
@@ -422,10 +434,22 @@ struct a_Stmt_
         struct a_Stmt_GotoLabel_ stmt_gotolabel;
     };
 
+    // code position
     uint32_t line; uint32_t where;
 };
 
-struct a_Stmt_List_ { a_Stmt stmt; a_Stmt_List next; uint32_t line; uint32_t where; };
+// list of statements, e.g., as enclosed by { }
+struct a_Stmt_List_
+{
+    // a statement
+    a_Stmt stmt;
+    // next in list
+    a_Stmt_List next;
+    // code position
+    uint32_t line; uint32_t where;
+};
+
+// class definition AST node
 struct a_Class_Def_ { ae_Keyword decl; a_Id_List name; a_Class_Ext ext;
                       a_Class_Body body; t_CKTYPE type; int iface; t_CKNSPC home;
                       uint32_t line; uint32_t where; };

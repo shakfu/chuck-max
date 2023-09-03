@@ -331,15 +331,15 @@ struct Chuck_Namespace : public Chuck_VM_Object
         /* TODO: CK_SAFE_DELETE( dtor ); */
     }
 
-    // look up type
-    Chuck_Type * lookup_type( const std::string & name, t_CKINT climb = 1 );
-    Chuck_Type * lookup_type( S_Symbol name, t_CKINT climb = 1 );
     // look up value
-    Chuck_Value * lookup_value( const std::string & name, t_CKINT climb = 1 );
-    Chuck_Value * lookup_value( S_Symbol name, t_CKINT climb = 1 );
+    Chuck_Value * lookup_value( const std::string & name, t_CKINT climb = 1, t_CKBOOL stayWithinClassDef = FALSE );
+    Chuck_Value * lookup_value( S_Symbol name, t_CKINT climb = 1, t_CKBOOL stayWithinClassDef = FALSE );
+    // look up type
+    Chuck_Type * lookup_type( const std::string & name, t_CKINT climb = 1, t_CKBOOL stayWithinClassDef = FALSE );
+    Chuck_Type * lookup_type( S_Symbol name, t_CKINT climb = 1, t_CKBOOL stayWithinClassDef = FALSE );
     // look up func
-    Chuck_Func * lookup_func( const std::string & name, t_CKINT climb = 1 );
-    Chuck_Func * lookup_func( S_Symbol name, t_CKINT climb = 1 );
+    Chuck_Func * lookup_func( const std::string & name, t_CKINT climb = 1, t_CKBOOL stayWithinClassDef = FALSE );
+    Chuck_Func * lookup_func( S_Symbol name, t_CKINT climb = 1, t_CKBOOL stayWithinClassDef = FALSE );
 
     // commit the maps
     void commit() {
@@ -455,7 +455,7 @@ public:
     // get namespace at top of stack
     Chuck_Namespace * nspc_top();
     // get type at top of type stack
-    Chuck_Type* class_top();
+    Chuck_Type * class_top();
 
 public:
     // REFACTOR-2017: carrier and accessors
@@ -507,7 +507,6 @@ public:
     std::map<std::string, std::string> deprecated;
     // level - 0:stop, 1:warn, 2:ignore
     t_CKINT deprecate_level;
-
 
 public:
     // REFACTOR-2017: public types
@@ -628,6 +627,12 @@ public:
     void add( const Chuck_Value_Dependency & dep );
     // add a remote (recursive) dependency
     void add( Chuck_Value_Dependency_Graph * graph );
+    // clear all dependencies | to be called when all dependencies are met
+    // for example, at the successful compilation of a context (e.g., a file)
+    // after this, calls to locate() will return NULL, indicating no dependencies
+    // NOTE dependency analysis is for within-context only, and is not needed
+    // across contexts (e.g., files) | 1.5.1.1 (ge) added
+    void clear();
     // look for a dependency that occurs AFTER a particular code position
     // this function crawls the graph, taking care in the event of cycles
     const Chuck_Value_Dependency * locate( t_CKUINT pos, t_CKBOOL isClassDef = FALSE );
@@ -702,7 +707,7 @@ struct Chuck_Type : public Chuck_Object
     // reference to environment RE-FACTOR 2017
     Chuck_Env * env_ref;
 
-    // dependency tracking | 1.5.0.8
+    // (within-context, e.g., a ck file) dependency tracking | 1.5.0.8
     Chuck_Value_Dependency_Graph depends;
 
     // documentation
@@ -719,12 +724,12 @@ public:
                 t_CKUINT _s = 0 );
     // destructor
     virtual ~Chuck_Type();
-        // reset
+    // reset
     void reset();
     // assignment - this does not touch the Chuck_VM_Object
     const Chuck_Type & operator =( const Chuck_Type & rhs );
     // make a copy of this type struct
-    Chuck_Type * copy( Chuck_Env * env ) const;
+    Chuck_Type * copy( Chuck_Env * env, Chuck_Context * context ) const;
 
 public:
     // to string: the full name of this type, e.g., "UGen" or "int[][]"
@@ -830,11 +835,9 @@ struct Chuck_Func : public Chuck_VM_Object
     // base name (without the designation, e.g., "dump"); 1.4.1.0
     std::string base_name;
     // human readable function signature: e.g., void Object.func( int foo, float bar[] );
-    std::string signature() const;
+    std::string signature( t_CKBOOL incFunDef = TRUE, t_CKBOOL incRetType = TRUE ) const;
     // code (included imported)
     Chuck_VM_Code * code;
-    // imported code
-    // Chuck_DL_Func * dl_code;
     // member
     t_CKBOOL is_member;
     // static (inside class)
@@ -848,7 +851,7 @@ struct Chuck_Func : public Chuck_VM_Object
     // for overriding
     Chuck_Value * up;
 
-    // dependency tracking | 1.5.0.8
+    // (within-context, e.g., a ck file) dependency tracking | 1.5.0.8
     Chuck_Value_Dependency_Graph depends;
 
     // documentation
@@ -899,9 +902,9 @@ public:
 // primary chuck type checker interface
 //-----------------------------------------------------------------------------
 // initialize the type engine
-Chuck_Env * type_engine_init( Chuck_Carrier * carrier );
+t_CKBOOL type_engine_init( Chuck_Carrier * carrier );
 // shutdown the type engine
-void type_engine_shutdown( Chuck_Env * env );
+void type_engine_shutdown( Chuck_Carrier * carrier );
 // load a context to be type-checked or emitted
 t_CKBOOL type_engine_load_context( Chuck_Env * env, Chuck_Context * context );
 // unload a context after being emitted
@@ -1006,7 +1009,7 @@ Chuck_Type  * type_engine_find_type( Chuck_Env * env, a_Id_List path );
 Chuck_Type  * type_engine_find_type( Chuck_Env * env, const std::string & name ); // 1.5.0.0 (ge) added
 Chuck_Value * type_engine_find_value( Chuck_Type * type, const std::string & xid );
 Chuck_Value * type_engine_find_value( Chuck_Type * type, S_Symbol xid );
-Chuck_Value * type_engine_find_value( Chuck_Env * env, const std::string & xid, t_CKBOOL climb, int linepos = 0 );
+Chuck_Value * type_engine_find_value( Chuck_Env * env, const std::string & xid, t_CKBOOL climb, t_CKBOOL stayWithClassDef = FALSE, int linepos = 0 );
 Chuck_Namespace * type_engine_find_nspc( Chuck_Env * env, a_Id_List path );
 // convert a vector of type names to a vector of Types | 1.5.0.0 (ge) added
 void type_engine_names2types( Chuck_Env * env, const std::vector<std::string> & typeNames, std::vector<Chuck_Type *> & types );
