@@ -6,18 +6,13 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 #############################################################
 # set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment version" FORCE)
 
-add_subdirectory(core)
-add_subdirectory(host)
-add_subdirectory(host_embed)
 
-
-set(CHUCK_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/core)
+set(CHUCK_INCLUDE ${CMAKE_SOURCE_DIR}/source/projects/chuck/core)
 
 include_directories( 
     "${MAX_SDK_INCLUDES}"
     "${MAX_SDK_MSP_INCLUDES}"
     "${MAX_SDK_JIT_INCLUDES}"
-    
 )
 
 file(GLOB PROJECT_SRC
