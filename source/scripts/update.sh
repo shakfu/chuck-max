@@ -36,9 +36,10 @@ function update_new_chugin() {
 	rm -rf ${PROJECTS_DIR}/chugins-new/"$1"/*.dsw && \
 	rm -rf ${PROJECTS_DIR}/chugins-new/"$1"/*.dsp && \
 	rm -rf ${PROJECTS_DIR}/chugins-new/"$1"/*.xcodeproj && \
-	rm -rf ${PROJECTS_DIR}/chugins-new/"$1"/*.vcxproj
+	rm -rf ${PROJECTS_DIR}/chugins-new/"$1"/*.vcxproj && \
+	rm -rf ${PROJECTS_DIR}/chugins-new/"$1"/*.sln && \
+	rm -rf ${PROJECTS_DIR}/chugins-new/"$1"/.gitignore
 }
-
 
 
 function update_chugins() {
@@ -84,6 +85,7 @@ function update_chugins() {
 	update_new_chugin WPKorg35 && \
 	update_new_chugin Wavetable && \
 	update_new_chugin WinFuncEnv && \
+	rm -rf ${PROJECTS_DIR}/chugins-new/chuginate
 	mv ${PROJECTS_DIR}/chugins ${PROJECTS_DIR}/chugins-old && \
 	mv ${PROJECTS_DIR}/chugins-new ${PROJECTS_DIR}/chugins && \
 	rm -rf chugins-src
@@ -93,6 +95,7 @@ function update_chugins() {
 
 function update() {
 	update_chuck
+	update_chugins
 	rm -rf ${PROJECTS_DIR}/chuck-old
 	rm -rf ${PROJECTS_DIR}/chugins-old
 }
