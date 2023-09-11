@@ -78,9 +78,7 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 
 ## Status
 
-- [x] updated to chuck-1.5.0.8
-- [ ] add linux support
-- [ ] add windows support
+\- [ ] add windows support
 - [ ] add support for events
 - [ ] add support for callbacks
 - [x] build chugins with cmake
@@ -95,8 +93,6 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 
 ## TODO
 
-- [ ] Fix `chugin/Patch` regression
-
 - [ ] More error checking!!! 
 
 - [ ] Add editor support for double-click to edit, etc.. or via filewatcher
@@ -104,8 +100,6 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 - [ ] Flesh out API (add all messages). Learn from the miniAudicle code.
 
 - [ ] Add support for events and callbacks: ChucKDesigner has python callbacks, perhaps use lua or js via an extension?
-
-- [ ] Convert `chuginate` to python3
 
 - [ ] Package chugins and scripts in a self-contained signed and notarized external bundle
 

@@ -11,12 +11,9 @@ However, static complition and integration of chugins is not working although th
 
 The directories `chuck/src/core`, `chuck/src/host`, `chuck/src/host-embed` are directly included for the sake of practicality in the `chuck-max/source/projects/chuck~` folder. Typically the `chuck` repo would have been included as an external dependency and downloaded and built when required.
 
-Indeed this is usual practice and was the initial intention, however, this idea was dropped when it became clear that the `chuck` repo, even at `--depth=1`, requires more than 1 GB of storage and can take ages to download. Half of this is repo history and the other half is due to the size of the `docs` directory which contains large media files.
+The prior reason was that the `chuck` repo until recently, even at `--depth=1`, required more than 1 GB of storage and could take ages to download.
 
-The other reason only the necessary code directories were included (as well as chugins) was to facilitate conversion of the build system to cmake from makefiles.
-
-The project may still resort to git submodules in the future, but this will require a fork of the chuck and chugins repos.
-
+With this problem solved, a script (`source/scripts/update.sh`) is preferred to including chuck and chugins directories as git submodules.
 
 ## Audio Processing Block Evolution
 
@@ -142,7 +139,11 @@ void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **
 
 ### Issues
 
-- How to set default values?
+#### How to set default values?
+
+As a general rule, if the chuck code will not run in chuck, then it will not run in chuck-max.
+
+So global parameters should be initialized in the chuck script as normal and chuck-max will change the value of initialization on opening. It practice, this is a non-issue.
 
 
 ### From "Chunity: Integrated Audiovisual Programming in Unity":
