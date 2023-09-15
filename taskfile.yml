@@ -1,0 +1,47 @@
+# uses task, a multi-platform make replacement (https://taskfile.dev)
+
+version: '3'
+
+vars:
+  CONFIG: "Release" # or Debug
+  CHUCK_EXTERNAL: externals/chuck~.mxo
+  CHUCK_PACKAGE: "{{.HOME}}/Documents/Max\ 8/Packages/chuck-max"
+  SCRIPTS: source/scripts
+  BUILD: build
+
+
+env:
+  GREETING: good morning
+
+
+tasks:
+  build:
+    platforms: [darwin]
+    deps: [clean-externals]
+    cmds:
+      - |
+        mkdir -p build
+        cd build
+        cmake -GXcode ..
+        cmake --build . --config '{{.CONFIG}}'
+
+  clean:
+    cmds:
+      - task: clean-externals
+      - rm -rf build
+
+  clean-externals:
+    cmds:
+      - rm -rf externals
+
+  build-windows:
+    platforms: [windows]
+    deps:
+      - clean-externals
+    cmds:
+      - |
+        mkdir -p build
+        cd build
+        cmake -GNinja ..
+        cmake --build . --config '{{.CONFIG}}'
+
