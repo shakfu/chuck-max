@@ -3,7 +3,6 @@
 version: '3'
 
 vars:
-  CONFIG: "Release" # or Debug
   CHUCK_EXTERNAL: externals/chuck~.mxo
   CHUCK_PACKAGE: "{{.HOME}}/Documents/Max\ 8/Packages/chuck-max"
   SCRIPTS: source/scripts
@@ -11,7 +10,7 @@ vars:
 
 
 env:
-  GREETING: good morning
+  CONFIG: Release # or Debug
 
 
 tasks:
@@ -23,7 +22,7 @@ tasks:
         mkdir -p build
         cd build
         cmake -GXcode ..
-        cmake --build . --config '{{.CONFIG}}'
+        cmake --build . --config '$CONFIG'
 
   clean:
     cmds:
@@ -43,5 +42,5 @@ tasks:
         mkdir -p build
         cd build
         cmake -GNinja ..
-        cmake --build . --config '{{.CONFIG}}'
+        cmake --build . --config '$CONFIG'
 

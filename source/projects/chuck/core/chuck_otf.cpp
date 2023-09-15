@@ -198,8 +198,8 @@ t_CKUINT otf_process_msg( Chuck_VM * vm, Chuck_Compiler * compiler,
         // (added 1.3.5.2)
         std::string full_path = get_full_path( msg->buffer );
 
-        // special FILE descriptor mode; set autoClose to true
-        compiler->set_file2parse( fd, TRUE );
+        // special FILE descriptor mode; set autoClose to FALSE ('cleanup' will close fd)
+        compiler->set_file2parse( fd, FALSE );
         // parse, type-check, and emit
         if( !compiler->go( msg->buffer, full_path ) )
         {
