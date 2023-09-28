@@ -1790,8 +1790,8 @@ void Chuck_Instr_Add_string_int::execute( Chuck_VM * vm, Chuck_VM_Shred * shred 
     result = (Chuck_String *)instantiate_and_initialize_object( vm->env()->ckt_string, shred );
 
     // concat
-    // result->str = lhs->str + ::itoa(rhs);
-    result->set( lhs->str() + ::itoa( rhs ) );
+    // result->str = lhs->str + ::ck_itoa(rhs);
+    result->set( lhs->str() + ::ck_itoa( rhs ) );
 
     // push the reference value to reg stack
     push_( reg_sp, (t_CKUINT)(result) );
@@ -1839,8 +1839,8 @@ void Chuck_Instr_Add_string_float::execute( Chuck_VM * vm, Chuck_VM_Shred * shre
     result = (Chuck_String *)instantiate_and_initialize_object( vm->env()->ckt_string, shred );
 
     // concat
-    // result->str = lhs->str + ::ftoa(rhs, 4);
-    result->set( lhs->str() + ::ftoa( rhs, 4 ) );
+    // result->str = lhs->str + ::ck_ftoa(rhs, 4);
+    result->set( lhs->str() + ::ck_ftoa( rhs, 4 ) );
 
     // push the reference value to reg stack
     push_( reg_sp, (t_CKUINT)(result) );
@@ -1888,8 +1888,8 @@ void Chuck_Instr_Add_int_string::execute( Chuck_VM * vm, Chuck_VM_Shred * shred 
     result = (Chuck_String *)instantiate_and_initialize_object( vm->env()->ckt_string, shred );
 
     // concat
-    // result->str = ::itoa(lhs) + rhs->str;
-    result->set( ::itoa(lhs) + rhs->str() );
+    // result->str = ::ck_itoa(lhs) + rhs->str;
+    result->set( ::ck_itoa(lhs) + rhs->str() );
 
     // push the reference value to reg stack
     push_( reg_sp, (t_CKUINT)(result) );
@@ -1937,8 +1937,8 @@ void Chuck_Instr_Add_float_string::execute( Chuck_VM * vm, Chuck_VM_Shred * shre
     result = (Chuck_String *)instantiate_and_initialize_object( vm->env()->ckt_string, shred );
 
     // concat
-    // result->str = ::ftoa(lhs, 4) + rhs->str;
-    result->set( ::ftoa( lhs, 4 ) + rhs->str() );
+    // result->str = ::ck_ftoa(lhs, 4) + rhs->str;
+    result->set( ::ck_ftoa( lhs, 4 ) + rhs->str() );
 
     // push the reference value to reg stack
     push_( reg_sp, (t_CKUINT)(result) );
@@ -1982,8 +1982,8 @@ void Chuck_Instr_Add_int_string_Assign::execute( Chuck_VM * vm, Chuck_VM_Shred *
     if( !(*rhs_ptr) ) goto null_pointer;
 
     // concat
-    // (*rhs_ptr)->str += ::itoa(lhs);
-    (*rhs_ptr)->set( (*rhs_ptr)->str() + ::itoa(lhs) );
+    // (*rhs_ptr)->str += ::ck_itoa(lhs);
+    (*rhs_ptr)->set( (*rhs_ptr)->str() + ::ck_itoa(lhs) );
 
     // push the reference value to reg stack
     push_( reg_sp, (t_CKUINT)(*rhs_ptr) );
@@ -2027,8 +2027,8 @@ void Chuck_Instr_Add_float_string_Assign::execute( Chuck_VM * vm, Chuck_VM_Shred
     if( !(*rhs_ptr) ) goto null_pointer;
 
     // concat
-    // (*rhs_ptr)->str += ::ftoa(lhs, 4);
-    (*rhs_ptr)->set( (*rhs_ptr)->str() + ::ftoa(lhs, 4) );
+    // (*rhs_ptr)->str += ::ck_ftoa(lhs, 4);
+    (*rhs_ptr)->set( (*rhs_ptr)->str() + ::ck_ftoa(lhs, 4) );
 
     // push the reference value to reg stack
     push_( reg_sp, (t_CKUINT)(*rhs_ptr) );
@@ -4091,9 +4091,7 @@ Chuck_Object * instantiate_and_initialize_object( Chuck_Type * type, Chuck_VM_Sh
         // check type TODO: make this faster
         if( type->allocator )
             object = type->allocator( vm, shred, Chuck_DL_Api::Api::instance() );
-        // #ifndef __DISABLE_FILEIO__
         else if( isa( type, vm->env()->ckt_fileio ) ) object = new Chuck_IO_File( vm );
-        // #endif
         else if( isa( type, vm->env()->ckt_event ) ) object = new Chuck_Event;
         else if( isa( type, vm->env()->ckt_string ) ) object = new Chuck_String;
         // TODO: is this ok?
