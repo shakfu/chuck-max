@@ -67,6 +67,12 @@ CK_DLL_SFUN( machine_version_impl );
 CK_DLL_SFUN( machine_setloglevel_impl );
 CK_DLL_SFUN( machine_getloglevel_impl );
 CK_DLL_SFUN( machine_refcount_impl);
+CK_DLL_SFUN( machine_opOverloadPush_impl);
+CK_DLL_SFUN( machine_opOverloadPop_impl);
+CK_DLL_SFUN( machine_opOverloadReset_impl);
+CK_DLL_SFUN( machine_opOverloadStackLevel_impl);
+CK_DLL_SFUN( machine_testSetup_impl );
+CK_DLL_SFUN( machine_testInvoke_impl );
 
 
 
@@ -137,6 +143,32 @@ DLL_QUERY machine_query( Chuck_DL_Query * QUERY )
     // add clearVM
     QUERY->add_sfun( QUERY, machine_clearVM_impl, "void", "clearVM" );
     QUERY->doc_func( QUERY, "Reset the type system, removing all user-defined types and all global variables; removes all shreds in the VM (including the shred calling this function); use with care.");
+
+    // add resetOperators
+    QUERY->add_sfun( QUERY, machine_opOverloadReset_impl, "void", "resetOperators" );
+    QUERY->doc_func( QUERY, "Reset operator overloading state to default startup state; removes all public @operator overloads; use with care.");
+
+    // comment out for now -- since local overloads don't persist, push/pop should probably affect public @operator overloads
+    // // add operatorsPush
+    // QUERY->add_sfun( QUERY, machine_opOverloadPush_impl, "void", "operatorsPush" );
+    // QUERY->doc_func( QUERY, "Push the operator overloading stack; use with care.");
+    //
+    // // add operatorsPop
+    // QUERY->add_sfun( QUERY, machine_opOverloadPop_impl, "void", "operatorsPop" );
+    // QUERY->doc_func( QUERY, "Pop the operator overloading stack; use with care.");
+    //
+    // // add operatorsStackLevel
+    // QUERY->add_sfun( QUERY, machine_opOverloadStackLevel_impl, "void", "operatorsStackLevel" );
+    // QUERY->doc_func( QUERY, "Get the current operator overloading stack level.");
+
+//    // add testSetup
+//    QUERY->add_sfun( QUERY, machine_testSetup_impl, "void", "testSetup" );
+//    QUERY->add_arg( QUERY, "Object", "obj" );
+//
+//    // add testInvoke
+//    QUERY->add_sfun( QUERY, machine_testInvoke_impl, "void", "testInvoke" );
+//    QUERY->add_arg( QUERY, "Object", "obj" );
+//    QUERY->add_arg( QUERY, "float", "arg" );
 
     // add status (legacy version of printStatus; has return value)
     QUERY->add_sfun( QUERY, machine_printStatus_impl, "int", "status" );
@@ -480,8 +512,8 @@ CK_DLL_SFUN( machine_silent_impl )
 
 CK_DLL_SFUN( machine_shreds_impl )
 {
-    Chuck_Array4 *array = new Chuck_Array4(FALSE);
-    initialize_object(array, SHRED->vm_ref->env()->ckt_array);
+    Chuck_ArrayInt *array = new Chuck_ArrayInt(FALSE);
+    initialize_object(array, SHRED->vm_ref->env()->ckt_array, SHRED, VM);
     array->clear();
 
     Chuck_VM_Status status;
@@ -539,7 +571,7 @@ CK_DLL_SFUN( machine_version_impl )
     // make chuck string
     Chuck_String * s = new Chuck_String( vs );
     // initialize
-    initialize_object(s, VM->carrier()->env->ckt_string );
+    initialize_object(s, VM->carrier()->env->ckt_string, SHRED, VM );
     // return
     RETURN->v_string = s;
 }
@@ -577,9 +609,87 @@ CK_DLL_SFUN( machine_refcount_impl )
     RETURN->v_int = obj != NULL ? obj->m_ref_count-1 : 0;
 }
 
+CK_DLL_SFUN( machine_opOverloadPush_impl)
+{
+    VM->env()->op_registry.push();
+}
+
+CK_DLL_SFUN( machine_opOverloadPop_impl)
+{
+    VM->env()->op_registry.pop();
+}
+
+CK_DLL_SFUN( machine_opOverloadReset_impl)
+{
+    VM->env()->op_registry.reset2public();
+}
+
+CK_DLL_SFUN( machine_opOverloadStackLevel_impl)
+{
+    RETURN->v_int = VM->env()->op_registry.stackLevel();
+}
+
 // add
 CK_DLL_SFUN( machine_crash_impl )
 {
     CK_FPRINTF_STDERR( "[chuck]: crashing...\n" );
     *(volatile int *)0 = 0;
 }
+
+
+// TEST
+//Chuck_VM_MFunInvoker * g_testInvoker;
+//
+//CK_DLL_SFUN( machine_testSetup_impl )
+//{
+//    Chuck_Object * obj = GET_NEXT_OBJECT(ARGS);
+//
+//    g_testInvoker = new Chuck_VM_MFunInvoker;
+//
+//    t_CKINT func_vt_offset = -1;
+//    Chuck_Func * func = NULL;
+//
+//    for(t_CKINT i = 0; i < obj->vtable->funcs.size(); i++)
+//    {
+//        func = obj->vtable->funcs[i];
+//        if(func->name.find("update") == 0 &&
+//           // ensure has one argument
+//           func->def()->arg_list != NULL &&
+//           // ensure first argument is float
+//           func->def()->arg_list->type == SHRED->vm_ref->env()->ckt_float &&
+//           // ensure has only one argument
+//           func->def()->arg_list->next == NULL &&
+//           // ensure returns float
+//           func->def()->ret_type == SHRED->vm_ref->env()->ckt_void )
+//        {
+//            func_vt_offset = i;
+//            break;
+//        }
+//    }
+//
+//    // not found
+//    if( func_vt_offset < 0 )
+//    {
+//        EM_error3( "update() not found yo" );
+//        return;
+//    }
+//
+//    // set up invoker
+//    g_testInvoker->setup( func, func_vt_offset, VM, SHRED );
+//}
+//
+//CK_DLL_SFUN( machine_testInvoke_impl )
+//{
+//    Chuck_Object * obj = GET_NEXT_OBJECT(ARGS);
+//    t_CKFLOAT v = GET_NEXT_FLOAT(ARGS);
+//
+//    Chuck_DL_Arg arg;
+//    arg.kind = kindof_FLOAT;
+//    arg.value.v_float = v;
+//    vector<Chuck_DL_Arg> args;
+//    args.push_back(arg);
+//
+//    g_testInvoker->invoke(obj, args );
+//
+//    CK_SAFE_DELETE( g_testInvoker );
+//}

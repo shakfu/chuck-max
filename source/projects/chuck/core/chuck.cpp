@@ -535,6 +535,8 @@ t_CKBOOL ChucK::initVM()
 
     // instantiate VM
     m_carrier->vm = new Chuck_VM();
+    // add reference (this will be released on shtudwon
+    CK_SAFE_ADD_REF( m_carrier->vm );
     // reference back to carrier
     m_carrier->vm->setCarrier( m_carrier );
     // initialize VM
@@ -677,7 +679,6 @@ t_CKBOOL ChucK::initCompiler()
         EM_poplog();
     }
 
-
     return true;
 }
 
@@ -759,9 +760,8 @@ t_CKBOOL ChucK::initChugins()
             // parse, type-check, and emit
             if( compiler()->go( filename, full_path ) )
             {
-                // TODO: how to compilation handle?
-                //return 1;
-
+                // preserve op overloads | 1.5.1.5
+                compiler()->env()->op_registry.preserve();
                 // get the code
                 code = compiler()->output();
                 // name it - TODO?
@@ -769,6 +769,11 @@ t_CKBOOL ChucK::initChugins()
 
                 // spork it
                 shred = vm()->spork( code, NULL, TRUE );
+            }
+            else // did not compile
+            {
+                // undo any op overloads | 1.5.1.5
+                compiler()->env()->op_registry.reset2local();
             }
 
             // pop indent
@@ -1032,8 +1037,10 @@ t_CKBOOL ChucK::shutdown()
     if( m_carrier != NULL )
     {
         // clean up vm, compiler
-        CK_SAFE_DELETE( m_carrier->vm );
         CK_SAFE_DELETE( m_carrier->compiler );
+        // release VM (which is itself a Chuck_Obj)
+        CK_SAFE_RELEASE( m_carrier->vm );
+        // zero the env out (cleaned up in compiler)
         m_carrier->env = NULL;
     }
 

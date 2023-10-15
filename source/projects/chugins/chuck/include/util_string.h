@@ -40,9 +40,14 @@
 
 
 // int to ascii
-std::string itoa( t_CKINT val );
+std::string ck_itoa( t_CKINT val );
 // float to ascii
-std::string ftoa( t_CKFLOAT val, t_CKUINT precision );
+std::string ck_ftoa( t_CKFLOAT val, t_CKUINT precision );
+// ascii to unsigned long
+unsigned long ck_atoul( const std::string & s, int base = 10 );
+// ascii to signed long
+long ck_atol( const std::string & s, int base = 10 );
+
 // pointer to ascii
 std::string ptoa( void * val );
 // lower-case string
@@ -100,6 +105,9 @@ t_CKBOOL is_absolute_path( const std::string & path );
 
 // split "x:y:z"-style path list into {"x","y","z"}
 void parse_path_list( std::string & str, std::list<std::string> & lst );
+
+// generate auto filename (usually with date-time) with file prefix and extension
+std::string autoFilename( const std::string & prefix, const std::string & extension );
 
 // test whether a filename ends in a particular extension
 t_CKBOOL extension_matches( const std::string & filename,

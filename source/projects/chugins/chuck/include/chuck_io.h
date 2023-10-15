@@ -53,9 +53,7 @@ t_CKBOOL init_class_MidiRW( Chuck_Env * env );
 t_CKBOOL init_class_HID( Chuck_Env * env );
 #endif
 t_CKBOOL init_class_io( Chuck_Env * env, Chuck_Type * type );
-// #ifndef __DISABLE_FILEIO__
 t_CKBOOL init_class_fileio( Chuck_Env * env, Chuck_Type * type );
-// #endif
 // added 1.3.0.0 -- moved to be full-fledged class
 t_CKBOOL init_class_chout( Chuck_Env * env, Chuck_Type * type );
 // added 1.3.0.0 -- moved to be full-fledged class
@@ -158,7 +156,6 @@ public:
 
 
 
-// #ifndef __DISABLE_FILEIO__
 
 #ifndef __PLATFORM_WINDOWS__
 #include <dirent.h>
@@ -193,7 +190,7 @@ public:
 
     // directories
     virtual t_CKINT isDir();
-    virtual Chuck_Array4 * dirList();
+    virtual Chuck_ArrayInt * dirList();
 
     // reading
     // virtual Chuck_String * read( t_CKINT length );
@@ -234,6 +231,9 @@ public:
     static THREAD_RETURN( THREAD_TYPE writeFloat_thread ) (void * data);
 #endif
 
+    // get filename
+    std::string filename() const { return m_path; }
+
 protected:
     // open flags
     t_CKINT m_flags;
@@ -249,8 +249,13 @@ protected:
     std::string m_path;
     // vm and shred
     Chuck_VM * m_vmRef;
+
+public:
+    // auto prefix | 1.5.1.5
+    std::string m_autoPrefix;
+    // auto extension | 1.5.1.5
+    std::string m_autoExtension;
 };
-// #endif // __DISABLE_FILEIO__
 
 
 
@@ -376,7 +381,6 @@ CK_DLL_SFUN( io_newline );
 CK_DLL_SFUN( io_openfile );
 
 
-// #ifndef __DISABLE_FILEIO__
 //-----------------------------------------------------------------------------
 // fileio API
 //-----------------------------------------------------------------------------
@@ -410,8 +414,11 @@ CK_DLL_MFUN( fileio_writeint );
 CK_DLL_MFUN( fileio_writeintflags );
 CK_DLL_MFUN( fileio_writefloat );
 CK_DLL_MFUN( fileio_writefloatflags );
+CK_DLL_MFUN( file_ctrl_autoPrefixAndExtension );
+CK_DLL_MFUN( file_cget_autoPrefix );
+CK_DLL_MFUN( file_cget_autoExtension );
+CK_DLL_MFUN( file_cget_filename );
 CK_DLL_SFUN( fileio_expandpath_impl );
-// #endif // __DISABLE_FILEIO__
 
 
 //-----------------------------------------------------------------------------
@@ -551,8 +558,11 @@ CK_DLL_MFUN( HidIn_open );
 CK_DLL_MFUN( HidIn_open_named );
 CK_DLL_MFUN( HidIn_open_named_i ); // added 1.3.0.0
 CK_DLL_MFUN( HidIn_open_joystick );
+CK_DLL_MFUN( HidIn_open_joystick_2 );
 CK_DLL_MFUN( HidIn_open_mouse );
+CK_DLL_MFUN( HidIn_open_mouse_2 );
 CK_DLL_MFUN( HidIn_open_keyboard );
+CK_DLL_MFUN( HidIn_open_keyboard_2 );
 CK_DLL_MFUN( HidIn_open_tiltsensor );
 CK_DLL_MFUN( HidIn_good );
 CK_DLL_MFUN( HidIn_num );
@@ -622,7 +632,7 @@ public:
     virtual void write( const std::string & val );
     virtual void write( t_CKINT val );
     virtual void write( t_CKINT val, t_CKINT flags );
-    virtual void writeBytes( Chuck_Array4 * arr );
+    virtual void writeBytes( Chuck_ArrayInt * arr );
     virtual void write( t_CKFLOAT val );
     virtual void write( t_CKFLOAT val, t_CKINT flags );
     virtual void write( const t_CKCOMPLEX & val );

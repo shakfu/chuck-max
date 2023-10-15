@@ -167,7 +167,7 @@ string toupper( const string & str )
 
 //-----------------------------------------------------------------------------
 // name: capitalize()
-// capitalize first character
+// desc: capiitalize first character
 //-----------------------------------------------------------------------------
 string capitalize( const string & s )
 {
@@ -176,6 +176,45 @@ string capitalize( const string & s )
     // if not empty and first character is a lower-case letter
     if( retval.length() > 0 && retval[0] >= 'a' && retval[0] <= 'z' )
         retval[0] -= 32;
+    // done
+    return retval;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: capitalize_and_periodize()
+// desc: capiitalize first character and ensure trailing period
+//-----------------------------------------------------------------------------
+string capitalize_and_periodize( const string & s )
+{
+    // copy
+    string retval = capitalize( trim(s) );
+    // check
+    if( retval.length() > 0 )
+    {
+        char c = retval[retval.length()-1];
+        // check for other punctuation
+        switch( c )
+        {
+            case '.':
+            case ',':
+            case '!':
+            case '?':
+            case ')':
+            case '(':
+            case '#':
+            case '\'':
+            case '\"':
+            case '\n':
+                break;
+
+            // in all other cases, append .
+            default:
+                retval += '.';
+        }
+    }
     // done
     return retval;
 }
@@ -1069,6 +1108,29 @@ std::string timestamp_formatted()
     // return the formatted timestamp
     return datetime_buf;
 }
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: autoFilename()
+// desc: generate auto filename | 1.5.0.0 (ge) refactored into this function
+//-----------------------------------------------------------------------------
+std::string autoFilename( const std::string & prefix, const std::string & fileExt )
+{
+    char buffer[1024];
+    time_t t; time(&t);
+    strcpy( buffer, prefix.c_str() );
+    strcat( buffer, "(" );
+    strncat( buffer, ctime(&t), 24 );
+    buffer[strlen(prefix.c_str())+14] = 'h';
+    buffer[strlen(prefix.c_str())+17] = 'm';
+    strcat( buffer, ")." );
+    strcat( buffer, fileExt.c_str() );
+    // return
+    return buffer;
+}
+
 
 
 
