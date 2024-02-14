@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -47,11 +47,18 @@
 #define CK_LOG_DEBUG            6  // 1.5.0.5 was: CK_LOG_CONFIG
 #define CK_LOG_INFO             5
 #define CK_LOG_WARNING          4
-#define CK_LOG_SEVERE           3
+#define CK_LOG_HERALD           3
 #define CK_LOG_SYSTEM           2
 #define CK_LOG_CORE             1
 #define CK_LOG_NONE             0  // set this to log nothing
 
+// bitwise options for EM_log_opts
+enum em_LogOpts
+{
+    EM_LOG_NONE = 0,
+    EM_LOG_NO_NEWLINE = 0x1,
+    EM_LOG_NO_PREFIX = 0x10
+};
 
 // C linkage
 #if defined(_cplusplus) || defined(__cplusplus)
@@ -66,8 +73,11 @@ extern "C" {
 #define CK_LOG( level, ... ) do{ if(level <= g_loglevel) \
                                  { EM_log( level, __VA_ARGS__ ); } }while(0)
 
+
 // output log message
 void EM_log( t_CKINT, c_constr, ... );
+// output log message (with options)
+void EM_log_opts( t_CKINT level, enum em_LogOpts options, c_constr, ... );
 // set log level [CK_LOG_NONE, CK_LOG_ALL]
 void EM_setlog( t_CKINT level );
 // push the log indentation
@@ -85,8 +95,12 @@ void EM_error2( t_CKINT, c_constr, ... );
 void EM_error2b( t_CKINT, c_constr, ... );
 // prints message, no line number
 void EM_error3( c_constr, ... );
+// prints message, no line number, no color
+void EM_error3b( c_constr, ... );
 // prints exception message
 void EM_exception( c_constr, ... );
+// generate and return error string | 1.5.2.0 (ge)
+c_constr EM_error2str( t_CKINT, t_CKBOOL, c_constr, ... );
 
 // like EM_error2() minus line arg and error
 void EM_print2vanilla( c_constr, ... );

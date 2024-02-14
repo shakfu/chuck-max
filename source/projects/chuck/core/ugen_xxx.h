@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -45,6 +45,7 @@ DLL_QUERY xxx_query( Chuck_DL_Query * query );
 
 // stereo
 CK_DLL_CTOR( stereo_ctor );
+CK_DLL_DTOR( stereo_dtor );
 CK_DLL_CTRL( stereo_ctrl_pan );
 CK_DLL_CGET( stereo_cget_pan );
 CK_DLL_CTRL( stereo_ctrl_panType );
@@ -59,17 +60,23 @@ CK_DLL_CGET( multi_cget_chan );
 // bunghole
 CK_DLL_TICK( bunghole_tick );
 
+// subgraph; release and cleanup subgraph inlet/outlet
+void ck_subgraph_cleaup_inlet_outlet( Chuck_UGen * ugen );
+
 // pan2
 CK_DLL_CTOR( pan2_ctor );
 CK_DLL_DTOR( pan2_dtor );
 CK_DLL_CTRL( pan2_ctrl_value );
 CK_DLL_CGET( pan2_cget_value );
 
-// MIX2
+// Mix2
 CK_DLL_CTOR( mix2_ctor );
 CK_DLL_CTOR( mix2_dtor );
 CK_DLL_CTRL( mix2_ctrl_value );
 CK_DLL_CGET( mix2_cget_value );
+
+// Gain
+CK_DLL_MFUN( gain_ctor_1 );
 
 // noise
 CK_DLL_TICK( noise_tick );
@@ -90,6 +97,7 @@ CK_DLL_CGET( impulse_cget_next );
 
 // step
 CK_DLL_CTOR( step_ctor );
+CK_DLL_CTOR( step_ctor_value );
 CK_DLL_DTOR( step_dtor );
 CK_DLL_TICK( step_tick );
 CK_DLL_CTRL( step_ctrl_next );
@@ -154,11 +162,14 @@ CK_DLL_CGET( delayp_cget_max );
 
 // sndbuf
 CK_DLL_CTOR( sndbuf_ctor );
+CK_DLL_CTOR( sndbuf_ctor_path );
+CK_DLL_CTOR( sndbuf_ctor_path_rate );
+CK_DLL_CTOR( sndbuf_ctor_path_rate_pos );
 CK_DLL_DTOR( sndbuf_dtor );
 CK_DLL_TICK( sndbuf_tick );
 CK_DLL_TICKF( sndbuf_tickf );
 CK_DLL_CTRL( sndbuf_ctrl_read );
-CK_DLL_CGET( sndbuf_cget_read );
+CK_DLL_CGET( sndbuf_cget_ready );
 CK_DLL_CTRL( sndbuf_ctrl_write );
 CK_DLL_CGET( sndbuf_cget_write );
 CK_DLL_CTRL( sndbuf_ctrl_pos );

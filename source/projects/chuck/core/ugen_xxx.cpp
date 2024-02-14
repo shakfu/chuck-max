@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -41,6 +41,7 @@
 #include "chuck_compile.h"
 #include "chuck_instr.h"
 #include "util_math.h"
+#include "util_raw.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -220,7 +221,7 @@ DLL_QUERY xxx_query( Chuck_DL_Query * QUERY )
     //---------------------------------------------------------------------
     doc = "base class for stereo unit generators.";
     if( !type_engine_import_ugen_begin( env, "UGen_Stereo", "UGen_Multi", env->global(),
-                                        stereo_ctor, NULL, NULL, NULL, 2, 2, doc.c_str() ) )
+                                        stereo_ctor, stereo_dtor, NULL, NULL, 2, 2, doc.c_str() ) )
         return FALSE;
 
     // add left
@@ -361,6 +362,12 @@ DLL_QUERY xxx_query( Chuck_DL_Query * QUERY )
         return FALSE;
 
     if( !type_engine_import_add_ex( env, "basic/i-robot.ck" ) ) goto error;
+
+    // add ctrl: fprob
+    func = make_new_mfun( "void", "Gain", gain_ctor_1 );
+    func->doc = "construct a Gain with default value.";
+    func->add_arg( "float", "gain" );
+    if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // end import
     if( !type_engine_import_class_end( env ) )
@@ -534,6 +541,12 @@ DLL_QUERY xxx_query( Chuck_DL_Query * QUERY )
     // add member variable
     step_offset_data = type_engine_import_mvar( env, "int", "@step_data", FALSE );
     if( step_offset_data == CK_INVALID_OFFSET ) goto error;
+
+    // add ctor( float value )
+    func = make_new_ctor( step_ctor_value );
+    func->add_arg( "float", "value" );
+    func->doc = "construct a Step with default value.";
+    if( !type_engine_import_ctor( env, func ) ) goto error;
 
     // add ctrl: next
     func = make_new_mfun( "float", "next", step_ctrl_next );
@@ -711,14 +724,37 @@ DLL_QUERY xxx_query( Chuck_DL_Query * QUERY )
     sndbuf_offset_data = type_engine_import_mvar( env, "int", "@sndbuf_data", FALSE );
     if( sndbuf_offset_data == CK_INVALID_OFFSET ) goto error;
 
+    // add ctor( string path )
+    func = make_new_ctor( sndbuf_ctor_path );
+    func->add_arg( "string", "path" );
+    func->doc = "construct a SndBuf with the 'path' to a sound file to read.";
+    if( !type_engine_import_ctor( env, func ) ) goto error;
+
+    // add ctor( string path, float rate )
+    func = make_new_ctor( sndbuf_ctor_path_rate );
+    func->add_arg( "string", "path" );
+    func->add_arg( "float", "rate" );
+    func->doc = "construct a SndBuf with the 'path' to a sound file to read, and a default playback 'rate' (1.0 is normal rate)";
+    if( !type_engine_import_ctor( env, func ) ) goto error;
+
+    // add ctor( string path )
+    func = make_new_ctor( sndbuf_ctor_path_rate_pos );
+    func->add_arg( "string", "path" );
+    func->add_arg( "float", "rate" );
+    func->add_arg( "int", "pos" );
+    func->doc = "construct a SndBuf with the 'path' to a sound file to read, a default playback 'rate' (1.0 is normal rate), and starting at sample position 'pos'";
+    if( !type_engine_import_ctor( env, func ) ) goto error;
+
     // add ctrl: read
     func = make_new_mfun( "string", "read", sndbuf_ctrl_read );
     func->add_arg( "string", "read" );
     func->doc = "read file for reading.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
-    // add cget: read // area
-    //func = make_new_mfun( "string", "read", sndbuf_cget_read );
-    //if( !type_engine_import_mfun( env, func ) ) goto error;
+
+    // add cget: ready
+    func = make_new_mfun( "int", "ready", sndbuf_cget_ready );
+    func->doc = "query whether the SndBuf is ready for use (e.g., sound file successfully loaded).";
+    if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add ctrl: write
     func = make_new_mfun( "string", "write", sndbuf_ctrl_write );
@@ -883,9 +919,9 @@ DLL_QUERY xxx_query( Chuck_DL_Query * QUERY )
                                         dyno_ctor, dyno_dtor, dyno_tick, NULL, doc.c_str() ) )
         return FALSE;
 
-    if( !type_engine_import_add_ex( env, "Dyno-compress.ck" ) ) goto error;
-    if( !type_engine_import_add_ex( env, "Dyno-duck.ck" ) ) goto error;
-    if( !type_engine_import_add_ex( env, "Dyno-limit.ck" ) ) goto error;
+    if( !type_engine_import_add_ex( env, "special/Dyno-compress.ck" ) ) goto error;
+    if( !type_engine_import_add_ex( env, "special/Dyno-duck.ck" ) ) goto error;
+    if( !type_engine_import_add_ex( env, "special/Dyno-limit.ck" ) ) goto error;
 
     // add member variable
     dyno_offset_data = type_engine_import_mvar( env, "int", "@dyno_data", FALSE );
@@ -900,25 +936,25 @@ DLL_QUERY xxx_query( Chuck_DL_Query * QUERY )
     // add ctrl: compress
     func = make_new_mfun( "void", "compress", dyno_ctrl_compress );
     //func->add_arg( "string", "mode" );
-    func->doc = "set parameters to default compressor values.";
+    func->doc = "set parameters to default compressor values: slopeAbove = 0.5, slopeBelow = 1.0, thresh = 0.5, attackTime = 5 ms, releaseTime = 500 ms, externalSideInput = 0 (false)";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add ctrl: gate
     func = make_new_mfun( "void", "gate", dyno_ctrl_gate );
     //func->add_arg( "string", "mode" );
-    func->doc = "set parameters to default noise gate values.";
+    func->doc = "set parameters to default noise gate values: slopeAbove = 1.0, slopeBelow = 1.0E08, thresh = 0.1, attackTime = 11 ms, releaseTime = 100 ms, externalSideInput = 0 (false)";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add ctrl: expand
     func = make_new_mfun( "void", "expand", dyno_ctrl_expand );
     //func->add_arg( "string", "mode" );
-    func->doc = "set parameters to default expander values.";
+    func->doc = "set parameters to default expander values: slopeAbove = 2.0, slopeBelow = 1.0, thresh = 0.5, attackTime = 20 ms, releaseTime = 400 ms, externalSideInput = 0 (false)";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add ctrl: duck
     func = make_new_mfun( "void", "duck", dyno_ctrl_duck );
     //func->add_arg( "string", "mode" );
-    func->doc = "set parameters ot default ducker values.";
+    func->doc = "set parameters to default ducker values: slopeAbove = 0.5, slopeBelow = 1.0, thresh = 0.5, attackTime = 10 ms, releaseTime = 1000 ms, externalSideInput = 1 (true)";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     //add ctrl: thresh
@@ -1001,12 +1037,12 @@ DLL_QUERY xxx_query( Chuck_DL_Query * QUERY )
     //add ctrl: externalSideInput
     func = make_new_mfun( "int", "externalSideInput", dyno_ctrl_externalSideInput );
     func->add_arg( "int", "externalSideInput" );
-    func->doc = "set to true to cue the amplitude envelope off of sideInput instead of the input signal. Note that this means you will need to manually set sideInput every so often.";
+    func->doc = "set to true to cue the amplitude envelope off sideInput instead of the input signal. Note that this means you will need to manually set sideInput every so often.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     //add cget: externalSideInput
     func = make_new_mfun( "int", "externalSideInput", dyno_cget_externalSideInput );
-    func->doc = "get externalSideInput state. if set to true, the amplitude envelope will be cued off of sideInput instead of the input signal. Note that this means you will need to manually set sideInput every so often.";
+    func->doc = "get externalSideInput state. If set to true, the amplitude envelope will be cued off sideInput instead of the input signal. Note that this means you will need to manually set sideInput every so often.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // end import
@@ -1500,24 +1536,58 @@ error:
 
 //-----------------------------------------------------------------------------
 // name: subgraph_ctor()
-// desc: ...
+// desc: subgraph constructor
 //-----------------------------------------------------------------------------
 CK_DLL_CTOR( subgraph_ctor )
 {
     // get ugen
     Chuck_UGen * ugen = (Chuck_UGen *)SELF;
 
+    // initialize the ugen as subgraph
     ugen->init_subgraph();
 
+    // handle the inlet
     if( ugen->inlet() )
     {
-        OBJ_MEMBER_OBJECT(SELF, subgraph_offset_inlet) = ugen->inlet();
+        // get the ugen
+        Chuck_UGen * in = ugen->inlet();
+        // set the mvar
+        OBJ_MEMBER_OBJECT(SELF, subgraph_offset_inlet) = in;
+        // add refcount for the mvar | 1.5.2.0 (ge)
+        // NOTE will be released as part of Object cleanup
+        CK_SAFE_ADD_REF(in);
     }
 
+    // handle the outlet
     if( ugen->outlet() )
     {
-        OBJ_MEMBER_OBJECT(SELF, subgraph_offset_outlet) = ugen->outlet();
+        // get the ugen
+        Chuck_UGen * out = ugen->outlet();
+        // set the mvar
+        OBJ_MEMBER_OBJECT(SELF, subgraph_offset_outlet) = out;
+        // add refcount for the mvar | 1.5.2.0 (ge)
+        // NOTE will be released as part of Object cleanup
+        CK_SAFE_ADD_REF(out);
     }
+}
+
+
+//-----------------------------------------------------------------------------
+// name: ck_subgraph_cleaup_inlet_outlet()
+// desc: release and cleanup subgraph inlet/outlet
+//-----------------------------------------------------------------------------
+void ck_subgraph_cleaup_inlet_outlet( Chuck_UGen * ugen )
+{
+    Chuck_UGen * inlet = (Chuck_UGen *)OBJ_MEMBER_OBJECT(ugen, subgraph_offset_inlet);
+    Chuck_UGen * outlet = (Chuck_UGen *)OBJ_MEMBER_OBJECT(ugen, subgraph_offset_outlet);
+
+    // release
+    CK_SAFE_RELEASE( inlet );
+    CK_SAFE_RELEASE( outlet );
+
+    // zero out
+    OBJ_MEMBER_OBJECT(ugen, subgraph_offset_inlet) = NULL;
+    OBJ_MEMBER_OBJECT(ugen, subgraph_offset_outlet) = NULL;
 }
 
 
@@ -1634,7 +1704,7 @@ CK_DLL_TICK( foogen_tick )
         // set input
         data->input = in;
         // invoke the function | 1.5.1.5 (ge) encapsulated into invoker
-        ret = data->invoker->invoke( SELF, args );
+        ret = data->invoker->invoke( SELF, args, SELF->originShred() );
         // set output
         data->output = ret.v_float;
     }
@@ -1729,7 +1799,7 @@ void pan_this( Chuck_UGen * left, Chuck_UGen * right, t_CKFLOAT pan, t_CKINT law
 
 //-----------------------------------------------------------------------------
 // name: stereo_ctor()
-// desc: ...
+// desc: stereo constructor
 //-----------------------------------------------------------------------------
 CK_DLL_CTOR( stereo_ctor )
 {
@@ -1738,20 +1808,51 @@ CK_DLL_CTOR( stereo_ctor )
     // default panning law to preserve unity gain (but a WTF panning scheme)
     OBJ_MEMBER_INT(SELF, stereo_offset_panType) = PAN_WTF_UNITY;
 
-    // multi
+    // 2 or more
     if( ugen->m_multi_chan_size )
     {
         // set left
         OBJ_MEMBER_UINT(SELF, stereo_offset_left) = (t_CKUINT)(ugen->m_multi_chan[0]);
+        // add ref | 1.5.2.0
+        CK_SAFE_ADD_REF( ugen->m_multi_chan[0] );
+
         // set right
         OBJ_MEMBER_UINT(SELF, stereo_offset_right) = (t_CKUINT)(ugen->m_multi_chan[1]);
+        // add ref | 1.5.2.0
+        CK_SAFE_ADD_REF( ugen->m_multi_chan[1] );
     }
     else // mono
     {
-        // set left and right to self
-        OBJ_MEMBER_UINT(SELF, stereo_offset_left) = (t_CKUINT)ugen;
-        OBJ_MEMBER_UINT(SELF, stereo_offset_right) = (t_CKUINT)ugen;
+        // set left
+        OBJ_MEMBER_OBJECT(SELF, stereo_offset_left) = ugen;
+        // set right
+        OBJ_MEMBER_OBJECT(SELF, stereo_offset_right) = ugen;
+
+        // add refs 2x | 1.5.2.0
+        CK_SAFE_ADD_REF(ugen); CK_SAFE_ADD_REF(ugen);
     }
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: stereo_dtor()
+// desc: stereo destructor | 1.5.2.0
+//-----------------------------------------------------------------------------
+CK_DLL_DTOR( stereo_dtor )
+{
+    // left & right
+    Chuck_UGen * left = (Chuck_UGen *)OBJ_MEMBER_OBJECT(SELF, stereo_offset_left);
+    Chuck_UGen * right = (Chuck_UGen *)OBJ_MEMBER_OBJECT(SELF, stereo_offset_right);
+
+    // release
+    CK_SAFE_RELEASE(left);
+    CK_SAFE_RELEASE(right);
+
+    // zero out
+    OBJ_MEMBER_OBJECT(SELF, stereo_offset_left) = NULL;
+    OBJ_MEMBER_OBJECT(SELF, stereo_offset_right) = NULL;
 }
 
 
@@ -1854,6 +1955,21 @@ CK_DLL_TICK( dac_tick )
 CK_DLL_TICK( bunghole_tick )
 {
     *out = 0.0f; return 0;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: Gain( float gain )
+// desc: Gain constructor that takes a float
+//-----------------------------------------------------------------------------
+CK_DLL_MFUN( gain_ctor_1 )
+{
+    // get ugen
+    Chuck_UGen * ugen = (Chuck_UGen *)SELF;
+    // set from constructor arg
+    ugen->m_gain = GET_NEXT_FLOAT(ARGS);
 }
 
 
@@ -2201,15 +2317,13 @@ CK_DLL_CGET( impulse_cget_next )
 
 //-----------------------------------------------------------------------------
 // name: step_ctor()
-// desc: ...
+// desc: base constructor (always run)
 //-----------------------------------------------------------------------------
 CK_DLL_CTOR( step_ctor )
 {
     // return data to be used later
     OBJ_MEMBER_UINT(SELF, step_offset_data) = (t_CKUINT)new SAMPLE( 1.0f );
 }
-
-
 
 
 //-----------------------------------------------------------------------------
@@ -2221,6 +2335,17 @@ CK_DLL_DTOR( step_dtor )
     // delete
     delete (SAMPLE *)OBJ_MEMBER_UINT(SELF, step_offset_data);
     OBJ_MEMBER_UINT(SELF, step_offset_data) = 0;
+}
+
+
+//-----------------------------------------------------------------------------
+// name: step_ctor_value()
+// desc: overloaded constructor
+//-----------------------------------------------------------------------------
+CK_DLL_CTOR( step_ctor_value )
+{
+    Chuck_DL_Return RETURN;
+    step_ctrl_next( SELF, ARGS, &RETURN, VM, SHRED, API );
 }
 
 
@@ -2905,7 +3030,6 @@ void   sndbuf_sinc_interpolate( sndbuf_data * d, SAMPLE * out );
 CK_DLL_CTOR( sndbuf_ctor )
 {
     OBJ_MEMBER_UINT(SELF, sndbuf_offset_data) = (t_CKUINT)new sndbuf_data;
-
 }
 
 CK_DLL_DTOR( sndbuf_dtor )
@@ -2913,6 +3037,41 @@ CK_DLL_DTOR( sndbuf_dtor )
     sndbuf_data * d = (sndbuf_data *)OBJ_MEMBER_UINT(SELF, sndbuf_offset_data);
     CK_SAFE_DELETE(d);
     OBJ_MEMBER_UINT(SELF, sndbuf_offset_data) = 0;
+}
+
+CK_DLL_CTOR( sndbuf_ctor_path )
+{
+    Chuck_DL_Return RETURN;
+    // read it
+    sndbuf_ctrl_read( SELF, ARGS, &RETURN, VM, SHRED, API );
+}
+
+CK_DLL_CTOR( sndbuf_ctor_path_rate )
+{
+    Chuck_DL_Return RETURN;
+    // read it
+    sndbuf_ctrl_read( SELF, ARGS, &RETURN, VM, SHRED, API );
+
+    // advance args, skip over path
+    GET_NEXT_STRING(ARGS);
+    // control rate
+    sndbuf_ctrl_rate( SELF, ARGS, &RETURN, VM, SHRED, API );
+}
+
+CK_DLL_CTOR( sndbuf_ctor_path_rate_pos )
+{
+    Chuck_DL_Return RETURN;
+    // read it
+    sndbuf_ctrl_read( SELF, ARGS, &RETURN, VM, SHRED, API );
+
+    // advance args, skip over path
+    GET_NEXT_STRING(ARGS);
+    // control rate
+    sndbuf_ctrl_rate( SELF, ARGS, &RETURN, VM, SHRED, API );
+
+    // advance args, skip over rate
+    GET_NEXT_FLOAT(ARGS);
+    sndbuf_ctrl_pos( SELF, ARGS, &RETURN, VM, SHRED, API );
 }
 
 inline t_CKUINT sndbuf_read( sndbuf_data * d, t_CKUINT frame, t_CKUINT num_frames )
@@ -3340,10 +3499,6 @@ CK_DLL_TICKF( sndbuf_tickf )
     return TRUE;
 }
 
-
-#include "util_raw.h"
-
-
 CK_DLL_CTRL( sndbuf_ctrl_read )
 {
     sndbuf_data * d = (sndbuf_data *)OBJ_MEMBER_UINT(SELF, sndbuf_offset_data);
@@ -3646,10 +3801,17 @@ CK_DLL_CTRL( sndbuf_ctrl_write )
 #endif
 }
 
+CK_DLL_CGET( sndbuf_cget_ready )
+{
+    // get the internal representation
+    sndbuf_data * d = ( sndbuf_data * )OBJ_MEMBER_UINT(SELF, sndbuf_offset_data);
+    // ready if we have a file descriptor
+    RETURN->v_int = d->fd != NULL;
+}
 
 CK_DLL_CTRL( sndbuf_ctrl_rate )
 {
-    sndbuf_data * d = ( sndbuf_data * ) OBJ_MEMBER_UINT(SELF, sndbuf_offset_data);
+    sndbuf_data * d = ( sndbuf_data * )OBJ_MEMBER_UINT(SELF, sndbuf_offset_data);
     t_CKFLOAT rate = GET_CK_FLOAT(ARGS); // rate
     d->rate = rate * d->sampleratio;
     d->rate_factor = rate;

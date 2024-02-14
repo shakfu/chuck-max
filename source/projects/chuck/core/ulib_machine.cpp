@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -66,13 +66,17 @@ CK_DLL_SFUN( machine_eval3_impl );
 CK_DLL_SFUN( machine_version_impl );
 CK_DLL_SFUN( machine_setloglevel_impl );
 CK_DLL_SFUN( machine_getloglevel_impl );
-CK_DLL_SFUN( machine_refcount_impl);
-CK_DLL_SFUN( machine_opOverloadPush_impl);
-CK_DLL_SFUN( machine_opOverloadPop_impl);
-CK_DLL_SFUN( machine_opOverloadReset_impl);
-CK_DLL_SFUN( machine_opOverloadStackLevel_impl);
-CK_DLL_SFUN( machine_testSetup_impl );
-CK_DLL_SFUN( machine_testInvoke_impl );
+CK_DLL_SFUN( machine_refcount_impl );
+CK_DLL_SFUN( machine_regstack_impl );
+CK_DLL_SFUN( machine_memstack_impl );
+CK_DLL_SFUN( machine_gc );
+CK_DLL_SFUN( machine_opOverloadReset_impl );
+// not used
+//CK_DLL_SFUN( machine_opOverloadPush_impl );
+//CK_DLL_SFUN( machine_opOverloadPop_impl );
+//CK_DLL_SFUN( machine_opOverloadStackLevel_impl );
+//CK_DLL_SFUN( machine_testSetup_impl );
+//CK_DLL_SFUN( machine_testInvoke_impl );
 
 
 
@@ -263,6 +267,18 @@ DLL_QUERY machine_query( Chuck_DL_Query * QUERY )
     QUERY->add_sfun( QUERY, machine_refcount_impl, "int", "refcount" );
     QUERY->add_arg( QUERY, "Object", "obj" );
     QUERY->doc_func( QUERY, "get an object's current internal reference count; this is intended for testing or curiosity; NOTE: this function intentionally does not take into account any reference counting related to the calling of this function (normally all functions increments the reference count for objects passed as arguments and decrements upon returning)" );
+
+    // explicitly trigger garbage collection pass | 1.5.2.0 (ge) added
+    // QUERY->add_sfun( QUERY, machine_gc, "void", "gc" );
+    // QUERY->doc_func( QUERY, "explicitly trigger a manual VM-level garbage collection pass; this will preemptively clean up eligible objects before automated garbage collection system does. Use with care." );
+
+    // get reg stack pointer
+    QUERY->add_sfun( QUERY, machine_regstack_impl, "int", "sp_reg" );
+    QUERY->doc_func( QUERY, "get the calling shred's operand (aka \"reg\"/register) stack pointer; intended for either debugging or curiosity." );
+
+    // get mem stack pointer
+    QUERY->add_sfun( QUERY, machine_memstack_impl, "int", "sp_mem" );
+    QUERY->doc_func( QUERY, "get the calling shred's memory (aka \"mem\") stack pointer; intended for either debugging or curiosity." );
 
     // add examples
     QUERY->add_ex( QUERY, "machine/eval.ck" );
@@ -607,6 +623,25 @@ CK_DLL_SFUN( machine_refcount_impl )
     Chuck_Object * obj = (Chuck_Object *)GET_NEXT_OBJECT(ARGS);
     // return (-1 to account for the extra refcount as part of calling this function!)
     RETURN->v_int = obj != NULL ? obj->m_ref_count-1 : 0;
+}
+
+CK_DLL_SFUN( machine_regstack_impl )
+{
+    // return reg stack pointer
+    RETURN->v_int = (t_CKINT)SHRED->reg->sp;
+}
+
+CK_DLL_SFUN( machine_memstack_impl )
+{
+    // return mem stack pointer
+    RETURN->v_int = (t_CKINT)SHRED->mem->sp;
+}
+
+// gc() | 1.5.2.0 (ge)
+CK_DLL_SFUN( machine_gc )
+{
+    // invoke
+    VM->gc();
 }
 
 CK_DLL_SFUN( machine_opOverloadPush_impl)

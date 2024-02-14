@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -409,9 +409,9 @@ string absyn_stmt2str( a_Stmt stmt )
 // name: absyn2str()
 // desc: convert abstract syntax exp to string
 //-----------------------------------------------------------------------------
-string absyn2str( a_Exp exp )
+string absyn2str( a_Exp exp, t_CKBOOL appendSemicolon )
 {
-    return absyn_exp2str( exp ) + ";";
+    return absyn_exp2str( exp ) + (appendSemicolon ? ";" : "" );
 }
 
 
@@ -559,6 +559,7 @@ string absyn_binary2str( a_Exp_Binary binary )
         case ae_op_chuck:
         case ae_op_unchuck:
         case ae_op_upchuck:
+        case ae_op_downchuck:
         case ae_op_at_chuck:
         case ae_op_eq:
         case ae_op_neq:
@@ -566,6 +567,8 @@ string absyn_binary2str( a_Exp_Binary binary )
         case ae_op_gt:
         case ae_op_le:
         case ae_op_ge:
+        case ae_op_and:
+        case ae_op_or:
             paren = false;
             spacing = true;
             break;
@@ -597,6 +600,7 @@ string absyn_unary2str( a_Exp_Unary unary )
     {
         case ae_op_new:
             s = absyn_op2str(unary->op) + " " + unary->self->type->name();
+            if( unary->ctor.invoked ) s += "(" + absyn_exp2str(unary->ctor.args) + ")";
             break;
         default:
             s = absyn_op2str(unary->op) + " " + absyn_exp2str(unary->exp);
@@ -771,6 +775,11 @@ string absyn_decl2str( a_Exp_Decl decl )
     {
         // type
         str += list->var_decl->value->type->base_name + " " + (decl->type->ref ? "@ " : "") + list->var_decl->value->name;
+        // constructor?
+        if( list->var_decl->ctor.invoked )
+        {
+            str += "(" + absyn_exp2str(list->var_decl->ctor.args) + ")";
+        }
         // array?
         if( list->var_decl->array )
         {

@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -1584,7 +1584,7 @@ CK_DLL_MFUN( oscmsg_numArgs )
 
 CK_DLL_MFUN( oscmsg_getInt )
 {
-    int i = GET_NEXT_INT( ARGS );
+    t_CKINT i = GET_NEXT_INT( ARGS );
     Chuck_ArrayInt * args_obj = (Chuck_ArrayInt *)OBJ_MEMBER_OBJECT( SELF, oscmsg_offset_args );
     Chuck_Object * arg_obj;
 
@@ -1602,7 +1602,7 @@ CK_DLL_MFUN( oscmsg_getInt )
 
 CK_DLL_MFUN( oscmsg_getFloat )
 {
-    int i = GET_NEXT_INT( ARGS );
+    t_CKINT i = GET_NEXT_INT( ARGS );
     Chuck_ArrayInt * args_obj = (Chuck_ArrayInt *)OBJ_MEMBER_OBJECT( SELF, oscmsg_offset_args );
     Chuck_Object * arg_obj;
     if( i >= 0 && i < args_obj->size() )
@@ -1616,7 +1616,7 @@ CK_DLL_MFUN( oscmsg_getFloat )
 
 CK_DLL_MFUN( oscmsg_getString )
 {
-    int i = GET_NEXT_INT( ARGS );
+    t_CKINT i = GET_NEXT_INT( ARGS );
     Chuck_ArrayInt * args_obj = (Chuck_ArrayInt *)OBJ_MEMBER_OBJECT( SELF, oscmsg_offset_args );
     Chuck_Object * arg_obj;
 

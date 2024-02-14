@@ -1,25 +1,25 @@
 /*----------------------------------------------------------------------------
- ChucK Concurrent, On-the-fly Audio Programming Language
-   Compiler and Virtual Machine
+  ChucK Strongly-timed Audio Programming Language
+    Compiler and Virtual Machine
 
- Copyright (c) 2003 Ge Wang and Perry R. Cook.  All rights reserved.
-   http://chuck.stanford.edu/
-   http://chuck.cs.princeton.edu/
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
+    http://chuck.stanford.edu/
+    http://chuck.cs.princeton.edu/
 
- This program is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 2 of the License, or
- (at your option) any later version.
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
- You should have received a copy of the GNU General Public License
- along with this program; if not, write to the Free Software
- Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
- U.S.A.
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+  U.S.A.
  -----------------------------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
@@ -34,9 +34,18 @@
 //       |- see src/host-examples/ for sample integration code for ChucK core
 //       |- see chuck, miniAudicle, WebChucK, Chunity etc. for their
 //          respective integration of ChucK core
+//       ------
+//       |- [chugins] "chuck.h" is also a single-header include for
+//          chugins, including ChuGL (ChucK Graphics Library), standard
+//          chugins library, and 3rd-party chugins
+//       |- [chugins] are dynamically loaded and thus should never directly
+//          instantiate objects in chuck core; instead chugins must access
+//          chuck core function through the DL runtime API
+//          (defined in "chuck_dl.h", which is included from this header)
+//       ----------------------------------------------------------------------
 //
 // author: Ge Wang (https://ccrma.stanford.edu/~ge/)
-//   date: fall 2017
+//   date: Fall 2017
 //
 // additional authors:
 //       Jack Atherton (lja@ccrma.stanford.edu)
@@ -47,10 +56,10 @@
 #ifndef __CHUCK_H__
 #define __CHUCK_H__
 
+#include "chuck_carrier.h"
 #include "chuck_compile.h"
 #include "chuck_dl.h"
 #include "chuck_vm.h"
-#include "chuck_carrier.h"
 #include "util_math.h"
 #include "util_string.h"
 #include <string>
@@ -71,10 +80,6 @@
 #ifndef __DISABLE_MIDI__
 #include "midiio_rtmidi.h"
 #endif
-
-// ChucK version string -- retrieve using ChucK::version()
-// 1.5.0.0 (ge) | moved here for at-a-glance visibility (e.g., for chugins)
-#define CHUCK_VERSION_STRING                    "1.5.1.7-dev (chai)"
 
 // ChucK param names -- used in setParam(...) and getParam*(...)
 #define CHUCK_PARAM_VERSION                     "VERSION"

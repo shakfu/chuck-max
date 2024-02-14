@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -80,22 +80,6 @@ typedef enum { te_globalTypeNone,
 typedef enum {
     te_do_all = 0, te_do_classes_only, te_do_no_classes
 } te_HowMuch;
-
-
-
-
-//-----------------------------------------------------------------------------
-// name: enum te_Origin | 1.5.0.0 (ge) added
-// desc: where something (e.g., a Type) originates
-//-----------------------------------------------------------------------------
-typedef enum {
-    te_originUnknown = 0,
-    te_originBuiltin, // in core
-    te_originChugin, // in imported chugin
-    te_originImport, // library CK code
-    te_originUserDefined, // in user chuck code
-    te_originGenerated // generated (e.g., array types like int[][][][])
-} te_Origin;
 
 
 
@@ -290,6 +274,7 @@ struct Chuck_Multi;
 struct Chuck_VM;
 struct Chuck_VM_Code;
 struct Chuck_VM_MFunInvoker;
+struct Chuck_VM_DtorInvoker;
 struct Chuck_DLL;
 // operator loading structs | 1.5.1.5
 struct Chuck_Op_Registry;
@@ -319,24 +304,19 @@ struct Chuck_Namespace : public Chuck_VM_Object
 
     // name
     std::string name;
-    // top-level code
+    // pre-constructor (either chuck or c++ defined)
     Chuck_VM_Code * pre_ctor;
-    // destructor
-    Chuck_VM_Code * dtor;
+    // pre-destructor
+    Chuck_VM_Code * pre_dtor;
     // type that contains this
     Chuck_Namespace * parent;
     // address offset
     t_CKUINT offset;
 
     // constructor
-    Chuck_Namespace() { pre_ctor = NULL; dtor = NULL; parent = NULL; offset = 0;
-                        class_data = NULL; class_data_size = 0; }
+    Chuck_Namespace();
     // destructor
-    virtual ~Chuck_Namespace() {
-        /* TODO: CK_SAFE_RELEASE( this->parent ); */
-        /* TODO: CK_SAFE_DELETE( pre_ctor ); */
-        /* TODO: CK_SAFE_DELETE( dtor ); */
-    }
+    virtual ~Chuck_Namespace();
 
     // look up value
     Chuck_Value * lookup_value( const std::string & name, t_CKINT climb = 1, t_CKBOOL stayWithinClassDef = FALSE );
@@ -481,13 +461,13 @@ public:
 
     // add binary operator overload: lhs OP rhs
     t_CKBOOL add_overload( Chuck_Type * lhs, ae_Operator op, Chuck_Type * rhs, Chuck_Func * func, 
-                           te_Origin origin, const std::string & originName = "", t_CKINT originWhere = 0, t_CKBOOL isPublic = FALSE );
+                           ckte_Origin origin, const std::string & originName = "", t_CKINT originWhere = 0, t_CKBOOL isPublic = FALSE );
     // add prefix unary operator overload: OP rhs
     t_CKBOOL add_overload( ae_Operator op, Chuck_Type * rhs, Chuck_Func * func,
-                           te_Origin origin, const std::string & originName = "", t_CKINT originWhere = 0, t_CKBOOL isPublic = FALSE );
+                           ckte_Origin origin, const std::string & originName = "", t_CKINT originWhere = 0, t_CKBOOL isPublic = FALSE );
     // add postfix unary operator overload: lhs OP
     t_CKBOOL add_overload( Chuck_Type * lhs, ae_Operator op, Chuck_Func * func,
-                           te_Origin origin, const std::string & originName = "", t_CKINT originWhere = 0, t_CKBOOL isPublic = FALSE );
+                           ckte_Origin origin, const std::string & originName = "", t_CKINT originWhere = 0, t_CKBOOL isPublic = FALSE );
 
     // look up binary operator overload: lhs OP rhs
     Chuck_Op_Overload * lookup_overload( Chuck_Type * lhs, ae_Operator op, Chuck_Type * rhs );
@@ -592,7 +572,7 @@ public:
 struct Chuck_Op_Overload
 {
     // where this overload was defined
-    te_Origin m_origin;
+    ckte_Origin m_origin;
     // origin name
     std::string m_originName;
     // origin parse position (if applicable)
@@ -602,7 +582,7 @@ protected:
     // the operator
     ae_Operator m_op;
     // which kind of overload?
-    te_Op_OverloadKind m_kind;
+    ckte_Op_OverloadKind m_kind;
     // the function to call
     Chuck_Func * m_func;
     // left hand side
@@ -636,7 +616,7 @@ public:
     bool operator <( const Chuck_Op_Overload & other ) const;
 
     // update origin info
-    void updateOrigin( te_Origin origin, const std::string & name = "", t_CKINT where = 0 );
+    void updateOrigin( ckte_Origin origin, const std::string & name = "", t_CKINT where = 0 );
     // update overload stack push ID
     void mark( t_CKUINT pushID );
     // set as reserved
@@ -648,7 +628,7 @@ public:
     // get op
     ae_Operator op() const { return m_op; }
     // get the kind of overload
-    te_Op_OverloadKind kind() const { return m_kind; }
+    ckte_Op_OverloadKind kind() const { return m_kind; }
     // get func
     Chuck_Func * func() const { return m_func; }
     // get left hand side type
@@ -658,7 +638,7 @@ public:
     // get overload stack push ID
     t_CKUINT pushID() const { return m_pushID; }
     // has origin been set?
-    t_CKBOOL hasOrigin() const { return m_origin != te_originUnknown; }
+    t_CKBOOL hasOrigin() const { return m_origin != ckte_origin_UNKNOWN; }
     // overloading natively handled? (e.g., in chuck_type)
     t_CKBOOL isNative() const;
 };
@@ -704,8 +684,9 @@ public:
 public:
     // REFACTOR-2017: carrier and accessors
     void set_carrier( Chuck_Carrier * carrier ) { m_carrier = carrier; }
-    Chuck_VM * vm() { return m_carrier ? m_carrier->vm : NULL; }
-    Chuck_Compiler * compiler() { return m_carrier ? m_carrier->compiler : NULL; }
+    Chuck_Carrier * carrier() const { return m_carrier; }
+    Chuck_VM * vm() const { return m_carrier ? m_carrier->vm : NULL; }
+    Chuck_Compiler * compiler() const { return m_carrier ? m_carrier->compiler : NULL; }
 
 protected:
     Chuck_Carrier * m_carrier;
@@ -741,6 +722,9 @@ public:
 
     // control scope (for break, continue)
     std::vector<a_Stmt> breaks;
+
+    // stmt stack (for tracking object references)
+    std::vector<a_Stmt> stmt_stack;
 
     // reserved words
     std::map<std::string, t_CKBOOL> key_words;
@@ -883,7 +867,7 @@ public:
     void clear();
     // look for a dependency that occurs AFTER a particular code position
     // this function crawls the graph, taking care in the event of cycles
-    const Chuck_Value_Dependency * locate( t_CKUINT pos, t_CKBOOL isClassDef = FALSE );
+    const Chuck_Value_Dependency * locate( t_CKUINT pos, Chuck_Type * fromClassDef = NULL );
 
 public:
     // constructor
@@ -900,11 +884,11 @@ protected:
 
 protected:
     // locate non-recursive
-    const Chuck_Value_Dependency * locateLocal( t_CKUINT pos, t_CKBOOL isClassDef );
+    const Chuck_Value_Dependency * locateLocal( t_CKUINT pos, Chuck_Type * fromClassDef );
     // reset search tokens
     void resetRecursive( t_CKUINT value = 0 );
     // locate recursive
-    const Chuck_Value_Dependency * locateRecursive( t_CKUINT pos, t_CKBOOL isClassDef, t_CKUINT searchToken = 1 );
+    const Chuck_Value_Dependency * locateRecursive( t_CKUINT pos, Chuck_Type * fromClassDef, t_CKUINT searchToken = 1 );
 };
 
 
@@ -943,17 +927,25 @@ struct Chuck_Type : public Chuck_Object
     t_CKBOOL is_copy;
     // defined
     t_CKBOOL is_complete;
-    // has pre constructor
-    t_CKBOOL has_constructor;
-    // has destructor
-    t_CKBOOL has_destructor;
+    // has pre-constructor
+    t_CKBOOL has_pre_ctor;
+    // has pre-destructor; related to info->pre_dtor, but different since info is shared with arrays
+    // of this type (via new_array_type()), but this flag is this specific type only
+    t_CKBOOL has_pre_dtor;
+    // constructor(s), potentially overloaded | 1.5.2.0 (ge) added
+    Chuck_Func * ctors_all;
+    // default constructor (no arguments) | 1.5.2.0 (ge) added
+    Chuck_Func * ctor_default;
+    // destructor (also see this->info->pre_dtor) | 1.5.2.0 (ge) added
+    Chuck_Func * dtor_the;
+    // destructor invoker (needed since dtor could run outside of chuck shreduling) | 1.5.2.0
+    Chuck_VM_DtorInvoker * dtor_invoker;
     // custom allocator
     f_alloc allocator;
     // origin hint
-    te_Origin originHint;
-
-    // reference to environment RE-FACTOR 2017
-    Chuck_Env * env_ref;
+    ckte_Origin originHint;
+    // offsets of mvars that are Objects
+    std::vector<t_CKUINT> obj_mvars_offsets;
 
     // (within-context, e.g., a ck file) dependency tracking | 1.5.0.8
     Chuck_Value_Dependency_Graph depends;
@@ -980,12 +972,20 @@ public:
     Chuck_Type * copy( Chuck_Env * env, Chuck_Context * context ) const;
 
 public:
+    // get env reference that contains this type | 1.5.1.8
+    Chuck_Env * env() const;
+    // get VM reference associated with this type (via the env) | 1.5.1.8
+    Chuck_VM * vm() const;
+
+public:
     // to string: the full name of this type, e.g., "UGen" or "int[][]"
     const std::string & name();
     // to c string
     const char * c_name();
 
 protected:
+    // reference to environment RE-FACTOR 2017 | get using env()
+    Chuck_Env * env_ref;
     // this for str() and c_name() use only
     std::string ret;
 
@@ -1015,11 +1015,11 @@ public:
     // struct to hold callback on instantiate
     struct CallbackOnInstantiate
     {
+        // the callback
+        f_callback_on_instantiate callback;
         // whether to auto-set shred origin at instantiation;
         // see t_CKBOOL initialize_object( ... )
         t_CKBOOL shouldSetShredOrigin;
-        // the callback
-        f_callback_on_instantiate callback;
         // constructor
         CallbackOnInstantiate( f_callback_on_instantiate cb = NULL, t_CKBOOL setShredOrigin = FALSE )
         : callback(cb), shouldSetShredOrigin(setShredOrigin) { }
@@ -1114,6 +1114,8 @@ struct Chuck_Func : public Chuck_VM_Object
     std::string signature( t_CKBOOL incFunDef = TRUE, t_CKBOOL incRetType = TRUE ) const;
     // code (included imported)
     Chuck_VM_Code * code;
+    // get owner type: if func part of a class
+    Chuck_Type * ownerType() const;
     // member (inside class)
     t_CKBOOL is_member;
     // static (inside class)
@@ -1132,6 +1134,14 @@ struct Chuck_Func : public Chuck_VM_Object
 
     // documentation
     std::string doc;
+
+public: // constructors / destructor | 1.5.2.0
+    // is this a constructor?
+    t_CKBOOL is_ctor;
+    // is this a default constructor?
+    t_CKBOOL is_default_ctor;
+    // is this a destructor?
+    t_CKBOOL is_dtor;
 
 public:
     // pack c-style array of DL_Args into args cache
@@ -1177,6 +1187,9 @@ public:
         /*dl_code = NULL;*/
         next = NULL;
         up = NULL;
+        is_ctor = FALSE;
+        is_default_ctor = FALSE;
+        is_dtor = FALSE;
         args_cache = NULL;
         args_cache_size = 0;
         invoker_mfun = NULL;
@@ -1224,15 +1237,21 @@ t_CKBOOL type_engine_add_class_from_dl( Chuck_Env * env, Chuck_DL_Class * c );
 // type equality
 t_CKBOOL operator ==( const Chuck_Type & lhs, const Chuck_Type & rhs );
 t_CKBOOL operator !=( const Chuck_Type & lhs, const Chuck_Type & rhs );
-t_CKBOOL equals( Chuck_Type * lhs, Chuck_Type * rhs );
 t_CKBOOL operator <=( const Chuck_Type & lhs, const Chuck_Type & rhs );
-t_CKBOOL isa( Chuck_Type * lhs, Chuck_Type * rhs );
+t_CKBOOL equals( Chuck_Type * lhs, Chuck_Type * rhs );
+t_CKBOOL isa( const Chuck_Type * lhs, const Chuck_Type * rhs );
+t_CKBOOL isa_levels( const Chuck_Type & lhs, const Chuck_Type & rhs, t_CKUINT & levels ); // 1.5.2.0 (ge) return how many levels of inheritance from lhs to rhs
 t_CKBOOL isprim( Chuck_Env * env, Chuck_Type * type );
 t_CKBOOL isobj( Chuck_Env * env, Chuck_Type * type );
 t_CKBOOL isfunc( Chuck_Env * env, Chuck_Type * type );
 t_CKBOOL isvoid( Chuck_Env * env, Chuck_Type * type );
+t_CKBOOL isnull( Chuck_Env * env, Chuck_Type * type );
 t_CKBOOL iskindofint( Chuck_Env * env, Chuck_Type * type ); // added 1.3.1.0: this includes int + pointers
 te_KindOf getkindof( Chuck_Env * env, Chuck_Type * type ); // added 1.3.1.0: to get the kindof a type
+t_CKBOOL isctor( Chuck_Env * env, a_Func_Def func_def ); // 1.5.2.0 (ge) added for constructors
+t_CKBOOL isdtor( Chuck_Env * env, a_Func_Def func_def ); // 1.5.2.0 (ge) added for destructors
+
+
 
 
 //-----------------------------------------------------------------------------
@@ -1267,6 +1286,7 @@ Chuck_Type * type_engine_import_uana_begin( Chuck_Env * env, const char * name, 
                                             t_CKUINT num_ins_ana = CK_NO_VALUE,
                                             t_CKUINT num_outs_ana = CK_NO_VALUE,
                                             const char * doc = NULL );
+t_CKBOOL type_engine_import_ctor( Chuck_Env * env, Chuck_DL_Func * ctor ); // 1.5.2.0 (ge) added
 t_CKBOOL type_engine_import_mfun( Chuck_Env * env, Chuck_DL_Func * mfun );
 t_CKBOOL type_engine_import_sfun( Chuck_Env * env, Chuck_DL_Func * sfun );
 t_CKUINT type_engine_import_mvar( Chuck_Env * env, const char * type,
@@ -1314,8 +1334,8 @@ t_CKBOOL type_engine_init_op_overload( Chuck_Env * env );
 t_CKBOOL type_engine_scan_func_op_overload( Chuck_Env * env, a_Func_Def func_def );
 // type-check an operator overload func def | 1.5.1.5 (ge) added
 t_CKBOOL type_engine_check_func_op_overload( Chuck_Env * env, a_Func_Def func_def );
-
-
+// determine whether type has implicit default constructor; helpful for ckdoc | 1.5.2.0
+t_CKBOOL type_engine_has_implicit_def_ctor( Chuck_Type * type );
 
 
 //-----------------------------------------------------------------------------
@@ -1353,6 +1373,15 @@ t_CKINT str2char( const char * char_lit, int linepos );
 t_CKBOOL same_arg_lists( a_Arg_List lhs, a_Arg_List rhs );
 // generate a string from an argument list (types only)
 std::string arglist2string( a_Arg_List list );
+
+
+//-----------------------------------------------------------------------------
+// compare functions | 1.5.2.0 (ge) added
+//-----------------------------------------------------------------------------
+bool ck_comp_func( Chuck_Func * a, Chuck_Func * b );
+bool ck_comp_func_args( Chuck_Func * a, Chuck_Func * b );
+bool ck_comp_value( Chuck_Value * a, Chuck_Value * b );
+bool ck_comp_dl_func_args(Chuck_DL_Func* a, Chuck_DL_Func* b);
 
 
 

@@ -19,7 +19,7 @@ set(CK_SRC_PATH
 add_library(${CHUGIN_NAME}
 	# ${CHUGIN_SRC}
 	${PROJECT_SRC}
-	${CK_SRC_PATH}/chuck_dl.h
+	# ${CK_SRC_PATH}/chuck_dl.h
 )
 
 

@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -52,9 +52,15 @@
 #ifndef __UTIL_SNDFILE_H__
 #define __UTIL_SNDFILE_H__
 
+#if defined(__CHUNREAL_ENGINE__)
+#pragma warning(disable : 4668)  // -Wundef
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wundef"
+#endif
+#endif // #if defined(__CHUNREAL_ENGINE__)
+
 #include <stdio.h>
 #include <stdlib.h>
-
 
 // XXX philipd this might break things?
 // these defines were placed after the machine-dependent
