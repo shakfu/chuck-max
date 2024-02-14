@@ -4,11 +4,11 @@ A project to minimally embed the [chuck](https://chuck.stanford.edu) engine in a
 
 It currently has one external (`chuck~`) with the following features and limitations:
 
-- Generate and process audio via an embedded chuck engine by running chuck files with `global` parameters adjusted and controlled in realtime via Max messages.
+- Generate and process audio via an embedded chuck engine by running chuck files with `global` parameters controlled and adjusted in realtime by Max messages.
 
-- Layer sounds by running multiple chuck files concurrently.
+- Layer sounds from a single instance by running multiple chuck files concurrently.
 
-- Add and remove audio and audio processes on the fly via max messages.
+- Add and remove audio and audio processes on the fly via Max messages.
 
 - Includes most of the [standard ccrma chugins](https://github.com/ccrma/chugins) except for the following: 
 
@@ -38,14 +38,13 @@ It requires the following to be available on your system:
 
 4. flex
 
-The last three can be installed via Homebrew as follows:
+The last three can be installed using [Homebrew](https://brew.sh) as follows:
 
 ```bash
 
 brew install cmake bison flex
 
 ```
-
 
 ## Compilation
 
@@ -62,14 +61,7 @@ make
 make setup
 ```
 
-Note: `make` builds everything and the `make setup` does the following:
-
-```bash
-ln -s $(shell pwd) "$(HOME)/Documents/Max 8/Packages/$(shell basename `pwd`)"
-```
-
-This makes the package and its contents available in Max.
-
+Note: `make` builds everything and `make setup` makes the package and its contents available to be used by Max by creating a symlink of the `chuck-max` folder in `$HOME/Documents/Max 8/Packages`.
 
 ## Usage
 
@@ -78,7 +70,7 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 
 ## Status
 
-\- [ ] add windows support
+- [ ] add windows support
 - [ ] add support for events
 - [ ] add support for callbacks
 - [x] build chugins with cmake
@@ -114,7 +106,7 @@ This project thanks the following:
 
 - Professor Perry Cook for co-authoring Chuck and creating the [Synthesis Toolkit](https://github.com/thestk/stk) which is integrated with chuck.
 
-- Professor [Brad Garton](http://sites.music.columbia.edu/brad) for creating the original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5. My failure to build and run on it Max 8 motivated me to start this project.
+- Professor [Brad Garton](http://sites.music.columbia.edu/brad) for creating the original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5. My failure to build it and run it on Max 8 motivated me to start this project.
 
-- David Braun, the author of the very cool [DawDreamer](https://github.com/DBraun/DawDreamer) project (which I am a great fan of), for creating the excellent [ChucKDesigner](https://github.com/DBraun/ChucKDesigner) project which embeds chuck in a Touch Designer plugin. His project provided a super-clear blueprint on how to embed `libchuck` in another host or plugin system and was essential to this project.
+- David Braun, the author of the very cool and excellent [DawDreamer](https://github.com/DBraun/DawDreamer) project, for creating the excellent [ChucKDesigner](https://github.com/DBraun/ChucKDesigner) project which embeds chuck in a Touch Designer plugin. His project provided a super-clear blueprint on how to embed `libchuck` in another host or plugin system and was essential to this project.
 
