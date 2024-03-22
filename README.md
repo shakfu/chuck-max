@@ -63,6 +63,13 @@ make setup
 
 Note: `make` builds everything and `make setup` makes the package and its contents available to be used by Max by creating a symlink of the `chuck-max` folder in `$HOME/Documents/Max 8/Packages`.
 
+If you want to update and re-build the external if there are changes in the repo just type the following in the root of the project.
+
+```bash
+git pull
+make
+```
+
 ## Usage
 
 Open the help file `help/chuck~.maxhelp` for a demo.
@@ -81,6 +88,7 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 - [x] compiled `chuck~` with `libchuck.a` without errors
 - [x] created `libchuck.a`
 - [x] converted chuck makefile to CMAKE
+- [x] added support for `<<< msgs >>>`
 
 
 ## TODO
