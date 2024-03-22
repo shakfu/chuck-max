@@ -65,21 +65,7 @@ void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **
 static t_class *ck_class = NULL;
 
 //-----------------------------------------------------------------------------------------------
-// helpers
-
-void ck_stdout_print(const char* msg)
-{
-    post("ck_stdout -> %s", msg);
-}
-
-void ck_stderr_print(const char* msg)
-{
-    post("ck_stderr -> %s", msg);
-}
-
-//-----------------------------------------------------------------------------------------------
 // core
-
 
 void ext_main(void *r)
 {
@@ -178,6 +164,18 @@ void ck_assist(t_ck *x, void *b, long m, long a, char *s)
 
 //-----------------------------------------------------------------------------------------------
 // helpers
+
+void ck_stdout_print(const char* msg)
+{
+    post("ck_stdout -> %s", msg);
+}
+
+
+void ck_stderr_print(const char* msg)
+{
+    post("ck_stderr -> %s", msg);
+}
+
 
 t_string* ck_get_path_from_external(t_class* c, char* subpath)
 {
