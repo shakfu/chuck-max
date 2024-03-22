@@ -48,6 +48,8 @@ t_max_err ck_broadcast(t_ck* x, t_symbol* s);   // broadcast global event
 t_max_err ck_remove(t_ck *x, t_symbol *s, long argc, t_atom *argv);   // remove shreds (all, last or by #)
 
 // helpers
+void ck_stdout_print(const char* msg);
+void ck_stderr_print(const char* msg);
 void ck_run_file(t_ck *x);
 void ck_compile_file(t_ck *x, const char *filename);
 t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type);
@@ -62,6 +64,18 @@ void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **
 // global class pointer variable
 static t_class *ck_class = NULL;
 
+//-----------------------------------------------------------------------------------------------
+// helpers
+
+void ck_stdout_print(const char* msg)
+{
+    post("ck_stdout -> %s", msg);
+}
+
+void ck_stderr_print(const char* msg)
+{
+    post("ck_stderr -> %s", msg);
+}
 
 //-----------------------------------------------------------------------------------------------
 // core
@@ -121,6 +135,8 @@ void *ck_new(t_symbol *s, long argc, t_atom *argv)
         std::list< std::string > chugin_search;
         chugin_search.push_back(global_dir + "/chugins" );
         x->chuck->setParam( CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, chugin_search );
+        x->chuck->setStdoutCallback(ck_stdout_print);
+        x->chuck->setStderrCallback(ck_stderr_print);
 
         // init chuck
         x->chuck->init();

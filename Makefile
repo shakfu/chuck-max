@@ -3,12 +3,15 @@ SCRIPTS := source/scripts
 BUILD := build
 
 
-.PHONY: macos clean setup 
+.PHONY: all macos dev clean setup 
 
 all: macos
 
 macos:
 	@mkdir -p build && cd build && cmake -GXcode .. && cmake --build . --config 'Release'
+
+dev:
+	@mkdir -p build && cd build && cmake .. && make
 
 clean:
 	@rm -rf build
