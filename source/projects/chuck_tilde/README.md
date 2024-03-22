@@ -1,4 +1,4 @@
-# luajit~ 
+# chuck_tilde~ 
 
-An audio external with an embedded luajit engine.
+An audio external with an embedded chuck engine.
 

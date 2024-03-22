@@ -1,5 +1,5 @@
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(__APPLE__) || defined(__linux__) || defined(__FreeBSD__)
 // 1.5.0.7 (ge) since this is in the lo/ sub-directory,
 // and does not include chuck_def.h, directly check platform macros
 // #if defined(__PLATFORM_APPLE__) || defined(__PLATFORM_LINUX__)
@@ -21,6 +21,9 @@
 
 /* Define to 1 if you have the `m' library (-lm). */
 /* #undef HAVE_LIBM */
+
+/* 1.5.2.2 (ge) define 1 to enable threads */
+#define ENABLE_THREADS 1
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 #define HAVE_LIBPTHREAD 1
@@ -121,6 +124,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #define HAVE_INTTYPES_H 1
 
+/* 1.5.2.2 (ge) define 1 to enable threads */
+#define ENABLE_THREADS 1
+
 /* Define to 1 if you have the `pthread' library (-lpthread). */
 /* #undef HAVE_LIBPTHREAD */
 
@@ -199,4 +205,4 @@
 /* Define to `unsigned int' if <sys/types.h> does not define. */
 /* #undef size_t */
 
-#endif // defined(__APPLE__) || defined(__linux__)
+#endif // defined(__APPLE__) || defined(__linux__) || defined(__FreeBSD__)

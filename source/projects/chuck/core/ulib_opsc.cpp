@@ -1737,7 +1737,7 @@ DLL_QUERY opensoundcontrol_query( Chuck_DL_Query * query )
     query->add_ex( query, "osc/r.ck" );
     query->add_ex( query, "osc/s.ck" );
     query->add_ex( query, "osc/osc-dump.ck" );
-    query->add_ex( query, "multi-msg/r-multi-msg.ck" );
+    query->add_ex( query, "osc/multi-msg/r-multi-msg.ck" );
 
     query->end_class( query );
 
@@ -1747,7 +1747,7 @@ DLL_QUERY opensoundcontrol_query( Chuck_DL_Query * query )
     query->doc_class( query, "Class for receiving Open Sound Control (OSC) messages. See examples for usage." );
 
     // add member reference
-    oscin_offset_data = query->add_mvar( query, "int", "@OscOut_data", FALSE );
+    oscin_offset_data = query->add_mvar( query, "int", "@OscIn_data", FALSE );
 
     query->add_ctor( query, oscin_ctor );
     query->add_dtor( query, oscin_dtor );
@@ -1787,7 +1787,7 @@ DLL_QUERY opensoundcontrol_query( Chuck_DL_Query * query )
     query->add_ex( query, "osc/r.ck" );
     query->add_ex( query, "osc/s.ck" );
     query->add_ex( query, "osc/osc-dump.ck" );
-    query->add_ex( query, "multi-msg/r-multi-msg.ck" );
+    query->add_ex( query, "osc/multi-msg/r-multi-msg.ck" );
 
     // end class definition
     query->end_class( query );
