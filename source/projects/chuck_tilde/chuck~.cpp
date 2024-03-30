@@ -42,6 +42,7 @@ t_max_err ck_anything(t_ck *x, t_symbol *s, long argc, t_atom *argv); // set glo
 
 // special message handlers
 t_max_err ck_run(t_ck* x, t_symbol* s);         // run chuck file
+t_max_err ck_info(t_ck* x);                     // get info about running shreds
 t_max_err ck_reset(t_ck* x);                    // remove all shreds and clean vm
 t_max_err ck_signal(t_ck* x, t_symbol* s);      // signal global event
 t_max_err ck_broadcast(t_ck* x, t_symbol* s);   // broadcast global event
@@ -76,6 +77,7 @@ void ext_main(void *r)
         (method)ck_new, (method)ck_free, (long)sizeof(t_ck), 0L, A_GIMME, 0);
 
     class_addmethod(c, (method)ck_run,          "run",          A_SYM,   0);
+    class_addmethod(c, (method)ck_info,         "info",                  0);
     class_addmethod(c, (method)ck_reset,        "reset",                 0);
     class_addmethod(c, (method)ck_signal,       "signal",       A_SYM,   0);
     class_addmethod(c, (method)ck_broadcast,    "broadcast",    A_SYM,   0);
@@ -472,6 +474,18 @@ t_max_err ck_reset(t_ck* x)
         error("[ck_reset] failed");
     }
     return err;
+}
+
+
+t_max_err ck_info(t_ck *x)
+{
+    Chuck_VM_Shreduler * shreduler = x->chuck->vm()->shreduler();
+    std::vector<Chuck_VM_Shred *> shreds;
+    shreduler->get_all_shreds(shreds);
+    for(const Chuck_VM_Shred* i : shreds) {
+        post("shred #%d %s", i->get_id(), i->name.c_str());
+    }
+    return MAX_ERR_NONE;
 }
 
 
