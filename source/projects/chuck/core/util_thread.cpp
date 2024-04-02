@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -340,7 +340,7 @@ size_t XWriteThread::fwrite(const void * ptr, size_t size, size_t nitems, FILE *
     // TODO: overflow detection
     if( m_data_buffer->put((char*)ptr, size*nitems) == 0 )
     {
-        EM_log( CK_LOG_SEVERE, "XWriteThread::fwrite(): data buffer overflow!" );
+        EM_log( CK_LOG_HERALD, "XWriteThread::fwrite(): data buffer overflow!" );
     }
 
     m_bytes_in_buffer += size*nitems;
@@ -458,7 +458,7 @@ unsigned XWriteThread::write_cb(void * _thiss)
                                                                msg.write.data_size);
                 if(actual_size != msg.write.data_size)
                 {
-                    EM_log( CK_LOG_SEVERE, "XWriteThread: buffered data size mismatch (%li : %li)",
+                    EM_log( CK_LOG_HERALD, "XWriteThread: buffered data size mismatch (%li : %li)",
                             msg.write.data_size, actual_size );
                 }
 

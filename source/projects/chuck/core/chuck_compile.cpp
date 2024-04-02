@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -98,7 +98,7 @@ Chuck_Compiler::Chuck_Compiler()
     m_auto_depend = FALSE;
 
     // origin hint | 1.5.0.0 (ge) added
-    m_originHint = te_originUnknown;
+    m_originHint = ckte_origin_UNKNOWN;
 }
 
 
@@ -127,7 +127,7 @@ t_CKBOOL Chuck_Compiler::initialize()
     assert( m_carrier != NULL );
 
     // set origin hint
-    m_originHint = te_originBuiltin;
+    m_originHint = ckte_origin_BUILTIN;
 
     // allocate the type checker
     if( !type_engine_init( m_carrier ) )
@@ -147,7 +147,7 @@ t_CKBOOL Chuck_Compiler::initialize()
         goto error;
 
     // unset origin hint
-    m_originHint = te_originUnknown;
+    m_originHint = ckte_origin_UNKNOWN;
 
     return TRUE;
 
@@ -175,17 +175,6 @@ void Chuck_Compiler::shutdown()
     // push indent
     EM_pushlog();
 
-    // need an actual carrier
-    if( m_carrier != NULL )
-    {
-        // free type engine env
-        type_engine_shutdown( m_carrier );
-        // check the pointer is now NULL
-        assert( m_carrier->env == NULL );
-        // zero out the carrier reference | 1.5.1.1
-        m_carrier = NULL;
-    }
-
     // free emitter (and set emitter to NULL)
     emit_engine_shutdown( emitter );
     // check the pointer is now NULL
@@ -206,8 +195,21 @@ void Chuck_Compiler::shutdown()
     // clear the list
     m_dlls.clear();
 
+    // log | 1.5.1.8
+    EM_log( CK_LOG_SYSTEM, "compiler shutown complete." ) ;
     // pop indent
     EM_poplog();
+
+    // if we have carrier
+    if( m_carrier != NULL )
+    {
+        // free type engine env within carrier
+        type_engine_shutdown( m_carrier );
+        // check the pointer is now NULL
+        assert( m_carrier->env == NULL );
+        // zero out the carrier reference | 1.5.1.1
+        m_carrier = NULL;
+    }
 }
 
 
@@ -695,7 +697,7 @@ t_CKBOOL load_module( Chuck_Compiler * compiler, Chuck_Env * env, f_ck_query que
 t_CKBOOL load_internal_modules( Chuck_Compiler * compiler )
 {
     // log
-    EM_log( CK_LOG_SEVERE, "loading built-in modules..." );
+    EM_log( CK_LOG_HERALD, "loading built-in modules..." );
     // push indent level
     EM_pushlog();
 
@@ -715,31 +717,31 @@ t_CKBOOL load_internal_modules( Chuck_Compiler * compiler )
 #endif // __DISABLE_MIDI__
 
     // load
-    EM_log( CK_LOG_SEVERE, "module 'math'" );
-    if( !load_module( compiler, env, libmath_query, "Math", "global" ) ) goto error;
-    EM_log( CK_LOG_SEVERE, "module 'osc'" );
+    EM_log( CK_LOG_HERALD, "module 'math'" );
+    if( !load_module( compiler, env, libmath_query, "math", "global" ) ) goto error;
+    EM_log( CK_LOG_HERALD, "module 'osc'" );
     load_module( compiler, env, osc_query, "osc", "global" );
-    EM_log( CK_LOG_SEVERE, "module 'ai'" );
-    if( !load_module( compiler, env, libai_query, "AI", "global" ) ) goto error;
-    EM_log( CK_LOG_SEVERE, "module 'extract'" );
+    EM_log( CK_LOG_HERALD, "module 'ai'" );
+    if( !load_module( compiler, env, libai_query, "ai", "global" ) ) goto error;
+    EM_log( CK_LOG_HERALD, "module 'extract'" );
     load_module( compiler, env, extract_query, "extract", "global" );
-    EM_log( CK_LOG_SEVERE, "module 'filter'" );
+    EM_log( CK_LOG_HERALD, "module 'filter'" );
     load_module( compiler, env, filter_query, "filter", "global" );
-    EM_log( CK_LOG_SEVERE, "module 'STK'" );
+    EM_log( CK_LOG_HERALD, "module 'STK'" );
     load_module( compiler, env, stk_query, "stk", "global" );
-    EM_log( CK_LOG_SEVERE, "module 'xform'" );
+    EM_log( CK_LOG_HERALD, "module 'xform'" );
     load_module( compiler, env, xform_query, "xform", "global" );
-    EM_log( CK_LOG_SEVERE, "module 'xxx'" );
+    EM_log( CK_LOG_HERALD, "module 'xxx'" );
     load_module( compiler, env, xxx_query, "xxx", "global" );
-    EM_log( CK_LOG_SEVERE, "module 'std'" );
-    if( !load_module( compiler, env, libstd_query, "Std", "global" ) ) goto error;
+    EM_log( CK_LOG_HERALD, "module 'std'" );
+    if( !load_module( compiler, env, libstd_query, "std", "global" ) ) goto error;
 
     // load
-    EM_log( CK_LOG_SEVERE, "module 'machine'" );
-    if( !load_module( compiler, env, machine_query, "Machine", "global" ) ) goto error;
+    EM_log( CK_LOG_HERALD, "module 'machine'" );
+    if( !load_module( compiler, env, machine_query, "machine", "global" ) ) goto error;
 
     #ifndef __DISABLE_NETWORK__
-    EM_log( CK_LOG_SEVERE, "module 'opsc'" );
+    EM_log( CK_LOG_HERALD, "module 'opsc'" );
     if( !load_module( compiler, env, opensoundcontrol_query, "opsc", "global" ) ) goto error;
     #endif
 
@@ -747,17 +749,17 @@ t_CKBOOL load_internal_modules( Chuck_Compiler * compiler )
     // if( !load_module( compiler, env, net_query, "net", "global" ) ) goto error;
 
     #ifndef __DISABLE_HID__
-    EM_log( CK_LOG_SEVERE, "module 'HID'" );
+    EM_log( CK_LOG_HERALD, "module 'HID'" );
     if( !init_class_HID( env ) ) goto error;
     #endif
 
     #ifndef __DISABLE_SERIAL__
-    EM_log( CK_LOG_SEVERE, "module 'SerialIO'" );
+    EM_log( CK_LOG_HERALD, "module 'SerialIO'" );
     if( !init_class_serialio( env ) ) goto error;
     #endif
 
-    EM_log( CK_LOG_SEVERE, "module 'CKDoc'" );
-    if( !load_module( compiler, env, ckdoc_query, "CKDoc", "global" ) ) goto error;
+    EM_log( CK_LOG_HERALD, "module 'CKDoc'" );
+    if( !load_module( compiler, env, ckdoc_query, "ckdoc", "global" ) ) goto error;
 
     // clear context
     type_engine_unload_context( env );
@@ -976,9 +978,12 @@ t_CKBOOL load_external_module_at_path( Chuck_Compiler * compiler,
                                        const char * name,
                                        const char * dl_path )
 {
+    // get env
     Chuck_Env * env = compiler->env();
 
-    // EM_log(CK_LOG_SEVERE, "loading chugin '%s'", name);
+    // log with no newline; print status next
+    // NOTE this is more informative if the chugin crashes, we can see the name
+    EM_log_opts( CK_LOG_HERALD, EM_LOG_NO_NEWLINE, "[%s] %s ", TC::magenta("chugin",true).c_str(), name );
 
     Chuck_DLL * dll = new Chuck_DLL( compiler->carrier(), name );
     t_CKBOOL query_failed = FALSE;
@@ -992,10 +997,10 @@ t_CKBOOL load_external_module_at_path( Chuck_Compiler * compiler,
         if( !dll->compatible() )
         {
             // print
-            EM_log( CK_LOG_SEVERE, "[%s] loading chugin %s (%d.%d)", TC::red("FAILED",true).c_str(), name, dll->versionMajor(), dll->versionMinor() );
+            EM_log_opts( CK_LOG_HERALD, EM_LOG_NO_PREFIX, "[%s] (API version: %d.%d)", TC::red("FAILED",true).c_str(), dll->versionMajor(), dll->versionMinor() );
             // push
             EM_pushlog();
-            EM_log( CK_LOG_SEVERE, "reason: %s", TC::orange(dll->last_error(),true).c_str() );
+            EM_log( CK_LOG_HERALD, "reason: %s", TC::orange(dll->last_error(),true).c_str() );
             EM_poplog();
             // go to error for cleanup
             goto error;
@@ -1007,15 +1012,15 @@ t_CKBOOL load_external_module_at_path( Chuck_Compiler * compiler,
         if( query_failed || !type_engine_add_dll2( env, dll, "global" ) )
         {
             // print
-            EM_log( CK_LOG_SEVERE, "[%s] loading chugin %s (%d.%d)", TC::red("FAILED",true).c_str(), name, dll->versionMajor(), dll->versionMinor() );
+            EM_log_opts( CK_LOG_HERALD, EM_LOG_NO_PREFIX, "[%s] (API version: %d.%d)", TC::red("FAILED",true).c_str(), dll->versionMajor(), dll->versionMinor() );
             EM_pushlog();
             // if add_dll2 failed, an error should have already been output
             if( query_failed )
             {
                 // print reason
-                EM_log( CK_LOG_SEVERE, "reason: %s", TC::orange(dll->last_error(),true).c_str() );
+                EM_log( CK_LOG_HERALD, "reason: %s", TC::orange(dll->last_error(),true).c_str() );
             }
-            EM_log( CK_LOG_SEVERE, "%s '%s'...", TC::blue("skipping",true).c_str(), dl_path );
+            EM_log( CK_LOG_HERALD, "%s '%s'...", TC::blue("skipping",true).c_str(), dl_path );
             EM_poplog();
             // go to error for cleanup
             goto error;
@@ -1024,17 +1029,17 @@ t_CKBOOL load_external_module_at_path( Chuck_Compiler * compiler,
     else
     {
         // print
-        EM_log( CK_LOG_SEVERE, "[%s] chugin '%s' load...", TC::red("FAILED",true).c_str(), name );
+        EM_log_opts( CK_LOG_HERALD, EM_LOG_NO_PREFIX, "[%s]", TC::red("FAILED",true).c_str() );
         // more info
         EM_pushlog();
-        EM_log( CK_LOG_SEVERE, "reason: %s", TC::orange(dll->last_error(),true).c_str() );
+        EM_log( CK_LOG_HERALD, "reason: %s", TC::orange(dll->last_error(),true).c_str() );
         EM_poplog();
         // go to error for cleanup
         goto error;
     }
 
     // print
-    EM_log( CK_LOG_SEVERE, "[%s] chugin %s (%d.%d)", TC::green("OK",true).c_str(), name, dll->versionMajor(), dll->versionMinor() );
+    EM_log_opts( CK_LOG_HERALD, EM_LOG_NO_PREFIX, "[%s]", TC::green("OK",true).c_str() );
     // add to compiler
     compiler->m_dlls.push_back(dll);
     // commit operator overloads | 1.5.1.5
@@ -1068,7 +1073,7 @@ t_CKBOOL load_external_modules_in_directory( Chuck_Compiler * compiler,
     vector<string> ckfiles2load;
 
     // print directory to examine
-    EM_log( CK_LOG_SEVERE, "searching '%s'", format_dir_name_for_display(directory).c_str() );
+    EM_log( CK_LOG_HERALD, "searching '%s'", format_dir_name_for_display(directory).c_str() );
     // push
     EM_pushlog();
 
@@ -1192,6 +1197,10 @@ t_CKBOOL probe_external_module_at_path( const char * name, const char * dl_path 
     // create dynamic module
     Chuck_DLL * dll = new Chuck_DLL( NULL, name );
 
+    // log with no newline; print status next
+    // NOTE this is more informative if the chugin crashes, we can see the name
+    EM_log_opts( CK_LOG_SYSTEM, EM_LOG_NO_NEWLINE, "[%s] %s ", TC::magenta("chugin",true).c_str(), name );
+
     // load the dll, lazy mode
     if( dll->load(dl_path, CK_QUERY_FUNC, TRUE) )
     {
@@ -1201,23 +1210,44 @@ t_CKBOOL probe_external_module_at_path( const char * name, const char * dl_path 
         if( dll->compatible() )
         {
             // print
-            EM_log( CK_LOG_SYSTEM, "[%s] chugin %s (%d.%d)", TC::green("OK",true).c_str(), name, dll->versionMajor(), dll->versionMinor() );
+            EM_log_opts( CK_LOG_SYSTEM, EM_LOG_NO_PREFIX, "[%s] (API version: %d.%d)", TC::green("OK",true).c_str(),
+                         dll->versionMajor(), dll->versionMinor() );
         }
         else
         {
             // print
-            EM_log( CK_LOG_SYSTEM, "[%s] chugin %s (%d.%d)", TC::red("FAILED",true).c_str(), name, dll->versionMajor(), dll->versionMinor() );
+            EM_log_opts( CK_LOG_SYSTEM, EM_LOG_NO_PREFIX, "[%s] (API version: %d.%d)", TC::red("FAILED",true).c_str(),
+                         dll->versionMajor(), dll->versionMinor() );
             // push
             EM_pushlog();
             EM_log( CK_LOG_SYSTEM, "reason: %s", TC::orange(dll->last_error(),true).c_str() );
             EM_poplog();
+        }
 
+        // print info if available
+        string name = dll->name();
+        string authors = dll->getinfo( CHUGIN_INFO_AUTHORS );
+        string version = dll->getinfo( CHUGIN_INFO_CHUGIN_VERSION );
+        string desc = dll->getinfo( CHUGIN_INFO_DESCRIPTION );
+        string url = dll->getinfo( CHUGIN_INFO_URL );
+        string email = dll->getinfo( CHUGIN_INFO_EMAIL );
+
+        // print additional information
+        if( authors.length() || version.length() || desc.length() || url.length() )
+        {
+            EM_pushlog();
+            if( version.length() ) EM_log( CK_LOG_SYSTEM, "version: %s", version.c_str() );
+            if( authors.length() ) EM_log( CK_LOG_SYSTEM, "author: %s", authors.c_str() );
+            if( desc.length() ) EM_log( CK_LOG_HERALD, "description: %s", desc.c_str() );
+            if( url.length() ) EM_log( CK_LOG_HERALD, "URL: %s", url.c_str() );
+            if( email.length() ) EM_log( CK_LOG_INFO, "email: %s", email.c_str() );
+            EM_poplog();
         }
     }
     else
     {
         // print
-        EM_log( CK_LOG_SYSTEM, "[%s] chugin '%s' load...", TC::red("FAILED",true).c_str(), name );
+        EM_log_opts( CK_LOG_SYSTEM, EM_LOG_NO_PREFIX, "[%s]...", TC::red("FAILED",true).c_str() );
         // more info
         EM_pushlog();
         EM_log( CK_LOG_SYSTEM, "reason: %s", TC::orange(dll->last_error(),true).c_str() );

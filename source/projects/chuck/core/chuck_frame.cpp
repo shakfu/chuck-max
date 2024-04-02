@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -165,6 +165,6 @@ void Chuck_Frame::pop_scope( vector<Chuck_Local *> & out )
 
     // sanity (should be at least one left)
     assert( this->stack.size() > 0 );
-    // get ride of null boundary character (added 1.3.0.0)
+    // get rid of null boundary character (added 1.3.0.0)
     this->stack.pop_back();
 }

@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -105,7 +105,7 @@ t_CKBOOL init_class_io( Chuck_Env * env, Chuck_Type * type )
     std::string doc = "Base class for other IO classes such as FileIO, StdOut and StdErr. Besides IO.newline(), it’s unlikely you need to use this class directly.";
 
     // log
-    EM_log( CK_LOG_SEVERE, "class 'IO'" );
+    EM_log( CK_LOG_HERALD, "class 'IO'" );
     
     // init as base class
     // TODO: ctor/dtor?
@@ -204,6 +204,11 @@ t_CKBOOL init_class_io( Chuck_Env * env, Chuck_Type * type )
     // if( !type_engine_import_sfun( env, func ) ) goto error;
     // new line string
     initialize_object( g_newline, env->ckt_string, NULL, NULL );
+    // add reference, since we are keeping a reference of it | 1.5.1.7
+    CK_SAFE_ADD_REF( g_newline );
+    // also lock it | 1.5.1.7
+    g_newline->lock();
+    // set as newline
     g_newline->set( "\n" );
 
     // add TYPE_ASCII
@@ -310,7 +315,7 @@ t_CKBOOL init_class_fileio( Chuck_Env * env, Chuck_Type * type )
     Chuck_DL_Func * func = NULL;
 
     // log
-    EM_log( CK_LOG_SEVERE, "class 'FileIO'" );
+    EM_log( CK_LOG_HERALD, "class 'FileIO'" );
 
     // init as base class
     // TODO: ctor/dtor?
@@ -525,7 +530,7 @@ t_CKBOOL init_class_chout( Chuck_Env * env, Chuck_Type * type )
     Chuck_DL_Func * func = NULL;
 
     // log
-    EM_log( CK_LOG_SEVERE, "class 'chout'" );
+    EM_log( CK_LOG_HERALD, "class 'chout'" );
 
     // TODO: ctor/dtor?
     if( !type_engine_import_class_begin( env, type, env->global(), NULL, NULL, "Do not instantiate this class directly! Use 'chout' instead." ) )
@@ -615,7 +620,7 @@ t_CKBOOL init_class_cherr( Chuck_Env * env, Chuck_Type * type )
     Chuck_DL_Func * func = NULL;
 
     // log
-    EM_log( CK_LOG_SEVERE, "class 'cherr'" );
+    EM_log( CK_LOG_HERALD, "class 'cherr'" );
 
     // TODO: ctor/dtor?
     if( !type_engine_import_class_begin( env, type, env->global(), NULL, NULL, "Do not instantiate this class directly! Use 'cherr' instead." ) )
@@ -2035,7 +2040,7 @@ CK_DLL_MFUN( fileio_writefloatflags )
 CK_DLL_MFUN( chout_close )
 {
     // problem
-    CK_FPRINTF_STDERR( "[chuck]: cannot close 'chout'...\n" );
+    // CK_FPRINTF_STDERR( "[chuck]: cannot close 'chout'...\n" );
     Chuck_IO_Chout * c = SHRED->vm_ref->chout();
     c->close();
 }
@@ -2157,7 +2162,7 @@ CK_DLL_MFUN( chout_writefloat )
 CK_DLL_MFUN( cherr_close )
 {
     // problem
-    CK_FPRINTF_STDERR( "[chuck]: cannot close 'cherr'...\n" );
+    // CK_FPRINTF_STDERR( "[chuck]: cannot close 'cherr'...\n" );
     Chuck_IO_Cherr * c = SHRED->vm_ref->cherr();
     c->close();
 }
@@ -5818,7 +5823,7 @@ t_CKBOOL Chuck_IO_Serial::readAsync( t_CKUINT type, t_CKUINT num )
     }
     else
     {
-        EM_log(CK_LOG_SEVERE, "(SerialIO.readAsync): warning: request buffer overflow, dropping read");
+        EM_log(CK_LOG_HERALD, "(SerialIO.readAsync): warning: request buffer overflow, dropping read");
         return FALSE;
     }
 
@@ -5991,7 +5996,7 @@ t_CKBOOL Chuck_IO_Serial::get_buffer(t_CKINT timeout_ms)
         }
         else
         {
-            EM_log(CK_LOG_SEVERE, "(SerialIO::get_buffer): read() returned 0 bytes");
+            EM_log(CK_LOG_HERALD, "(SerialIO::get_buffer): read() returned 0 bytes");
         }
     }
     else
@@ -6381,7 +6386,7 @@ void Chuck_IO_Serial::read_cb()
         {
             if( m_asyncResponses.atMaximum() )
             {
-                EM_log(CK_LOG_SEVERE, "SerialIO.read_cb: error: response buffer overflow, dropping read");
+                EM_log(CK_LOG_HERALD, "SerialIO.read_cb: error: response buffer overflow, dropping read");
                 continue;
             }
 
@@ -6804,7 +6809,7 @@ t_CKBOOL init_class_serialio( Chuck_Env * env )
     if( !type_engine_import_add_ex( env, "serial/byte.ck" ) ) goto error;
     if( !type_engine_import_add_ex( env, "serial/bytes.ck" ) ) goto error;
     if( !type_engine_import_add_ex( env, "serial/ints-bin.ck" ) ) goto error;
-    if( !type_engine_import_add_ex( env, "serial/ints.ck" ) ) goto error;
+    if( !type_engine_import_add_ex( env, "serial/ints-ascii.ck" ) ) goto error;
     if( !type_engine_import_add_ex( env, "serial/lines.ck" ) ) goto error;
     if( !type_engine_import_add_ex( env, "serial/list.ck" ) ) goto error;
     if( !type_engine_import_add_ex( env, "serial/write-bytes.ck" ) ) goto error;

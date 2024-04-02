@@ -1,25 +1,25 @@
 /*----------------------------------------------------------------------------
-    ChucK Concurrent, On-the-fly Audio Programming Language
-      Compiler and Virtual Machine
+  ChucK Strongly-timed Audio Programming Language
+    Compiler and Virtual Machine
 
-    Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
-      http://chuck.cs.princeton.edu/
-      http://soundlab.cs.princeton.edu/
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
+    http://chuck.cs.princeton.edu/
+    http://soundlab.cs.princeton.edu/
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-    U.S.A.
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+  U.S.A.
 -----------------------------------------------------------------------------*/
 
 /*
@@ -1418,10 +1418,12 @@ aiff_write_strings (SF_PRIVATE *psf, int location)
 static int
 aiff_command (SF_PRIVATE *psf, int command, void *data, int datasize)
 {
+#ifndef __CHUNREAL_ENGINE__
 	/* Avoid compiler warnings. */
 	psf = psf ;
 	data = data ;
 	datasize = datasize ;
+#endif
 
 	switch (command)
 	{	default : break ;
@@ -4881,7 +4883,9 @@ psf_default_seek (SF_PRIVATE *psf, int mode, sf_count_t samples_from_start)
 		return ((sf_count_t) -1) ;
 		} ;
 
+#ifndef __CHUNREAL_ENGINE__
 	mode = mode ;
+#endif
 
 	return samples_from_start ;
 } /* psf_default_seek */
@@ -5295,15 +5299,21 @@ static void dither_double	(const double *in, double *out, int frames, int channe
 
 static sf_count_t
 dither_read_short (SF_PRIVATE *psf, short *ptr, sf_count_t len)
-{	psf = psf ;
+{
+#ifndef __CHUNREAL_ENGINE__
+	psf = psf ;
 	ptr = ptr ;
+#endif
 	return len ;
 } /* dither_read_short */
 
 static sf_count_t
 dither_read_int (SF_PRIVATE *psf, int *ptr, sf_count_t len)
-{	psf = psf ;
+{
+#ifndef __CHUNREAL_ENGINE__
+	psf = psf ;
 	ptr = ptr ;
+#endif
 	return len ;
 } /* dither_read_int */
 
@@ -6976,7 +6986,9 @@ static sf_count_t
 dwvw_seek	(SF_PRIVATE *psf, int mode, sf_count_t offset)
 {	DWVW_PRIVATE *pdwvw ;
 
+#ifndef __CHUNREAL_ENGINE__
 	mode = mode ;
+#endif
 
 	if (! psf->fdata)
 	{	psf->error = SFE_INTERNAL ;
@@ -11292,7 +11304,9 @@ gsm610_seek	(SF_PRIVATE *psf, int mode, sf_count_t offset)
 {	GSM610_PRIVATE *pgsm610 ;
 	int			newblock, newsample ;
 
+#ifndef __CHUNREAL_ENGINE__
 	mode = mode ;
+#endif
 
 	if (! psf->fdata)
 		return 0 ;
@@ -14026,7 +14040,10 @@ interleave_read_double	(SF_PRIVATE *psf, double *ptr, sf_count_t len)
 
 static sf_count_t
 interleave_seek	(SF_PRIVATE *psf, int mode, sf_count_t samples_from_start)
-{	psf = psf ;	mode = mode ;
+{
+#ifndef __CHUNREAL_ENGINE__
+	psf = psf ;	mode = mode ;
+#endif
 
 	/*
 	** Do nothing here. This is a place holder to prevent the default
@@ -14288,7 +14305,9 @@ ircam_write_header (SF_PRIVATE *psf, int calc_length)
 
 	current = psf_ftell (psf) ;
 
+#ifndef __CHUNREAL_ENGINE__
 	calc_length = calc_length ;
+#endif
 
 	/* This also sets psf->endian. */
 	encoding = get_encoding (psf->sf.format & SF_FORMAT_SUBMASK) ;
@@ -15743,7 +15762,9 @@ macos_guess_file_type (SF_PRIVATE *psf, const char *filename)
 	struct stat statbuf ;
 	int format ;
 
+#ifndef __CHUNREAL_ENGINE__
 	psf = psf ;
+#endif
 
 	snprintf (rsrc_name, sizeof (rsrc_name), "%s/rsrc", filename);
 
@@ -17759,8 +17780,10 @@ nist_write_header (SF_PRIVATE *psf, int calc_length)
 
 	current = psf_ftell (psf) ;
 
+#ifndef __CHUNREAL_ENGINE__
 	/* Prevent compiler warning. */
 	calc_length = calc_length ;
+#endif
 
 	if (psf->endian == SF_ENDIAN_BIG)
 		end_str = "10" ;
@@ -18237,8 +18260,10 @@ paf_write_header (SF_PRIVATE *psf, int calc_length)
 
 	psf->dataoffset = PAF_HEADER_LENGTH ;
 
+#ifndef __CHUNREAL_ENGINE__
 	/* Prevent compiler warning. */
 	calc_length = calc_length ;
+#endif
 
 	switch (psf->sf.format & SF_FORMAT_SUBMASK)
 	{	case SF_FORMAT_PCM_S8 :
@@ -21984,7 +22009,9 @@ pvf_open	(SF_PRIVATE *psf)
 static int
 pvf_close	(SF_PRIVATE *psf)
 {
+#ifndef __CHUNREAL_ENGINE__
 	psf = psf ;
+#endif
 
 	return 0 ;
 } /* pvf_close */
@@ -21996,7 +22023,9 @@ pvf_write_header (SF_PRIVATE *psf, int calc_length)
 	if (psf->pipeoffset > 0)
 		return 0 ;
 
+#ifndef __CHUNREAL_ENGINE__
 	calc_length = calc_length ; /* Avoid a compiler warning. */
+#endif
 
 	current = psf_ftell (psf) ;
 
@@ -32369,10 +32398,12 @@ wav_close (SF_PRIVATE *psf)
 static int
 wav_command (SF_PRIVATE *psf, int command, void *data, int datasize)
 {
+#ifndef __CHUNREAL_ENGINE__
 	/* Avoid compiler warnings. */
 	psf = psf ;
 	data = data ;
 	datasize = datasize ;
+#endif
 
 	switch (command)
 	{	default : break ;
@@ -33289,7 +33320,9 @@ xi_open	(SF_PRIVATE *psf)
 static int
 xi_close	(SF_PRIVATE *psf)
 {
+#ifndef __CHUNREAL_ENGINE__
 	psf = psf ;
+#endif
 
 	return 0 ;
 } /* xi_close */
@@ -33437,7 +33470,9 @@ xi_write_header (SF_PRIVATE *psf, int calc_length)
 	if ((pxi = psf->fdata) == NULL)
 		return SFE_INTERNAL ;
 
+#ifndef __CHUNREAL_ENGINE__
 	calc_length = calc_length ; /* Avoid a compiler warning. */
+#endif
 
 	current = psf_ftell (psf) ;
 

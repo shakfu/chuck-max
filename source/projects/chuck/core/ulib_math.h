@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -66,6 +66,8 @@ CK_DLL_SFUN( fmod_impl );
 CK_DLL_SFUN( remainder_impl );
 CK_DLL_SFUN( min_impl );
 CK_DLL_SFUN( max_impl );
+CK_DLL_SFUN( min_int_impl );
+CK_DLL_SFUN( max_int_impl );
 CK_DLL_SFUN( isinf_impl );
 CK_DLL_SFUN( isnan_impl );
 CK_DLL_SFUN( equal_impl );

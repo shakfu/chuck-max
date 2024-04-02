@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -116,7 +116,7 @@ t_CKBOOL kb_initscr()
     struct termios term;
     if( tcgetattr(0, &term) == -1 )
     { 
-        EM_log( CK_LOG_SEVERE, "(kbhit disabled): standard input not a tty!");
+        EM_log( CK_LOG_HERALD, "(kbhit disabled): standard input not a tty!");
         return FALSE;
     }
 

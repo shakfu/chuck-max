@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -37,6 +37,24 @@
 #include <memory.h>
 #include <assert.h>
 
+
+
+
+//-----------------------------------------------------------------------------
+// ChucK version string
+//-----------------------------------------------------------------------------
+// from host (non-chugin) -- can retrieve using ChucK::version()
+// from chugin -- can access directly as CHUCK_VERSION_STRING
+// 1.5.0.0 (ge) | moved to chuck.h for at-a-glance visibility
+// 1.5.2.0 (ge) | moved to chuck_def.h for chugins headers streamlining
+//-----------------------------------------------------------------------------
+#define CHUCK_VERSION_STRING        "1.5.2.3-dev (chai)"
+//-----------------------------------------------------------------------------
+
+
+
+
+//-------------------------------------------
 // chuck types
 //-------------------------------------------
 #ifndef __EMSCRIPTEN__
@@ -171,6 +189,7 @@ typedef struct { SAMPLE re ; SAMPLE im ; } t_CKCOMPLEX_SAMPLE;
 #define CK_SAFE_REF_ASSIGN(lhs,rhs) do { Chuck_VM_Object * temp = (lhs); (lhs) = (rhs); CK_SAFE_ADD_REF(lhs); CK_SAFE_RELEASE(temp); } while(0)
 #define CK_SAFE_FREE(x)             do { if(x){ free(x); (x) = NULL; } } while(0)
 #define CK_SAFE_UNLOCK_DELETE(x)    do { if(x){ (x)->unlock(); delete (x); (x) = NULL; } } while(0)
+#define CK_SAFE_UNLOCK_RELEASE(x)   do { if(x){ (x)->unlock(); (x)->release(); (x) = NULL; } } while(0)
 
 // max + min
 #define ck_max(x,y)                 ( (x) >= (y) ? (x) : (y) )
@@ -241,13 +260,13 @@ typedef struct { SAMPLE re ; SAMPLE im ; } t_CKCOMPLEX_SAMPLE;
 // platform: linux
 // related macros: __LINUX_ALSA__ __LINUX_PULSE__ __LINUX_OSS__ __LINUX_JACK__ __UNIX_JACK__
 //-------------------------------------------
-#if defined(__linux__)
+#if defined(__linux__) || defined(__FreeBSD__)
 //-------------------------------------------
   #ifndef __PLATFORM_LINUX__
   #define __PLATFORM_LINUX__
   #endif
 //-------------------------------------------
-#endif // defined(__linux__)
+#endif // defined(__linux__) || defined(__FreeBSD__)
 //-------------------------------------------
 
 

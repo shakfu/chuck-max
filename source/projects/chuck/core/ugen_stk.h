@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -39,6 +39,7 @@
 #define __UGEN_STK_H__
 
 #include "chuck_dl.h"
+#include "chuck_carrier.h"
 
 // forward reference; REFACTOR-2017
 struct Chuck_Carrier;
@@ -681,7 +682,7 @@ public:
 
 
 /***************************************************/
-/*! \class Delay
+/*! \class DelayBase
     \brief STK non-interpolating delay line class.
 
     This protected Filter subclass implements
@@ -704,18 +705,18 @@ public:
 #define __DELAY_H
 
 
-class Delay : public FilterStk
+class DelayBase : public FilterStk
 {
 public:
 
   //! Default constructor creates a delay-line with maximum length of 4095 samples and zero delay.
-  Delay();
+  DelayBase();
 
   //! Overloaded constructor which specifies the current and maximum delay-line lengths.
-  Delay(long theDelay, long maxDelay);
+  DelayBase(long theDelay, long maxDelay);
 
   //! Class destructor.
-  virtual ~Delay();
+  virtual ~DelayBase();
 
   //! Clears the internal state of the delay line.
   void clear();
@@ -747,8 +748,9 @@ public:
   //! Return the value which will be output by the next call to tick().
   /*!
     This method is valid only for delay settings greater than zero!
+    [VERSION #] Removed const qualification because derived class signatures are non-const: avoid virtual function shadowing warnings by agreeing signatures
    */
-  virtual MY_FLOAT nextOut(void) const;
+  virtual MY_FLOAT nextOut(void);
 
   //! Input one sample to the delay-line and return one output.
   virtual MY_FLOAT tick(MY_FLOAT sample);
@@ -796,7 +798,7 @@ public:
 #define __DELAYL_H
 
 
-class DelayL : public Delay
+class DelayL : public DelayBase
 {
 public:
 
@@ -821,10 +823,10 @@ public:
   /*!
     This method is valid only for delay settings greater than zero!
    */
-  MY_FLOAT nextOut(void);
+  virtual MY_FLOAT nextOut(void);
 
   //! Input one sample to the delay-line and return one output.
-  MY_FLOAT tick(MY_FLOAT sample);
+  virtual MY_FLOAT tick(MY_FLOAT sample);
 
  public: // SWAP formerly protected
   MY_FLOAT alpha;
@@ -1376,6 +1378,7 @@ public:
   //! Class constructor.
   WaveLoop( const char *fileName, bool raw = FALSE, bool generate = true );
 
+  using WvIn::openFile;  // tell the compiler we're OK overloading/shadowing a virtual function
   virtual void openFile( const char * fileName, bool raw = FALSE, bool n = TRUE );
 
   //! Class destructor.
@@ -2457,7 +2460,7 @@ class Bowed : public Instrmnt
 #define __DelayA_h
 
 
-class DelayA : public Delay
+class DelayA : public DelayBase
 {
 public:
 
@@ -2485,10 +2488,10 @@ public:
   /*!
     This method is valid only for delay settings greater than zero!
    */
-  MY_FLOAT nextOut(void);
+  virtual MY_FLOAT nextOut(void);
 
   //! Input one sample to the delay-line and return one output.
-  MY_FLOAT tick(MY_FLOAT sample);
+  virtual MY_FLOAT tick(MY_FLOAT sample);
 
 public: // SWAP formerly protected
   MY_FLOAT alpha;
@@ -2869,7 +2872,7 @@ public:
   MY_FLOAT *tick(MY_FLOAT *vector, unsigned int vectorSize);
 
 public:
-  Delay *delayLine;
+  DelayBase *delayLine;
   long length;
   MY_FLOAT lastOutput;
   MY_FLOAT effectMix;
@@ -3476,10 +3479,10 @@ class JCRev : public Reverb
   MY_FLOAT tick(MY_FLOAT input);
 
  public: // SWAP formerly protected
-  Delay *allpassDelays[3];
-  Delay *combDelays[4];
-  Delay *outLeftDelay;
-  Delay *outRightDelay;
+  DelayBase *allpassDelays[3];
+  DelayBase *combDelays[4];
+  DelayBase *outLeftDelay;
+  DelayBase *outRightDelay;
   MY_FLOAT allpassCoefficient;
   MY_FLOAT combCoefficient[4];
 
@@ -3725,6 +3728,7 @@ class Mesh2D : public Instrmnt
   MY_FLOAT tick();
 
   //! Input a sample to the mesh and compute one output sample.
+  using Instrmnt::tick;  // tell the compiler we're OK overloading/shadowing a virtual function
   MY_FLOAT tick(MY_FLOAT input);
 
   //! Perform the control change specified by \e number and \e value (0.0 - 128.0).
@@ -4192,8 +4196,8 @@ class NRev : public Reverb
   MY_FLOAT tick(MY_FLOAT input);
 
  public: // SWAP formerly protected
-  Delay *allpassDelays[8];
-  Delay *combDelays[6];
+  DelayBase *allpassDelays[8];
+  DelayBase *combDelays[6];
   MY_FLOAT allpassCoefficient;
   MY_FLOAT combCoefficient[6];
     MY_FLOAT lowpassState;
@@ -4242,8 +4246,8 @@ public:
   MY_FLOAT tick(MY_FLOAT input);
 
 public: // SWAP formerly protected
-  Delay *allpassDelays[2];
-  Delay *combDelays[2];
+  DelayBase *allpassDelays[2];
+  DelayBase *combDelays[2];
   MY_FLOAT allpassCoefficient;
   MY_FLOAT combCoefficient[2];
 

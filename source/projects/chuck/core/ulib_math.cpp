@@ -1,8 +1,8 @@
 /*----------------------------------------------------------------------------
-  ChucK Concurrent, On-the-fly Audio Programming Language
+  ChucK Strongly-timed Audio Programming Language
     Compiler and Virtual Machine
 
-  Copyright (c) 2004 Ge Wang and Perry R. Cook.  All rights reserved.
+  Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
@@ -38,10 +38,10 @@
 #include <float.h>
 #include <stdlib.h>
 #include <time.h>
-
 #include <limits.h>
-#include <limits>
+
 #include <vector> // 1.5.0.0 (ge) | added
+#include <limits> // 1.5.2.2 (nick) | added
 
 
 static double g_pi = CK_ONE_PI;
@@ -78,10 +78,10 @@ DLL_QUERY libmath_query( Chuck_DL_Query * QUERY )
 
     // add examples | 1.5.0.4 (ge) added
     QUERY->add_ex( QUERY, "basic/blit2.ck" );
-    QUERY->add_ex( QUERY, "basic/mand-o-matic.ck" );
+    QUERY->add_ex( QUERY, "stk/mand-o-matic.ck" );
     QUERY->add_ex( QUERY, "math/randomize.ck" );
     QUERY->add_ex( QUERY, "math/maybe.ck" );
-    QUERY->add_ex( QUERY, "math/ind-dist.ck" );
+    QUERY->add_ex( QUERY, "math/int-dist.ck" );
     QUERY->add_ex( QUERY, "math/map.ck" );
 
     // add abs
@@ -224,18 +224,30 @@ DLL_QUERY libmath_query( Chuck_DL_Query * QUERY )
     QUERY->add_arg( QUERY, "float", "y" );
     QUERY->doc_func( QUERY, "Compute the value r such that r=x-n*y, where n is the integer nearest the exact value of x / y. If there are two integers closest to x / y, n shall be the even one. If r is zero, it is given the same sign as x." );
 
+    // min | 1.5.2.2 (ge) added -- NOTE: for now put before float version; overloading needs to implement best match
+    QUERY->add_sfun( QUERY, min_int_impl, "int", "min" );
+    QUERY->add_arg( QUERY, "int", "x" );
+    QUERY->add_arg( QUERY, "int", "y" );
+    QUERY->doc_func( QUERY, "Return the lesser of x and y (int)." );
+
     // min
     QUERY->add_sfun( QUERY, min_impl, "float", "min" );
     QUERY->add_arg( QUERY, "float", "x" );
     QUERY->add_arg( QUERY, "float", "y" );
-    QUERY->doc_func( QUERY, "Return the lesser of x and y." );
+    QUERY->doc_func( QUERY, "Return the lesser of x and y (float)." );
+
+    // max | 1.5.2.2 (ge) added -- NOTE: for now put before float version; overloading needs to implement best match
+    QUERY->add_sfun( QUERY, max_int_impl, "int", "max" );
+    QUERY->add_arg( QUERY, "int", "x" );
+    QUERY->add_arg( QUERY, "int", "y" );
+    QUERY->doc_func( QUERY, "Return the greater of x and y (integer)." );
 
     // max
     //! see \example powerup.ck
     QUERY->add_sfun( QUERY, max_impl, "float", "max" );
     QUERY->add_arg( QUERY, "float", "x" );
     QUERY->add_arg( QUERY, "float", "y" );
-    QUERY->doc_func( QUERY, "Return the greater of x and y." );
+    QUERY->doc_func( QUERY, "Return the greater of x and y (float)." );
 
     // isinf
     QUERY->add_sfun( QUERY, isinf_impl, "int", "isinf" );
@@ -702,6 +714,22 @@ CK_DLL_SFUN( max_impl )
     RETURN->v_float = x > y ? x : y;
 }
 
+// min
+CK_DLL_SFUN( min_int_impl )
+{
+    t_CKINT x = GET_NEXT_INT(ARGS);
+    t_CKINT y = GET_NEXT_INT(ARGS);
+    RETURN->v_int = x < y ? x : y;
+}
+
+// max
+CK_DLL_SFUN( max_int_impl )
+{
+    t_CKINT x = GET_NEXT_INT(ARGS);
+    t_CKINT y = GET_NEXT_INT(ARGS);
+    RETURN->v_int= x > y ? x : y;
+}
+
 // isinf
 CK_DLL_SFUN( isinf_impl )
 {
@@ -726,26 +754,13 @@ CK_DLL_SFUN( isnan_impl )
 
 // equal( x, y ) -- 1.4.1.1 (added ge)
 // returns whether x and y (floats) are considered equal
-//
-// Knuth, Donald E., /The Art of Computer Programming
-// Volume II: Seminumerical Algorithms/, Addison-Wesley, 1969.
-// based on Knuth section 4.2.2 pages 217-218
-// https://www.cs.technion.ac.il/users/yechiel/c++-faq/floating-point-arith.html
 CK_DLL_SFUN( equal_impl )
 {
-    const t_CKFLOAT epsilon = .00000001; // a small number 1e-8
     // get arguments
     t_CKFLOAT x = GET_CK_FLOAT(ARGS);
     t_CKFLOAT y = *((t_CKFLOAT *)ARGS + 1);
-    // absolute values
-    t_CKFLOAT abs_x = (x >= 0.0 ? x : -x);
-    t_CKFLOAT abs_y = (y >= 0.0 ? y : -y);
-    // smaller of the two absolute values (this step added by ge; ensures symmetry)
-    t_CKFLOAT min = abs_x < abs_y ? abs_x : abs_y;
-    // absolute value of the difference
-    t_CKFLOAT v = x-y; t_CKFLOAT abs_v = (v >= 0.0 ? v : -v);
-    // test whether difference is less/equal to episilon * smaller of two abs values
-    RETURN->v_int = (abs_v <= (epsilon * min));
+    // equal
+    RETURN->v_int = ck_equals(x,y);
 }
 
 // floatMax
@@ -829,8 +844,8 @@ CK_DLL_SFUN( phase_impl )
 CK_DLL_SFUN( rtop_impl )
 {
     // get array
-    Chuck_Array16 * from = (Chuck_Array16 *)GET_NEXT_OBJECT(ARGS);
-    Chuck_Array16 * to = (Chuck_Array16 *)GET_NEXT_OBJECT(ARGS);
+    Chuck_ArrayVec2 * from = (Chuck_ArrayVec2 *)GET_NEXT_OBJECT(ARGS);
+    Chuck_ArrayVec2 * to = (Chuck_ArrayVec2 *)GET_NEXT_OBJECT(ARGS);
 
     // make sure not null
     if( !from || !to )
@@ -868,8 +883,8 @@ CK_DLL_SFUN( rtop_impl )
 CK_DLL_SFUN( ptor_impl )
 {
     // get array
-    Chuck_Array16 * from = (Chuck_Array16 *)GET_NEXT_OBJECT(ARGS);
-    Chuck_Array16 * to = (Chuck_Array16 *)GET_NEXT_OBJECT(ARGS);
+    Chuck_ArrayVec2 * from = (Chuck_ArrayVec2 *)GET_NEXT_OBJECT(ARGS);
+    Chuck_ArrayVec2 * to = (Chuck_ArrayVec2 *)GET_NEXT_OBJECT(ARGS);
 
     // make sure not null
     if( !from || !to )

@@ -40,7 +40,6 @@ set(CXX_CORE
 	chuck_table.cpp
 	chuck_type.cpp
 	chuck_ugen.cpp
-	chuck_utils.cpp
 	chuck_vm.cpp
 	hidio_sdl.cpp
 	midiio_rtmidi.cpp

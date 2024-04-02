@@ -24,6 +24,8 @@ see `help/chuck~.maxhelp` for a demonstration of current features.
 
 Also note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
 
+This project is currently built on chuck 1.5.2.3-dev (chai).
+
 ## Requirements
 
 Note that this external is currently only developed and tested on macOS.
