@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 435.0, 137.0, 705.0, 598.0 ],
+		"rect" : [ 435.0, 137.0, 678.0, 598.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -432,7 +432,7 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-40",
-					"items" : [ "ABSaturator-test.ck", ",", "adc.ck", ",", "adsr.ck", ",", "alarm.ck", ",", "AmbPan3-CCRMA.ck", ",", "AmbPan3-test.ck", ",", "args.ck", ",", "autotune-test.ck", ",", "bar.ck", ",", "bitcrush.ck", ",", "Bitcrusher-test.ck", ",", "blit.ck", ",", "blit2.ck", ",", "chirp.ck", ",", "chirp2.ck", ",", "chuck", ",", "comb.ck", ",", "curly++.ck", ",", "curly.ck", ",", "delay.ck", ",", "demo0.ck", ",", "demo1.ck", ",", "demo2.ck", ",", "demo3.ck", ",", "echo.ck", ",", "elliptic-help.ck", ",", "envelope.ck", ",", "expdelay-help.ck", ",", "fm.ck", ",", "fm2.ck", ",", "fm3.ck", ",", "foldback-test-index.ck", ",", "foldback-test-threshold.ck", ",", "foo.ck", ",", "foo2.ck", ",", "func.ck", ",", "gverb-help.ck", ",", "i-robot.ck", ",", "imp.ck", ",", "infnan.ck", ",", "input-test.ck", ",", "interpolation-test.ck", ",", "KasFilter-test.ck", ",", "larry++.ck", ",", "larry.ck", ",", "lfo.ck", ",", "MagicSine-test.ck", ",", "maxtest.ck", ",", "mcsine.ck", ",", "mesh-help.ck", ",", "Modes.ck", ",", "moe++.ck", ",", "moe.ck", ",", "multicomb-help.ck", ",", "nhhall-help.ck", ",", "oscidx.ck", ",", "oscillatronx.ck", ",", "overdrive-help.ck", ",", "Pan4-test.ck", ",", "Pan8-test.ck", ",", "panB.ck", ",", "Patch-example.ck", ",", "Patch-pwm.ck", ",", "Patch-test.ck", ",", "perlin-test-gfx.ck", ",", "phasor.ck", ",", "pitchtrack-help.ck", ",", "poweradsr-feedback-beatings.ck", ",", "poweradsr-help.ck", ",", "poweradsr-test.ck", ",", "pulse.ck", ",", "Random-test.ck", ",", "Range-example.ck", ",", "Range-test.ck", ",", "README-KasFilter.ck", ",", "rec-auto-stereo.ck", ",", "rec-auto.ck", ",", "rec.ck", ",", "ring.ck", ",", "sigmund-help.ck", ",", "sigmund-tracks-test.ck", ",", "Sine-test.ck", ",", "sine.ck", ",", "sndbuf.ck", ",", "spectacle-help.ck", ",", "step.ck", ",", "test.ck", ",", "tick.ck", ",", "tick2.ck", ",", "unchuck.ck", ",", "valueat.ck", ",", "wavetable-help.ck", ",", "whirl.ck", ",", "whole.ck", ",", "wind.ck", ",", "wind2.ck", ",", "winfuncenv-help.ck", ",", "WPDiodeLadder-test.ck", ",", "WPKorg35-test.ck", ",", "zerox.ck" ],
+					"items" : [ "ABSaturator-test.ck", ",", "adc.ck", ",", "adsr.ck", ",", "alarm.ck", ",", "AmbPan3-CCRMA.ck", ",", "AmbPan3-test.ck", ",", "args.ck", ",", "autotune-test.ck", ",", "bar.ck", ",", "bitcrush.ck", ",", "blit.ck", ",", "blit2.ck", ",", "chirp.ck", ",", "chirp2.ck", ",", "chuck", ",", "comb.ck", ",", "curly++.ck", ",", "curly.ck", ",", "delay.ck", ",", "demo0.ck", ",", "demo1.ck", ",", "demo2.ck", ",", "demo3.ck", ",", "echo.ck", ",", "elliptic-help.ck", ",", "envelope.ck", ",", "expdelay-help.ck", ",", "fm.ck", ",", "fm2.ck", ",", "fm3.ck", ",", "foldback-test-index.ck", ",", "foldback-test-threshold.ck", ",", "foo.ck", ",", "foo2.ck", ",", "func.ck", ",", "gverb-help.ck", ",", "i-robot.ck", ",", "imp.ck", ",", "infnan.ck", ",", "input-test.ck", ",", "interpolation-test.ck", ",", "KasFilter-test.ck", ",", "larry++.ck", ",", "larry.ck", ",", "lfo.ck", ",", "MagicSine-test.ck", ",", "maxtest.ck", ",", "mcsine.ck", ",", "mesh-help.ck", ",", "Modes.ck", ",", "moe++.ck", ",", "moe.ck", ",", "multicomb-help.ck", ",", "nhhall-help.ck", ",", "oscidx.ck", ",", "oscillatronx.ck", ",", "overdrive-help.ck", ",", "Pan4-test.ck", ",", "Pan8-test.ck", ",", "panB.ck", ",", "Patch-example.ck", ",", "Patch-pwm.ck", ",", "Patch-test.ck", ",", "perlin-test-gfx.ck", ",", "phasor.ck", ",", "pitchtrack-help.ck", ",", "poweradsr-feedback-beatings.ck", ",", "poweradsr-help.ck", ",", "poweradsr-test.ck", ",", "pulse.ck", ",", "Random-test.ck", ",", "Range-example.ck", ",", "Range-test.ck", ",", "README-KasFilter.ck", ",", "rec-auto-stereo.ck", ",", "rec-auto.ck", ",", "rec.ck", ",", "ring.ck", ",", "sigmund-help.ck", ",", "sigmund-tracks-test.ck", ",", "Sine-test.ck", ",", "sine.ck", ",", "sndbuf.ck", ",", "spectacle-help.ck", ",", "step.ck", ",", "test.ck", ",", "tick.ck", ",", "tick2.ck", ",", "unchuck.ck", ",", "valueat.ck", ",", "wavetable-help.ck", ",", "whirl.ck", ",", "whole.ck", ",", "wind.ck", ",", "wind2.ck", ",", "winfuncenv-help.ck", ",", "WPDiodeLadder-test.ck", ",", "WPKorg35-test.ck", ",", "zerox.ck" ],
 					"maxclass" : "umenu",
 					"numinlets" : 1,
 					"numoutlets" : 3,
@@ -586,8 +586,8 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 116.5, 234.0, 49.0, 19.0 ],
-					"text" : "(re)load"
+					"patching_rect" : [ 118.25, 230.0, 27.5, 19.0 ],
+					"text" : "run"
 				}
 
 			}

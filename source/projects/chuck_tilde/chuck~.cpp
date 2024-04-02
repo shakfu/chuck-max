@@ -19,9 +19,12 @@
 #define N_OUT_CHANNELS 1
 #define MAX_FILENAME 128
 
+int MX_CK_COUNT = 0;
+
 typedef struct _ck {
     t_pxobject ob;              // the object itself (t_pxobject in MSP)
 
+    int oid;                    // object id
     // chuck-related
     ChucK *chuck;               // chuck instance
     t_symbol* filename;         // name of chuck file in Max search path
@@ -128,6 +131,7 @@ void *ck_new(t_symbol *s, long argc, t_atom *argv)
         x->chuck->setParam( CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, chugin_search );
         x->chuck->setStdoutCallback(ck_stdout_print);
         x->chuck->setStderrCallback(ck_stderr_print);
+        x->oid = ++MX_CK_COUNT;
 
         // init chuck
         x->chuck->init();
@@ -482,11 +486,13 @@ t_max_err ck_info(t_ck *x)
     Chuck_VM_Shreduler * shreduler = x->chuck->vm()->shreduler();
     std::vector<Chuck_VM_Shred *> shreds;
     shreduler->get_all_shreds(shreds);
+    post("\nRUNNING SHREDS:");
     for(const Chuck_VM_Shred* i : shreds) {
-        post("shred #%d %s", i->get_id(), i->name.c_str());
+        post("%d-%d: %s", x->oid, i->get_id(), i->name.c_str());
     }
     return MAX_ERR_NONE;
 }
+
 
 
 //-----------------------------------------------------------------------------------------------
