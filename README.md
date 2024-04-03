@@ -65,6 +65,13 @@ make setup
 
 Note: `make` builds everything and `make setup` makes the package and its contents available to be used by Max by creating a symlink of the `chuck-max` folder in `$HOME/Documents/Max 8/Packages`.
 
+Also note that by default `make` builds the external according to the
+*native* architecture of the mac it is compiled on. If you'd rather build an  external with a universal architecture then do this instead:
+
+```bash
+make universal
+```
+
 If you want to update and re-build the external if there are changes in the repo just type the following in the root of the project.
 
 ```bash

@@ -3,15 +3,20 @@ SCRIPTS := source/scripts
 BUILD := build
 
 
-.PHONY: all macos dev clean setup 
+.PHONY: all native universal dev clean setup 
 
-all: macos
+all: native
 
-macos:
+native:
 	@mkdir -p build && cd build && cmake -GXcode .. && cmake --build . --config 'Release'
+
+universal:
+	@mkdir -p build && cd build && cmake -GXcode -DC74_BUILD_FAT=ON .. && cmake --build . --config 'Release'
 
 dev:
 	@mkdir -p build && cd build && cmake .. && make
+
+
 
 clean:
 	@rm -rf build
