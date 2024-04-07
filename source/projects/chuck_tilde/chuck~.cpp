@@ -16,7 +16,7 @@
 #define GAIN 0.5
 #define SAMPLE float
 #define N_IN_CHANNELS 1
-#define N_OUT_CHANNELS 1
+#define N_OUT_CHANNELS 2
 #define MAX_FILENAME 128
 
 int MX_CK_COUNT = 0;
