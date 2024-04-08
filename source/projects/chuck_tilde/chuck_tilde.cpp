@@ -22,6 +22,8 @@ int MX_CK_COUNT = 0;
 typedef struct _ck {
     t_pxobject ob;           // the object itself (t_pxobject in MSP)
 
+    t_bool c_debug;          // bool flag to switch per-object debug state
+
     // chuck-related
     ChucK* chuck;            // chuck instance
     int oid;                 // object id
@@ -93,6 +95,12 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_dsp64, "dsp64", A_CANT, 0);
     class_addmethod(c, (method)ck_assist, "assist", A_CANT, 0);
 
+    CLASS_ATTR_LONG(c,      "debug", 0,  t_ck, c_debug);
+    CLASS_ATTR_STYLE(c,     "debug", 0, "onoff");
+    CLASS_ATTR_DEFAULT(c,   "debug", 0,     "0");
+    CLASS_ATTR_BASIC(c,     "debug", 0);
+    CLASS_ATTR_SAVE(c,      "debug", 0);
+
     class_dspinit(c);
     class_register(CLASS_BOX, c);
     ck_class = c;
@@ -139,6 +147,9 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // init chuck
         x->chuck->init();
         x->chuck->start();
+
+        // set default debug level
+        x->c_debug = DEBUG;
 
         post("ChucK %s", x->chuck->version());
         post("inputs: %d  outputs: %d ", x->chuck->vm()->m_num_adc_channels,
@@ -270,7 +281,7 @@ t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
 
 void ck_debug(t_ck* x, char* fmt, ...)
 {
-    if (DEBUG) {
+    if (x->c_debug) {
         char msg[MAX_PATH_CHARS];
 
         va_list va;
