@@ -3,15 +3,17 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+if (CMAKE_HOST_APPLE)
 execute_process(
 	COMMAND bison -dv -b chuck chuck.y
 	COMMAND flex -ochuck.yy.c chuck.lex
 	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
+endif()
 
 set(C_CORE
-	chuck.tab.c
-	chuck.yy.c
+	chuck.tab.c     # !win32
+	chuck.yy.c     	# !win32
 	util_network.c
 	util_raw.c
 	util_xforms.c
@@ -98,9 +100,8 @@ target_compile_options(chuck_lib
 
 target_compile_definitions(chuck_lib
 	PUBLIC
-	__MACOSX_CORE__
+	$<$<BOOL:${APPLE}>:__MACOSX_CORE__>
 	HAVE_CONFIG_H
-
 )
 
 

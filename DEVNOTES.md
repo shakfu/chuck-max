@@ -225,3 +225,306 @@ t_CKBOOL Chuck_Globals_Manager::broadcastGlobalEvent( const char * name );
 Can be used for chuck code to trigger callback functions in the external. Example provided.
 
 
+## Windows Support
+
+```cmake
+$<$<AND:$<BOOL:${WIN32}>,$<BOOL:${ENABLE_WARNINGS}>>:/W4>
+
+
+```
+
+```
+defs
+    __WINDOWS_DS__
+    __WINDOWS_ASIO__
+    __WINDOWS_WASAPI__
+    WIN32
+    NDEBUG for debug, _DEBUG for release
+    _CONSOLE
+
+console
+    dsound.lib
+    dinput8.lib
+    dxguid.lib
+    wsock32.lib
+    ws2_32.lib
+    iphlpapi.lib
+    winmm.lib
+
+
+..\core\lo\address.c
+..\core\lo\blob.c
+..\core\lo\bundle.c
+..\core\lo\message.c
+..\core\lo\method.c
+..\core\lo\pattern_match.c
+..\core\lo\server.c
+..\core\lo\send.c
+..\core\lo\timetag.c
+    defs
+        HAVE_CONFIG_H
+        __PLATFORM_WIN32__
+        __WINDOWS_DS__
+        WIN32
+        NDEBUG
+        _CONSOLE
+    additional_includes:
+        lo
+```
+
+vcproject:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\core\chuck.h" />
+    <ClInclude Include="..\core\chuck_absyn.h" />
+    <ClInclude Include="..\core\chuck_carrier.h" />
+    <ClInclude Include="..\core\chuck_compile.h" />
+    <ClInclude Include="..\core\chuck_globals.h" />
+    <ClInclude Include="..\core\util_platforms.h" />
+    <ClInclude Include="..\host\chuck_audio.h" />
+    <ClInclude Include="..\host\chuck_console.h" />
+    <ClInclude Include="..\core\chuck_def.h" />
+    <ClInclude Include="..\core\chuck_dl.h" />
+    <ClInclude Include="..\core\chuck_emit.h" />
+    <ClInclude Include="..\core\chuck_errmsg.h" />
+    <ClInclude Include="..\core\chuck_frame.h" />
+    <ClInclude Include="..\core\chuck_instr.h" />
+    <ClInclude Include="..\core\chuck_io.h" />
+    <ClInclude Include="..\core\chuck_lang.h" />
+    <ClInclude Include="..\core\chuck_oo.h" />
+    <ClInclude Include="..\core\chuck_otf.h" />
+    <ClInclude Include="..\core\chuck_parse.h" />
+    <ClInclude Include="..\core\chuck_scan.h" />
+    <ClInclude Include="..\core\chuck_shell.h" />
+    <ClInclude Include="..\core\chuck_stats.h" />
+    <ClInclude Include="..\core\chuck_symbol.h" />
+    <ClInclude Include="..\core\chuck_table.h" />
+    <ClInclude Include="..\core\chuck_type.h" />
+    <ClInclude Include="..\core\chuck_ugen.h" />
+    <ClInclude Include="..\core\chuck_vm.h" />
+    <ClInclude Include="..\core\chuck_yacc.h" />
+    <ClInclude Include="..\core\dirent_win32.h" />
+    <ClInclude Include="..\core\hidio_sdl.h" />
+    <ClInclude Include="..\core\lo\config.h" />
+    <ClInclude Include="..\core\lo\lo.h" />
+    <ClInclude Include="..\core\lo\lo_endian.h" />
+    <ClInclude Include="..\core\lo\lo_errors.h" />
+    <ClInclude Include="..\core\lo\lo_internal.h" />
+    <ClInclude Include="..\core\lo\lo_lowlevel.h" />
+    <ClInclude Include="..\core\lo\lo_macros.h" />
+    <ClInclude Include="..\core\lo\lo_osc_types.h" />
+    <ClInclude Include="..\core\lo\lo_throw.h" />
+    <ClInclude Include="..\core\lo\lo_types.h" />
+    <ClInclude Include="..\core\lo\lo_types_internal.h" />
+    <ClInclude Include="..\core\midiio_rtmidi.h" />
+    <ClInclude Include="..\core\rtmidi.h" />
+    <ClInclude Include="..\core\uana_extract.h" />
+    <ClInclude Include="..\core\uana_xform.h" />
+    <ClInclude Include="..\core\ugen_filter.h" />
+    <ClInclude Include="..\core\ugen_osc.h" />
+    <ClInclude Include="..\core\ugen_stk.h" />
+    <ClInclude Include="..\core\ugen_xxx.h" />
+    <ClInclude Include="..\core\ulib_ai.h" />
+    <ClInclude Include="..\core\ulib_doc.h" />
+    <ClInclude Include="..\core\ulib_machine.h" />
+    <ClInclude Include="..\core\ulib_math.h" />
+    <ClInclude Include="..\core\ulib_opsc.h" />
+    <ClInclude Include="..\core\ulib_std.h" />
+    <ClInclude Include="..\core\util_buffers.h" />
+    <ClInclude Include="..\core\util_console.h" />
+    <ClInclude Include="..\core\util_hid.h" />
+    <ClInclude Include="..\core\util_math.h" />
+    <ClInclude Include="..\core\util_network.h" />
+    <ClInclude Include="..\core\util_opsc.h" />
+    <ClInclude Include="..\core\util_raw.h" />
+    <ClInclude Include="..\core\util_serial.h" />
+    <ClInclude Include="..\core\util_sndfile.h" />
+    <ClInclude Include="..\core\util_string.h" />
+    <ClInclude Include="..\core\util_thread.h" />
+    <ClInclude Include="..\core\util_xforms.h" />
+    <ClInclude Include="..\host\RtAudio\include\asio.h" />
+    <ClInclude Include="..\host\RtAudio\include\asiodrivers.h" />
+    <ClInclude Include="..\host\RtAudio\include\asiodrvr.h" />
+    <ClInclude Include="..\host\RtAudio\include\asiolist.h" />
+    <ClInclude Include="..\host\RtAudio\include\asiosys.h" />
+    <ClInclude Include="..\host\RtAudio\include\dsound.h" />
+    <ClInclude Include="..\host\RtAudio\include\functiondiscoverykeys_devpkey.h" />
+    <ClInclude Include="..\host\RtAudio\include\ginclude.h" />
+    <ClInclude Include="..\host\RtAudio\include\iasiodrv.h" />
+    <ClInclude Include="..\host\RtAudio\include\iasiothiscallresolver.h" />
+    <ClInclude Include="..\host\RtAudio\include\soundcard.h" />
+    <ClInclude Include="..\host\RtAudio\RtAudio.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\core\chuck.cpp" />
+    <ClCompile Include="..\core\chuck_absyn.cpp" />
+    <ClCompile Include="..\core\chuck_carrier.cpp" />
+    <ClCompile Include="..\core\chuck_compile.cpp" />
+    <ClCompile Include="..\core\chuck_globals.cpp" />
+    <ClCompile Include="..\core\util_platforms.cpp" />
+    <ClCompile Include="..\host\chuck_audio.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\core;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\host\chuck_console.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\core;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\core\chuck_dl.cpp" />
+    <ClCompile Include="..\core\chuck_emit.cpp" />
+    <ClCompile Include="..\core\chuck_errmsg.cpp" />
+    <ClCompile Include="..\core\chuck_frame.cpp" />
+    <ClCompile Include="..\core\chuck_instr.cpp" />
+    <ClCompile Include="..\core\chuck_io.cpp" />
+    <ClCompile Include="..\core\chuck_lang.cpp" />
+    <ClCompile Include="..\host\chuck_main.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\core;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\core\chuck_oo.cpp" />
+    <ClCompile Include="..\core\chuck_otf.cpp" />
+    <ClCompile Include="..\core\chuck_parse.cpp" />
+    <ClCompile Include="..\core\chuck_scan.cpp" />
+    <ClCompile Include="..\core\chuck_shell.cpp" />
+    <ClCompile Include="..\core\chuck_stats.cpp" />
+    <ClCompile Include="..\core\chuck_symbol.cpp" />
+    <ClCompile Include="..\core\chuck_table.cpp" />
+    <ClCompile Include="..\core\chuck_type.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\core</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\core\chuck_ugen.cpp" />
+    <ClCompile Include="..\core\chuck_vm.cpp" />
+    <ClCompile Include="..\core\chuck_yacc.c" />
+    <ClCompile Include="..\core\hidio_sdl.cpp" />
+    <ClCompile Include="..\core\lo\address.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">HAVE_CONFIG_H;__PLATFORM_WIN32__;__WINDOWS_DS__;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lo;.</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\core\lo\blob.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">HAVE_CONFIG_H;__PLATFORM_WIN32__;__WINDOWS_DS__;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lo;.</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\core\lo\bundle.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">HAVE_CONFIG_H;__PLATFORM_WIN32__;__WINDOWS_DS__;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lo;.</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\core\lo\message.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">HAVE_CONFIG_H;__PLATFORM_WIN32__;__WINDOWS_DS__;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lo;.</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\core\lo\method.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">HAVE_CONFIG_H;__PLATFORM_WIN32__;__WINDOWS_DS__;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lo;.</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\core\lo\pattern_match.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">HAVE_CONFIG_H;__PLATFORM_WIN32__;__WINDOWS_DS__;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lo;.</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\core\lo\send.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">HAVE_CONFIG_H;__PLATFORM_WIN32__;__WINDOWS_DS__;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lo;.</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\core\lo\server.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">HAVE_CONFIG_H;__PLATFORM_WIN32__;__WINDOWS_DS__;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lo;.</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\core\lo\timetag.c">
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|x64'">HAVE_CONFIG_H;__PLATFORM_WIN32__;__WINDOWS_DS__;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|x64'">lo;.</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\core\midiio_rtmidi.cpp" />
+    <ClCompile Include="..\core\rtmidi.cpp" />
+    <ClCompile Include="..\core\uana_extract.cpp" />
+    <ClCompile Include="..\core\uana_xform.cpp" />
+    <ClCompile Include="..\core\ugen_filter.cpp" />
+    <ClCompile Include="..\core\ugen_osc.cpp" />
+    <ClCompile Include="..\core\ugen_stk.cpp" />
+    <ClCompile Include="..\core\ugen_xxx.cpp" />
+    <ClCompile Include="..\core\ulib_ai.cpp" />
+    <ClCompile Include="..\core\ulib_doc.cpp" />
+    <ClCompile Include="..\core\ulib_machine.cpp" />
+    <ClCompile Include="..\core\ulib_math.cpp" />
+    <ClCompile Include="..\core\ulib_opsc.cpp" />
+    <ClCompile Include="..\core\ulib_std.cpp" />
+    <ClCompile Include="..\core\util_buffers.cpp" />
+    <ClCompile Include="..\core\util_console.cpp" />
+    <ClCompile Include="..\core\util_hid.cpp" />
+    <ClCompile Include="..\core\util_math.cpp" />
+    <ClCompile Include="..\core\util_network.c" />
+    <ClCompile Include="..\core\util_opsc.cpp" />
+    <ClCompile Include="..\core\util_raw.c" />
+    <ClCompile Include="..\core\util_serial.cpp" />
+    <ClCompile Include="..\core\util_sndfile.c" />
+    <ClCompile Include="..\core\util_string.cpp" />
+    <ClCompile Include="..\core\util_thread.cpp" />
+    <ClCompile Include="..\core\util_xforms.c" />
+    <ClCompile Include="..\host\RtAudio\include\asio.cpp" />
+    <ClCompile Include="..\host\RtAudio\include\asiodrivers.cpp" />
+    <ClCompile Include="..\host\RtAudio\include\asiolist.cpp" />
+    <ClCompile Include="..\host\RtAudio\include\iasiothiscallresolver.cpp" />
+    <ClCompile Include="..\host\RtAudio\RtAudio.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\core\chuck.lex" />
+    <None Include="..\core\chuck.y" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\host\RtAudio\include\asioinfo.txt" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{C83D6D51-D477-4BAB-B2C2-F0698B9D3FB1}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>chuck_win32</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <TargetName>chuck</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>__WINDOWS_DS__;__WINDOWS_ASIO__;__WINDOWS_WASAPI__;WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\host\RtAudio\include;.</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>dsound.lib;dinput8.lib;dxguid.lib;wsock32.lib;ws2_32.lib;iphlpapi.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
+```
