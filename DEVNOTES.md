@@ -106,14 +106,16 @@ void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **
 }
 ```
 
-and finally, it was simplified to the following:
+and finally, it was simplified to the following with the help of Professor GE Wang
 
 ```c++
-void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
+void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
+                  double** outs, long numouts, long sampleframes, long flags,
+                  void* userparam)
 {
-    float * in_ptr = x->in_chuck_buffer;
-    float * out_ptr = x->out_chuck_buffer;
-    int n = sampleframes; // n = 64
+    float* in_ptr = x->in_chuck_buffer;
+    float* out_ptr = x->out_chuck_buffer;
+    long n = sampleframes; // n = 64
 
     if (ins) {
         for (int i = 0; i < n; i++) {

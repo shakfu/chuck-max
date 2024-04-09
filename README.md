@@ -26,7 +26,7 @@ It currently has one external (`chuck~`) with the following features and limitat
 	- `[chuck~ <filename>]` : single channel in/out with default chuck file
 	- `[chuck~ <N> <filename>]` : N channels with default chuck file
 
-- The `chuck~` object has a single attribute `debug` which can be switched on for more verbose logging ot the console.
+- The `chuck~` object has a single attribute `debug` which can be switched on for more verbose logging to the console.
 
 see `help/chuck~.maxhelp` for a demonstration of current features.
 
