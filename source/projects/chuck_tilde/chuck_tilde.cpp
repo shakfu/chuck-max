@@ -14,15 +14,14 @@
 #include "chuck_globals.h"
 
 #define DEBUG 0
-#define N_IN_CHANNELS 1
-#define N_OUT_CHANNELS 1
 
 int MX_CK_COUNT = 0;
 
 typedef struct _ck {
     t_pxobject ob;           // the object itself (t_pxobject in MSP)
 
-    t_bool c_debug;          // bool flag to switch per-object debug state
+    long channels;
+    t_bool debug;          // bool flag to switch per-object debug state
 
     // chuck-related
     ChucK* chuck;            // chuck instance
@@ -95,7 +94,7 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_dsp64, "dsp64", A_CANT, 0);
     class_addmethod(c, (method)ck_assist, "assist", A_CANT, 0);
 
-    CLASS_ATTR_LONG(c,      "debug", 0,  t_ck, c_debug);
+    CLASS_ATTR_LONG(c,      "debug", 0,  t_ck, debug);
     CLASS_ATTR_STYLE(c,     "debug", 0, "onoff");
     CLASS_ATTR_DEFAULT(c,   "debug", 0,     "0");
     CLASS_ATTR_BASIC(c,     "debug", 0);
@@ -112,26 +111,40 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
     t_ck* x = (t_ck*)object_alloc(ck_class);
 
     if (x) {
-        dsp_setup((t_pxobject*)x,
-                  N_IN_CHANNELS); // MSP inlets: arg is # of inlets and is
-                                  // REQUIRED! use 0 if you don't need inlets
+        // set default attributes
+        x->channels = 1;
+        x->debug = DEBUG;
 
-        for (int i = 0; i < N_OUT_CHANNELS; i++) {
+        if (argc == 0) {
+            x->filename = gensym("");
+        }
+        else if (argc == 1) {
+            x->filename = atom_getsymarg(0, argc, argv);    // 1st arg of object
+        }
+        else if (argc >= 2) {
+            atom_arg_getlong(&x->channels, 0, argc, argv);  // 1st arg of object
+            x->filename = atom_getsymarg(1, argc, argv);    // 2st arg of object
+        }
+
+        dsp_setup((t_pxobject*)x,
+                  x->channels); // MSP inlets: arg is # of inlets and is
+                                // REQUIRED! use 0 if you don't need inlets
+
+        for (int i = 0; i < x->channels; i++) {
             // post("created: outlet %d", i);
             outlet_new(x, "signal"); // signal outlet (note "signal" rather than NULL)
         }
 
         // chuck-related
-        x->filename = atom_getsymarg(0, argc, argv); // 1st arg of object
         x->working_dir = string_getptr(
-            ck_get_path_from_package(ck_class, "/examples"));
+            ck_get_path_from_package(ck_class, (char*)"/examples"));
         x->in_chuck_buffer = NULL;
         x->out_chuck_buffer = NULL;
 
         x->chuck = new ChucK();
         x->chuck->setParam(CHUCK_PARAM_SAMPLE_RATE, (t_CKINT)sys_getsr());
-        x->chuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, (t_CKINT)N_IN_CHANNELS);
-        x->chuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, (t_CKINT)N_OUT_CHANNELS);
+        x->chuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, (t_CKINT)x->channels);
+        x->chuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, (t_CKINT)x->channels);
         x->chuck->setParam(CHUCK_PARAM_VM_HALT, (t_CKINT)0);
         x->chuck->setParam(CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT)0);
         // directory for compiled code
@@ -144,12 +157,10 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->chuck->setStderrCallback(ck_stderr_print);
         x->oid = ++MX_CK_COUNT;
 
+
         // init chuck
         x->chuck->init();
         x->chuck->start();
-
-        // set default debug level
-        x->c_debug = DEBUG;
 
         post("ChucK %s", x->chuck->version());
         post("inputs: %d  outputs: %d ", x->chuck->vm()->m_num_adc_channels,
@@ -281,7 +292,7 @@ t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
 
 void ck_debug(t_ck* x, char* fmt, ...)
 {
-    if (x->c_debug) {
+    if (x->debug) {
         char msg[MAX_PATH_CHARS];
 
         va_list va;
@@ -331,14 +342,14 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         switch (argv->a_type) { // really argv[0]
         case A_FLOAT: {
             float p_float = atom_getfloat(argv);
-            ck_debug(x, "param %s: %f", s->s_name, p_float);            
+            ck_debug(x, (char*)"param %s: %f", s->s_name, p_float);            
             x->chuck->vm()->globals_manager()->setGlobalFloat(s->s_name,
                                                               p_float);
             break;
         }
         case A_LONG: {
             long p_long = atom_getlong(argv);
-            ck_debug(x, "param %s: %d", s->s_name, p_long);
+            ck_debug(x, (char*)"param %s: %d", s->s_name, p_long);
             x->chuck->vm()->globals_manager()->setGlobalInt(s->s_name, p_long);
             break;
         }
@@ -347,7 +358,7 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             if (p_sym == NULL) {
                 goto error;
             }
-            ck_debug(x, "param %s: %s", s->s_name, p_sym->s_name);
+            ck_debug(x, (char*)"param %s: %s", s->s_name, p_sym->s_name);
             x->chuck->vm()->globals_manager()->setGlobalString(s->s_name,
                                                                p_sym->s_name);
             break;
@@ -541,13 +552,13 @@ void ck_dsp64(t_ck* x, t_object* dsp64, short* count, double samplerate,
     delete[] x->in_chuck_buffer;
     delete[] x->out_chuck_buffer;
 
-    x->in_chuck_buffer = new float[maxvectorsize * N_IN_CHANNELS];
-    x->out_chuck_buffer = new float[maxvectorsize * N_OUT_CHANNELS];
+    x->in_chuck_buffer = new float[maxvectorsize * x->channels];
+    x->out_chuck_buffer = new float[maxvectorsize * x->channels];
 
     memset(x->in_chuck_buffer, 0.f,
-           sizeof(float) * maxvectorsize * N_IN_CHANNELS);
+           sizeof(float) * maxvectorsize * x->channels);
     memset(x->out_chuck_buffer, 0.f,
-           sizeof(float) * maxvectorsize * N_OUT_CHANNELS);
+           sizeof(float) * maxvectorsize * x->channels);
 
     object_method(dsp64, gensym("dsp_add64"), x, ck_perform64, 0, NULL);
 }
@@ -559,7 +570,7 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
 {
     float* in_ptr = x->in_chuck_buffer;
     float* out_ptr = x->out_chuck_buffer;
-    int n = sampleframes; // n = 64
+    long n = sampleframes; // n = 64
 
     if (ins) {
         for (int i = 0; i < n; i++) {
