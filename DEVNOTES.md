@@ -1,5 +1,6 @@
 # Dev Notes
 
+
 ## Converting chugins to cmake builds
 
 This has been pretty straightforward, especially as the project is currently only targeting one platform (macOS). 
@@ -202,4 +203,22 @@ public class EventResponder : MonoBehaviour {
 > The ChucK source was separated into core and host code- bases. The core comprises the language parser, which compiles code, and virtual machine (VM), which translates audio inputs to outputs. One embeds ChucK in a new project by simply writing a new host that calls these functions.
 
 > The rearchitecture allowed multiple VMs to exist in the same address space (useful for contexts where the number of channels is limited and multiple outputs are desired, such as in a digital audio plugin or Unity’s spatial audio system). **It also enabled the redirection of all ChucK error messages to an optional callback** (e.g. the Unity debug console).
+
+
+## Chuck Events
+
+see above section on events.. "ChucK Events are used to pause execution in a ChucK script until the Event signals that it has occurred."
+
+Documented [here](https://chuck.cs.princeton.edu/doc/language/event.html)
+
+Relevant interface is provided in `chuck/core/chuck_oo.h` and `chuck/core/chuck_globals.h`
+
+There are local events and `global` events, see `test-local-event.ck` and `test-global-event.ck` for examples of both. Trigger a single named event is via `ck_sigal` , and all events of the same name via `ck_broadcast` which implement:
+
+```c++
+t_CKBOOL Chuck_Globals_Manager::signalGlobalEvent( const char * name );
+t_CKBOOL Chuck_Globals_Manager::broadcastGlobalEvent( const char * name );
+```
+
+
 

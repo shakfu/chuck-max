@@ -81,18 +81,19 @@ void ext_main(void* r)
     t_class* c = class_new("chuck~", (method)ck_new, (method)ck_free,
                            (long)sizeof(t_ck), 0L, A_GIMME, 0);
 
-    class_addmethod(c, (method)ck_run, "run", A_SYM, 0);
-    class_addmethod(c, (method)ck_info, "info", 0);
-    class_addmethod(c, (method)ck_reset, "reset", 0);
-    class_addmethod(c, (method)ck_signal, "signal", A_SYM, 0);
-    class_addmethod(c, (method)ck_broadcast, "broadcast", A_SYM, 0);
-    class_addmethod(c, (method)ck_remove, "remove", A_GIMME, 0);
+    class_addmethod(c, (method)ck_run,          "run", A_SYM, 0);
+    class_addmethod(c, (method)ck_info,         "info", 0);
+    class_addmethod(c, (method)ck_reset,        "reset", 0);
+    // can't be called signal which is a Max global message
+    class_addmethod(c, (method)ck_signal,       "sig", A_SYM, 0);
+    class_addmethod(c, (method)ck_broadcast,    "broadcast", A_SYM, 0);
+    class_addmethod(c, (method)ck_remove,       "remove", A_GIMME, 0);
 
-    class_addmethod(c, (method)ck_bang, "bang", 0);
-    class_addmethod(c, (method)ck_anything, "anything", A_GIMME, 0);
+    class_addmethod(c, (method)ck_bang,         "bang", 0);
+    class_addmethod(c, (method)ck_anything,     "anything", A_GIMME, 0);
 
-    class_addmethod(c, (method)ck_dsp64, "dsp64", A_CANT, 0);
-    class_addmethod(c, (method)ck_assist, "assist", A_CANT, 0);
+    class_addmethod(c, (method)ck_dsp64,        "dsp64", A_CANT, 0);
+    class_addmethod(c, (method)ck_assist,       "assist", A_CANT, 0);
 
     CLASS_ATTR_LONG(c,      "debug", 0,  t_ck, debug);
     CLASS_ATTR_STYLE(c,     "debug", 0, "onoff");
@@ -281,8 +282,7 @@ t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
     // null reply so that VM will delete for us when it's done
     msg->reply_cb = (ck_msg_func)NULL;
 
-    if (x->chuck->vm()->globals_manager()->execute_chuck_msg_with_globals(
-            msg)) {
+    if (x->chuck->vm()->globals_manager()->execute_chuck_msg_with_globals(msg)) {
         return MAX_ERR_NONE;
     } else {
         return MAX_ERR_GENERIC;
@@ -488,7 +488,9 @@ t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 
 t_max_err ck_signal(t_ck* x, t_symbol* s)
 {
+    post("signal: %s", s->s_name);
     if (x->chuck->vm()->globals_manager()->signalGlobalEvent(s->s_name)) {
+        post("signal: %s success", s->s_name);
         return MAX_ERR_NONE;
     } else {
         error("[ck_signal] signal global event '%s' failed", s->s_name);
@@ -499,6 +501,7 @@ t_max_err ck_signal(t_ck* x, t_symbol* s)
 
 t_max_err ck_broadcast(t_ck* x, t_symbol* s)
 {
+    post("broadcast: %s", s->s_name);
     if (x->chuck->vm()->globals_manager()->broadcastGlobalEvent(s->s_name)) {
         return MAX_ERR_NONE;
     } else {

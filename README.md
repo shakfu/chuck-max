@@ -18,7 +18,7 @@ It currently has one external (`chuck~`) with the following features and limitat
 	- Ladspa
 	- WarpBuf
 
-- As of this version, there is no support for callbacks and events except via the `signal` and `broadcast` messages.
+- As of this version, there is no support for non-chuck callbacks and global events are only supported via the `sig` (for *signal*) and `broadcast` messages. Note that `sig` was supposed to be called `signal` but there is a global Max messge with the same name!
 
 - The `chuck~` object can take the following arguments:
 
@@ -28,7 +28,7 @@ It currently has one external (`chuck~`) with the following features and limitat
 
 - The `chuck~` object has a single attribute `debug` which can be switched on for more verbose logging to the console.
 
-see `help/chuck~.maxhelp` for a demonstration of current features.
+See `help/chuck~.maxhelp` and patchers in the `patchers/tests` directory for a demonstration of current features.
 
 Also note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
 
@@ -95,8 +95,8 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 ## Status
 
 - [ ] add windows support
-- [ ] add support for events
-- [ ] add support for callbacks
+- [ ] add support for callbacks (if needed)
+- [x] add support for events
 - [x] build chugins with cmake
 - [x] can set global param values
 - [x] fix sound input!

@@ -15,7 +15,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 # [0.1.x]
 
-- `info` now shows `<object id> - <shred-id>`
+- Added examples for local and global event triggering
+
+- Fixed the `sndbuf.ck` exmample (and added `sndbuf1.ck`) to demonstrate wav file playback via `SndBuf` with some samples
+
+- Changed `signal` message name to `sig` as it conflicted with a global Max message `signal`
+
+- Added optional channels argument which to set more channels at object creation
+
+- Changed `info`: now shows `<object id> - <shred-id>`
 
 - Added test for two object instances running simultaneously
 

@@ -1,6 +1,6 @@
 // sound file
 // me.dir() gets the directory of the chuck script!
-me.dir() + "/wavs/snare.wav" => string filename;
+me.dir() + "/wavs/amen.wav" => string filename;
 if( me.args() ) me.arg(0) => filename;
 
 // the patch 
@@ -12,7 +12,5 @@ filename => buf.read;
 while( true )
 {
     0 => buf.pos;
-    Math.random2f(.2,.5) => buf.gain;
-    Math.random2f(.5,1.5) => buf.rate;
-    100::ms => now;
+    3::second => now;
 }
