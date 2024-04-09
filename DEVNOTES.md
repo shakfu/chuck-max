@@ -69,7 +69,7 @@ CHUCKDESIGNERSHARED_API bool processBlock(unsigned int chuckID, const float** in
 }
 ```
 
-This was changed to this initially:
+This was initially changed to this:
 
 ```c++
 void ck_perform64(t_ck *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
@@ -207,7 +207,7 @@ public class EventResponder : MonoBehaviour {
 
 ## Chuck Events
 
-see above section on events.. "ChucK Events are used to pause execution in a ChucK script until the Event signals that it has occurred."
+See above section on events.. "ChucK Events are used to pause execution in a ChucK script until the Event signals that it has occurred."
 
 Documented [here](https://chuck.cs.princeton.edu/doc/language/event.html)
 
@@ -220,5 +220,8 @@ t_CKBOOL Chuck_Globals_Manager::signalGlobalEvent( const char * name );
 t_CKBOOL Chuck_Globals_Manager::broadcastGlobalEvent( const char * name );
 ```
 
+## Callbacks
+
+Can be used for chuck code to trigger callback functions in the external. Example provided.
 
 

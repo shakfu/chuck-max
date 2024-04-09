@@ -80,7 +80,7 @@ Also note that by default `make` builds the external according to the
 make universal
 ```
 
-If you want to update and re-build the external if there are changes in the repo just type the following in the root of the project.
+If there is a need to update and re-build the external just type the following in the root of the project.
 
 ```bash
 git pull
@@ -95,7 +95,7 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 ## Status
 
 - [ ] add windows support
-- [ ] add support for callbacks (if needed)
+- [x] add support for callbacks (if needed)
 - [x] add support for events
 - [x] build chugins with cmake
 - [x] can set global param values
@@ -110,13 +110,13 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 
 ## TODO
 
-- [ ] More error checking!!! 
+- [ ] Add Windows Support.
 
-- [ ] Add editor support for double-click to edit, etc.. or via filewatcher
+- [ ] More error checking!!
+
+- [ ] Add editor support code editor: double-click to edit, etc.. or via filewatcher
 
 - [ ] Flesh out API (add all messages). Learn from the miniAudicle code.
-
-- [ ] Add support for events and callbacks: ChucKDesigner has python callbacks, perhaps use lua or js via an extension?
 
 - [ ] Package chugins and scripts in a self-contained signed and notarized external bundle
 
