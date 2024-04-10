@@ -577,7 +577,8 @@ t_max_err ck_register(t_ck* x, t_symbol* s)
         error("callback not found: %s", s->s_name);
         return MAX_ERR_GENERIC;
     }
-    ck_callback cb = x->cb_map[s->s_name];
+    std::string key = std::string(s->s_name);
+    ck_callback cb = x->cb_map[key];
     // false: for a one off call, true: called everytime it is called
     if (x->chuck->vm()->globals_manager()->listenForGlobalEvent(s->s_name, cb, false)) {
         post("%s callback registered", s->s_name);
@@ -593,7 +594,8 @@ t_max_err ck_unregister(t_ck* x, t_symbol* s)
         error("callback not found: %s", s->s_name);
         return MAX_ERR_GENERIC;
     }
-    ck_callback cb = x->cb_map[s->s_name];
+    std::string key = std::string(s->s_name);
+    ck_callback cb = x->cb_map[key];
     if (x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent(s->s_name, cb)) {
         post("%s callback unregistered", s->s_name);
         return MAX_ERR_NONE;
