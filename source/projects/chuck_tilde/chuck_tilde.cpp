@@ -10,6 +10,9 @@
 #include <libgen.h>
 #include <unistd.h>
 
+#include <string>
+#include <unordered_map>
+
 #include "chuck.h"
 #include "chuck_globals.h"
 
