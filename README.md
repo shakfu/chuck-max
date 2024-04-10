@@ -95,7 +95,7 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 ## Status
 
 - [ ] add windows support
-- [x] add support for callbacks (if needed)
+- [ ] add support for callbacks (if needed)
 - [x] add support for events
 - [x] build chugins with cmake
 - [x] can set global param values

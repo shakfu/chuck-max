@@ -10,9 +10,6 @@
 #include <libgen.h>
 #include <unistd.h>
 
-#include <string>
-#include <unordered_map>
-
 #include "chuck.h"
 #include "chuck_globals.h"
 
@@ -20,8 +17,6 @@
 
 int MX_CK_COUNT = 0;
 
-typedef void (*ck_callback)(void);
-typedef std::unordered_map<std::string, ck_callback> callback_map;
 
 typedef struct _ck {
     t_pxobject ob;           // the object itself (t_pxobject in MSP)
@@ -35,12 +30,8 @@ typedef struct _ck {
     const char* working_dir; // chuck working directory
     float* in_chuck_buffer;  // intermediate chuck input buffer
     float* out_chuck_buffer; // intermediate chuck output buffer
-    callback_map cb_map;     // callback map<string,cb>
 } t_ck;
 
-
-// callbacks
-void cb_demo(void);
 
 // method prototypes
 void* ck_new(t_symbol* s, long argc, t_atom* argv);
@@ -77,24 +68,9 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
                   double** outs, long numouts, long sampleframes, long flags,
                   void* userparam);
 
-// callback registeration
-t_max_err ck_register(t_ck* x, t_symbol* s);
-t_max_err ck_unregister(t_ck* x, t_symbol* s);
-
 
 // global class pointer variable
 static t_class* ck_class = NULL;
-
-
-//-----------------------------------------------------------------------------------------------
-// callbacks
-
-/* nothing useful here yet */
-
-void cb_demo(void)
-{
-    post("==> demo callback is called!");
-}
 
 
 //-----------------------------------------------------------------------------------------------
@@ -108,9 +84,6 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_run,          "run", A_SYM, 0);
     class_addmethod(c, (method)ck_info,         "info", 0);
     class_addmethod(c, (method)ck_reset,        "reset", 0);
-
-    class_addmethod(c, (method)ck_register,     "register", A_SYM, 0);
-    class_addmethod(c, (method)ck_unregister,   "unregister", A_SYM, 0);
 
     // can't be called signal which is a Max global message
     class_addmethod(c, (method)ck_signal,       "sig", A_SYM, 0);
@@ -185,10 +158,6 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->chuck->setStdoutCallback(ck_stdout_print);
         x->chuck->setStderrCallback(ck_stderr_print);
         x->oid = ++MX_CK_COUNT;
-
-        // init cb_map and register callbacks
-        x->cb_map = callback_map();
-        x->cb_map.emplace("demo", &cb_demo);
 
         // init chuck
         x->chuck->init();
@@ -568,40 +537,6 @@ t_max_err ck_info(t_ck* x)
         post("%d-%d: %s", x->oid, i->get_id(), i->name.c_str());
     }
     return MAX_ERR_NONE;
-}
-
-
-t_max_err ck_register(t_ck* x, t_symbol* s)
-{
-    if (!x->cb_map.count(s->s_name)) {
-        error("callback not found: %s", s->s_name);
-        return MAX_ERR_GENERIC;
-    }
-    std::string key = std::string(s->s_name);
-    ck_callback cb = x->cb_map[key];
-    // false: for a one off call, true: called everytime it is called
-    if (x->chuck->vm()->globals_manager()->listenForGlobalEvent(s->s_name, cb, false)) {
-        post("%s callback registered", s->s_name);
-        return MAX_ERR_NONE;
-    };
-
-    return MAX_ERR_GENERIC;
-}
-
-t_max_err ck_unregister(t_ck* x, t_symbol* s)
-{
-    if (!x->cb_map.count(s->s_name)) {
-        error("callback not found: %s", s->s_name);
-        return MAX_ERR_GENERIC;
-    }
-    std::string key = std::string(s->s_name);
-    ck_callback cb = x->cb_map[key];
-    if (x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent(s->s_name, cb)) {
-        post("%s callback unregistered", s->s_name);
-        return MAX_ERR_NONE;
-    };
-
-    return MAX_ERR_GENERIC;
 }
 
 
