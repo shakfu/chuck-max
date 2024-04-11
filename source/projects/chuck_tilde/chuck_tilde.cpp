@@ -7,14 +7,24 @@
 #include "ext_obex.h"
 #include "z_dsp.h"
 
+#include <string>
+#include <unordered_map>
+
 #include "chuck.h"
 #include "chuck_globals.h"
 
+// globals defs
 #define DEBUG 0
+#define CHANNELS 1
 
+// global variables
 int MX_CK_COUNT = 0;
 
+// typdefs
+typedef void (*ck_callback)(void);
+typedef std::unordered_map<std::string, ck_callback> callback_map;
 
+// object struct
 typedef struct _ck {
     t_pxobject ob;           // the object itself (t_pxobject in MSP)
 
@@ -29,6 +39,7 @@ typedef struct _ck {
     const char* working_dir; // chuck working directory
     float* in_chuck_buffer;  // intermediate chuck input buffer
     float* out_chuck_buffer; // intermediate chuck output buffer
+    callback_map cb_map;     // callback map<string,callback>
 } t_ck;
 
 
@@ -68,9 +79,27 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
                   double** outs, long numouts, long sampleframes, long flags,
                   void* userparam);
 
+// callback registeration
+t_max_err ck_register(t_ck* x, t_symbol* s);
+t_max_err ck_unregister(t_ck* x, t_symbol* s);
+
+// callbacks
+void cb_demo(void);
+
 
 // global class pointer variable
 static t_class* ck_class = NULL;
+
+
+//-----------------------------------------------------------------------------------------------
+// callbacks
+
+/* nothing useful here yet */
+
+void cb_demo(void)
+{
+    post("==> demo callback is called!");
+}
 
 
 //-----------------------------------------------------------------------------------------------
@@ -89,6 +118,9 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_signal,       "sig", A_SYM, 0);
     class_addmethod(c, (method)ck_broadcast,    "broadcast", A_SYM, 0);
     class_addmethod(c, (method)ck_remove,       "remove", A_GIMME, 0);
+
+    class_addmethod(c, (method)ck_register,     "register", A_SYM, 0);
+    class_addmethod(c, (method)ck_unregister,   "unregister", A_SYM, 0);
 
     class_addmethod(c, (method)ck_bang,         "bang", 0);
     class_addmethod(c, (method)ck_anything,     "anything", A_GIMME, 0);
@@ -114,8 +146,9 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
     if (x) {
         // set default attributes
-        x->channels = 1;
-        x->debug = DEBUG; // can be overriden by compile-time definition
+        // defaults can be overriden by compile-time definitions
+        x->channels = CHANNELS;
+        x->debug = DEBUG;
 
         if (argc == 0) {
             x->filename = gensym("");
@@ -167,6 +200,10 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // object id corresponds to order of object creation
         x->oid = ++MX_CK_COUNT;
+
+        // init cb_map and register callbacks
+        x->cb_map = callback_map();
+        x->cb_map.emplace("demo", &cb_demo);
 
         // init chuck
         x->chuck->init();
@@ -295,8 +332,6 @@ t_max_err ck_run_file(t_ck* x)
     error("ck_run_file: filename slot was empty");
     return MAX_ERR_GENERIC;
 }
-
-
 
 
 t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
@@ -570,6 +605,41 @@ t_max_err ck_info(t_ck* x)
         post("%d-%d: %s", x->oid, i->get_id(), i->name.c_str());
     }
     return MAX_ERR_NONE;
+}
+
+
+t_max_err ck_register(t_ck* x, t_symbol* s)
+{
+    if (!x->cb_map.count(s->s_name)) {
+        error("event/callback not found: %s", s->s_name);
+        return MAX_ERR_GENERIC;
+    }
+    std::string key = std::string(s->s_name);
+    ck_callback cb = x->cb_map[key];
+    // false: for a one off call, true: called everytime it is called
+    if (x->chuck->vm()->globals_manager()->listenForGlobalEvent(s->s_name, cb, false)) {
+        post("%s event/callback registered", s->s_name);
+        return MAX_ERR_NONE;
+    };
+
+    return MAX_ERR_GENERIC;
+}
+
+
+t_max_err ck_unregister(t_ck* x, t_symbol* s)
+{
+    if (!x->cb_map.count(s->s_name)) {
+        error("event/callback not found: %s", s->s_name);
+        return MAX_ERR_GENERIC;
+    }
+    std::string key = std::string(s->s_name);
+    ck_callback cb = x->cb_map[key];
+    if (x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent(s->s_name, cb)) {
+        post("%s event/callback unregistered", s->s_name);
+        return MAX_ERR_NONE;
+    };
+
+    return MAX_ERR_GENERIC;
 }
 
 
