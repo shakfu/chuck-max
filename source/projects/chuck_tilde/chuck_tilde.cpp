@@ -7,9 +7,6 @@
 #include "ext_obex.h"
 #include "z_dsp.h"
 
-#include <libgen.h>
-#include <unistd.h>
-
 #include "chuck.h"
 #include "chuck_globals.h"
 
@@ -21,11 +18,13 @@ int MX_CK_COUNT = 0;
 typedef struct _ck {
     t_pxobject ob;           // the object itself (t_pxobject in MSP)
 
+    // meta
+    t_bool debug;            // flag to switch per-object debug state
+
     // chuck-related
     ChucK* chuck;            // chuck instance
     int oid;                 // object id
     long channels;           // n of input/output channels
-    t_bool debug;            // flag to switch per-object debug state
     t_symbol* filename;      // name of chuck file in Max search path
     const char* working_dir; // chuck working directory
     float* in_chuck_buffer;  // intermediate chuck input buffer
@@ -53,10 +52,11 @@ t_max_err ck_remove(t_ck* x, t_symbol* s, long argc,
                     t_atom* argv); // remove shreds (all, last or by #)
 
 // helpers
+void ck_debug(t_ck* x, char* fmt, ...);
 void ck_stdout_print(const char* msg);
 void ck_stderr_print(const char* msg);
-void ck_run_file(t_ck* x);
-void ck_compile_file(t_ck* x, const char* filename);
+t_max_err ck_compile_file(t_ck* x, const char* filename);
+t_max_err ck_run_file(t_ck* x);
 t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type);
 t_string* ck_get_path_from_external(t_class* c, char* subpath);
 t_string* ck_get_path_from_package(t_class* c, char* subpath);
@@ -115,48 +115,57 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
     if (x) {
         // set default attributes
         x->channels = 1;
-        x->debug = DEBUG;
+        x->debug = DEBUG; // can be overriden by compile-time definition
 
         if (argc == 0) {
             x->filename = gensym("");
         }
         else if (argc == 1) {
-            x->filename = atom_getsymarg(0, argc, argv);    // 1st arg of object
+            x->filename = atom_getsymarg(0, argc, argv);    // is 1st arg of object
         }
         else if (argc >= 2) {
-            atom_arg_getlong(&x->channels, 0, argc, argv);  // 1st arg of object
-            x->filename = atom_getsymarg(1, argc, argv);    // 2st arg of object
+            atom_arg_getlong(&x->channels, 0, argc, argv);  // is 1st arg of object
+            x->filename = atom_getsymarg(1, argc, argv);    // is 2nd arg of object
         }
 
-        dsp_setup((t_pxobject*)x,
-                  x->channels); // MSP inlets: arg is # of inlets and is
-                                // REQUIRED! use 0 if you don't need inlets
-
+        dsp_setup((t_pxobject*)x, x->channels); // MSP inlets: 2nd arg is # of inlets
+    
         for (int i = 0; i < x->channels; i++) {
-            // post("created: outlet %d", i);
-            outlet_new(x, "signal"); // signal outlet (note "signal" rather than NULL)
+            outlet_new(x, "signal"); // signal outlet
         }
 
         // chuck-related
+        x->chuck = NULL;
         x->working_dir = string_getptr(
             ck_get_path_from_package(ck_class, (char*)"/examples"));
         x->in_chuck_buffer = NULL;
         x->out_chuck_buffer = NULL;
 
         x->chuck = new ChucK();
+        if (x->chuck == NULL) {
+            error("critical: could not create chuck object");
+            return;
+        }
         x->chuck->setParam(CHUCK_PARAM_SAMPLE_RATE, (t_CKINT)sys_getsr());
         x->chuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, (t_CKINT)x->channels);
         x->chuck->setParam(CHUCK_PARAM_OUTPUT_CHANNELS, (t_CKINT)x->channels);
         x->chuck->setParam(CHUCK_PARAM_VM_HALT, (t_CKINT)0);
         x->chuck->setParam(CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT)0);
-        // directory for compiled code
+
+        // set default chuck examples dirs
         std::string global_dir = std::string(x->working_dir);
         x->chuck->setParam(CHUCK_PARAM_WORKING_DIRECTORY, global_dir);
+
+        // set default chuggins dirs
         std::list<std::string> chugin_search;
         chugin_search.push_back(global_dir + "/chugins");
         x->chuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, chugin_search);
+
+        // redirect chuck stdout/stderr to local callbacks
         x->chuck->setStdoutCallback(ck_stdout_print);
         x->chuck->setStderrCallback(ck_stderr_print);
+
+        // object id corresponds to order of object creation
         x->oid = ++MX_CK_COUNT;
 
         // init chuck
@@ -166,10 +175,9 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         post("ChucK %s", x->chuck->version());
         post("inputs: %d  outputs: %d ", x->chuck->vm()->m_num_adc_channels,
              x->chuck->vm()->m_num_dac_channels);
-
         post("file: %s", x->filename->s_name);
-        // post("working dir: %s", x->working_dir);
-        // post("chugins dir: %s/chugins", x->working_dir);
+        ck_debug(x, (char*)"working dir: %s", x->working_dir);
+        ck_debug(x, (char*)"chugins dir: %s/chugins", x->working_dir);
     }
     return (x);
 }
@@ -187,9 +195,9 @@ void ck_free(t_ck* x)
 void ck_assist(t_ck* x, void* b, long m, long a, char* s)
 {
     if (m == ASSIST_INLET) { // inlet
-        snprintf_zero(s, 2, "I am inlet %ld", a);
-    } else { // outlet
-        snprintf_zero(s, 2, "I am outlet %ld", a);
+        snprintf_zero(s, 20, "I am inlet %ld", a);
+    } else {                 // outlet
+        snprintf_zero(s, 20, "I am outlet %ld", a);
     }
 }
 
@@ -201,7 +209,6 @@ void ck_assist(t_ck* x, void* b, long m, long a, char* s)
 void ck_stdout_print(const char* msg) { post("ck_stdout -> %s", msg); }
 
 void ck_stderr_print(const char* msg) { post("ck_stderr -> %s", msg); }
-
 
 t_string* ck_get_path_from_external(t_class* c, char* subpath)
 {
@@ -216,66 +223,91 @@ t_string* ck_get_path_from_external(t_class* c, char* subpath)
 #else
     const char* ext_filename = "%s.mxe64";
 #endif
-    snprintf_zero(external_name, MAX_PATH_CHARS, ext_filename,
-                  c->c_sym->s_name);
+    snprintf_zero(external_name, MAX_PATH_CHARS, ext_filename, c->c_sym->s_name);
     path_toabsolutesystempath(path_id, external_name, external_path);
-    path_nameconform(external_path, conform_path, PATH_STYLE_MAX,
-                     PATH_TYPE_BOOT);
-    result = string_new(external_path);
-    if (subpath != NULL) {
+    path_nameconform(external_path, conform_path, PATH_STYLE_MAX, PATH_TYPE_BOOT);
+    result = string_new(conform_path);
+    if (result != NULL && subpath != NULL) {
         string_append(result, subpath);
     }
     return result;
 }
-
 
 t_string* ck_get_path_from_package(t_class* c, char* subpath)
 {
-    t_string* result;
+    char filename[MAX_FILENAME_CHARS];
+    char externals_dir[MAX_PATH_CHARS];
+    char package_dir[MAX_PATH_CHARS];
+    t_string* package_dir_s;
+
     t_string* external_path = ck_get_path_from_external(c, NULL);
-
     const char* ext_path_c = string_getptr(external_path);
-
-    result = string_new(dirname(dirname((char*)ext_path_c)));
-
+    path_splitnames(ext_path_c, externals_dir, filename);
+    path_splitnames(externals_dir, package_dir, filename);
+    package_dir_s = string_new(package_dir);
     if (subpath != NULL) {
-        string_append(result, subpath);
+        string_append(package_dir_s, subpath);
     }
-    return result;
+    return package_dir_s;
 }
 
-
-void ck_compile_file(t_ck* x, const char* filename)
+t_max_err ck_compile_file(t_ck* x, const char* filename)
 {
     if (x->chuck->compileFile(std::string(filename), "", 1)) {
         post("compilation successful: %s", filename);
+        return MAX_ERR_NONE;
     } else {
         error("compilation error! : %s", filename);
+        return MAX_ERR_GENERIC;
+    }
+}
+
+/* x-platform solution to check if a path exists
+ * 
+ * since ext_path.h (`path_exists`) is not available
+ * and std::filesystem::exists requires macos >= 10.15
+ */
+inline bool path_exists(const char* name) {
+
+    if (FILE *file = fopen(name, "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
     }
 }
 
 
-void ck_run_file(t_ck* x)
+t_max_err ck_run_file(t_ck* x)
 {
     if (x->filename != gensym("")) {
         char norm_path[MAX_PATH_CHARS];
-        path_nameconform(x->filename->s_name, norm_path, PATH_STYLE_MAX,
-                         PATH_TYPE_BOOT);
-        if (access(norm_path, F_OK) == 0) { // file exists in path
-            ck_compile_file(x, norm_path);
+        path_nameconform(x->filename->s_name, norm_path, PATH_STYLE_MAX, PATH_TYPE_BOOT);
+        if (path_exists(norm_path)) {       // test if file exists
+            return ck_compile_file(x, norm_path);
         } else { // try in the example folder
             char ck_file[MAX_PATH_CHARS];
             snprintf_zero(ck_file, MAX_PATH_CHARS, "%s/%s",
                 x->working_dir, x->filename->s_name);
-            ck_compile_file(x, ck_file);
+            return ck_compile_file(x, ck_file);
         }
     }
+    error("ck_run_file: filename slot was empty");
+    return MAX_ERR_GENERIC;
 }
+
+
 
 
 t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
 {
-    Chuck_Msg* msg = new Chuck_Msg;
+    Chuck_Msg* msg = NULL;
+
+    msg = new Chuck_Msg;
+    if (msg == NULL) {
+        error("ck_send_chuck_vm_msg: could not create chuck msg");
+        return MAX_ERR_GENERIC;
+    }
     msg->type = msg_type;
 
     // null reply so that VM will delete for us when it's done
@@ -284,6 +316,7 @@ t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
     if (x->chuck->vm()->globals_manager()->execute_chuck_msg_with_globals(msg)) {
         return MAX_ERR_NONE;
     } else {
+        error("ck_send_chuck_vm_msg: could not send error msg");
         return MAX_ERR_GENERIC;
     }
 }
