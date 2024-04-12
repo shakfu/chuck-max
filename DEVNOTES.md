@@ -222,8 +222,63 @@ t_CKBOOL Chuck_Globals_Manager::broadcastGlobalEvent( const char * name );
 
 ## Callbacks
 
-Can be used for chuck code to trigger callback functions in the external. Example provided.
+Can be used for chuck code to trigger callback functions in the external. Prelim example provided.
 
+Better examples needed. How to use the following functions creatively
+
+```c++
+t_CKBOOL getGlobalInt( const char * name, void (*callback)(t_CKINT) );
+t_CKBOOL getGlobalInt( const char * name, void (*callback)(const char*, t_CKINT) );
+t_CKBOOL getGlobalInt( const char * name, t_CKINT callbackID, void (*callback)(t_CKINT, t_CKINT) );
+t_CKBOOL setGlobalInt( const char * name, t_CKINT val );
+
+t_CKBOOL getGlobalFloat( const char * name, void (*callback)(t_CKFLOAT) );
+t_CKBOOL getGlobalFloat( const char * name, void (*callback)(const char*, t_CKFLOAT) );
+t_CKBOOL getGlobalFloat( const char * name, t_CKINT callbackID, void (*callback)(t_CKINT, t_CKFLOAT) );
+t_CKBOOL setGlobalFloat( const char * name, t_CKFLOAT val );
+
+t_CKBOOL getGlobalString( const char * name, void (*callback)(const char*) );
+t_CKBOOL getGlobalString( const char * name, void (*callback)(const char*, const char*) );
+t_CKBOOL getGlobalString( const char * name, t_CKINT callbackID, void (*callback)(t_CKINT, const char*) );
+t_CKBOOL setGlobalString( const char * name, const char * val );
+
+t_CKBOOL signalGlobalEvent( const char * name );
+t_CKBOOL broadcastGlobalEvent( const char * name );
+t_CKBOOL listenForGlobalEvent( const char * name, void (*callback)(void), t_CKBOOL listen_forever );
+t_CKBOOL listenForGlobalEvent( const char * name, void (*callback)(const char*), t_CKBOOL listen_forever );
+t_CKBOOL listenForGlobalEvent( const char * name, t_CKINT callbackID, void (*callback)(t_CKINT), t_CKBOOL listen_forever );
+t_CKBOOL stopListeningForGlobalEvent( const char * name, void (*callback)(void) );
+t_CKBOOL stopListeningForGlobalEvent( const char * name, void (*callback)(const char*) );
+t_CKBOOL stopListeningForGlobalEvent( const char * name, t_CKINT callbackID, void (*callback)(t_CKINT) );
+
+t_CKBOOL getGlobalUGenSamples( const char * name, SAMPLE* buffer, int numFrames );
+
+t_CKBOOL setGlobalIntArray( const char * name, t_CKINT arrayValues[], t_CKUINT numValues );
+t_CKBOOL getGlobalIntArray( const char * name, void (*callback)(t_CKINT[], t_CKUINT) );
+t_CKBOOL getGlobalIntArray( const char * name, void (*callback)(const char*, t_CKINT[], t_CKUINT) );
+t_CKBOOL getGlobalIntArray( const char * name, t_CKINT callbackID, void (*callback)(t_CKINT, t_CKINT[], t_CKUINT) );
+t_CKBOOL setGlobalIntArrayValue( const char * name, t_CKUINT index, t_CKINT value );
+t_CKBOOL getGlobalIntArrayValue( const char * name, t_CKUINT index, void (*callback)(t_CKINT) );
+t_CKBOOL getGlobalIntArrayValue( const char * name, t_CKUINT index, void (*callback)(const char*, t_CKINT) );
+t_CKBOOL getGlobalIntArrayValue( const char * name, t_CKINT callbackID, t_CKUINT index, void (*callback)(t_CKINT, t_CKINT) );
+t_CKBOOL setGlobalAssociativeIntArrayValue( const char * name, const char * key, t_CKINT value );
+t_CKBOOL getGlobalAssociativeIntArrayValue( const char * name, const char * key, void (*callback)(t_CKINT) );
+t_CKBOOL getGlobalAssociativeIntArrayValue( const char * name, const char * key, void (*callback)(const char*, t_CKINT) );
+t_CKBOOL getGlobalAssociativeIntArrayValue( const char * name, t_CKINT callbackID, const char * key, void (*callback)(t_CKINT, t_CKINT) );
+
+t_CKBOOL setGlobalFloatArray( const char * name, t_CKFLOAT arrayValues[], t_CKUINT numValues );
+t_CKBOOL getGlobalFloatArray( const char * name, void (*callback)(t_CKFLOAT[], t_CKUINT) );
+t_CKBOOL getGlobalFloatArray( const char * name, void (*callback)(const char*, t_CKFLOAT[], t_CKUINT) );
+t_CKBOOL getGlobalFloatArray( const char * name, t_CKINT callbackID, void (*callback)(t_CKINT, t_CKFLOAT[], t_CKUINT) );
+t_CKBOOL setGlobalFloatArrayValue( const char * name, t_CKUINT index, t_CKFLOAT value );
+t_CKBOOL getGlobalFloatArrayValue( const char * name, t_CKUINT index, void (*callback)(t_CKFLOAT) );
+t_CKBOOL getGlobalFloatArrayValue( const char * name, t_CKUINT index, void (*callback)(const char*, t_CKFLOAT) );
+t_CKBOOL getGlobalFloatArrayValue( const char * name, t_CKINT callbackID, t_CKUINT index, void (*callback)(t_CKINT, t_CKFLOAT) );
+t_CKBOOL setGlobalAssociativeFloatArrayValue( const char * name, const char * key, t_CKFLOAT value );
+t_CKBOOL getGlobalAssociativeFloatArrayValue( const char * name, const char * key, void (*callback)(t_CKFLOAT) );
+t_CKBOOL getGlobalAssociativeFloatArrayValue( const char * name, const char * key, void (*callback)(const char*, t_CKFLOAT) );
+t_CKBOOL getGlobalAssociativeFloatArrayValue( const char * name, t_CKINT callbackID, const char * key, void (*callback)(t_CKINT, t_CKFLOAT) );
+```
 
 ## Windows Support
 

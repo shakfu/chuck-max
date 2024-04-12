@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 # [0.1.x]
 
+- Removed posix header includes and replaced with x-platform code in aid of eventual windows support
+
 - Added callback mechanism and example
 
 - Added examples for local and global event triggering
