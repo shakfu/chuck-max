@@ -8,10 +8,18 @@ BUILD := build
 all: native
 
 native:
-	@mkdir -p build && cd build && cmake -GXcode .. && cmake --build . --config 'Release' && cmake --install . --config 'Release'
+	@mkdir -p build && \
+		cd build && \
+		cmake -GXcode .. && \
+		cmake --build . --config 'Release' && \
+		cmake --install . --config 'Release'
 
 universal:
-	@mkdir -p build && cd build && cmake -GXcode -DC74_BUILD_FAT=ON .. && cmake --build . --config 'Release' && cmake --install . --config 'Release'
+	@mkdir -p build && \
+		cd build && \
+		cmake -GXcode -DC74_BUILD_FAT=ON .. && \
+		cmake --build . --config 'Release' && \
+		cmake --install . --config 'Release'
 
 dev:
 	@mkdir -p build && cd build && cmake .. && make
