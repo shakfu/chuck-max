@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ---
 
-# [0.1.x]
+## [0.1.x]
 
 - Removed posix header includes and replaced with x-platform code in aid of eventual windows support
 
@@ -35,12 +35,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Update to chuck 1.5.2.3-dev (chai)
 
-
-# [0.1.0]
+## [0.1.0]
 
 - Initial support for chuck 1.5.1.3
 
 - Support for Linux
 
 - Support for macOS
-

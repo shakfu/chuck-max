@@ -58,3 +58,9 @@ target_link_options(${CHUGIN_NAME}
 # 	PUBLIC
 # 	-lm
 # )
+
+install(
+	TARGETS ${CHUGIN_NAME}
+	LIBRARY DESTINATION	chugins
+)
+

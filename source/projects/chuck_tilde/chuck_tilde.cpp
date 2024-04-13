@@ -18,9 +18,9 @@
 #define CHANNELS 1
 
 // global variables
-int MX_CK_COUNT = 0;
+static int MX_CK_COUNT = 0;
 
-// typdefs
+// typedefs
 typedef void (*ck_callback)(void);
 typedef std::unordered_map<std::string, ck_callback> callback_map;
 
@@ -37,6 +37,7 @@ typedef struct _ck {
     long channels;           // n of input/output channels
     t_symbol* filename;      // name of chuck file in Max search path
     const char* working_dir; // chuck working directory
+    const char* chugins_dir; // chugins directory
     float* in_chuck_buffer;  // intermediate chuck input buffer
     float* out_chuck_buffer; // intermediate chuck output buffer
     callback_map cb_map;     // callback map<string,callback>
@@ -169,6 +170,8 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // chuck-related
         x->chuck = NULL;
+        x->chugins_dir = string_getptr(
+            ck_get_path_from_external(ck_class, (char*)"/Contents/Resources/chugins"));
         x->working_dir = string_getptr(
             ck_get_path_from_package(ck_class, (char*)"/examples"));
         x->in_chuck_buffer = NULL;
@@ -190,7 +193,9 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->chuck->setParam(CHUCK_PARAM_WORKING_DIRECTORY, global_dir);
 
         // set default chuggins dirs
+        std::string chugins_dir = std::string(x->chugins_dir);
         std::list<std::string> chugin_search;
+        chugin_search.push_back(chugins_dir);
         chugin_search.push_back(global_dir + "/chugins");
         x->chuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, chugin_search);
 

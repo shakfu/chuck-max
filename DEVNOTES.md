@@ -1,12 +1,10 @@
 # Dev Notes
 
-
 ## Converting chugins to cmake builds
 
-This has been pretty straightforward, especially as the project is currently only targeting one platform (macOS). 
+This has been pretty straightforward, especially as the project is currently only targeting one platform (macOS).
 
 However, static complition and integration of chugins is not working although this is indicated as possible in the makefiles: chugins were not recognized when invoked via test scripts.
-
 
 ## Why isn't chuck a git submodule?
 
@@ -136,8 +134,6 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
 }
 ```
 
-
-
 ## Parameters via the `global` keyword
 
 ### Issues
@@ -148,41 +144,40 @@ As a general rule, if the chuck code will not run in chuck, then it will not run
 
 So global parameters should be initialized in the chuck script as normal and chuck-max will change the value of initialization on opening. It practice, this is a non-issue.
 
+### From "Chunity: Integrated Audiovisual Programming in Unity"
 
-### From "Chunity: Integrated Audiovisual Programming in Unity":
-
-> We have added the new global keyword to enable integrated communication between ChucK code and the outside environment that ChucK is embedded in (the embedding host). 
+> We have added the new global keyword to enable integrated communication between ChucK code and the outside environment that ChucK is embedded in (the embedding host).
 
 > The `global` keyword is used when declaring the type of a variable, such as (A) below
 
 ```c++
 public class EventResponder : MonoBehaviour {
-	private ChuckSubInstance myChuck;
-	void Start() {
-		myChuck = GetComponent<ChuckSubInstance>();
-    	// broadcast "notifier" every 250 ms
+ private ChuckSubInstance myChuck;
+ void Start() {
+  myChuck = GetComponent<ChuckSubInstance>();
+     // broadcast "notifier" every 250 ms
     
-	    myChuck.RunCode( @"
-	      global Event notifier; // <- Here (A)
-	      while( true ) {
-	        notifier.broadcast();
-	        250::ms => now;
-		} ");
+     myChuck.RunCode( @"
+       global Event notifier; // <- Here (A)
+       while( true ) {
+         notifier.broadcast();
+         250::ms => now;
+  } ");
 
-	    // create a ChuckEventListener
-	    ChuckEventListener listener = gameObject
-	      .AddComponent<ChuckEventListener>();
-	    
-	    // call MyCallback() during Update()
-	    //   after every broadcast from "notifier"
-	    listener.ListenForEvent( myChuck, "notifier", // <- Here (B)
-	      MyCallback );
-	}
+     // create a ChuckEventListener
+     ChuckEventListener listener = gameObject
+       .AddComponent<ChuckEventListener>();
+     
+     // call MyCallback() during Update()
+     //   after every broadcast from "notifier"
+     listener.ListenForEvent( myChuck, "notifier", // <- Here (B)
+       MyCallback );
+ }
 
-	void MyCallback() {
-    	// react to event (rotate my object)
-    	transform.Rotate( new Vector3( 5, 10, 15 ) );
-	}
+ void MyCallback() {
+     // react to event (rotate my object)
+     transform.Rotate( new Vector3( 5, 10, 15 ) );
+ }
 }
 ```
 
@@ -203,7 +198,6 @@ public class EventResponder : MonoBehaviour {
 > The ChucK source was separated into core and host code- bases. The core comprises the language parser, which compiles code, and virtual machine (VM), which translates audio inputs to outputs. One embeds ChucK in a new project by simply writing a new host that calls these functions.
 
 > The rearchitecture allowed multiple VMs to exist in the same address space (useful for contexts where the number of channels is limited and multiple outputs are desired, such as in a digital audio plugin or Unity’s spatial audio system). **It also enabled the redirection of all ChucK error messages to an optional callback** (e.g. the Unity debug console).
-
 
 ## Chuck Events
 
@@ -285,10 +279,9 @@ t_CKBOOL getGlobalAssociativeFloatArrayValue( const char * name, t_CKINT callbac
 ```cmake
 $<$<AND:$<BOOL:${WIN32}>,$<BOOL:${ENABLE_WARNINGS}>>:/W4>
 
-
 ```
 
-```
+```text
 defs
     __WINDOWS_DS__
     __WINDOWS_ASIO__

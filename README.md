@@ -1,6 +1,6 @@
 # chuck-max
 
-A project to minimally embed the [chuck](https://chuck.stanford.edu) engine in a Max/MSP external. 
+A project to minimally embed the [chuck](https://chuck.stanford.edu) engine in a Max/MSP external.
 
 It currently has one external (`chuck~`) with the following features and limitations:
 
@@ -10,21 +10,21 @@ It currently has one external (`chuck~`) with the following features and limitat
 
 - Add and remove audio and audio processes on the fly via Max messages.
 
-- Includes most of the [standard ccrma chugins](https://github.com/ccrma/chugins) except for the following: 
+- Includes most of the [standard ccrma chugins](https://github.com/ccrma/chugins) except for the following:
 
-	- Faust
-	- Fluidsynth
-	- MIAP
-	- Ladspa
-	- WarpBuf
+  - Faust
+  - Fluidsynth
+  - MIAP
+  - Ladspa
+  - WarpBuf
 
 - As of this version, there is no support for non-chuck callbacks and global events are only supported via the `sig` (for *signal*) and `broadcast` messages. Note that `sig` was supposed to be called `signal` but there is a global Max messge with the same name!
 
 - The `chuck~` object can take the following arguments:
 
-	- `[chuck~]` : single channel in/out, no default chuck file
-	- `[chuck~ <filename>]` : single channel in/out with default chuck file
-	- `[chuck~ <N> <filename>]` : N channels with default chuck file
+  - `[chuck~]` : single channel in/out, no default chuck file
+  - `[chuck~ <filename>]` : single channel in/out with default chuck file
+  - `[chuck~ <N> <filename>]` : N channels with default chuck file
 
 - The `chuck~` object has a single attribute `debug` which can be switched on for more verbose logging to the console.
 
@@ -91,7 +91,6 @@ make
 
 Open the help file `help/chuck~.maxhelp` for a demo.
 
-
 ## Status
 
 - [ ] add windows support
@@ -108,7 +107,6 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 - [x] converted chuck makefile to CMAKE
 - [x] added support for `<<< msgs >>>`
 
-
 ## TODO
 
 - [ ] Add Windows Support.
@@ -123,7 +121,6 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 
 - ...
 
-
 ## Credits
 
 This project thanks the following:
@@ -135,4 +132,3 @@ This project thanks the following:
 - Professor [Brad Garton](http://sites.music.columbia.edu/brad) for creating the original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5. My failure to build it and run it on Max 8 motivated me to start this project.
 
 - David Braun, the author of the very cool and excellent [DawDreamer](https://github.com/DBraun/DawDreamer) project, for creating the excellent [ChucKDesigner](https://github.com/DBraun/ChucKDesigner) project which embeds chuck in a Touch Designer plugin. His project provided a super-clear blueprint on how to embed `libchuck` in another host or plugin system and was essential to this project.
-

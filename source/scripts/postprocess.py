@@ -21,11 +21,11 @@ if not resources.exists():
 else:
 	print("skipped creating Resources folder")
 
-if not external_examples.exists():
-	shutil.copytree(examples, external_examples)
-	print(f"copied {examples} to {external_examples}")
-else:
-	print(f"skipped copying {examples} to {external_examples}")
+# if not external_examples.exists():
+# 	shutil.copytree(examples, external_examples)
+# 	print(f"copied {examples} to {external_examples}")
+# else:
+# 	print(f"skipped copying {examples} to {external_examples}")
 
 print('-'*80)
 
