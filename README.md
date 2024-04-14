@@ -12,11 +12,9 @@ It currently has one external (`chuck~`) with the following features and limitat
 
 - Includes most of the [standard ccrma chugins](https://github.com/ccrma/chugins) except for the following:
 
-  - Faust
+  - Fauck
   - Fluidsynth
-  - MIAP
   - Ladspa
-  - WarpBuf
 
 - As of this version, there is no support for non-chuck callbacks and global events are only supported via the `sig` (for *signal*) and `broadcast` messages. Note that `sig` was supposed to be called `signal` but there is a global Max messge with the same name!
 
@@ -95,6 +93,7 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 
 - [ ] add windows support
 - [ ] add support for fauck (faust chugin)
+- [ ] add support for WarpBuf chugin
 - [x] add support for callbacks (if needed)
 - [x] add support for events
 - [x] build chugins with cmake
