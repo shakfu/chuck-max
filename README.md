@@ -97,13 +97,16 @@ make
 
 Open the help file `help/chuck~.maxhelp` for a demo.
 
-## Missing Chugins
+## Optional or Missing Chugins
 
-There are four of the standard CCRMA chugins which are not included in the standard build:
+There are four of the standard CCRMA chugins which are either optional or not yet supported:
 
-1. `WarpBuf`: works well, can be built with cmake option: `-DENABLE_WARPBUF`
+1. `WarpBuf`: works well, can be built with cmake option: `-DENABLE_WARPBUF` or `make full`
+
 2. `Fauck`: not yet suppported, not yet known to work (wip).
+
 3. `Ladspa`: not yet supported but known to compile ok.
+
 4. `Fluidsynth`: not yet supported.
 
 ## Status
