@@ -17,9 +17,7 @@ set(CK_SRC_PATH
 )
 
 add_library(${CHUGIN_NAME}
-	# ${CHUGIN_SRC}
 	${PROJECT_SRC}
-	${CK_SRC_PATH}/chuck_dl.h
 )
 
 if(BUILD_SHARED_LIBS)
@@ -39,7 +37,7 @@ target_compile_options(${CHUGIN_NAME}
 
 target_compile_definitions(${CHUGIN_NAME}
 	PUBLIC
-	__MACOSX_CORE__
+	$<$<BOOL:${APPLE}>:__MACOSX_CORE__>
 	HAVE_CONFIG_H
 	$<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:__CK_DLL_STATIC__>
 )
@@ -60,3 +58,8 @@ target_link_options(${CHUGIN_NAME}
 # 	PUBLIC
 # 	-lm
 # )
+
+install(
+	TARGETS ${CHUGIN_NAME}
+	LIBRARY DESTINATION	chugins
+)
