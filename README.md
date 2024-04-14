@@ -94,7 +94,7 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 ## Status
 
 - [ ] add windows support
-- [ ] add support for sample buffer ugens
+- [ ] add support for fauck (faust chugin)
 - [x] add support for callbacks (if needed)
 - [x] add support for events
 - [x] build chugins with cmake
@@ -111,7 +111,7 @@ Open the help file `help/chuck~.maxhelp` for a demo.
 
 - [ ] Add Windows Support.
 
-- [ ] Better callback example
+- [ ] Better examples
 
 - [ ] Add editor support code editor: double-click to edit, etc.. or via filewatcher
 

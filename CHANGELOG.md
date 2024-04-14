@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Changed the content and structure of the `examples` folder to more closely resemble the updated chuck examples folder. See the `README.md` file in the folder for a more granular list of changes.
+
 - For macOS, chugins are now installed in the external's `Resources/chugins` folder. The `chugins` folder in `examples` is still searched for chugins in any case
 
 - Removed posix header includes and replaced with x-platform code in aid of eventual windows support
