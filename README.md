@@ -16,8 +16,6 @@ It currently has one external (`chuck~`) with the following features and limitat
   - Fluidsynth
   - Ladspa
 
-- As of this version, there is no support for non-chuck callbacks and global events are only supported via the `sig` (for *signal*) and `broadcast` messages. Note that `sig` was supposed to be called `signal` but there is a global Max messge with the same name!
-
 - The `chuck~` object can take the following arguments:
 
   - `[chuck~]` : single channel in/out, no default chuck file
@@ -26,15 +24,25 @@ It currently has one external (`chuck~`) with the following features and limitat
 
 - The `chuck~` object has a single attribute `debug` which can be switched on for more verbose logging to the console.
 
+- As of the current version, `chuck~` maps a few chuck language constructs to corresponding Max/MSP constructs as per the following table:
+
+| action                            | chuck              | max                          |
+| :-------------------------------- | :----------------  | :--------------------------  |
+| change param value                | global variable    | (`<name>` `<value>`)  msg    |
+| trigger named event               | global event       | (`sig <name>`) msg           |
+| trigger named event all shreds    | global event       | (`broadcast <name>`) msg     |
+| trigger named callback            | global event       | (`sig <name>`) msg           |
+| trigger named callback all shreds | global event       | (`broadcast <name>`)  msg    |
+
 See `help/chuck~.maxhelp` and patchers in the `patchers/tests` directory for a demonstration of current features.
 
 Also note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
 
-This project is currently built on chuck 1.5.2.3-dev (chai).
+This project is currently built on the chuck 1.5.2.3-dev (chai) engine.
 
 ## Requirements
 
-Note that this external is currently only developed and tested on macOS.
+Note that this external is currently only developed and tested on macOS, although a Windows version is on the TODO list.
 
 It requires the following to be available on your system:
 
@@ -89,11 +97,22 @@ make
 
 Open the help file `help/chuck~.maxhelp` for a demo.
 
+## Missing Chugins
+
+There are four of the standard CCRMA chugins which are not included in the standard build:
+
+1. `WarpBuf`: works well, can be built with cmake option: `-DENABLE_WARPBUF`
+2. `Fauck`: not yet suppported, not yet known to work (wip).
+3. `Ladspa`: not yet supported but known to compile ok.
+4. `Fluidsynth`: not yet supported.
+
 ## Status
 
+- [ ] add midi support
+- [ ] add osc support
 - [ ] add windows support
 - [ ] add support for fauck (faust chugin)
-- [ ] add support for WarpBuf chugin
+- [x] add support for WarpBuf chugin
 - [x] add support for callbacks (if needed)
 - [x] add support for events
 - [x] build chugins with cmake

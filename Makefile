@@ -3,7 +3,7 @@ SCRIPTS := source/scripts
 BUILD := build
 
 
-.PHONY: all native universal dev clean setup 
+.PHONY: all native full universal dev clean setup
 
 all: native
 
@@ -21,11 +21,18 @@ universal:
 		cmake --build . --config 'Release' && \
 		cmake --install . --config 'Release'
 
+full:
+	@mkdir -p build && \
+		cd build && \
+		cmake -GXcode .. -DENABLE_WARPBUF=ON & \
+		cmake --build . --config 'Release' && \
+		cmake --install . --config 'Release'
+
 dev:
 	@mkdir -p build && cd build && cmake .. && make
 
 clean:
-	@rm -rf build
+	@rm -rf build externals
 
 setup:
 	@git submodule init

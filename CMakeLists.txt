@@ -4,6 +4,7 @@ string(REGEX REPLACE "(.*)/" "" THIS_FOLDER_NAME "${CMAKE_CURRENT_SOURCE_DIR}")
 project(${THIS_FOLDER_NAME})
 
 option(C74_BUILD_FAT "Build Universal Externals")
+option(ENABLE_WARPBUF "Build WarpBuf chugin")
 
 # use ccache if available
 find_program(CCACHE_PROGRAM ccache)
@@ -54,7 +55,6 @@ MACRO(SUBDIRLIST result curdir)
   ENDFOREACH()
   SET(${result} ${dirlist})
 ENDMACRO()
-
 
 # Generate a project for every folder in the "source/category" folder
 SUBDIRLIST(CATEGORY_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/source)
