@@ -103,7 +103,7 @@ There are four of the standard CCRMA chugins which are either optional or not ye
 
 1. `WarpBuf`: works well, can be built with cmake option: `-DENABLE_WARPBUF` or `make full`
 
-2. `Fauck`: not yet suppported, not yet known to work (wip).
+2. `Fauck`: works well, provided `chuck~` configured with at least 2 channels.
 
 3. `Ladspa`: not yet supported but known to compile ok.
 
@@ -111,10 +111,8 @@ There are four of the standard CCRMA chugins which are either optional or not ye
 
 ## Status
 
-- [ ] add midi support
-- [ ] add osc support
 - [ ] add windows support
-- [ ] add support for fauck (faust chugin)
+- [x] add support for fauck (faust chugin)
 - [x] add support for WarpBuf chugin
 - [x] add support for callbacks (if needed)
 - [x] add support for events

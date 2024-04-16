@@ -4,7 +4,7 @@
 
 This has been pretty straightforward, especially as the project is currently only targeting one platform (macOS).
 
-However, static complition and integration of chugins is not working although this is indicated as possible in the makefiles: chugins were not recognized when invoked via test scripts.
+However, static compilation and integration of chugins is not working although this is indicated as possible in the makefiles: static chugins were not recognized when invoked via test scripts.
 
 ## Why isn't chuck a git submodule?
 
@@ -280,6 +280,7 @@ t_CKBOOL getGlobalAssociativeFloatArrayValue( const char * name, t_CKINT callbac
 $<$<AND:$<BOOL:${WIN32}>,$<BOOL:${ENABLE_WARNINGS}>>:/W4>
 
 ```
+Console level flags
 
 ```text
 defs

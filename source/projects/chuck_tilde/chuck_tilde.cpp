@@ -29,7 +29,7 @@ typedef struct _ck {
     t_pxobject ob;           // the object itself (t_pxobject in MSP)
 
     // meta
-    t_bool debug;            // flag to switch per-object debug state
+    long debug;              // flag to switch per-object debug state
 
     // chuck-related
     ChucK* chuck;            // chuck instance
@@ -41,6 +41,7 @@ typedef struct _ck {
     float* in_chuck_buffer;  // intermediate chuck input buffer
     float* out_chuck_buffer; // intermediate chuck output buffer
     callback_map cb_map;     // callback map<string,callback>
+    int log_level;           // chuck log level
 } t_ck;
 
 
@@ -151,6 +152,20 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->channels = CHANNELS;
         x->debug = DEBUG;
 
+        // #define CK_LOG_ALL              10 // set this to log everything
+        // #define CK_LOG_FINEST           9
+        // #define CK_LOG_FINER            8
+        // #define CK_LOG_FINE             7
+        // #define CK_LOG_DEBUG            6  // 1.5.0.5 was: CK_LOG_CONFIG
+        // #define CK_LOG_INFO             5
+        // #define CK_LOG_WARNING          4
+        // #define CK_LOG_HERALD           3
+        // #define CK_LOG_SYSTEM           2
+        // #define CK_LOG_CORE             1
+        // #define CK_LOG_NONE             0  // set this to log nothing
+
+        x->log_level = CK_LOG_WARNING;
+
         if (argc == 0) {
             x->filename = gensym("");
         }
@@ -213,6 +228,8 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // init chuck
         x->chuck->init();
         x->chuck->start();
+
+        EM_setlog(x->log_level);
 
         post("ChucK %s", x->chuck->version());
         post("inputs: %d  outputs: %d ", x->chuck->vm()->m_num_adc_channels,
