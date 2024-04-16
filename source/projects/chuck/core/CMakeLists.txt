@@ -12,8 +12,8 @@ execute_process(
 endif()
 
 set(C_CORE
-	chuck.tab.c     # !win32
-	chuck.yy.c     	# !win32
+	$<$<BOOL:${APPLE}>:chuck.tab.c>
+	$<$<BOOL:${APPLE}>:chuck.yy.c>
 	util_network.c
 	util_raw.c
 	util_xforms.c
@@ -78,7 +78,7 @@ set(LO_C_CORE
 	lo/pattern_match.c
 	lo/send.c
 	lo/server.c
-	lo/server_thread.c
+	$<$<BOOL:${APPLE}>:lo/server_thread.c>
 	lo/timetag.c
 )
 

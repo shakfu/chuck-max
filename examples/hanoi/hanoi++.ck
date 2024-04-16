@@ -23,9 +23,9 @@ pan.right => NRev r2 => dac.right;
 SndBuf pegs[4];
 
 // load files
-me.dir() + "/data/snare-chili.wav" => pegs[1].read;
-me.dir() + "/data/kick.wav" => pegs[2].read;
-me.dir() + "/data/snare-hop.wav" => pegs[3].read;
+me.dir() + "../data/snare-chili.wav" => pegs[1].read;
+me.dir() + "../data/kick.wav" => pegs[2].read;
+me.dir() + "../data/snare-hop.wav" => pegs[3].read;
 
 // connect to gain
 for( 1 => int i; i < pegs.size(); i++ )

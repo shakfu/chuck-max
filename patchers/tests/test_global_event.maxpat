@@ -225,7 +225,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
 					"patching_rect" : [ 238.0, 397.0, 150.0, 21.0 ],
-					"text" : "chuck~ test-global-event.ck"
+					"text" : "chuck~ test/global-event.ck"
 				}
 
 			}

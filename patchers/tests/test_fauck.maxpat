@@ -640,8 +640,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 238.0, 397.0, 134.0, 21.0 ],
-					"text" : "chuck~ fauck/crybaby.ck"
+					"patching_rect" : [ 238.0, 397.0, 111.0, 21.0 ],
+					"text" : "chuck~ fauck/fau.ck"
 				}
 
 			}

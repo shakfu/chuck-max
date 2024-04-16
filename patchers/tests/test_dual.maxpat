@@ -270,8 +270,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 460.0, 409.5, 105.0, 21.0 ],
-					"text" : "chuck~ maxtest.ck"
+					"patching_rect" : [ 460.0, 409.5, 109.0, 21.0 ],
+					"text" : "chuck~ max/test.ck"
 				}
 
 			}
@@ -482,8 +482,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 155.0, 400.0, 105.0, 21.0 ],
-					"text" : "chuck~ maxtest.ck"
+					"patching_rect" : [ 155.0, 400.0, 109.0, 21.0 ],
+					"text" : "chuck~ max/test.ck"
 				}
 
 			}

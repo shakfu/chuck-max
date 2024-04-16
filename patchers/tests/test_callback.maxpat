@@ -272,8 +272,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 238.0, 397.0, 127.0, 21.0 ],
-					"text" : "chuck~ test-callback.ck"
+					"patching_rect" : [ 238.0, 397.0, 128.0, 21.0 ],
+					"text" : "chuck~ test/callback.ck"
 				}
 
 			}

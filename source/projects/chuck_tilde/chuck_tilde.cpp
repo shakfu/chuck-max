@@ -158,7 +158,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
             x->filename = atom_getsymarg(0, argc, argv);    // is 1st arg of object
         }
         else if (argc >= 2) {
-            atom_arg_getlong(&x->channels, 0, argc, argv);  // is 1st arg of object
+            atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);  // is 1st arg of object
             x->filename = atom_getsymarg(1, argc, argv);    // is 2nd arg of object
         }
 
@@ -180,7 +180,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->chuck = new ChucK();
         if (x->chuck == NULL) {
             error("critical: could not create chuck object");
-            return;
+            return NULL;
         }
         x->chuck->setParam(CHUCK_PARAM_SAMPLE_RATE, (t_CKINT)sys_getsr());
         x->chuck->setParam(CHUCK_PARAM_INPUT_CHANNELS, (t_CKINT)x->channels);
@@ -443,7 +443,7 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     } else { // type is a list
 
         if (argv->a_type == A_LONG) { // list of longs
-            long* long_array = (long*)sysmem_newptr(sizeof(long*) * argc);
+            t_atom_long* long_array = (t_atom_long*)sysmem_newptr(sizeof(t_atom_long*) * argc);
             for (int i = 0; i < argc; i++) {
                 long_array[i] = atom_getlong(argv + i);
             }

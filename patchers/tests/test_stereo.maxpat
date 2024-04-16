@@ -185,8 +185,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
-					"patching_rect" : [ 238.0, 397.0, 122.0, 21.0 ],
-					"text" : "chuck~ 2 Pan4-test.ck"
+					"patching_rect" : [ 238.0, 397.0, 136.0, 21.0 ],
+					"text" : "chuck~ 2 spatial/Pan4.ck"
 				}
 
 			}

@@ -19,9 +19,9 @@ Gain g => Pan2 pan => JCRev r => dac;
 SndBuf pegs[4];
 
 // load files
-"data/hihat-open.wav" => pegs[1].read;
-"data/hihat.wav" => pegs[2].read;
-"data/snare-chili.wav" => pegs[3].read;
+"../data/hihat-open.wav" => pegs[1].read;
+"../data/hihat.wav" => pegs[2].read;
+"../data/snare-chili.wav" => pegs[3].read;
 
 // connect to gain
 for( 1 => int i; i < pegs.size(); i++ )
