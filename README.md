@@ -71,51 +71,58 @@ The buildsystem consists of a minimal Makefile frontend with CMake driving the b
 To get up and running:
 
 ```bash
-git clone https://github.com/shakfu/chuck-max.git
+git clone --recursive https://github.com/shakfu/chuck-max.git
 cd chuck-max
-make
 make setup
+make
 ```
 
 Note: `make` builds everything and `make setup` makes the package and its contents available to be used by Max by creating a symlink of the `chuck-max` folder in `$HOME/Documents/Max 8/Packages`.
 
-Also note that by default `make` builds the external according to the
-*native* architecture of the mac it is compiled on. If you'd rather build an  external with a universal architecture then do this instead:
+Also note that by default `make` builds the external according to the *native* architecture of the mac it is compiled on. If you'd rather build an  external with a universal architecture then do this instead:
 
 ```bash
 make universal
 ```
 
-If there is a need to update and re-build the external just type the following in the root of the project.
+If there's a need to update and re-build the external just type the following in the root of the project.
 
 ```bash
 git pull
 make
 ```
 
+### Install the Warpbuf Chugin (Optional)
+
+With WarpBuf you can time-stretch and independently transpose the pitch of an audio file.
+
+This chugin can be built by `make full` instead of `make` in the build process above or if you are just using cmake then set option -DENABLE_WARPBUF=ON 
+
+### Install the Fauck Chugin (Optional)
+
+The [fauck chugin](https://github.com/ccrma/fauck) contains the full llvm-based [faust](https://faust.grame.fr) engine and dsp platform which makes it very powerful and also quite large compared to other chugins (at around 45 MB stripped down).
+
+Follow the build instructions in the github repo above and move the built chugin to the `chuck-max/examples/chugins` folder
+
+A future aim is to include a stripped down version of this fauck chugin which only supports .wav files and and only contains the faust standard library in an official `chuck-max` package.
+
+
 ## Usage
 
-Open the help file `help/chuck~.maxhelp` for a demo.
+Open the help file `help/chuck~.maxhelp` for a demo. Check out the `patchers` folders for further examples of use.
+
 
 ## Optional or Missing Chugins
 
-There are four of the standard CCRMA chugins which are either optional or not yet supported:
+There are four CCRMA chugins which are either optional or not yet supported by `chuck-max`:
 
 1. `WarpBuf`: works well, can be built with cmake option: `-DENABLE_WARPBUF` or `make full`
 
-2. `Fauck`: works well, provided `chuck~` configured with at least 2 channels (see below for setup).
+2. `Fauck`: works well, provided `chuck~` configured with at least 2 channels (see above for setup).
 
-3. `Ladspa`: not yet supported but known to compile ok.
+3. `Ladspa`: not yet supported but known to compile without issues.
 
 4. `Fluidsynth`: not yet supported.
-
-### Install the Fauck Chugin
-
-This [chugin](https://github.com/ccrma/fauck) contains the full llvm-based [faust](https://faust.grame.fr) engine and dsp platform which makes it very powerful  and also quite large compared to other chugins (at around 45 MB stripped down).
-
-Follow the build instructions in the github repo above and install the chugin in the `chuck-max/examples/chugins` folder
-
-A future aim is to include a stripped down version of this fauck chugin which only supports .wav files and and only contains the faust standard library in an official `chuck-max` package.
 
 
 ## Status

@@ -8,8 +8,9 @@ function setup() {
 }
 
 function install_libsndfile() {
+	SRC=${THIRDPARTY}/libsndfile
 	BUILD=${THIRDPARTY}/libsndfile/build
-	if [! -f ${THIRDPARTY}/install/libsndfile.a ]; then
+	if [ ! -f ${THIRDPARTY}/install/lib/libsndfile.a ]; then
 		mkdir -p build/thirdparty && \
 		git clone --depth=1 https://github.com/libsndfile/libsndfile.git ${THIRDPARTY}/libsndfile && \
 		mkdir -p ${BUILD} && \
@@ -32,7 +33,7 @@ function install_libsndfile() {
 
 function install_rubberband() {
 	SRC=${THIRDPARTY}/rubberband
-	if [! -f ${THIRDPARTY}/install/librubberband.a ]; then
+	if [ ! -f ${THIRDPARTY}/install/lib/librubberband.a ]; then
 		mkdir -p ${THIRDPARTY} && \
 		git clone --depth=1 https://github.com/breakfastquay/rubberband.git ${THIRDPARTY}/rubberband && \
 		cd ${SRC} && \
@@ -45,7 +46,7 @@ function install_rubberband() {
 function install_libsamplerate() {
 	SRC=${THIRDPARTY}/libsamplerate
 	BUILD=${THIRDPARTY}/libsamplerate/build
-	if [! -f ${THIRDPARTY}/install/libsameplerate.a ]; then
+	if [ ! -f ${THIRDPARTY}/install/lib/libsamplerate.a ]; then
 		mkdir -p build/thirdparty && \
 		git clone --depth=1 https://github.com/libsndfile/libsamplerate.git ${THIRDPARTY}/libsamplerate && \
 		mkdir -p ${BUILD} && \
@@ -58,6 +59,7 @@ function install_libsamplerate() {
 		cmake --build . --target install
 	fi
 }
+
 
 setup
 install_libsndfile
