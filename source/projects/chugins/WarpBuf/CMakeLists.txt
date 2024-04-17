@@ -96,12 +96,15 @@ target_link_libraries(${CHUGIN_NAME}
     "-framework Accelerate"
 )
 
+# set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/examples")
 install(
     TARGETS ${CHUGIN_NAME}
     LIBRARY DESTINATION chugins
+    # LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/examples/chugins
 )
 
 set (DST ${CMAKE_SOURCE_DIR}/externals/chuck~.mxo/Contents/Resources/chugins)
+# set (DST ${CMAKE_SOURCE_DIR}/examples/chugins)
 
 install(
     CODE "execute_process (COMMAND codesign -vf -s - ${DST}/WarpBuf.chug)" 

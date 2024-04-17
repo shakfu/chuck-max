@@ -12,7 +12,7 @@ It currently has one external (`chuck~`) with the following features and limitat
 
 - Includes most of the [standard ccrma chugins](https://github.com/ccrma/chugins) except for the following:
 
-  - Fauck
+  - Fauck (needs separate installation steps)
   - Fluidsynth
   - Ladspa
 
@@ -103,11 +103,20 @@ There are four of the standard CCRMA chugins which are either optional or not ye
 
 1. `WarpBuf`: works well, can be built with cmake option: `-DENABLE_WARPBUF` or `make full`
 
-2. `Fauck`: works well, provided `chuck~` configured with at least 2 channels.
+2. `Fauck`: works well, provided `chuck~` configured with at least 2 channels (see below for setup).
 
 3. `Ladspa`: not yet supported but known to compile ok.
 
 4. `Fluidsynth`: not yet supported.
+
+### Install the Fauck Chugin
+
+This [chugin](https://github.com/ccrma/fauck) contains the full llvm-based [faust](https://faust.grame.fr) engine and dsp platform which makes it very powerful  and also quite large compared to other chugins (at around 45 MB stripped down).
+
+Follow the build instructions in the github repo above and install the chugin in the `chuck-max/examples/chugins` folder
+
+A future aim is to include a stripped down version of this fauck chugin which only supports .wav files and and only contains the faust standard library in an official `chuck-max` package.
+
 
 ## Status
 
