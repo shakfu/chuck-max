@@ -24,9 +24,12 @@ universal:
 full:
 	@mkdir -p build && \
 		cd build && \
-		cmake -GXcode .. -DENABLE_WARPBUF=ON & \
+		cmake -GXcode .. -DENABLE_WARPBUF=ON && \
 		cmake --build . --config 'Release' && \
 		cmake --install . --config 'Release'
+
+link:
+	@cd examples && rm -f chuck && ln -s ../build/Release/chuck .
 
 dev:
 	@mkdir -p build && cd build && cmake .. && make
