@@ -28,7 +28,7 @@ add_custom_target(warpbuf_deps
         ${THIRDPARTY}/lib/libsndfile.a
         ${THIRDPARTY}/lib/libsamplerate.a
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMAND ${CMAKE_SOURCE_DIR}/source/scripts/install_deps.sh
+    COMMAND ${CMAKE_SOURCE_DIR}/source/scripts/install_warpbuf_deps.sh
 )
 
 add_library(${CHUGIN_NAME}

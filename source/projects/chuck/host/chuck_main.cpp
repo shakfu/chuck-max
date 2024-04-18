@@ -610,7 +610,8 @@ t_CKBOOL go( int argc, const char ** argv )
     t_CKBOOL enable_server = TRUE;
     t_CKBOOL do_watchdog = TRUE;
     t_CKINT  adaptive_size = 0;
-    t_CKINT  log_level = CK_LOG_CORE;
+    // t_CKINT  log_level = CK_LOG_CORE;
+    t_CKINT  log_level = CK_LOG_DEBUG;
     t_CKINT  deprecate_level = 1; // 1 == warn
     t_CKINT  chugin_load = 1; // 1 == auto (variable added 1.3.0.0)
     // whether to enable this VM to receive OTF commands over network

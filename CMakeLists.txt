@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.19)
-
+set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version" FORCE)
 string(REGEX REPLACE "(.*)/" "" THIS_FOLDER_NAME "${CMAKE_CURRENT_SOURCE_DIR}")
 project(${THIS_FOLDER_NAME})
 
 option(C74_BUILD_FAT "Build Universal Externals")
 option(ENABLE_WARPBUF "Build WarpBuf chugin")
+option(ENABLE_FAUCK "Build Fauck chugin")
 
 # use ccache if available
 find_program(CCACHE_PROGRAM ccache)

@@ -164,7 +164,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // #define CK_LOG_CORE             1
         // #define CK_LOG_NONE             0  // set this to log nothing
 
-        x->log_level = CK_LOG_WARNING;
+        x->log_level = CK_LOG_DEBUG;
 
         if (argc == 0) {
             x->filename = gensym("");

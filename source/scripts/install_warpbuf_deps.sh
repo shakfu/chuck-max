@@ -1,3 +1,5 @@
+# install dependencies to build the WarpBuf chugin
+
 CWD=`pwd`
 THIRDPARTY=${CWD}/build/thirdparty
 PREFIX=${THIRDPARTY}/install
