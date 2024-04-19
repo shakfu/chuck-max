@@ -1,10 +1,25 @@
 # Dev Notes
 
+
+## Fauck and WarpBuf chugins
+
+Fauck chugin can be deployed in two ways for macOS:
+
+1. Default is via a macos bundle with the  faust `stdlib` included inside the bundle
+
+2. As a non-bundled module with `chugins` and faust `stdlib` in the `examples` folder
+
+Preference in this case is for (2) since it is useful to have direct access to chugins and stdlib (and related examples). The package format is more natural for Max/MSP.
+
+Converting (1) to (2) was a major pain because the faust dependency needs to be git cloned as branch `2.69.3`, if current main was cloned it would. segfault inexplicably at the `compute` function.
+
+
 ## Converting chugins to cmake builds
 
 This has been pretty straightforward, especially as the project is currently only targeting one platform (macOS).
 
 However, static compilation and integration of chugins is not working although this is indicated as possible in the makefiles: static chugins were not recognized when invoked via test scripts.
+
 
 ## Why isn't chuck a git submodule?
 
@@ -13,6 +28,7 @@ The directories `chuck/src/core`, `chuck/src/host`, `chuck/src/host-embed` are d
 The prior reason was that the `chuck` repo until recently, even at `--depth=1`, required more than 1 GB of storage and could take ages to download.
 
 With this problem solved, a script (`source/scripts/update.sh`) is preferred to including chuck and chugins directories as git submodules.
+
 
 ## Audio Processing Block Evolution
 
@@ -134,6 +150,7 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
 }
 ```
 
+
 ## Parameters via the `global` keyword
 
 ### Issues
@@ -199,6 +216,9 @@ public class EventResponder : MonoBehaviour {
 
 > The rearchitecture allowed multiple VMs to exist in the same address space (useful for contexts where the number of channels is limited and multiple outputs are desired, such as in a digital audio plugin or Unity’s spatial audio system). **It also enabled the redirection of all ChucK error messages to an optional callback** (e.g. the Unity debug console).
 
+
+
+
 ## Chuck Events
 
 See above section on events.. "ChucK Events are used to pause execution in a ChucK script until the Event signals that it has occurred."
@@ -213,6 +233,8 @@ There are local events and `global` events, see `test-local-event.ck` and `test-
 t_CKBOOL Chuck_Globals_Manager::signalGlobalEvent( const char * name );
 t_CKBOOL Chuck_Globals_Manager::broadcastGlobalEvent( const char * name );
 ```
+
+
 
 ## Callbacks
 

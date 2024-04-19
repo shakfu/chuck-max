@@ -77,7 +77,7 @@ make setup
 make
 ```
 
-Note: `make` builds everything and `make setup` makes the package and its contents available to be used by Max by creating a symlink of the `chuck-max` folder in `$HOME/Documents/Max 8/Packages`.
+Note: `make` builds everything except the `Warpbuf` and `Faust` chugns and `make setup` makes the package and its contents available to be used by Max by creating a symlink of the `chuck-max` folder in `$HOME/Documents/Max 8/Packages`.
 
 Also note that by default `make` builds the external according to the *native* architecture of the mac it is compiled on. If you'd rather build an  external with a universal architecture then do this instead:
 
@@ -85,8 +85,10 @@ Also note that by default `make` builds the external according to the *native* a
 make universal
 ```
 
-If there's a need to update and re-build the external just type the following in the root of the project.
+If you want build `chuck~` with the `WarpBuf` and `Faust` chugins, just enter `make full` instead of `make` in the build sequence above.
 
+If there's a need to update and re-build the external just type the following in the root of the project.
+7
 ```bash
 git pull
 make
@@ -100,9 +102,9 @@ This chugin can be built by `make full` instead of `make` in the build process a
 
 ### Install the Fauck Chugin (Optional)
 
-The [fauck chugin](https://github.com/ccrma/fauck) contains the full llvm-based [faust](https://faust.grame.fr) engine and dsp platform which makes it very powerful and also quite large compared to other chugins (at around 45 MB stripped down).
+The [fauck chugin](https://github.com/ccrma/fauck) contains the full llvm-based [faust](https://faust.grame.fr) engine and dsp platform which makes it very powerful and also quite large compared to other chugins (at around 45 MB stripped down). It requires at least 2 output channels to work properly.
 
-Follow the build instructions in the github repo above and move the built chugin to the `chuck-max/examples/chugins` folder
+This chugin can be built by `make full` instead of `make` in the build process above or if you are just using cmake then set option -DENABLE_FAUCK=ON 
 
 A future aim is to include a stripped down version of this fauck chugin which only supports .wav files and and only contains the faust standard library in an official `chuck-max` package.
 
@@ -112,17 +114,13 @@ A future aim is to include a stripped down version of this fauck chugin which on
 Open the help file `help/chuck~.maxhelp` for a demo. Check out the `patchers` folders for further examples of use.
 
 
-## Optional or Missing Chugins
+## Missing Chugins
 
-There are four CCRMA chugins which are either optional or not yet supported by `chuck-max`:
+There are two CCRMA chugins which are not yet supported by `chuck-max`:
 
-1. `WarpBuf`: works well, can be built with cmake option: `-DENABLE_WARPBUF` or `make full`
+1. `Ladspa`: not yet supported but known to compile without issues.
 
-2. `Fauck`: works well, provided `chuck~` configured with at least 2 channels (see above for setup).
-
-3. `Ladspa`: not yet supported but known to compile without issues.
-
-4. `Fluidsynth`: not yet supported.
+2. `Fluidsynth`: not yet supported.
 
 
 ## Status
@@ -152,7 +150,7 @@ There are four CCRMA chugins which are either optional or not yet supported by `
 
 - [ ] Flesh out API (add all messages). Learn from the miniAudicle code.
 
-- [ ] Package chugins and scripts in a self-contained signed and notarized external bundle
+- [ ] Package externlla,s chugins, scripts and patchers in a self-contained signed and notarized Max package
 
 - ...
 
