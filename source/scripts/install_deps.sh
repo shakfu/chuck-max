@@ -10,10 +10,11 @@ function setup() {
 }
 
 function install_faust() {
+	VERSION=2.69.3
 	SRC=${THIRDPARTY}/faust
     if [ ! -d ${THIRDPARTY}/faust/architecture ]; then
     	rm -rf ${THIRDPARTY}/faust && \
-		git clone -b "2.69.3" --depth=1 https://github.com/grame-cncm/faust.git ${THIRDPARTY}/faust
+		git clone -b "${VERSION}" --depth=1 https://github.com/grame-cncm/faust.git ${THIRDPARTY}/faust
 	fi
 }
 

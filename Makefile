@@ -4,10 +4,11 @@ BUILD := build
 CONFIG = Release
 THIRDPARTY = $(BUILD)/thirdparty
 LIB = $(THIRDPARTY)/install/lib
+CHUCK = $(THIRDPARTY)/install/bin/chuck
 
 
 
-.PHONY: all native full universal fauck dev clean reset setup
+.PHONY: all native full universal fauck dev clean reset setup test-fauck test-warpbuf
 
 all: native
 
@@ -74,3 +75,11 @@ setup:
 	else \
 		echo "... symlink already exists" ; \
 	fi
+
+test-fauck:
+	@cd examples && ./chuck --chugin-path:chugins fauck/test.ck
+
+test-warpbuf:
+	@cd examples && ./chuck --chugin-path:chugins warpbuf/warpbuf_basic.ck
+
+
