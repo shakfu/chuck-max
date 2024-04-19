@@ -8,7 +8,7 @@ CHUCK = $(THIRDPARTY)/install/bin/chuck
 
 
 
-.PHONY: all native full universal fauck dev clean reset setup test-fauck test-warpbuf
+.PHONY: all native full universal fauck dev clean reset setup test test-fauck test-warpbuf
 
 all: native
 
@@ -75,6 +75,9 @@ setup:
 	else \
 		echo "... symlink already exists" ; \
 	fi
+
+test:
+	@cd examples && ./chuck --chugin-path:chugins stk/rhodey-song.ck
 
 test-fauck:
 	@cd examples && ./chuck --chugin-path:chugins fauck/test.ck

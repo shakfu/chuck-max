@@ -3,6 +3,8 @@
 CWD=`pwd`
 THIRDPARTY=${CWD}/build/thirdparty
 PREFIX=${THIRDPARTY}/install
+# FAUST_VERSION=2.69.3
+FAUST_VERSION=2.72.14
 
 function setup() {
 	mkdir -p ${PREFIX}/include && \
@@ -10,7 +12,7 @@ function setup() {
 }
 
 function install_faust() {
-	VERSION=2.69.3
+	VERSION=${FAUST_VERSION}
 	SRC=${THIRDPARTY}/faust
     if [ ! -d ${THIRDPARTY}/faust/architecture ]; then
     	rm -rf ${THIRDPARTY}/faust && \
@@ -19,7 +21,7 @@ function install_faust() {
 }
 
 function install_libfaust() {
-	VERSION=2.69.3
+	VERSION=${FAUST_VERSION}
 	if [ "$(uname)" = "Darwin" ]; then
 	    if [ ! -f ${THIRDPARTY}/libfaust/lib/libfaustwithllvm.a ]; then
 	    	rm -rf ${THIRDPARTY}/libfaust
@@ -28,7 +30,7 @@ function install_libfaust() {
 					curl -L https://github.com/grame-cncm/faust/releases/download/$VERSION/Faust-$VERSION-arm64.dmg -o Faust-$VERSION-arm64.dmg
 					hdiutil attach Faust-$VERSION-arm64.dmg
 					mkdir -p ${THIRDPARTY}/libfaust
-					cp -R /Volumes/Faust-$VERSION/Faust-$VERSION/* ${THIRDPARTY}/libfaust/
+					cp -Rf /Volumes/Faust-$VERSION/Faust-$VERSION/* ${THIRDPARTY}/libfaust/
 					hdiutil detach /Volumes/Faust-$VERSION/
 					rm -f Faust-$VERSION-arm64.dmg
 				fi					
@@ -36,8 +38,8 @@ function install_libfaust() {
 				if [ ! -f Faust-$VERSION-x64.dmg ]; then
 					curl -L https://github.com/grame-cncm/faust/releases/download/$VERSION/Faust-$VERSION-x64.dmg -o Faust-$VERSION-x64.dmg
 					hdiutil attach Faust-$VERSION-x64.dmg
-					mkdir -p ${THIRDPARTY}/libfaust
-					cp -R /Volumes/Faust-$VERSION/Faust-$VERSION/* ${THIRDPARTY}/libfaust/
+					mkdir -p ${THIRDPARTY}/libfaustd
+					cp -Rf /Volumes/Faust-$VERSION/Faust-$VERSION/* ${THIRDPARTY}/libfaust/
 					hdiutil detach /Volumes/Faust-$VERSION/
 					rm -f Faust-$VERSION-x64.dmg
 				fi
