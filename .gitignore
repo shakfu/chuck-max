@@ -1,3 +1,4 @@
+.vscode
 .DS_Store
 build
 externals/*
@@ -24,7 +25,7 @@ archive/
 *.pch
 
 # Libraries
-*.lib
+#*.lib
 *.a
 *.la
 *.lo
