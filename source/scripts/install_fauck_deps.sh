@@ -13,7 +13,7 @@ function install_faust() {
 	SRC=${THIRDPARTY}/faust
     if [ ! -d ${THIRDPARTY}/faust/architecture ]; then
     	rm -rf ${THIRDPARTY}/faust && \
-		git clone --depth=1 https://github.com/grame-cncm/faust.git ${THIRDPARTY}/faust
+		git clone -b "2.69.3" --depth=1 https://github.com/grame-cncm/faust.git ${THIRDPARTY}/faust
 	fi
 }
 
@@ -166,6 +166,24 @@ function install_libmpg123() {
 	fi
 }
 
+# function install_libmp3lame() {
+# 	SRC=${THIRDPARTY}/libmpg123
+# 	BUILD=${THIRDPARTY}/libmp3lame/build
+# 	if [ ! -f ${THIRDPARTY}/install/lib/libmp3lame.a ]; then
+# 		rm -rf ${THIRDPARTY}/libmp3lame && \
+# 		mkdir -p build/thirdparty && \
+# 		git clone --depth=1 https://github.com/gypified/libmp3lame.git ${THIRDPARTY}/libmp3lame && \
+# 		cd ${THIRDPARTY}/libmp3lame && \
+# 		CFLAGS="-Os -s" ./configure \
+# 			--disable-dependency-tracking  \
+# 			--disable-frontend \
+# 			--enable-static \
+# 			--prefix=${PREFIX} && \
+# 		make && \
+# 		make install 
+# 	fi
+# }
+
 
 function install_libsndfile() {
 	SRC=${THIRDPARTY}/libsndfile
@@ -197,6 +215,7 @@ function install_libsndfile() {
 
 setup
 install_libmpg123
+# install_libmp3lame
 install_libopus
 install_libvorbis
 install_libflac

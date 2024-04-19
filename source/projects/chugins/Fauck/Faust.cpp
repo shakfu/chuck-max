@@ -149,10 +149,7 @@ const char* getMyDLLPath(void) {
 
 std::string getPathToFaustLibraries() {
   // Get the path to the directory containing basics.lib, stdfaust.lib etc.
-#ifdef HARDCODE_FAUSTLIB
-    // return std::string("/Users/sa/Documents/Max\\ 8/Packages/chuck-max/examples/faust");
-    return std::string("/Users/sa/Downloads/projects/chuck-max/examples/faust");
-#else
+
   try {
 #ifdef WIN32
     const std::wstring ws_shareFaustDir = MyDLLDir + L"\\faust";
@@ -171,6 +168,12 @@ std::string getPathToFaustLibraries() {
     delete[] char_shareFaustDir;
     return p;
 #elif __APPLE__
+#ifdef NOBUNDLE
+    const char* myDLLPath = getMyDLLPath();
+    std::filesystem::path p = std::filesystem::path(myDLLPath).parent_path().parent_path() / "faust" ;
+    std::cout << "path: " << p << std::endl;
+    return p.string();
+#else
     // look for faustlibraries inside the bundle
     // OSX only : access to the Faust bundle
     CFBundleRef fauck_bundle = CFBundleGetBundleWithIdentifier(
@@ -185,6 +188,7 @@ std::string getPathToFaustLibraries() {
     std::string resourcePath = std::string((const char*)bundle_path) +
                     std::string("/Contents/Resources/faust");
     return resourcePath;
+#endif
 #else
     // this applies to Linux
     const char* myDLLPath = getMyDLLPath();
@@ -194,7 +198,6 @@ std::string getPathToFaustLibraries() {
   } catch (...) {
     throw std::runtime_error("Error getting path to faustlibraries.");
   }
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -599,17 +602,17 @@ public:
             return false;
         }
         
-        // print where faustlib is looking for stdfaust.lib and the other lib files.
-        auto pathnames = m_factory->getIncludePathnames();
-        std::cout << "pathnames:\n" << std::endl;
-        for (auto name : pathnames) {
-           std::cout << name << "\n" << std::endl;
-        }
-        std::cout << "library list:\n" << std::endl;
-        auto librarylist = m_factory->getLibraryList();
-        for (auto name : librarylist) {
-           std::cout << name << "\n" << std::endl;
-        }
+        //// print where faustlib is looking for stdfaust.lib and the other lib files.
+        //auto pathnames = m_factory->getIncludePathnames();
+        //std::cout << "pathnames:\n" << std::endl;
+        //for (auto name : pathnames) {
+        //    std::cout << name << "\n" << std::endl;
+        //}
+        //std::cout << "library list:\n" << std::endl;
+        //auto librarylist = m_factory->getLibraryList();
+        //for (auto name : librarylist) {
+        //    std::cout << name << "\n" << std::endl;
+        //}
 
     #if __APPLE__
         if (m_midi_enable) {
@@ -715,10 +718,10 @@ public:
     }
     
     void tick( SAMPLE * in, SAMPLE * out, int nframes ){
-
+        
         const bool polyphonyIsOn = m_nvoices > 0;
         dsp* theDsp = polyphonyIsOn ? m_dsp_poly : m_dsp;
-
+        
         if (!theDsp) {
             // write zeros and return
             for (int f = 0; f < nframes; f++)
@@ -730,7 +733,7 @@ public:
             }
             return;
         }
-
+        
         bool needGuiMutex = m_nvoices > 0 && polyphonyIsOn && m_groupVoices;
                 
         // If polyphony is enabled and we're grouping voices,
@@ -744,16 +747,14 @@ public:
                 m_guiUpdateMutex.Unlock();
             }
         }
-        std::cerr << "pre-compute: " << nframes << std::endl ;        
+        
         for(int f = 0; f < nframes; f++)
         {
             for(int c = 0; c < m_numInputChannels; c++)
             {
                 m_input[c][0] = in[f*m_numInputChannels+c];
             }
-            std::cerr << "f: " << f << std::endl ;
-            std::cerr << "m_input: " << m_input << std::endl ;
-            std::cerr << "m_output: " << m_output << std::endl ;
+            
             theDsp->compute( 1, m_input, m_output );
             
             for(int c = 0; c < m_numOutputChannels; c++)
@@ -761,7 +762,6 @@ public:
                 out[f*m_numOutputChannels+c] = m_output[c][0];
             }
         }
-        std::cerr << "post-compute: " << nframes << std::endl ;
     }
     
     // for Chugins extending UGen

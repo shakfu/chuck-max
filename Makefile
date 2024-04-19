@@ -43,7 +43,17 @@ dev:
 	@mkdir -p build && cd build && cmake .. && make
 
 clean:
-	@rm -rf build/source build/build build/CMake* build/*.xcodeproj build/$(CONFIG) build/*.cmake externals
+	@rm -rf \
+		build/$(CONFIG) \
+		build/*.ck \
+		build/*.cmake \
+		build/*.xcodeproj \
+		build/build \
+		build/CMake* \
+		build/install* \
+		build/package \
+		build/source \
+		externals
 
 reset:
 	@rm -rf build externals

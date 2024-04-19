@@ -1,73 +1,71 @@
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version" FORCE)
+cmake_minimum_required(VERSION 3.13.0 FATAL_ERROR)
 
-set(ROOT ${CMAKE_BINARY_DIR})
+set(ROOT ${CMAKE_CURRENT_SOURCE_DIR})
+
+set(CMAKE_OSX_DEPLOYMENT_TARGET 12.0)
 
 if (DEFINED ENV{FAUCK_VERSION})
-    set (VERSION $ENV{FAUCK_VERSION})
+set (VERSION $ENV{FAUCK_VERSION})
 else()
-    set (VERSION "0.0.1")
+set (VERSION "0.0.1")
 endif()
 
 project(FaucK VERSION ${VERSION})
 
-set(PROJECT_NAME FaucK)
+# Collect ChucK sources
+FILE(GLOB CK_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/cheaders/include/*.h)
+source_group("ChucK" FILES ${CK_SOURCES})
 
-set(THIRDPARTY ${CMAKE_SOURCE_DIR}/build/thirdparty)
+# Collect FaucK sources
+set(Sources
+    "${PROJECT_SOURCE_DIR}/Faust.cpp"
+)
+source_group("Sources" FILES ${Sources})
 
-# where the chuck headers are
-set(CK_SRC_PATH "../chuck/include/")
-set(CK_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/../chuck/include/chugin.h)
+# Combine all sources
+set(ALL_FILES
+    ${CK_SOURCES}
+    ${Sources}
+)
 
+#######################################
+# faust libraries
 
-set(FAUST_DIR "${CMAKE_BINARY_DIR}/thirdparty/faust")
-set(LIBFAUST_DIR "${CMAKE_BINARY_DIR}/thirdparty/libfaust")
-set(FAUST_LIBRARIES_DIR ${LIBFAUST_DIR}/share/faust)
-
+# Include directories for libfaust
+if (NOT DEFINED FAUST_DIR)
+    set(FAUST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/faust")
+endif()
 include_directories(${FAUST_DIR}/architecture)
 include_directories(${FAUST_DIR}/compiler)
 include_directories(${FAUST_DIR}/compiler/utils)
 
-set(PROJECT_SRC
-    Faust.cpp
-    ${CK_SOURCES}
-)
+if (NOT DEFINED LIBFAUST_DIR)
+    message( FATAL_ERROR "LIBFAUST_DIR must be set on macOS." )
+endif()
 
-add_custom_target(fauck_deps
-    # TARGET  ${CHUGIN_NAME} PRE_BUILD
-    BYPRODUCTS  
-        ${THIRDPARTY}/libfaust/lib/libfaustwithllvm.a
-        ${THIRDPARTY}/install/lib/libsndfile.a
-        ${FAUST_DIR}/architecture
-        ${FAUST_DIR}/compiler
-        ${FAUST_DIR}/compiler/utils
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMAND ${CMAKE_SOURCE_DIR}/source/scripts/install_fauck_deps.sh
-)
+set(FAUST_LIBRARIES_DIR ${LIBFAUST_DIR}/share/faust)
 
-add_library(${PROJECT_NAME}
-    MODULE
-    ${PROJECT_SRC}
-)
+# Create shared library
+add_library(FaucK MODULE ${ALL_FILES})
 
-add_dependencies(${PROJECT_NAME} fauck_deps)
-
-set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
+set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 17)
 
 ####################################
 # Install - used for packaging
 ####################################
-
 set (PACKDIR ${ROOT}/package)
 set (DST fauck-${VERSION})
-install ( TARGETS ${PROJECT_NAME}
+install ( TARGETS FaucK
     RUNTIME DESTINATION ${PACKDIR}/${DST}
     LIBRARY DESTINATION ${PACKDIR}/${DST}
     ARCHIVE DESTINATION ${PACKDIR}/${DST}
 )
 
-set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-add_compile_options(-fPIC)
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+)
 
+add_compile_options(-fPIC)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     LINK_FLAGS "-Wl,-U,_object_new_imp -Wl,-U,_object_method_imp"
@@ -78,9 +76,8 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
     MACOSX_BUNDLE_BUNDLE_VERSION ${VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${VERSION}
-    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist
+    MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/Info.plist
 )
-
 install(
     DIRECTORY ${FAUST_LIBRARIES_DIR}
     DESTINATION ${PACKDIR}/${DST}/Faust.chug/Contents/Resources
@@ -88,70 +85,53 @@ install(
     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
 )
 
-target_compile_definitions(${PROJECT_NAME}
-    PUBLIC
-    $<$<BOOL:${APPLE}>:__APPLE__>
-    $<$<BOOL:${APPLE}>:__MACOSX_CORE__>
-    $<$<BOOL:${APPLE}>:__PLATFORM_APPLE__>
-    _USRDLL
-    FAUCK_EXPORTS
+
+# Find sndfile and link it
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/libsndfile/install")
+find_package(PkgConfig REQUIRED)
+# We expect the user to have used brew to install the dependencies
+# for libsndfile, to have built libsndfile as a static lib,
+# and for it to be accessible via `pkg-config --static libsndfile`.
+set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+list(APPEND PKG_CONFIG_EXECUTABLE "--static")  # append temporarily
+pkg_check_modules(SNDFILE REQUIRED IMPORTED_TARGET sndfile)
+pkg_check_modules(FLAC REQUIRED IMPORTED_TARGET flac)
+pkg_check_modules(VORBIS REQUIRED IMPORTED_TARGET vorbis)
+pkg_check_modules(OGG REQUIRED IMPORTED_TARGET ogg)
+pkg_check_modules(OPUS REQUIRED IMPORTED_TARGET opus)
+pkg_check_modules(MPG123 REQUIRED IMPORTED_TARGET libmpg123)
+target_link_libraries (${PROJECT_NAME} PRIVATE PkgConfig::SNDFILE PkgConfig::FLAC PkgConfig::VORBIS PkgConfig::OGG PkgConfig::OPUS PkgConfig::MPG123)
+
+
+# Link libfaust based on platform
+target_link_directories(${PROJECT_NAME} PRIVATE ${LIBFAUST_DIR}/lib)
+target_link_libraries(${PROJECT_NAME} PRIVATE libfaustwithllvm.a)
+
+unset(FAUST_DIR CACHE)
+unset(LIBFAUST_DIR CACHE)
+
+# Platform-specific libraries and definitions
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    __MACOSX_CORE__
+    __APPLE__
+    __PLATFORM_APPLE__
+)
+target_link_libraries(${PROJECT_NAME} PRIVATE "-framework CoreFoundation" "-framework CoreMIDI" "-framework CoreAudio")
+
+# Debug and Release configurations
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    "_USRDLL;"
+    "FAUCK_EXPORTS"
 )
 
-target_include_directories(${PROJECT_NAME}
-    PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${THIRDPARTY}/install/include
-    ${CK_SRC_PATH}
-    ${FAUST_DIR}/architecture
-    ${FAUST_DIR}/compiler
-    ${FAUST_DIR}/compiler/utils
-)
-
-target_link_options(${PROJECT_NAME}
-    PUBLIC
-    $<$<CONFIG:RELEASE>:-s>
-)
-
-target_link_directories(${PROJECT_NAME}
-    PUBLIC
-    ${LIBFAUST_DIR}/lib
-    ${THIRDPARTY}/install/lib
-)
-
-target_link_libraries(${PROJECT_NAME}
-    PUBLIC
-    ${LIBFAUST_DIR}/lib/libfaustwithllvm.a
-    ${THIRDPARTY}/install/lib/libsndfile.a
-    "-framework CoreFoundation"
-    "-framework CoreMIDI"
-    "-framework CoreAudio"
-)
+# Include directories
+target_include_directories(FaucK PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/cheaders/include>
+    $<INSTALL_INTERFACE:FaucK> )
 
 
-
-# testing smaller 
-# install(
-#     DIRECTORY ${CMAKE_SOURCE_DIR}/examples/faust
-#     DESTINATION ${PACKDIR}/${DST}/${CHUGIN_NAME}.chug/Contents/Resources
-#     PATTERN "*.lproj" EXCLUDE
-#     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-# )
-
-# install(
-#     DIRECTORY ${FAUST_LIBRARIES_DIR}
-#     DESTINATION ${PACKDIR}/${DST}/${CHUGIN_NAME}.chug/Contents/Resources
-#     PATTERN "*.lproj" EXCLUDE
-#     PERMISSIONS OWNER_READ OWNER_WRITE GROUP_READ WORLD_READ
-# )
-
-# filter recursive copy
-# find . -name '*.lib' -or -name '*.dsp' -or -name '*.wav' | cpio -pdm ./dest
-
-
-# Custom install command to copy the directory
 set(SOURCE_DIR "${PACKDIR}/${DST}/Faust.chug")
-set(DEST_DIR "${CMAKE_SOURCE_DIR}/examples/chugins/Faust.chug")
-# set(DEST_DIR "$ENV{HOME}/.chuck/lib/Faust.chug")
+set(DEST_DIR "$ENV{HOME}/.chuck/lib/Faust.chug")
 install(CODE "
     message(\"Copying ${SOURCE_DIR} to ${DEST_DIR}\")
     file(MAKE_DIRECTORY ${DEST_DIR})
@@ -159,4 +139,3 @@ install(CODE "
         COMMAND ${CMAKE_COMMAND} -E copy_directory \"${SOURCE_DIR}\" \"${DEST_DIR}\"
     )
 ")
-

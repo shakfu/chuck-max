@@ -1,46 +1,55 @@
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version" FORCE)
+set(BUILD_SHARED_LIBS ON)
 
 set(path "${CMAKE_CURRENT_SOURCE_DIR}")
 cmake_path(GET path STEM PARENT_DIR)
 
 # chugin name
-set(CHUGIN_NAME ${PARENT_DIR})
+# set(CHUGIN_NAME ${PARENT_DIR})
+set(CHUGIN_NAME "Faust")
 
-set(THIRDPARTY ${CMAKE_SOURCE_DIR}/build/thirdparty/install)
+set(THIRDPARTY ${CMAKE_SOURCE_DIR}/build/thirdparty)
 
 # where the chuck headers are
-set(CK_SRC_PATH "../chuck/include/")
+set(CK_SRC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../chuck/include)
+set(CK_SOURCE ${CK_SRC_PATH}/chugin.h)
 
 set(FAUST_DIR "${CMAKE_BINARY_DIR}/thirdparty/faust")
 set(LIBFAUST_DIR "${CMAKE_BINARY_DIR}/thirdparty/libfaust")
 set(FAUST_LIBRARIES_DIR ${LIBFAUST_DIR}/share/faust)
 
-include_directories(${FAUST_DIR}/architecture)
-include_directories(${FAUST_DIR}/compiler)
-include_directories(${FAUST_DIR}/compiler/utils)
-
 
 set(PROJECT_SRC
-    Faust.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Faust.cpp
+    ${CK_SOURCE}
 )
 
 
-add_custom_target(fauck_deps
-    # TARGET  ${CHUGIN_NAME} PRE_BUILD
-    BYPRODUCTS  
-        ${THIRDPARTY}/libfaust/lib/libfaustwithllvm.a
-        ${THIRDPARTY}/install/lib/libsndfile.a
-        ${THIRDPARTY}/faust/architecture
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMAND ${CMAKE_SOURCE_DIR}/source/scripts/install_fauck_deps.sh
-)
+# add_custom_target(fauck_deps
+#     BYPRODUCTS
+#         ${THIRDPARTY}/libfaust/lib/libfaustwithllvm.a
+#         ${THIRDPARTY}/install/lib/libFLAC.a
+#         ${THIRDPARTY}/install/lib/libogg.a
+#         ${THIRDPARTY}/install/lib/libvorbis.a
+#         ${THIRDPARTY}/install/lib/libvorbisenc.a
+#         ${THIRDPARTY}/install/lib/libvorbisfile.a
+#         ${THIRDPARTY}/install/lib/libopus.a
+#         ${THIRDPARTY}/install/lib/libmpg123.a
+#         ${THIRDPARTY}/install/lib/libsndfile.a
+#         ${FAUST_DIR}/architecture
+#         ${FAUST_DIR}/compiler
+#         ${FAUST_DIR}/compiler/utils
+#     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+#     COMMAND ${CMAKE_SOURCE_DIR}/source/scripts/install_fauck_deps.sh
+# )
 
 
 add_library(${CHUGIN_NAME}
+    MODULE
     ${PROJECT_SRC}
 )
 
-add_dependencies(${CHUGIN_NAME} fauck_deps)
+# add_dependencies(${CHUGIN_NAME} fauck_deps)
 
 set_target_properties(${CHUGIN_NAME} PROPERTIES CXX_STANDARD 17)
 set_target_properties(${CHUGIN_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -61,6 +70,7 @@ target_compile_options(${CHUGIN_NAME}
 
 target_compile_definitions(${CHUGIN_NAME}
     PUBLIC
+    NOBUNDLE
     $<$<BOOL:${APPLE}>:__APPLE__>
     $<$<BOOL:${APPLE}>:__MACOSX_CORE__>
     $<$<BOOL:${APPLE}>:__PLATFORM_APPLE__>
@@ -72,7 +82,7 @@ target_compile_definitions(${CHUGIN_NAME}
 target_include_directories(${CHUGIN_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${THIRDPARTY}/include
+    ${THIRDPARTY}/install/include
     ${CK_SRC_PATH}
     ${FAUST_DIR}/architecture
     ${FAUST_DIR}/compiler
@@ -82,24 +92,33 @@ target_include_directories(${CHUGIN_NAME}
 target_link_options(${CHUGIN_NAME}
     PUBLIC
     $<$<CONFIG:RELEASE>:-s>
-    -shared
+    # -shared
     -lc++
 )
+
 
 target_link_directories(${CHUGIN_NAME}
     PUBLIC
     ${LIBFAUST_DIR}/lib
-    ${THIRDPARTY}/lib
+    ${THIRDPARTY}/install/lib
 )
 
 target_link_libraries(${CHUGIN_NAME}
     PUBLIC
     ${LIBFAUST_DIR}/lib/libfaustwithllvm.a
-    ${THIRDPARTY}/lib/libsndfile.a
+    ${THIRDPARTY}/install/lib/libFLAC.a
+    ${THIRDPARTY}/install/lib/libogg.a
+    ${THIRDPARTY}/install/lib/libvorbis.a
+    ${THIRDPARTY}/install/lib/libvorbisenc.a
+    ${THIRDPARTY}/install/lib/libvorbisfile.a
+    ${THIRDPARTY}/install/lib/libopus.a
+    ${THIRDPARTY}/install/lib/libmpg123.a
+    ${THIRDPARTY}/install/lib/libsndfile.a
     "-framework CoreFoundation"
     "-framework CoreMIDI"
     "-framework CoreAudio"
 )
+
 
 # set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/examples")
 install(
@@ -114,5 +133,3 @@ set (DST ${CMAKE_SOURCE_DIR}/examples/chugins)
 install(
     CODE "execute_process (COMMAND codesign -vf -s - ${DST}/${CHUGIN_NAME}.chug)" 
 )
-
-

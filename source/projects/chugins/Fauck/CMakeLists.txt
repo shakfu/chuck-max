@@ -5,8 +5,8 @@ set(path "${CMAKE_CURRENT_SOURCE_DIR}")
 cmake_path(GET path STEM PARENT_DIR)
 
 # chugin name
-set(CHUGIN_NAME ${PARENT_DIR})
-# set(CHUGIN_NAME "Faust")
+# set(CHUGIN_NAME ${PARENT_DIR})
+set(CHUGIN_NAME "Faust")
 
 set(THIRDPARTY ${CMAKE_SOURCE_DIR}/build/thirdparty)
 
@@ -70,7 +70,7 @@ target_compile_options(${CHUGIN_NAME}
 
 target_compile_definitions(${CHUGIN_NAME}
     PUBLIC
-    HARDCODE_FAUSTLIB
+    NOBUNDLE
     $<$<BOOL:${APPLE}>:__APPLE__>
     $<$<BOOL:${APPLE}>:__MACOSX_CORE__>
     $<$<BOOL:${APPLE}>:__PLATFORM_APPLE__>
@@ -96,11 +96,6 @@ target_link_options(${CHUGIN_NAME}
     -lc++
 )
 
-# set_target_properties(${CHUGIN_NAME}
-#     PROPERTIES
-#     BUNDLE True
-#     BUNDLE_EXTENSION "chug"
-# )
 
 target_link_directories(${CHUGIN_NAME}
     PUBLIC
@@ -135,6 +130,6 @@ install(
 # set (DST ${CMAKE_SOURCE_DIR}/externals/chuck~.mxo/Contents/Resources/chugins)
 set (DST ${CMAKE_SOURCE_DIR}/examples/chugins)
 
-# install(
-#     CODE "execute_process (COMMAND codesign -vf -s - ${DST}/${CHUGIN_NAME}.chug)" 
-# )
+install(
+    CODE "execute_process (COMMAND codesign -vf -s - ${DST}/${CHUGIN_NAME}.chug)" 
+)
