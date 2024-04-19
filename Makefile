@@ -2,6 +2,9 @@ CHUCK_PACKAGE := "$(HOME)/Documents/Max\ 8/Packages/chuck-max"
 SCRIPTS := source/scripts
 BUILD := build
 CONFIG = Release
+THIRDPARTY = $(BUILD)/thirdparty
+LIB = $(THIRDPARTY)/install/lib
+
 
 
 .PHONY: all native full universal fauck dev clean reset setup
@@ -22,10 +25,14 @@ universal:
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
-full:
+
+install_deps:
+	./source/scripts/install_deps.sh
+
+full: install_deps
 	@mkdir -p build && \
 		cd build && \
-		cmake -GXcode .. -DENABLE_WARPBUF=ON && \
+		cmake -GXcode .. -DENABLE_WARPBUF=ON -DENABLE_FAUCK=ON && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 

@@ -595,8 +595,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
-					"patching_rect" : [ 238.0, 397.0, 166.0, 21.0 ],
-					"text" : "chuck~ 2 mx.warpbuf_basic.ck"
+					"patching_rect" : [ 238.0, 397.0, 191.0, 21.0 ],
+					"text" : "chuck~ 2 warpbuf/warpbuf_basic.ck"
 				}
 
 			}

@@ -6,7 +6,7 @@ cmake_path(GET path STEM PARENT_DIR)
 # chugin name
 set(CHUGIN_NAME ${PARENT_DIR})
 
-set(THIRDPARTY ${CMAKE_SOURCE_DIR}/build/thirdparty/install)
+set(THIRDPARTY ${CMAKE_SOURCE_DIR}/build/thirdparty)
 
 # all of the c/cpp files that compose this chugin
 file(GLOB PROJECT_SRC
@@ -21,22 +21,22 @@ set(CK_SRC_PATH
     "../chuck/include/"
 )
 
-add_custom_target(warpbuf_deps
-    # TARGET  ${CHUGIN_NAME} PRE_BUILD
-    BYPRODUCTS  
-        ${THIRDPARTY}/lib/librubberband.a
-        ${THIRDPARTY}/lib/libsndfile.a
-        ${THIRDPARTY}/lib/libsamplerate.a
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMAND ${CMAKE_SOURCE_DIR}/source/scripts/install_warpbuf_deps.sh
-)
+# add_custom_target(warpbuf_deps
+#     # TARGET  ${CHUGIN_NAME} PRE_BUILD
+#     BYPRODUCTS  
+#         ${THIRDPARTY}/install/lib/librubberband.a
+#         ${THIRDPARTY}/install/lib/libsndfile.a
+#         ${THIRDPARTY}/install/lib/libsamplerate.a
+#     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+#     COMMAND ${CMAKE_SOURCE_DIR}/source/scripts/install_warpbuf_deps.sh
+# )
 
 add_library(${CHUGIN_NAME}
     ${PROJECT_SRC}
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/portable_endian/include/portable_endian.h
 )
 
-add_dependencies(${CHUGIN_NAME} warpbuf_deps)
+# add_dependencies(${CHUGIN_NAME} warpbuf_deps)
 
 set_target_properties(${CHUGIN_NAME} PROPERTIES CXX_STANDARD 17)
 set_target_properties(${CHUGIN_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -69,7 +69,7 @@ target_compile_definitions(${CHUGIN_NAME}
 target_include_directories(${CHUGIN_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${THIRDPARTY}/include
+    ${THIRDPARTY}/install/include
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/portable_endian/include
     ${CK_SRC_PATH}
 )
@@ -82,14 +82,21 @@ target_link_options(${CHUGIN_NAME}
 
 target_link_directories(${CHUGIN_NAME}
     PUBLIC
-    ${THIRDPARTY}/lib
+    ${THIRDPARTY}/install/lib
 )
 
 target_link_libraries(${CHUGIN_NAME}
     PUBLIC
-    ${THIRDPARTY}/lib/librubberband.a
-    ${THIRDPARTY}/lib/libsndfile.a
-    ${THIRDPARTY}/lib/libsamplerate.a
+    ${THIRDPARTY}/install/lib/librubberband.a
+    ${THIRDPARTY}/install/lib/libFLAC.a
+    ${THIRDPARTY}/install/lib/libogg.a
+    ${THIRDPARTY}/install/lib/libvorbis.a
+    ${THIRDPARTY}/install/lib/libvorbisenc.a
+    ${THIRDPARTY}/install/lib/libvorbisfile.a
+    ${THIRDPARTY}/install/lib/libopus.a
+    ${THIRDPARTY}/install/lib/libmpg123.a
+    ${THIRDPARTY}/install/lib/libsndfile.a
+    ${THIRDPARTY}/install/lib/libsamplerate.a
     "-framework CoreFoundation"
     "-framework CoreMIDI"
     "-framework CoreAudio"
@@ -103,8 +110,8 @@ install(
     # LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/examples/chugins
 )
 
-set (DST ${CMAKE_SOURCE_DIR}/externals/chuck~.mxo/Contents/Resources/chugins)
-# set (DST ${CMAKE_SOURCE_DIR}/examples/chugins)
+# set (DST ${CMAKE_SOURCE_DIR}/externals/chuck~.mxo/Contents/Resources/chugins)
+set (DST ${CMAKE_SOURCE_DIR}/examples/chugins)
 
 install(
     CODE "execute_process (COMMAND codesign -vf -s - ${DST}/WarpBuf.chug)" 
