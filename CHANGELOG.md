@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Added `loglevel` / `loglevel <int>` message for setting chuck log level 0-10. Dropped redundant previous `debug` switch/attribute.
+
+- Added a number of missing chuck messages: `add <filepath>`, `replace <shredID> <filepath>`, `reset id`, `clear vm`, `clear globals`, `time`, `status` along with their respective symbols: `+`, `-`, `--`, `=`, `^`, etc.
+
 - Changed back to keeping all chugins in `chuck-max/examples/chugins` (alternative is to move chugins and faust stdlib to `support`)
 
 - Added support for building the `Faust` or `Fauck` chugin with the `faust`

@@ -8,11 +8,10 @@ It currently has one external (`chuck~`) with the following features and limitat
 
 - Layer sounds from a single instance by running multiple chuck files concurrently.
 
-- Add and remove audio and audio processes on the fly via Max messages.
+- Add, remove, replace audio and audio processes on the fly using Chuck messages via Max messages.
 
-- Includes most of the [standard ccrma chugins](https://github.com/ccrma/chugins) except for the following:
+- Includes most of the [base ccrma chugins](https://github.com/ccrma/chugins) including `WarpBuf` and `Faust` or (Fauck) except for the following:
 
-  - Fauck (needs separate installation steps)
   - Fluidsynth
   - Ladspa
 
@@ -22,17 +21,34 @@ It currently has one external (`chuck~`) with the following features and limitat
   - `[chuck~ <filename>]` : single channel in/out with default chuck file
   - `[chuck~ <N> <filename>]` : N channels with default chuck file
 
-- The `chuck~` object has a single attribute `debug` which can be switched on for more verbose logging to the console.
+- As of the current version, `chuck~` maps a few chuck language elements to corresponding Max/MSP constructs as per the following table:
 
-- As of the current version, `chuck~` maps a few chuck language constructs to corresponding Max/MSP constructs as per the following table:
-
-| action                            | chuck              | max                          |
+| action                            | chuck              | max msg                      |
 | :-------------------------------- | :----------------  | :--------------------------  |
-| change param value                | global variable    | (`<name>` `<value>`)  msg    |
-| trigger named event               | global event       | (`sig <name>`) msg           |
-| trigger named event all shreds    | global event       | (`broadcast <name>`) msg     |
-| trigger named callback            | global event       | (`sig <name>`) msg           |
-| trigger named callback all shreds | global event       | (`broadcast <name>`)  msg    |
+| change param value                | global variable    | `<name>` `<value>`           |
+| trigger named event               | global event       | `sig <name>`                 |
+| trigger named event all shreds    | global event       | `broadcast <name>`           |
+| trigger named callback            | global event       | `sig <name>`                 |
+| trigger named callback all shreds | global event       | `broadcast <name>`           |
+
+- In addition a decent number of the core Chuck vm messages are available as Max messages:
+
+| action                            | max msg                      | max msg (alias)              |
+| :-------------------------------- | :--------------------------- | :--------------------------  |
+| add shred                         | `add <file>`                 | `+ <filepath>`               |
+| remove shred                      | `remove <shredID>`           | `- <shredID>`                |
+| remove last shred                 | `remove last`                | `--`                         |
+| remove all shreds                 | `remove all`                 |                              |
+| replace shred                     | `replace <shredID> <file>`   | `= <shredID> <file>`         |
+| vm status                         | `status`                     | `^`                          |
+| clear vm                          | `clear vm`                   | `reset`                      |
+| clear globals                     | `clear globals`              |                              |
+| reset id                          | `reset id`                   |                              |
+| time                              | `time`                       |                              |
+| probe chugins                     | `chugins`                    |                              |
+| list of running shreds            | `info`                       |                              |
+| get/set loglevel (0-10)           | `loglevel` | `loglevel <n>`  |                              |
+
 
 See `help/chuck~.maxhelp` and patchers in the `patchers/tests` directory for a demonstration of current features.
 
@@ -64,28 +80,28 @@ brew install cmake bison flex
 
 ## Compilation
 
-All dependencies are included in the repo, and the external is built 'statically' without any non-system dependencies.
-
-The buildsystem consists of a minimal Makefile frontend with CMake driving the build on the backend.
+Currently building on macOS is only supported. The buildsystem consists of a minimal Makefile frontend with CMake driving the build on the backend.
 
 To get up and running:
 
 ```bash
-git clone --recursive https://github.com/shakfu/chuck-max.git
+git clone https://github.com/shakfu/chuck-max.git
 cd chuck-max
 make setup
-make
 ```
 
-Note: `make` builds everything except the `Warpbuf` and `Faust` chugns and `make setup` makes the package and its contents available to be used by Max by creating a symlink of the `chuck-max` folder in `$HOME/Documents/Max 8/Packages`.
+Note: `make setup` does two things: (1) retrieve `max-sdk-base` via a git submodule and makes the package and its contents available to be used by Max by creating a symlink of the `chuck-max` folder in `$HOME/Documents/Max 8/Packages`.
 
-Also note that by default `make` builds the external according to the *native* architecture of the mac it is compiled on. If you'd rather build an  external with a universal architecture then do this instead:
+From this point you have three options: 
 
-```bash
-make universal
-```
+1. `make`: Base system: (external + base ccrma chugins)
 
-If you want build `chuck~` with the `WarpBuf` and `Faust` chugins, just enter `make full` instead of `make` in the build sequence above.
+2. `make full`: Base system + Faust and Warpbuf chugins with full libsndfile format support
+
+3. `make light`: Base system + Faust and Warpbuf chugins with libsndfile support only .wav files.
+
+
+Also note that by default `make` builds the external according to the *native* architecture of the mac it is compiled on. You can build the base system with universal support by typing `make universal` instead.
 
 If there's a need to update and re-build the external just type the following in the root of the project.
 7
@@ -104,9 +120,11 @@ This chugin can be built by `make full` instead of `make` in the build process a
 
 The [fauck chugin](https://github.com/ccrma/fauck) contains the full llvm-based [faust](https://faust.grame.fr) engine and dsp platform which makes it very powerful and also quite large compared to other chugins (at around 45 MB stripped down). It requires at least 2 output channels to work properly.
 
-This chugin can be built by `make full` instead of `make` in the build process above or if you are just using cmake then set option -DENABLE_FAUCK=ON 
+This chugin can be built by `make full` and `make light` options instead of `make` in the build process above or if you are just using cmake then set option -DENABLE_FAUCK=ON 
 
 A future aim is to include a stripped down version of this fauck chugin which only supports .wav files and and only contains the faust standard library in an official `chuck-max` package.
+
+CAVEAT: the Faust chugin has unresolved cleanup bug which may cause Max to crash after all patch windows are closed and Max is exited.
 
 
 ## Usage
@@ -126,7 +144,7 @@ There are two CCRMA chugins which are not yet supported by `chuck-max`:
 ## Status
 
 - [ ] add windows support
-- [x] add support for fauck (faust chugin)
+- [x] add support for Fauck (faust chugin)
 - [x] add support for WarpBuf chugin
 - [x] add support for callbacks (if needed)
 - [x] add support for events
@@ -142,13 +160,14 @@ There are two CCRMA chugins which are not yet supported by `chuck-max`:
 
 ## TODO
 
+
+- [ ] Fix Faust cleanup bug
+
 - [ ] Add Windows Support.
 
 - [ ] Better examples
 
 - [ ] Add editor support code editor: double-click to edit, etc.. or via filewatcher
-
-- [ ] Flesh out API (add all messages). Learn from the miniAudicle code.
 
 - [ ] Package externlla,s chugins, scripts and patchers in a self-contained signed and notarized Max package
 

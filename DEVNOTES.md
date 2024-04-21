@@ -13,6 +13,34 @@ see:
 - chuck [versions changelog](https://chuck.stanford.edu/release/VERSIONS)
 
 
+```
+    implemented Chuck_Msg_Type(s)
+
+    [x] CK_MSG_ADD
+    [x] CK_MSG_REMOVE
+    [x] CK_MSG_REMOVEALL
+    [x] CK_MSG_REPLACE
+    [x] CK_MSG_STATUS
+    [-] CK_MSG_PAUSE            OTF only
+    [-] CK_MSG_EXIT             Not applicable
+    [x] CK_MSG_TIME
+    [x] CK_MSG_RESET_ID
+    [-] CK_MSG_DONE             OTF only
+    [-] CK_MSG_ABORT            OTF only
+    [-] CK_MSG_ERROR            Not implemented
+    [x] CK_MSG_CLEARVM
+    [x] CK_MSG_CLEARGLOBALS
+
+
+    TODO:
+
+    [x] replace <shredID> <path> <args>
+    [ ] replace <shredID> <withShredID>
+    [ ] replace <shredID> <code>
+
+    [ ] add <path> <args>
+```
+
 
 ## Faust.chug causes Max crash on closing (not yet solved)
 
