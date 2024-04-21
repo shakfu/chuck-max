@@ -1,4 +1,4 @@
-# install dependencies to build the WarpBuf chugin
+# install full stack dependencies to build the WarpBuf and Fauck chugins
 
 CWD=`pwd`
 THIRDPARTY=${CWD}/build/thirdparty
@@ -38,7 +38,7 @@ function install_libfaust() {
 				if [ ! -f Faust-$VERSION-x64.dmg ]; then
 					curl -L https://github.com/grame-cncm/faust/releases/download/$VERSION/Faust-$VERSION-x64.dmg -o Faust-$VERSION-x64.dmg
 					hdiutil attach Faust-$VERSION-x64.dmg
-					mkdir -p ${THIRDPARTY}/libfaustd
+					mkdir -p ${THIRDPARTY}/libfaust
 					cp -Rf /Volumes/Faust-$VERSION/Faust-$VERSION/* ${THIRDPARTY}/libfaust/
 					hdiutil detach /Volumes/Faust-$VERSION/
 					rm -f Faust-$VERSION-x64.dmg

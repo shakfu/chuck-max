@@ -12,9 +12,8 @@ file(GLOB PROJECT_SRC
 )
 
 # where the chuck headers are
-set(CK_SRC_PATH
-	"../chuck/include/"
-)
+set(CK_SRC_PATH ${CMAKE_SOURCE_DIR}/source/projects/chugins/chuck/include)
+
 
 add_library(${CHUGIN_NAME}
 	${PROJECT_SRC}

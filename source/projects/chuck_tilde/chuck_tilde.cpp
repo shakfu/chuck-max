@@ -82,9 +82,8 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc,
                       t_atom* argv); // set global params by name, value
 
 // vm message handlers
-// t_max_err ck_start(t_ck* x);
-// t_max_err ck_stop(t_ck* x);
 t_max_err ck_status(t_ck* x);
+t_max_err ck_chugins(t_ck* x);
 
 
 // special message handlers
@@ -147,9 +146,8 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_run,          "run", A_SYM, 0);
     class_addmethod(c, (method)ck_info,         "info", 0);
     class_addmethod(c, (method)ck_reset,        "reset", 0);
-    // class_addmethod(c, (method)ck_start,        "start", 0);
-    // class_addmethod(c, (method)ck_stop,         "stop", 0);
     class_addmethod(c, (method)ck_status,       "status", 0);
+    class_addmethod(c, (method)ck_chugins,       "chugins", 0);
 
     // can't be called signal which is a Max global message
     class_addmethod(c, (method)ck_signal,       "sig", A_SYM, 0);
@@ -278,8 +276,8 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         post("inputs: %d  outputs: %d ", x->chuck->vm()->m_num_adc_channels,
              x->chuck->vm()->m_num_dac_channels);
         post("file: %s", x->filename->s_name);
-        ck_debug(x, (char*)"working dir: %s", x->working_dir);
-        ck_debug(x, (char*)"chugins dir: %s/chugins", x->working_dir);
+        post("working dir: %s", x->working_dir);
+        post("chugins dir: %s", x->chugins_dir);
     }
     return (x);
 }
@@ -643,26 +641,6 @@ t_max_err ck_broadcast(t_ck* x, t_symbol* s)
     }
 }
 
-// t_max_err ck_start(t_ck* x)
-// {
-//     if (!x->chuck->vm()->running()) {
-//         if (x->chuck->vm()->start()) {
-//             return MAX_ERR_NONE;
-//         }
-//     }
-//     return MAX_ERR_GENERIC;
-// }
-
-// t_max_err ck_stop(t_ck* x)
-// {
-//     if (x->chuck->vm()->running()) {
-//         if (x->chuck->vm()->stop()) {
-//             return MAX_ERR_NONE;
-//         }
-//     }
-//     return MAX_ERR_GENERIC;
-// }
-
 t_max_err ck_status(t_ck* x)
 {
     Chuck_VM_Shreduler* shreduler = x->chuck->vm()->shreduler();
@@ -671,7 +649,11 @@ t_max_err ck_status(t_ck* x)
     return MAX_ERR_NONE;
 }
 
-
+t_max_err ck_chugins(t_ck* x)
+{
+    x->chuck->probeChugins();
+    return MAX_ERR_NONE;
+}
 
 t_max_err ck_reset(t_ck* x)
 {
