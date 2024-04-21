@@ -101,6 +101,7 @@ target_compile_options(chuck_lib
 target_compile_definitions(chuck_lib
 	PUBLIC
 	$<$<BOOL:${APPLE}>:__MACOSX_CORE__>
+	$<$<CONFIG:Debug>:__CHUCK_DEBUG__>
 	HAVE_CONFIG_H
 )
 

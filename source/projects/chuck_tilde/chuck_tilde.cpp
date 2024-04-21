@@ -1,6 +1,31 @@
 /**
     @file
     chuck~: chuck for Max
+
+    implemented Chuck_Msg_Type(s)
+
+    [ ] CK_MSG_ADD
+    [x] CK_MSG_REMOVE
+    [x] CK_MSG_REMOVEALL
+    [ ] CK_MSG_REPLACE
+    [ ] CK_MSG_STATUS
+    [-] CK_MSG_PAUSE            OTF only
+    [-] CK_MSG_EXIT             Not applicable
+    [ ] CK_MSG_TIME
+    [ ] CK_MSG_RESET_ID
+    [-] CK_MSG_DONE             OTF only
+    [-] CK_MSG_ABORT            OTF only
+    [-] CK_MSG_ERROR            Not implemented
+    [x] CK_MSG_CLEARVM
+    [x] CK_MSG_CLEARGLOBALS
+
+
+    TODO:
+        replace <shredID> <path> <args>
+        replace <shredID> <withShredID>
+        replace <shredID> <code>
+
+        add <path> <args>
 */
 
 #include "ext.h"
@@ -16,6 +41,7 @@
 // globals defs
 #define DEBUG 0
 #define CHANNELS 1
+#define EMBEDDED_CHUGINS 0
 
 // global variables
 static int MX_CK_COUNT = 0;
@@ -54,6 +80,12 @@ void ck_assist(t_ck* x, void* b, long m, long a, char* s);
 t_max_err ck_bang(t_ck* x); // (re)load chuck file
 t_max_err ck_anything(t_ck* x, t_symbol* s, long argc,
                       t_atom* argv); // set global params by name, value
+
+// vm message handlers
+// t_max_err ck_start(t_ck* x);
+// t_max_err ck_stop(t_ck* x);
+t_max_err ck_status(t_ck* x);
+
 
 // special message handlers
 t_max_err ck_run(t_ck* x, t_symbol* s);       // run chuck file
@@ -115,6 +147,9 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_run,          "run", A_SYM, 0);
     class_addmethod(c, (method)ck_info,         "info", 0);
     class_addmethod(c, (method)ck_reset,        "reset", 0);
+    // class_addmethod(c, (method)ck_start,        "start", 0);
+    // class_addmethod(c, (method)ck_stop,         "stop", 0);
+    class_addmethod(c, (method)ck_status,       "status", 0);
 
     // can't be called signal which is a Max global message
     class_addmethod(c, (method)ck_signal,       "sig", A_SYM, 0);
@@ -164,7 +199,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // #define CK_LOG_CORE             1
         // #define CK_LOG_NONE             0  // set this to log nothing
 
-        x->log_level = CK_LOG_DEBUG;
+        x->log_level = CK_LOG_CORE;
 
         if (argc == 0) {
             x->filename = gensym("");
@@ -180,15 +215,20 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         dsp_setup((t_pxobject*)x, x->channels); // MSP inlets: 2nd arg is # of inlets
     
         for (int i = 0; i < x->channels; i++) {
-            outlet_new(x, "signal"); // signal outlet
+            outlet_new((t_pxobject*)x, "signal"); // signal outlet
         }
 
         // chuck-related
         x->chuck = NULL;
-        x->chugins_dir = string_getptr(
-            ck_get_path_from_external(ck_class, (char*)"/Contents/Resources/chugins"));
         x->working_dir = string_getptr(
             ck_get_path_from_package(ck_class, (char*)"/examples"));
+#if EMBEDDED_CHUGINS 
+        x->chugins_dir = string_getptr(
+            ck_get_path_from_external(ck_class, (char*)"/Contents/Resources/chugins"));
+#else
+        x->chugins_dir = string_getptr(
+            ck_get_path_from_package(ck_class, (char*)"/examples/chugins"));
+#endif        
         x->in_chuck_buffer = NULL;
         x->out_chuck_buffer = NULL;
 
@@ -210,8 +250,11 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // set default chuggins dirs
         std::string chugins_dir = std::string(x->chugins_dir);
         std::list<std::string> chugin_search;
-        chugin_search.push_back(chugins_dir);
+#if EMBEDDED_CHUGINS
+        // add extra package-level chugins directory
         chugin_search.push_back(global_dir + "/chugins");
+#endif
+        chugin_search.push_back(chugins_dir);
         x->chuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, chugin_search);
 
         // redirect chuck stdout/stderr to local callbacks
@@ -246,6 +289,7 @@ void ck_free(t_ck* x)
 {
     delete[] x->in_chuck_buffer;
     delete[] x->out_chuck_buffer;
+    ChucK::globalCleanup();
     delete x->chuck;
     dsp_free((t_pxobject*)x);
 }
@@ -265,9 +309,10 @@ void ck_assist(t_ck* x, void* b, long m, long a, char* s)
 // helpers
 
 
-void ck_stdout_print(const char* msg) { post("ck_stdout -> %s", msg); }
+void ck_stdout_print(const char* msg) { post("-> %s", msg); }
 
-void ck_stderr_print(const char* msg) { post("ck_stderr -> %s", msg); }
+void ck_stderr_print(const char* msg) { post("=> %s", msg); }
+
 
 t_string* ck_get_path_from_external(t_class* c, char* subpath)
 {
@@ -309,6 +354,7 @@ t_string* ck_get_path_from_package(t_class* c, char* subpath)
     }
     return package_dir_s;
 }
+
 
 t_max_err ck_compile_file(t_ck* x, const char* filename)
 {
@@ -540,7 +586,6 @@ error:
 
 t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
-
     Chuck_Msg* msg = new Chuck_Msg;
 
     if (argc == 1) {
@@ -598,6 +643,35 @@ t_max_err ck_broadcast(t_ck* x, t_symbol* s)
     }
 }
 
+// t_max_err ck_start(t_ck* x)
+// {
+//     if (!x->chuck->vm()->running()) {
+//         if (x->chuck->vm()->start()) {
+//             return MAX_ERR_NONE;
+//         }
+//     }
+//     return MAX_ERR_GENERIC;
+// }
+
+// t_max_err ck_stop(t_ck* x)
+// {
+//     if (x->chuck->vm()->running()) {
+//         if (x->chuck->vm()->stop()) {
+//             return MAX_ERR_NONE;
+//         }
+//     }
+//     return MAX_ERR_GENERIC;
+// }
+
+t_max_err ck_status(t_ck* x)
+{
+    Chuck_VM_Shreduler* shreduler = x->chuck->vm()->shreduler();
+    shreduler->status();
+    //x->chuck->probeChugins();
+    return MAX_ERR_NONE;
+}
+
+
 
 t_max_err ck_reset(t_ck* x)
 {
@@ -643,7 +717,6 @@ t_max_err ck_register(t_ck* x, t_symbol* s)
         post("%s event/callback registered", s->s_name);
         return MAX_ERR_NONE;
     };
-
     return MAX_ERR_GENERIC;
 }
 
@@ -660,7 +733,6 @@ t_max_err ck_unregister(t_ck* x, t_symbol* s)
         post("%s event/callback unregistered", s->s_name);
         return MAX_ERR_NONE;
     };
-
     return MAX_ERR_GENERIC;
 }
 

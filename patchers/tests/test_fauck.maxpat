@@ -40,6 +40,18 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-20",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 215.0, 287.0, 39.0, 21.0 ],
+					"text" : "status"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"id" : "obj-25",
 					"lastchannelcount" : 0,
 					"maxclass" : "live.gain~",
@@ -444,7 +456,7 @@
 					"autopopulate" : 1,
 					"depth" : 2,
 					"id" : "obj-40",
-					"items" : [ "clarinet.ck", ",", "compressor.ck", ",", "crybaby.ck", ",", "distortion.ck", ",", "fau.ck", ",", "fauReverb.ck", ",", "file-playback.ck", ",", "flanger.ck", ",", "flute.ck", ",", "mx.fauReverb.ck", ",", "phaser.ck", ",", "polyphony-simple.ck", ",", "polyphony.ck", ",", "reverb.ck", ",", "sidechain-compressor.ck", ",", "smcAdvancedExample.ck", ",", "string.ck", ",", "test-import.ck", ",", "test.ck", ",", "vocoder.ck", ",", "wah.ck" ],
+					"items" : [ "clarinet.ck", ",", "compressor.ck", ",", "crybaby.ck", ",", "distortion.ck", ",", "fau.ck", ",", "fauReverb.ck", ",", "file-playback.ck", ",", "flanger.ck", ",", "flute.ck", ",", "mx.fauReverb.ck", ",", "noise.ck", ",", "phaser.ck", ",", "polyphony-simple.ck", ",", "polyphony.ck", ",", "reverb.ck", ",", "sidechain-compressor.ck", ",", "smcAdvancedExample.ck", ",", "string.ck", ",", "test-import.ck", ",", "test.ck", ",", "vocoder.ck", ",", "wah.ck" ],
 					"maxclass" : "umenu",
 					"numinlets" : 1,
 					"numoutlets" : 3,
@@ -475,7 +487,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 272.5, 287.0, 34.0, 21.0 ],
+					"patching_rect" : [ 283.0, 287.0, 34.0, 21.0 ],
 					"text" : "reset"
 				}
 
@@ -731,6 +743,13 @@
 				"patchline" : 				{
 					"destination" : [ "obj-10", 0 ],
 					"source" : [ "obj-2", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-20", 0 ]
 				}
 
 			}
