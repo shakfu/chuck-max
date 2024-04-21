@@ -160,7 +160,6 @@ There are two CCRMA chugins which are not yet supported by `chuck-max`:
 
 ## TODO
 
-
 - [ ] Fix Faust cleanup bug
 
 - [ ] Add Windows Support.

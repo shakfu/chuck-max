@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 224.0, 157.0, 678.0, 598.0 ],
+		"rect" : [ 409.0, 146.0, 678.0, 598.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -58,7 +58,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 23.5, 426.0, 154.0, 21.0 ],
-					"text" : "= 1 stk/honkeytonk-algo1.ck"
+					"text" : "= 1 stk/honkeytonk-algo3.ck"
 				}
 
 			}
