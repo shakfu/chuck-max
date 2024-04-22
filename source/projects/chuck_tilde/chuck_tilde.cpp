@@ -528,6 +528,7 @@ t_max_err ck_clear(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         if (argv->a_type == A_SYM) {
             t_symbol* target = atom_getsym(argv);
             if (target == gensym("globals")) {
+                post("=> [chuck]: clean up global variables without clearing the whole VM");
                 return ck_send_chuck_vm_msg(x, CK_MSG_CLEARGLOBALS);
             } 
             if (target == gensym("vm")) {
@@ -609,7 +610,7 @@ t_symbol* ck_get_loglevel_name(long level)
             name = gensym("CK_LOG_ALL");
             break;
         default:
-            name = gensym("CK_LOG_NONE");
+            name = gensym("CK_LOG_SYSTEM");
     }
     return name;
 }
@@ -635,7 +636,7 @@ t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv)
                 ChucK::setLogLevel(x->loglevel);
                 return MAX_ERR_NONE;
             } else {
-                error("out-of-range: defaulting to level 2. loglevel must be between 0-10 inclusive");
+                error("loglevel out-of-range: must between 0-10 inclusive. Defaulting to level 2");
                 ChucK::setLogLevel(CK_LOG_SYSTEM);
                 return MAX_ERR_GENERIC;
             }

@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 409.0, 146.0, 678.0, 598.0 ],
+		"rect" : [ 270.0, 128.0, 678.0, 598.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -39,6 +39,50 @@
 		"subpatcher_template" : "",
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
+				"box" : 				{
+					"id" : "obj-43",
+					"linecount" : 3,
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 493.0, 388.0, 172.0, 43.0 ],
+					"text" : "Use \"from Max 1\" midi port for MIDI playback of chuck~ patch. Try 'midi/polyfony.ck' example."
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"bgmode" : 0,
+					"border" : 0,
+					"clickthrough" : 0,
+					"enablehscroll" : 0,
+					"enablevscroll" : 0,
+					"id" : "obj-33",
+					"lockeddragscroll" : 0,
+					"lockedsize" : 0,
+					"maxclass" : "bpatcher",
+					"name" : "midi_player.maxpat",
+					"numinlets" : 0,
+					"numoutlets" : 1,
+					"offset" : [ 0.0, 0.0 ],
+					"outlettype" : [ "bang" ],
+					"patching_rect" : [ 503.0, 321.0, 162.0, 59.0 ],
+					"viewvisibility" : 1
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-38",
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 11.0, 542.0, 150.0, 19.0 ],
+					"text" : "should give error"
+				}
+
+			}
+, 			{
 				"box" : 				{
 					"id" : "obj-37",
 					"maxclass" : "message",
@@ -1145,6 +1189,13 @@
 				"name" : "interfacecolor.js",
 				"bootpath" : "C74:/interfaces",
 				"type" : "TEXT",
+				"implicit" : 1
+			}
+, 			{
+				"name" : "midi_player.maxpat",
+				"bootpath" : "~/Downloads/projects/chuck-max/patchers/tests",
+				"patcherrelativepath" : "../patchers/tests",
+				"type" : "JSON",
 				"implicit" : 1
 			}
 , 			{
