@@ -38,7 +38,9 @@ typedef struct _ck {
     float* in_chuck_buffer;  // intermediate chuck input buffer
     float* out_chuck_buffer; // intermediate chuck output buffer
     callback_map cb_map;     // callback map<string,callback>
-    int loglevel;            // chuck log level
+    long loglevel;           // chuck log level
+    long current_shred_id;   // current shred id
+    t_symbol* editor;        // external text editor for chuck code
 } t_ck;
 
 
@@ -51,9 +53,12 @@ void ck_assist(t_ck* x, void* b, long m, long a, char* s);
 t_max_err ck_bang(t_ck* x); // (re)load chuck file
 t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv); // set global params by name/value
 
+// basic message handlers
+t_max_err ck_run(t_ck* x, t_symbol* s);                              // run chuck file
+t_max_err ck_edit(t_ck* x, t_symbol* s);                             // edit chuck file
+
 // chuck vm message handlers
-t_max_err ck_add(t_ck* x, t_symbol* s); // add shred from file
-t_max_err ck_run(t_ck* x, t_symbol* s); // alias of add, run chuck file
+t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv);     // add shred from file
 t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // remove shreds (all, last, by #)
 t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv); // replace shreds 
 t_max_err ck_clear(t_ck* x, t_symbol* s, long argc, t_atom* argv);   // clear_vm, clear_globals
@@ -75,6 +80,7 @@ t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // get an
 void ck_debug(t_ck* x, char* fmt, ...);
 void ck_stdout_print(const char* msg);
 void ck_stderr_print(const char* msg);
+void ck_dblclick(t_ck* x);
 t_max_err ck_compile_file(t_ck* x, const char* filename);
 t_max_err ck_run_file(t_ck* x);
 t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type);
@@ -119,8 +125,13 @@ void ext_main(void* r)
     t_class* c = class_new("chuck~", (method)ck_new, (method)ck_free,
                            (long)sizeof(t_ck), 0L, A_GIMME, 0);
 
-    class_addmethod(c, (method)ck_add,          "add",      A_SYM, 0);
-    class_addmethod(c, (method)ck_run,          "run",      A_SYM, 0); // alias of 'add'
+    // object methods
+    //------------------------------------------------------------------------
+
+    class_addmethod(c, (method)ck_run,          "run",      A_SYM, 0);
+    class_addmethod(c, (method)ck_edit,         "edit",     A_SYM, 0);
+
+    class_addmethod(c, (method)ck_add,          "add",      A_GIMME, 0);
     class_addmethod(c, (method)ck_remove,       "remove",   A_GIMME, 0);
     class_addmethod(c, (method)ck_replace,      "replace",  A_GIMME, 0);
     class_addmethod(c, (method)ck_clear,        "clear",    A_GIMME, 0);
@@ -128,11 +139,9 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_status,       "status",   0);
     class_addmethod(c, (method)ck_time,         "time",     0);
 
-
     class_addmethod(c, (method)ck_info,         "info",     0);
     class_addmethod(c, (method)ck_chugins,      "chugins",  0);
     class_addmethod(c, (method)ck_loglevel,     "loglevel", A_GIMME, 0);
-
 
     // can't be called signal which is a Max global message
     class_addmethod(c, (method)ck_signal,       "sig",      A_SYM, 0);
@@ -146,6 +155,21 @@ void ext_main(void* r)
 
     class_addmethod(c, (method)ck_dsp64,        "dsp64",    A_CANT, 0);
     class_addmethod(c, (method)ck_assist,       "assist",   A_CANT, 0);
+    class_addmethod(c, (method)ck_dblclick,     "dblclick", A_CANT, 0);
+    
+    // class attributes
+    //------------------------------------------------------------------------
+
+    CLASS_ATTR_SYM(c,       "editor", 0,      t_ck, editor);
+    CLASS_ATTR_BASIC(c,     "editor", 0);
+
+    CLASS_ATTR_SYM(c,       "file", 0,     t_ck,  filename);
+    CLASS_ATTR_STYLE(c,     "file", 0,     "file");
+    CLASS_ATTR_BASIC(c,     "file", 0);
+    CLASS_ATTR_SAVE(c,      "file", 0);
+
+    // clang-format on
+    //------------------------------------------------------------------------
 
     class_dspinit(c);
     class_register(CLASS_BOX, c);
@@ -162,22 +186,37 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // defaults can be overriden by compile-time definitions
         x->channels = CHANNELS;
         x->loglevel = CK_LOG_SYSTEM;
+        x->current_shred_id = 0;
+        x->filename = gensym("");
 
-        if (argc == 0) {
-            x->filename = gensym("");
-        }
-        else if (argc == 1) {
-            x->filename = atom_getsymarg(0, argc, argv);    // is 1st arg of object
+        if (argc == 1) {
+            if (argv->a_type == A_LONG) {
+                atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);
+            } else if (argv->a_type == A_SYM) {
+                x->filename = atom_getsymarg(0, argc, argv);    
+            } else {
+                error("invalid arguments");
+                return;
+            }
         }
         else if (argc >= 2) {
             atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);  // is 1st arg of object
             x->filename = atom_getsymarg(1, argc, argv);    // is 2nd arg of object
-        }
+        } 
+        // else just use defaults
 
         dsp_setup((t_pxobject*)x, x->channels); // MSP inlets: 2nd arg is # of inlets
     
         for (int i = 0; i < x->channels; i++) {
             outlet_new((t_pxobject*)x, "signal"); // signal outlet
+        }
+
+        // FIXME: getenv doesn't work on macOS (may work on windows)
+        if (const char* editor = std::getenv("EDITOR")) {
+            post("editor: %s", editor);
+            x->editor = gensym(editor);
+        } else {
+            x->editor = gensym("");
         }
 
         // chuck-related
@@ -270,9 +309,9 @@ void ck_assist(t_ck* x, void* b, long m, long a, char* s)
 // helpers
 
 
-void ck_stdout_print(const char* msg) { post("-> %s", msg); }
+void ck_stdout_print(const char* msg) { post("%s", msg); }
 
-void ck_stderr_print(const char* msg) { post("=> %s", msg); }
+void ck_stderr_print(const char* msg) { post("%s", msg); }
 
 
 t_string* ck_get_path_from_external(t_class* c, char* subpath)
@@ -411,22 +450,95 @@ t_max_err ck_bang(t_ck* x)
     return MAX_ERR_NONE;
 }
 
-t_max_err ck_add(t_ck* x, t_symbol* s)
+t_max_err ck_run(t_ck* x, t_symbol* s)
 {
     if (s != gensym("")) {
-        post("filename: %s", s->s_name);
+        char conform_path[MAX_PATH_CHARS];
+        path_nameconform(s->s_name, conform_path, PATH_STYLE_MAX, PATH_TYPE_BOOT);
+        post("run: %s", conform_path);
         x->filename = s;
         ck_run_file(x);
         return MAX_ERR_NONE;
     }
+    error("ck_run: eguires a filename to edit");
     return MAX_ERR_GENERIC;
 }
 
 
-t_max_err ck_run(t_ck* x, t_symbol* s)
+t_max_err ck_edit(t_ck* x, t_symbol* s)
 {
-    return ck_add(x, s);
+    if (x->editor == gensym("")) {
+        error("editor attribute or EDITOR env var not set");
+        return MAX_ERR_GENERIC;
+    }
+
+    if (s != gensym("")) {
+        char conform_path[MAX_PATH_CHARS];
+        path_nameconform(s->s_name, conform_path, PATH_STYLE_MAX, PATH_TYPE_BOOT);
+        post("edit: %s", conform_path);
+        std::string cmd = std::string(x->editor->s_name) + " " + std::string(conform_path);
+        std::system(cmd.c_str());
+        return MAX_ERR_NONE;
+    }
+    error("ck_edit: reguires a filename");
+    return MAX_ERR_GENERIC;
 }
+
+void ck_dblclick(t_ck* x)
+{
+    if (x->filename != gensym("")) {
+        ck_edit(x, x->filename);
+    }
+}
+
+
+t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+{
+    t_symbol *filename_sym = _sym_nothing;
+
+    if (argc < 1) {
+        error("add message needs at least one <filename> argument");
+        return MAX_ERR_GENERIC;
+    }
+
+    if ((argv)->a_type != A_SYM) {
+        error("first argument must be a symbol");
+        return MAX_ERR_GENERIC;
+    }
+    filename_sym = atom_getsym(argv);
+
+    // get string
+    std::string path = std::string(filename_sym->s_name);
+    // filename
+    std::string filename;
+    // arguments
+    std::string args;
+    // extract args FILE:arg1:arg2:arg3
+    extract_args( path, filename, args );
+
+    std::string full_path = std::string(x->working_dir) + "/" + filename; // not portable
+
+    // compile but don't run yet (instance == 0)
+    if( !x->chuck->compileFile( full_path, args, 0 ) ) {
+        error("could not compile file");
+        return MAX_ERR_GENERIC;
+    }
+
+    // construct chuck msg (must allocate on heap, as VM will clean up)
+    Chuck_Msg * msg = new Chuck_Msg();
+    // set type
+    msg->type = CK_MSG_ADD;
+    // set code for incoming shred
+    msg->code = x->chuck->vm()->carrier()->compiler->output();
+    // create args array
+    msg->args = new vector<string>;
+    // extract args again but this time into vector
+    extract_args( path, filename, *(msg->args) );
+    // process ADD message, return new shred ID
+    x->current_shred_id = x->chuck->vm()->process_msg( msg );
+    return MAX_ERR_NONE;
+}
+
 
 t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
@@ -514,7 +626,7 @@ t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     // extract args again but this time into vector
     extract_args( path, filename, *(msg->args) );
     // process REPLACE message, return new shred ID
-    x->chuck->vm()->process_msg( msg );
+    x->current_shred_id = x->chuck->vm()->process_msg( msg );
     return MAX_ERR_NONE;
 }
 
@@ -661,7 +773,7 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 
     // set '+' as shorthand for ck_add method
     if (s == gensym("+")) {
-        ck_add(x, atom_getsym(argv));
+        ck_add(x, gensym(""), argc, argv);
         return MAX_ERR_NONE;
     }
 
