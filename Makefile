@@ -8,7 +8,7 @@ CHUCK = $(THIRDPARTY)/install/bin/chuck
 
 
 
-.PHONY: all native universal full light fauck warpbuf dev clean reset setup test \
+.PHONY: all native universal full light fauck warpbuf dev clean reset setup test   \
 		test-fauck test-warpbuf install_deps install_deps_light install_fauck_deps \
 		install_warpbuf_deps
 
@@ -103,12 +103,12 @@ setup:
 	fi
 
 test:
-	@cd examples && ./chuck --chugin-path:chugins stk/rhodey-song.ck
+	@cd examples && ./chuck --chugin-path:chugins stk/rhodey-song.ck -v3
 
 test-fauck:
-	@cd examples && ./chuck --chugin-path:chugins fauck/test.ck
+	@cd examples && ./chuck --chugin-path:chugins fauck/test.ck -v3
 
 test-warpbuf:
-	@cd examples && ./chuck --chugin-path:chugins warpbuf/warpbuf_basic.ck
+	@cd examples && ./chuck --chugin-path:chugins warpbuf/warpbuf_basic.ck -v3
 
 

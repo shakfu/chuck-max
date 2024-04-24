@@ -5,6 +5,7 @@
 
 #include "ext.h"
 #include "ext_obex.h"
+#include "ext_preferences.h"
 #include "z_dsp.h"
 
 #include <string>
@@ -81,6 +82,7 @@ void ck_debug(t_ck* x, char* fmt, ...);
 void ck_stdout_print(const char* msg);
 void ck_stderr_print(const char* msg);
 void ck_dblclick(t_ck* x);
+t_symbol* ck_locatefile(t_symbol* name);
 t_max_err ck_compile_file(t_ck* x, const char* filename);
 t_max_err ck_run_file(t_ck* x);
 t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type);
@@ -188,12 +190,17 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->loglevel = CK_LOG_SYSTEM;
         x->current_shred_id = 0;
         x->filename = gensym("");
+        x->editor = gensym("");
 
         if (argc == 1) {
+
             if (argv->a_type == A_LONG) {
                 atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);
             } else if (argv->a_type == A_SYM) {
-                x->filename = atom_getsymarg(0, argc, argv);    
+                t_symbol* filename = atom_getsymarg(0, argc, argv);
+                // limitation of ck_locatefile is that it doesn't
+                // search recursively
+                x->filename = ck_locatefile(filename);
             } else {
                 error("invalid arguments");
                 return;
@@ -209,14 +216,6 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
     
         for (int i = 0; i < x->channels; i++) {
             outlet_new((t_pxobject*)x, "signal"); // signal outlet
-        }
-
-        // FIXME: getenv doesn't work on macOS (may work on windows)
-        if (const char* editor = std::getenv("EDITOR")) {
-            post("editor: %s", editor);
-            x->editor = gensym(editor);
-        } else {
-            x->editor = gensym("");
         }
 
         // chuck-related
@@ -280,6 +279,13 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         post("file: %s", x->filename->s_name);
         post("working dir: %s", x->working_dir);
         post("chugins dir: %s", x->chugins_dir);
+
+        if (const char* editor = std::getenv("EDITOR")) {
+            post("editor from env: %s", editor);
+            x->editor = gensym(editor);
+        } else {
+            x->editor = gensym("");
+        }
     }
     return (x);
 }
@@ -312,6 +318,31 @@ void ck_assist(t_ck* x, void* b, long m, long a, char* s)
 void ck_stdout_print(const char* msg) { post("%s", msg); }
 
 void ck_stderr_print(const char* msg) { post("%s", msg); }
+
+t_symbol* ck_locatefile(t_symbol* name)
+{
+    char filepath[MAX_PATH_CHARS];
+    char abspath[MAX_PATH_CHARS];
+    char conform_path[MAX_PATH_CHARS];
+    short path, res;
+    t_fourcc outtype;
+    t_fourcc filetypelist;
+    t_max_err err;
+
+    strncpy_zero(filepath, name->s_name, MAX_FILENAME_CHARS);
+    res = locatefile_extended(filepath, &path, &outtype, &filetypelist, 1);
+    if (res != 0)
+        error("ck_locatefile > locatefile_extended failed");
+        return;
+    err = path_toabsolutesystempath(path, filepath, abspath);
+    if (err != MAX_ERR_NONE)
+        error("ck_locatefile > path_toabsolutesystempath failed");
+        return;
+    path_nameconform(abspath, conform_path, PATH_STYLE_MAX, PATH_TYPE_BOOT);
+    post("abspath: %s", abspath);
+    post("conform_path: %s", conform_path);
+    return gensym(conform_path);
+}
 
 
 t_string* ck_get_path_from_external(t_class* c, char* subpath)

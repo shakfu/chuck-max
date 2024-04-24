@@ -10,28 +10,25 @@ It currently has one external (`chuck~`) with the following features and limitat
 
 - Add, remove, replace audio and audio processes on the fly using Chuck messages via Max messages.
 
-- Includes most of the [base ccrma chugins](https://github.com/ccrma/chugins) including `WarpBuf` and `Faust` or (Fauck) except for the following:
+- Includes most of the [base ccrma chugins](https://github.com/ccrma/chugins) including `WarpBuf` and `Fauck` or `Faust` except for the following:
 
   - Fluidsynth
   - Ladspa
 
+- Note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
+
+This project is currently built on the chuck 1.5.2.3-dev (chai) engine.
+
+## Overview
+
 - The `chuck~` object can take the following arguments:
 
   - `[chuck~]` : single channel in/out, no default chuck file
+  - `[chuck~ <N>]` : N channel in/out, no default chuck file
   - `[chuck~ <filename>]` : single channel in/out with default chuck file
   - `[chuck~ <N> <filename>]` : N channels with default chuck file
 
-- As of the current version, `chuck~` maps a few chuck language elements to corresponding Max/MSP constructs as per the following table:
-
-| action                            | chuck              | max msg                      |
-| :-------------------------------- | :----------------  | :--------------------------  |
-| change param value                | global variable    | `<name>` `<value>`           |
-| trigger named event               | global event       | `sig <name>`                 |
-| trigger named event all shreds    | global event       | `broadcast <name>`           |
-| trigger named callback            | global event       | `sig <name>`                 |
-| trigger named callback all shreds | global event       | `broadcast <name>`           |
-
-- In addition a decent number of the core Chuck vm messages are available as Max messages:
+- As of the current version, `chuck~` implements the core Chuck vm messages as Max messages:
 
 | action                            | max msg                      | max msg (alias)              |
 | :-------------------------------- | :--------------------------- | :--------------------------  |
@@ -45,16 +42,34 @@ It currently has one external (`chuck~`) with the following features and limitat
 | clear globals                     | `clear globals`              |                              |
 | reset id                          | `reset id`                   |                              |
 | time                              | `time`                       |                              |
+
+It is worth reading [ChucK Language Specification's section on Concurrency and Shreds](https://chuck.cs.princeton.edu/doc/language/spork.html) to get a sense of what the above means. The first paragraph will be quoted here since it's quite informative:
+
+> ChucK is able to run many processes concurrently (the process behave as if they are running in parallel). A ChucKian process is called a shred. To spork a shred means creating and adding a new process to the virtual machine. Shreds may be sporked from a variety of places, and may themselves spork new shreds.
+
+- The core set of chuck vm messesages is also extended in `chuck-max` with the following utility messages:
+
+
+| action                            | max msg                      | max msg (alias)              |
+| :-------------------------------- | :--------------------------- | :--------------------------  |
 | probe chugins                     | `chugins`                    |                              |
 | list of running shreds            | `info`                       |                              |
 | get/set loglevel (0-10)           | `loglevel` | `loglevel <n>`  |                              |
 
 
+- Once a shred is running it makes sense to try to change it's parameters so to speak from outside of the process. To this end, ChucK makes available three mechanisms to do so: global variabls, global events, and callbacks which are triggered by the former. `chuck~` maps these chuck language elements to corresponding Max/MSP constructs as per the following table:
+
+| action                            | chuck              | max msg                      |
+| :-------------------------------- | :----------------  | :--------------------------  |
+| change param value                | global variable    | `<name>` `<value>`           |
+| trigger named event               | global event       | `sig <name>`                 |
+| trigger named event all shreds    | global event       | `broadcast <name>`           |
+| trigger named callback            | global event       | `sig <name>`                 |
+| trigger named callback all shreds | global event       | `broadcast <name>`           |
+
+- This means you can change a global variable by sending a `<variable> <value>` message to a `chuck~` instance. You can trigger an even in the shred by sending a bang to the `chuck~` instance and you can also trigger events and named callbacks by sending `sig` or signal messages, `broadcast` messages as per the above table.
+
 See `help/chuck~.maxhelp` and patchers in the `patchers/tests` directory for a demonstration of current features.
-
-Also note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
-
-This project is currently built on the chuck 1.5.2.3-dev (chai) engine.
 
 ## Requirements
 
@@ -80,7 +95,9 @@ brew install cmake bison flex
 
 ## Compilation
 
-Currently building on macOS is only supported. The buildsystem consists of a minimal Makefile frontend with CMake driving the build on the backend.
+Currently `chuck~` can only be built on macOS. Of course, any help to progrss a windows version variant would be welcome!
+
+The buildsystem consists of a minimal Makefile frontend with CMake driving the build on the backend.
 
 To get up and running:
 
@@ -94,12 +111,13 @@ Note: `make setup` does two things: (1) retrieve `max-sdk-base` via a git submod
 
 From this point you have three options: 
 
-1. `make`: Base system: (external + base ccrma chugins)
+1. `make`: Base system: (external + base ccrma chugins excluding `Fauck` or `Faust` and `WarpBuf`)*
 
-2. `make full`: Base system + Faust and Warpbuf chugins with full libsndfile format support
+2. `make full`: Base system + `Faust` and `Warpbuf` chugins with full `libsndfile` format support
 
-3. `make light`: Base system + Faust and Warpbuf chugins with libsndfile support only .wav files.
+3. `make light`: Base system + `Faust` and `Warpbuf` chugins with `libsndfile` support only `.wav` files.
 
+[`*`] The [Fauck](https://github.com/ccrma/fauck) or `Faust` chugin will be referred to by either of these names.
 
 Also note that by default `make` builds the external according to the *native* architecture of the mac it is compiled on. You can build the base system with universal support by typing `make universal` instead.
 
@@ -112,9 +130,9 @@ make
 
 ### Install the Warpbuf Chugin (Optional)
 
-With WarpBuf you can time-stretch and independently transpose the pitch of an audio file.
+With `WarpBuf` you can time-stretch and independently transpose the pitch of an audio file.
 
-This chugin can be built by `make full` instead of `make` in the build process above or if you are just using cmake then set option -DENABLE_WARPBUF=ON 
+This chugin can be built by `make full` instead of `make` in the build process above or if you are just using cmake then set option `-DENABLE_WARPBUF=ON` 
 
 ### Install the Fauck Chugin (Optional)
 
@@ -141,46 +159,6 @@ There are two CCRMA chugins which are not yet supported by `chuck-max`:
 2. `Fluidsynth`: not yet supported.
 
 
-## Status
-
-- [ ] add windows support
-- [x] add support for Fauck (faust chugin)
-- [x] add support for WarpBuf chugin
-- [x] add support for callbacks (if needed)
-- [x] add support for events
-- [x] build chugins with cmake
-- [x] can set global param values
-- [x] fix sound input!
-- [x] fix sound output!
-- [x] initial attempt to embed (no sound yet) without compilation or max/msp errors
-- [x] compiled `chuck~` with `libchuck.a` without errors
-- [x] created `libchuck.a`
-- [x] converted chuck makefile to CMAKE
-- [x] added support for `<<< msgs >>>`
-
-## TODO
-
-- [ ] Fix Faust cleanup bug
-
-- [ ] Add Windows Support
-
-- [ ] Convert args part of `<filename>:arg1:arg2:argN` to args as atom list, so that
-
-  ```
-  add stk/honkeytonk-algo1.ck:10:32.1:sample.wav
-
-  becomes
-
-  add stk/honkeytonk-algo1.ck 10 33.1 sample.wav
-  ```
-
-- [ ] Better examples using Max message for global variables
-
-- [ ] Add editor support code editor: double-click to edit, etc.. or via filewatcher
-
-- [ ] Package externlla,s chugins, scripts and patchers in a self-contained signed and notarized Max package
-
-- ...
 
 ## Credits
 

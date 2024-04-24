@@ -1,5 +1,25 @@
 # Dev Notes
 
+
+## Getting a default external editor
+
+It seemed to be a bit difficult to retrieve the path of the default external editor. 
+So if  `x->editor` is also an attribute then it should be possible set as follows:
+
+```c++
+if (const char* editor = std::getenv("EDITOR")) {                   // 1
+    post("editor: %s", editor);
+    x->editor = gensym(editor);
+} else if (x->editor = preferences_getsym("externaleditor")) {      // 2
+    post("editor: %s", x->editor->s_name);
+} else {
+    x->editor = gensym("");
+}
+```
+
+(1) didn't initially work, but works after a restart? and (2) retrieves only the stem of the path of the configured executable in which `locatefile_extended` doesn't work.
+
+
 ## Using chuck api more efficiently
 
 The chuck shell in `core/chuck_shell.h` has a very nice interface but is a repl (`chuck --shell` from the commandline). The `core/lib_machine.h` api is also quite nice, but is meant to be called from chuck code. Chuck shell uses the `core/chuck_otf.h` functionality. Maybe easier to hook into one or more of these apis instead or re-implementing the wheel.
@@ -34,11 +54,12 @@ see:
 
     TODO:
 
+    [x] add <path> <args>
+    [x] add <code>
+
     [x] replace <shredID> <path> <args>
     [ ] replace <shredID> <withShredID>
     [ ] replace <shredID> <code>
-
-    [ ] add <path> <args>
 ```
 
 
