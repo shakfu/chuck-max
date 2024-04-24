@@ -17,7 +17,7 @@ It currently has one external (`chuck~`) with the following features and limitat
 
 - Note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
 
-This project is currently built on the chuck 1.5.2.3-dev (chai) engine.
+This project is currently built on the chuck 1.5.2.5-dev (chai) engine.
 
 ## Overview
 
@@ -49,13 +49,13 @@ It is worth reading [ChucK Language Specification's section on Concurrency and S
 
 - The core set of chuck vm messesages is also extended in `chuck-max` with the following utility messages:
 
-
 | action                            | max msg                      | max msg (alias)              |
 | :-------------------------------- | :--------------------------- | :--------------------------  |
+| set file attribute (does not run) | `file <path>`                |                              |
+| set full path to editor attribute | `editor <path>`              |                              |
 | probe chugins                     | `chugins`                    |                              |
 | list of running shreds            | `info`                       |                              |
-| get/set loglevel (0-10)           | `loglevel` | `loglevel <n>`  |                              |
-
+| get/set loglevel (0-10)           | `loglevel` & `loglevel <n>`  |                              |
 
 - Once a shred is running it makes sense to try to change it's parameters so to speak from outside of the process. To this end, ChucK makes available three mechanisms to do so: global variabls, global events, and callbacks which are triggered by the former. `chuck~` maps these chuck language elements to corresponding Max/MSP constructs as per the following table:
 
@@ -109,7 +109,7 @@ make setup
 
 Note: `make setup` does two things: (1) retrieve `max-sdk-base` via a git submodule and makes the package and its contents available to be used by Max by creating a symlink of the `chuck-max` folder in `$HOME/Documents/Max 8/Packages`.
 
-From this point you have three options: 
+From this point you have three options:
 
 1. `make`: Base system: (external + base ccrma chugins excluding `Fauck` or `Faust` and `WarpBuf`)*
 
@@ -122,7 +122,7 @@ From this point you have three options:
 Also note that by default `make` builds the external according to the *native* architecture of the mac it is compiled on. You can build the base system with universal support by typing `make universal` instead.
 
 If there's a need to update and re-build the external just type the following in the root of the project.
-7
+
 ```bash
 git pull
 make
@@ -132,23 +132,21 @@ make
 
 With `WarpBuf` you can time-stretch and independently transpose the pitch of an audio file.
 
-This chugin can be built by `make full` instead of `make` in the build process above or if you are just using cmake then set option `-DENABLE_WARPBUF=ON` 
+This chugin can be built by `make full` instead of `make` in the build process above or if you are just using cmake then set option `-DENABLE_WARPBUF=ON`
 
 ### Install the Fauck Chugin (Optional)
 
 The [fauck chugin](https://github.com/ccrma/fauck) contains the full llvm-based [faust](https://faust.grame.fr) engine and dsp platform which makes it very powerful and also quite large compared to other chugins (at around 45 MB stripped down). It requires at least 2 output channels to work properly.
 
-This chugin can be built by `make full` and `make light` options instead of `make` in the build process above or if you are just using cmake then set option -DENABLE_FAUCK=ON 
+This chugin can be built by `make full` and `make light` options instead of `make` in the build process above or if you are just using cmake then set option -DENABLE_FAUCK=ON
 
 A future aim is to include a stripped down version of this fauck chugin which only supports .wav files and and only contains the faust standard library in an official `chuck-max` package.
 
 CAVEAT: the Faust chugin has unresolved cleanup bug which may cause Max to crash after all patch windows are closed and Max is exited.
 
-
 ## Usage
 
 Open the help file `help/chuck~.maxhelp` for a demo. Check out the `patchers` folders for further examples of use.
-
 
 ## Missing Chugins
 
@@ -157,8 +155,6 @@ There are two CCRMA chugins which are not yet supported by `chuck-max`:
 1. `Ladspa`: not yet supported but known to compile without issues.
 
 2. `Fluidsynth`: not yet supported.
-
-
 
 ## Credits
 

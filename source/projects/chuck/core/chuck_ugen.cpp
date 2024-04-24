@@ -443,7 +443,6 @@ void Chuck_UGen::get_buffer( SAMPLE * buffer, t_CKINT num_elem )
 
 
 
-
 //-----------------------------------------------------------------------------
 // name: src_chan()
 // desc: added 1.3.3.1
@@ -451,8 +450,9 @@ void Chuck_UGen::get_buffer( SAMPLE * buffer, t_CKINT num_elem )
 //-----------------------------------------------------------------------------
 Chuck_UGen * Chuck_UGen::src_chan( t_CKUINT chan )
 {
-    if( this->m_num_outs == 1 )
-        return this;
+    if( this->m_num_outs == 1 ) return this;
+    // multi-channel | modulo by num_ins
+    // NOTE the size of m_multi_chan array is the greater of num_outs and num_ins
     return m_multi_chan[chan%m_num_outs];
 }
 
@@ -466,11 +466,10 @@ Chuck_UGen * Chuck_UGen::src_chan( t_CKUINT chan )
 //-----------------------------------------------------------------------------
 Chuck_UGen * Chuck_UGen::dst_for_src_chan( t_CKUINT chan )
 {
-    if( this->m_num_ins == 1 )
-        return this;
-    if( chan < this->m_num_ins )
-        return m_multi_chan[chan];
-    return NULL;
+    if( this->m_num_ins == 1 ) return this;
+    // multi-channel | 1.5.2.4 (ge) modulo by num_ins
+    // NOTE the size of m_multi_chan array is the greater of num_outs and num_ins
+    return m_multi_chan[chan%m_num_ins];
 }
 
 
@@ -1693,74 +1692,5 @@ Chuck_UGen * ugen_generic_get_dst( Chuck_Object * obj, t_CKINT chan, t_CKBOOL is
     else
     {
         return ((Chuck_UGen *) obj)->dst_for_src_chan( chan );
-    }
-}
-
-
-
-
-//-----------------------------------------------------------------------------
-// name: ugen_generic_num_in_nochan()
-// dsec: get number of input channels for ugen or ugen array
-//-----------------------------------------------------------------------------
-t_CKINT ugen_generic_num_in_nochan( Chuck_Object * obj, t_CKBOOL isArray )
-{
-    if( isArray ) return ((Chuck_ArrayInt *)obj)->size();
-    else return 1;
-}
-
-
-
-
-//-----------------------------------------------------------------------------
-// name: ugen_generic_num_out_nochan()
-// dsec: get number of output channels for ugen or ugen array | 1.5.2.2 (ge)
-//-----------------------------------------------------------------------------
-t_CKINT ugen_generic_num_out_nochan( Chuck_Object * obj, t_CKBOOL isArray )
-{
-    if( isArray ) return ((Chuck_ArrayInt *)obj)->size();
-    else return 1;
-}
-
-
-
-
-//-----------------------------------------------------------------------------
-// name: ugen_generic_get_src_nochan()
-// dsec: get source channel given a ugen or ugen array
-//-----------------------------------------------------------------------------
-Chuck_UGen * ugen_generic_get_src_nochan( Chuck_Object * obj, t_CKINT chan, t_CKBOOL isArray )
-{
-    if( isArray )
-    {
-        Chuck_ArrayInt *arr = (Chuck_ArrayInt *) obj;
-        Chuck_UGen *src = NULL;
-        arr->get( chan%arr->size(), (t_CKUINT *)(&src) );
-        return src;
-    }
-    else
-    {
-        return ((Chuck_UGen *)obj);
-    }
-}
-
-
-
-//-----------------------------------------------------------------------------
-// name: ugen_generic_get_dst_nochan()
-// dsec: get destination channel given a ugen or array object
-//-----------------------------------------------------------------------------
-Chuck_UGen * ugen_generic_get_dst_nochan( Chuck_Object * obj, t_CKINT chan, t_CKBOOL isArray )
-{
-    if( isArray )
-    {
-        Chuck_ArrayInt *arr = (Chuck_ArrayInt *) obj;
-        Chuck_UGen *dst = NULL;
-        ((Chuck_ArrayInt *)obj)->get( chan%arr->size(), (t_CKUINT *)(&dst) );
-        return dst;
-    }
-    else
-    {
-        return ((Chuck_UGen *)obj);
     }
 }

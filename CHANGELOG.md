@@ -15,9 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Updated chuck code base to `1.5.2.5-dev (chai)`
+
+- Added fallback search for file based on `locatefile_extended` if given path is not absolute or found in the `chuck-max/examples` folder.
+
 - Added support for setting file and editor attributes, to facilitate use of external editor via setting inspector vars or via setting `editor <path>` and `edit <filename>`. Also double-clicking on the `chuck~` object will open the current file in the specified external editor.
 
--  The`add ` and `replace` messages now both handle chuck style file args:  `add <path>:<arg1>:<arg2>:<argN>`  While this is consistent without chuck treats file arguments, there is some thought to making this more readable and Max friendly in the future by dropping the colons to adopt the following style: `add <path> <arg1> <arg2> ... <argN>`
+- The`add` and `replace` messages now both handle chuck style file args:  `add <path>:<arg1>:<arg2>:<argN>`  While this is consistent without chuck treats file arguments, there is some thought to making this more readable and Max friendly in the future by dropping the colons to adopt the following style: `add <path> <arg1> <arg2> ... <argN>`
 
 - Fixed `chuck~` object args to allow just the number of channels as args.
 

@@ -871,7 +871,6 @@
 					"outlettype" : [ "signal", "signal" ],
 					"patching_rect" : [ 238.0, 397.0, 119.0, 21.0 ],
 					"saved_object_attributes" : 					{
-						"file" : "max/test.ck"
 					}
 ,
 					"text" : "chuck~ 2 max/test.ck"

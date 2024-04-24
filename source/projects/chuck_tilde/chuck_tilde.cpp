@@ -78,11 +78,12 @@ t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // get an
 
 
 // helpers
+bool path_exists(const char* name);
 void ck_debug(t_ck* x, char* fmt, ...);
 void ck_stdout_print(const char* msg);
 void ck_stderr_print(const char* msg);
 void ck_dblclick(t_ck* x);
-t_symbol* ck_locatefile(t_symbol* name);
+t_max_err ck_check_file(t_ck* x, t_symbol* name);
 t_max_err ck_compile_file(t_ck* x, const char* filename);
 t_max_err ck_run_file(t_ck* x);
 t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type);
@@ -99,6 +100,7 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
 // callback registeration
 t_max_err ck_register(t_ck* x, t_symbol* s);
 t_max_err ck_unregister(t_ck* x, t_symbol* s);
+
 
 // callbacks
 void cb_demo(void);
@@ -168,7 +170,7 @@ void ext_main(void* r)
     CLASS_ATTR_SYM(c,       "file", 0,     t_ck,  filename);
     CLASS_ATTR_STYLE(c,     "file", 0,     "file");
     CLASS_ATTR_BASIC(c,     "file", 0);
-    CLASS_ATTR_SAVE(c,      "file", 0);
+    // CLASS_ATTR_SAVE(c,      "file", 0);
 
     // clang-format on
     //------------------------------------------------------------------------
@@ -191,16 +193,17 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->current_shred_id = 0;
         x->filename = gensym("");
         x->editor = gensym("");
+        x->working_dir = string_getptr(
+            ck_get_path_from_package(ck_class, (char*)"/examples"));
+
+        t_symbol* filename;
 
         if (argc == 1) {
-
             if (argv->a_type == A_LONG) {
                 atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);
             } else if (argv->a_type == A_SYM) {
-                t_symbol* filename = atom_getsymarg(0, argc, argv);
-                // limitation of ck_locatefile is that it doesn't
-                // search recursively
-                x->filename = ck_locatefile(filename);
+                filename = atom_getsymarg(0, argc, argv);
+                ck_check_file(x, filename);
             } else {
                 error("invalid arguments");
                 return;
@@ -208,11 +211,12 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         }
         else if (argc >= 2) {
             atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);  // is 1st arg of object
-            x->filename = atom_getsymarg(1, argc, argv);    // is 2nd arg of object
+            filename = atom_getsymarg(1, argc, argv);    // is 2nd arg of object
+            ck_check_file(x, filename);
         } 
         // else just use defaults
 
-        dsp_setup((t_pxobject*)x, x->channels); // MSP inlets: 2nd arg is # of inlets
+        dsp_setup((t_pxobject*)x, x->channels);   // MSP inlets: 2nd arg is # of inlets
     
         for (int i = 0; i < x->channels; i++) {
             outlet_new((t_pxobject*)x, "signal"); // signal outlet
@@ -220,8 +224,6 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // chuck-related
         x->chuck = NULL;
-        x->working_dir = string_getptr(
-            ck_get_path_from_package(ck_class, (char*)"/examples"));
 #if EMBEDDED_CHUGINS 
         x->chugins_dir = string_getptr(
             ck_get_path_from_external(ck_class, (char*)"/Contents/Resources/chugins"));
@@ -281,11 +283,14 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         post("chugins dir: %s", x->chugins_dir);
 
         if (const char* editor = std::getenv("EDITOR")) {
-            post("editor from env: %s", editor);
+            post("editor: %s", editor);
             x->editor = gensym(editor);
+        } else if (x->editor = preferences_getsym("externaleditor")) {
+            post("editor: %s", x->editor->s_name);
         } else {
             x->editor = gensym("");
         }
+
     }
     return (x);
 }
@@ -314,35 +319,25 @@ void ck_assist(t_ck* x, void* b, long m, long a, char* s)
 //-----------------------------------------------------------------------------------------------
 // helpers
 
+/* x-platform solution to check if a path exists
+ * 
+ * since ext_path.h (`path_exists`) is not available
+ * and std::filesystem::exists requires macos >= 10.15
+ */
+bool path_exists(const char* name) {
+
+    if (FILE *file = fopen(name, "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }
+}
+
 
 void ck_stdout_print(const char* msg) { post("%s", msg); }
 
 void ck_stderr_print(const char* msg) { post("%s", msg); }
-
-t_symbol* ck_locatefile(t_symbol* name)
-{
-    char filepath[MAX_PATH_CHARS];
-    char abspath[MAX_PATH_CHARS];
-    char conform_path[MAX_PATH_CHARS];
-    short path, res;
-    t_fourcc outtype;
-    t_fourcc filetypelist;
-    t_max_err err;
-
-    strncpy_zero(filepath, name->s_name, MAX_FILENAME_CHARS);
-    res = locatefile_extended(filepath, &path, &outtype, &filetypelist, 1);
-    if (res != 0)
-        error("ck_locatefile > locatefile_extended failed");
-        return;
-    err = path_toabsolutesystempath(path, filepath, abspath);
-    if (err != MAX_ERR_NONE)
-        error("ck_locatefile > path_toabsolutesystempath failed");
-        return;
-    path_nameconform(abspath, conform_path, PATH_STYLE_MAX, PATH_TYPE_BOOT);
-    post("abspath: %s", abspath);
-    post("conform_path: %s", conform_path);
-    return gensym(conform_path);
-}
 
 
 t_string* ck_get_path_from_external(t_class* c, char* subpath)
@@ -387,10 +382,70 @@ t_string* ck_get_path_from_package(t_class* c, char* subpath)
 }
 
 
+t_max_err ck_check_file(t_ck* x, t_symbol* name)
+{
+    char filepath[MAX_PATH_CHARS];
+    char normpath[MAX_PATH_CHARS];
+    strncpy_zero(filepath, name->s_name, MAX_FILENAME_CHARS);
+    path_nameconform(filepath, normpath, PATH_STYLE_MAX, PATH_TYPE_BOOT);
+    // post("ck_check_file.name: %s", normpath);
+
+
+    // 1. check if file exists
+    if (path_exists(normpath)) {
+        // post("ck_check_file.normpath exists: %s", normpath);
+        x->filename = gensym(normpath);
+        return MAX_ERR_NONE;
+    }
+
+    // 2. check if exists with an `examples` folder prefix
+    char eg_file[MAX_PATH_CHARS];
+    snprintf_zero(eg_file, MAX_PATH_CHARS, "%s/%s", x->working_dir, filepath);
+    if (path_exists(eg_file)) {
+        // post("ck_check_file.eg_file exists: %s", eg_file);
+        x->filename = gensym(eg_file);
+        return MAX_ERR_NONE;
+    }
+
+    // 3. use locatefile_extended to search
+    char abspath[MAX_PATH_CHARS];
+    short path, res;
+    t_fourcc outtype;
+    t_fourcc filetypelist;
+    t_max_err err;
+
+    res = locatefile_extended(filepath, &path, &outtype, &filetypelist, 1);
+    if (res != 0)
+        error("ck_check_file: locatefile_extended failed");
+        return MAX_ERR_GENERIC;
+
+    err = path_toabsolutesystempath(path, filepath, abspath);
+    if (err != MAX_ERR_NONE)
+        error("ck_check_file: path_toabsolutesystempath failed");
+        return err;
+
+    // post("ck_check_file.abspath: %s", abspath);
+
+    normpath[0] = '\0'; // erase it to re-use it
+
+    path_nameconform(abspath, normpath, PATH_STYLE_MAX, PATH_TYPE_BOOT);
+
+    if (path_exists(normpath)) {
+        // post("ck_check_file.normpath exists: %s", normpath);
+        x->filename = gensym(normpath);
+        return MAX_ERR_NONE;
+    }
+
+    error("ck_check_file: could not locate %s", name->s_name);
+    return MAX_ERR_GENERIC;
+}
+
+
+
 t_max_err ck_compile_file(t_ck* x, const char* filename)
 {
     if (x->chuck->compileFile(std::string(filename), "", 1)) {
-        post("compilation successful: %s", filename);
+        post("compiled: %s", filename);
         return MAX_ERR_NONE;
     } else {
         error("compilation error! : %s", filename);
@@ -398,35 +453,11 @@ t_max_err ck_compile_file(t_ck* x, const char* filename)
     }
 }
 
-/* x-platform solution to check if a path exists
- * 
- * since ext_path.h (`path_exists`) is not available
- * and std::filesystem::exists requires macos >= 10.15
- */
-inline bool path_exists(const char* name) {
-
-    if (FILE *file = fopen(name, "r")) {
-        fclose(file);
-        return true;
-    } else {
-        return false;
-    }
-}
-
 
 t_max_err ck_run_file(t_ck* x)
 {
     if (x->filename != gensym("")) {
-        char norm_path[MAX_PATH_CHARS];
-        path_nameconform(x->filename->s_name, norm_path, PATH_STYLE_MAX, PATH_TYPE_BOOT);
-        if (path_exists(norm_path)) {       // test if file exists
-            return ck_compile_file(x, norm_path);
-        } else { // try in the example folder
-            char ck_file[MAX_PATH_CHARS];
-            snprintf_zero(ck_file, MAX_PATH_CHARS, "%s/%s",
-                x->working_dir, x->filename->s_name);
-            return ck_compile_file(x, ck_file);
-        }
+        return ck_compile_file(x, x->filename->s_name);
     }
     error("ck_run_file: filename slot was empty");
     return MAX_ERR_GENERIC;
@@ -484,12 +515,8 @@ t_max_err ck_bang(t_ck* x)
 t_max_err ck_run(t_ck* x, t_symbol* s)
 {
     if (s != gensym("")) {
-        char conform_path[MAX_PATH_CHARS];
-        path_nameconform(s->s_name, conform_path, PATH_STYLE_MAX, PATH_TYPE_BOOT);
-        post("run: %s", conform_path);
-        x->filename = s;
-        ck_run_file(x);
-        return MAX_ERR_NONE;
+        ck_check_file(x, s);
+        return ck_run_file(x);
     }
     error("ck_run: eguires a filename to edit");
     return MAX_ERR_GENERIC;
@@ -508,6 +535,7 @@ t_max_err ck_edit(t_ck* x, t_symbol* s)
         path_nameconform(s->s_name, conform_path, PATH_STYLE_MAX, PATH_TYPE_BOOT);
         post("edit: %s", conform_path);
         std::string cmd = std::string(x->editor->s_name) + " " + std::string(conform_path);
+        // std::string cmd = std::string("/usr/bin/open -a '") + std::string(x->editor->s_name) + "' " + std::string(conform_path);
         std::system(cmd.c_str());
         return MAX_ERR_NONE;
     }

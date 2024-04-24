@@ -1,9 +1,8 @@
 # Dev Notes
 
-
 ## Getting a default external editor
 
-It seemed to be a bit difficult to retrieve the path of the default external editor. 
+It seemed to be a bit difficult to retrieve the path of the default external editor.
 So if  `x->editor` is also an attribute then it should be possible set as follows:
 
 ```c++
@@ -19,21 +18,19 @@ if (const char* editor = std::getenv("EDITOR")) {                   // 1
 
 (1) didn't initially work, but works after a restart? and (2) retrieves only the stem of the path of the configured executable in which `locatefile_extended` doesn't work.
 
-
 ## Using chuck api more efficiently
 
 The chuck shell in `core/chuck_shell.h` has a very nice interface but is a repl (`chuck --shell` from the commandline). The `core/lib_machine.h` api is also quite nice, but is meant to be called from chuck code. Chuck shell uses the `core/chuck_otf.h` functionality. Maybe easier to hook into one or more of these apis instead or re-implementing the wheel.
 
 see:
 
--  chuck shell[paper](https://quod.lib.umich.edu/cgi/p/pod/dod-idx/miniaudicle-and-chuck-shell-new-interfaces-for-chuck.pdf?c=icmc;idno=bbp2372.2006.016;format=pdf)
+- chuck shell[paper](https://quod.lib.umich.edu/cgi/p/pod/dod-idx/miniaudicle-and-chuck-shell-new-interfaces-for-chuck.pdf?c=icmc;idno=bbp2372.2006.016;format=pdf)
 
 - chuck floss [manual](https://archive.flossmanuals.net/chuck/ch018_on-the-fly-commands.html)
 
 - chuck [versions changelog](https://chuck.stanford.edu/release/VERSIONS)
 
-
-```
+```text
     implemented Chuck_Msg_Type(s)
 
     [x] CK_MSG_ADD
@@ -62,10 +59,9 @@ see:
     [ ] replace <shredID> <code>
 ```
 
-
 ## Faust.chug causes Max crash on closing (not yet solved)
 
-```
+```text
 -------------------------------------
 Translated Report (Full Report Below)
 -------------------------------------
@@ -124,13 +120,11 @@ Preference in this case is for (2) since it is useful to have direct access to c
 
 Converting (1) to (2) was a major pain because the faust dependency needs to be git cloned as branch `2.69.3`, if current main was cloned it would. segfault inexplicably at the `compute` function.
 
-
 ## Converting chugins to cmake builds
 
 This has been pretty straightforward, especially as the project is currently only targeting one platform (macOS).
 
 However, static compilation and integration of chugins is not working although this is indicated as possible in the makefiles: static chugins were not recognized when invoked via test scripts.
-
 
 ## Why isn't chuck a git submodule?
 
@@ -139,7 +133,6 @@ The directories `chuck/src/core`, `chuck/src/host`, `chuck/src/host-embed` are d
 The prior reason was that the `chuck` repo until recently, even at `--depth=1`, required more than 1 GB of storage and could take ages to download.
 
 With this problem solved, a script (`source/scripts/update.sh`) is preferred to including chuck and chugins directories as git submodules.
-
 
 ## Audio Processing Block Evolution
 
@@ -261,7 +254,6 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
 }
 ```
 
-
 ## Parameters via the `global` keyword
 
 ### Issues
@@ -275,7 +267,6 @@ So global parameters should be initialized in the chuck script as normal and chu
 ### From "Chunity: Integrated Audiovisual Programming in Unity"
 
 > We have added the new global keyword to enable integrated communication between ChucK code and the outside environment that ChucK is embedded in (the embedding host).
-
 > The `global` keyword is used when declaring the type of a variable, such as (A) below
 
 ```c++
@@ -310,25 +301,15 @@ public class EventResponder : MonoBehaviour {
 ```
 
 > The main guiding principle in the design of this keyword is that it is not necessary for ChucK to know anything about the embedding host, or whether it is embedded at all. Instead, `global` variables appear like normal variables within their own ChucK script, but can be inspected, edited, or listened to by other ChucK scripts or by the embedding host.
-
 > So far, the `global` keyword is enabled for three types of variables;
-
+>
 > 1. The first type of global variable is primitives: `ints`, `floats`, and `strings`. The embedding host can get and set their values. The get operation requires the use of a *callback* because the embedding host often runs on a different thread than the audio thread.
-
 > 2. The second type of global variable is `Events`. ChucK Events are used to pause execution in a ChucK script until the Event signals that it has occurred. The embedding host can *signal* or *broadcast* a global Event (i.e. trigger *one* or *all* ChucK scripts waiting on the event). The embedding host can also register a callback to be called every time a global Event is broadcast, as (B) in the code example above. This callback to user code occurs on the audio thread and thus is timed with sample-level accuracy; a tighter integration of timing between audio and visuals is not achievable.
-
 > 3. The third type of global variable is `UGens` (unit generators). ChucK UGens are signal processing elements that generate streams of audio. The embedding host can fetch a global UGen’s most recent samples.
-
 > ...
-
 > The desire to embed ChucK in Unity motivated the wider libChucK rearchitecture project, which enables ChucK to act as an embeddable component in any C++ project.
-
 > The ChucK source was separated into core and host code- bases. The core comprises the language parser, which compiles code, and virtual machine (VM), which translates audio inputs to outputs. One embeds ChucK in a new project by simply writing a new host that calls these functions.
-
 > The rearchitecture allowed multiple VMs to exist in the same address space (useful for contexts where the number of channels is limited and multiple outputs are desired, such as in a digital audio plugin or Unity’s spatial audio system). **It also enabled the redirection of all ChucK error messages to an optional callback** (e.g. the Unity debug console).
-
-
-
 
 ## Chuck Events
 
@@ -344,8 +325,6 @@ There are local events and `global` events, see `test-local-event.ck` and `test-
 t_CKBOOL Chuck_Globals_Manager::signalGlobalEvent( const char * name );
 t_CKBOOL Chuck_Globals_Manager::broadcastGlobalEvent( const char * name );
 ```
-
-
 
 ## Callbacks
 
@@ -413,6 +392,7 @@ t_CKBOOL getGlobalAssociativeFloatArrayValue( const char * name, t_CKINT callbac
 $<$<AND:$<BOOL:${WIN32}>,$<BOOL:${ENABLE_WARNINGS}>>:/W4>
 
 ```
+
 Console level flags
 
 ```text

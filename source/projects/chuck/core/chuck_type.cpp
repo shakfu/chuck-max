@@ -671,6 +671,7 @@ t_CKBOOL type_engine_init( Chuck_Carrier * carrier )
     env->key_values["week"] = TRUE;
     env->key_values["adc"] = TRUE;
     env->key_values["dac"] = TRUE;
+    env->key_values["bunghole"] = TRUE;
     env->key_values["blackhole"] = TRUE;
     env->key_values["global"] = TRUE;
     env->key_values["chout"] = TRUE;
@@ -2654,7 +2655,7 @@ t_CKTYPE type_engine_check_op_chuck( Chuck_Env * env, a_Exp lhs, a_Exp rhs,
             {
                 // error
                 EM_error2( lhs->where,
-                           "array ugen type '%s' has more than one output channel - can only => one-dimensional array of mono ugens",
+                           "array ugen type '%s' has more than one output channel; can only => one-dimensional array of mono ugens",
                            left_ugen_type->c_name() );
                 return NULL;
             }
@@ -3293,6 +3294,13 @@ t_CKTYPE type_engine_check_exp_primary( Chuck_Env * env, a_Exp_Primary exp )
                 exp->self->s_meta = ae_meta_value;
                 // ugen
                 t = env->ckt_adc;
+            }
+            else if( str == "bunghole" ) // bunghole | reinstated 1.5.2.4 (ge)
+            {
+                // non assignable
+                exp->self->s_meta = ae_meta_value;
+                // ugen
+                t = env->ckt_ugen;
             }
             else if( str == "blackhole" ) // blackhole
             {
