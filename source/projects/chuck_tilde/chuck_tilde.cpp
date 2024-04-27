@@ -8,11 +8,22 @@
 #include "ext_preferences.h"
 #include "z_dsp.h"
 
+#ifdef __APPLE__
+#include "unistd.h"
+#endif
+
 #include <string>
 #include <unordered_map>
+#include <memory>
+#include <array>
+#include <filesystem>
+#include <sstream>
+#include <vector>
 
 #include "chuck.h"
 #include "chuck_globals.h"
+
+namespace fs = std::filesystem;
 
 // globals defs
 #define CHANNELS 1
@@ -33,7 +44,7 @@ typedef struct _ck {
     ChucK* chuck;            // chuck instance
     int oid;                 // object id
     long channels;           // n of input/output channels
-    t_symbol* filename;      // name of chuck file in Max search path
+    t_symbol* run_file;      // path of chuck file to run
     const char* working_dir; // chuck working directory
     const char* chugins_dir; // chugins directory
     float* in_chuck_buffer;  // intermediate chuck input buffer
@@ -42,6 +53,7 @@ typedef struct _ck {
     long loglevel;           // chuck log level
     long current_shred_id;   // current shred id
     t_symbol* editor;        // external text editor for chuck code
+    t_symbol* edit_file;     // path of file to edit by external editor
 } t_ck;
 
 
@@ -50,13 +62,17 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv);
 void ck_free(t_ck* x);
 void ck_assist(t_ck* x, void* b, long m, long a, char* s);
 
+// attribute set/get
+t_max_err ck_editor_get(t_ck *x, t_object *attr, long *argc, t_atom **argv);
+t_max_err ck_editor_set(t_ck *x, t_object *attr, long argc, t_atom *argv);
+
 // general message handlers
-t_max_err ck_bang(t_ck* x); // (re)load chuck file
+t_max_err ck_bang(t_ck* x);                     // (re)load chuck file
 t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv); // set global params by name/value
 
 // basic message handlers
-t_max_err ck_run(t_ck* x, t_symbol* s);                              // run chuck file
-t_max_err ck_edit(t_ck* x, t_symbol* s);                             // edit chuck file
+t_max_err ck_run(t_ck* x, t_symbol* s);         // run chuck file
+t_max_err ck_edit(t_ck* x, t_symbol* s);        // edit chuck file
 
 // chuck vm message handlers
 t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv);     // add shred from file
@@ -64,18 +80,18 @@ t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // remove s
 t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv); // replace shreds 
 t_max_err ck_clear(t_ck* x, t_symbol* s, long argc, t_atom* argv);   // clear_vm, clear_globals
 t_max_err ck_reset(t_ck* x, t_symbol* s, long argc, t_atom* argv);   // clear_vm, reset_id
-t_max_err ck_status(t_ck* x);
-t_max_err ck_time(t_ck* x);
+t_max_err ck_status(t_ck* x);                   // metadata about running shreds in the chuck vm
+t_max_err ck_time(t_ck* x);                     // current time
 
 // event/callback message handlers
-t_max_err ck_signal(t_ck* x, t_symbol* s);    // signal global event
-t_max_err ck_broadcast(t_ck* x, t_symbol* s); // broadcast global event
+t_max_err ck_signal(t_ck* x, t_symbol* s);      // signal global event
+t_max_err ck_broadcast(t_ck* x, t_symbol* s);   // broadcast global event
 
 // special message handlers
-t_max_err ck_info(t_ck* x);                   // get info about running shreds
-t_max_err ck_chugins(t_ck* x);
+t_max_err ck_docs(t_ck* x);                     // open chuck docs in a browser
+t_max_err ck_info(t_ck* x);                     // get info about running shreds
+t_max_err ck_chugins(t_ck* x);                  // probe and list available chugins
 t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // get and set loglevels
-
 
 // helpers
 bool path_exists(const char* name);
@@ -83,7 +99,9 @@ void ck_debug(t_ck* x, char* fmt, ...);
 void ck_stdout_print(const char* msg);
 void ck_stderr_print(const char* msg);
 void ck_dblclick(t_ck* x);
-t_max_err ck_check_file(t_ck* x, t_symbol* name);
+t_max_err ck_send_max_msg(t_ck* x, t_symbol* s, const char* parsestr);
+t_max_err ck_check_editor(t_ck* x, t_symbol* entry);
+t_symbol* ck_check_file(t_ck* x, t_symbol* name);
 t_max_err ck_compile_file(t_ck* x, const char* filename);
 t_max_err ck_run_file(t_ck* x);
 t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type);
@@ -143,6 +161,7 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_status,       "status",   0);
     class_addmethod(c, (method)ck_time,         "time",     0);
 
+    class_addmethod(c, (method)ck_docs,         "docs",     0);
     class_addmethod(c, (method)ck_info,         "info",     0);
     class_addmethod(c, (method)ck_chugins,      "chugins",  0);
     class_addmethod(c, (method)ck_loglevel,     "loglevel", A_GIMME, 0);
@@ -164,11 +183,13 @@ void ext_main(void* r)
     // class attributes
     //------------------------------------------------------------------------
 
-    CLASS_ATTR_SYM(c,       "editor", 0,      t_ck, editor);
+    CLASS_ATTR_SYM(c,       "editor", 0,        t_ck, editor);
     CLASS_ATTR_BASIC(c,     "editor", 0);
+    CLASS_ATTR_ACCESSORS(c, "editor", NULL, ck_editor_set);
+    // CLASS_ATTR_ACCESSORS(c, "editor", ck_editor_get, ck_editor_set);
 
-    CLASS_ATTR_SYM(c,       "file", 0,     t_ck,  filename);
-    CLASS_ATTR_STYLE(c,     "file", 0,     "file");
+    CLASS_ATTR_SYM(c,       "file", 0,          t_ck,  run_file);
+    CLASS_ATTR_STYLE(c,     "file", 0,          "file");
     CLASS_ATTR_BASIC(c,     "file", 0);
     // CLASS_ATTR_SAVE(c,      "file", 0);
 
@@ -191,28 +212,28 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->channels = CHANNELS;
         x->loglevel = CK_LOG_SYSTEM;
         x->current_shred_id = 0;
-        x->filename = gensym("");
+        x->run_file = gensym("");
+        x->edit_file = gensym("");
         x->editor = gensym("");
         x->working_dir = string_getptr(
             ck_get_path_from_package(ck_class, (char*)"/examples"));
 
         t_symbol* filename;
-
         if (argc == 1) {
             if (argv->a_type == A_LONG) {
                 atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);
             } else if (argv->a_type == A_SYM) {
                 filename = atom_getsymarg(0, argc, argv);
-                ck_check_file(x, filename);
+                x->run_file = ck_check_file(x, filename);
             } else {
-                error("invalid arguments");
+                error("invalid object arguments");
                 return;
             }
         }
         else if (argc >= 2) {
             atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);  // is 1st arg of object
             filename = atom_getsymarg(1, argc, argv);    // is 2nd arg of object
-            ck_check_file(x, filename);
+            x->run_file = ck_check_file(x, filename);
         } 
         // else just use defaults
 
@@ -278,15 +299,13 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         post("ChucK %s", x->chuck->version());
         post("inputs: %d  outputs: %d ", x->chuck->vm()->m_num_adc_channels,
              x->chuck->vm()->m_num_dac_channels);
-        post("file: %s", x->filename->s_name);
+        post("file: %s", x->run_file->s_name);
         post("working dir: %s", x->working_dir);
         post("chugins dir: %s", x->chugins_dir);
 
         if (const char* editor = std::getenv("EDITOR")) {
-            post("editor: %s", editor);
+            post("editor from env: %s", editor);
             x->editor = gensym(editor);
-        } else if (x->editor = preferences_getsym("externaleditor")) {
-            post("editor: %s", x->editor->s_name);
         } else {
             x->editor = gensym("");
         }
@@ -317,13 +336,74 @@ void ck_assist(t_ck* x, void* b, long m, long a, char* s)
 
 
 //-----------------------------------------------------------------------------------------------
-// helpers
+// general utilities
+
+std::vector<std::string> split(std::string s, char delimiter)
+{
+    std::vector<std::string> output;
+    for (auto cur = std::begin(s), beg = cur;; ++cur) {
+        if (cur == std::end(s) || *cur == delimiter || !*cur) {
+            output.insert(output.end(), std::string(beg, cur));
+            if (cur == std::end(s) || !*cur)
+                break;
+            else
+                beg = std::next(cur);
+        }
+    }
+    return output;
+}
+
+std::string join(std::vector<std::string> elements,
+    const char* const delimiter)
+{
+    std::ostringstream os;
+    auto b = std::begin(elements);
+    auto e = std::end(elements);
+
+    if (b != e) {
+        std::copy(b, std::prev(e),
+            std::ostream_iterator<std::string>(os, delimiter));
+        b = std::prev(e);
+    }
+    if (b != e) {
+        os << *b;
+    }
+
+    return os.str();
+}
+
+
+std::string get_output(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) {
+        error("popen() failed!");
+        return std::string("");
+    }
+    while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+    return result;
+}
+
+bool is_path(const char* target)
+{
+    std::string s = std::string(target);
+    return (s.find('/') != std::string::npos);
+}
+
 
 /* x-platform solution to check if a path exists
  * 
  * since ext_path.h (`path_exists`) is not available
  * and std::filesystem::exists requires macos >= 10.15
  */
+#ifdef __APPLE__
+bool path_exists(const char* name) {
+   return access( name, 0 ) == 0;
+}
+#else
 bool path_exists(const char* name) {
 
     if (FILE *file = fopen(name, "r")) {
@@ -333,11 +413,59 @@ bool path_exists(const char* name) {
         return false;
     }
 }
+#endif
 
+//-----------------------------------------------------------------------------------------------
+// attribute set/get
+
+t_max_err ck_editor_set(t_ck *x, t_object *attr, long argc, t_atom *argv)
+{
+    t_symbol* editor = atom_getsym(argv);
+    post("editor_set: %s", editor->s_name);
+    ck_check_editor(x, editor);
+    // x->editor = editor;
+    return MAX_ERR_NONE;
+}
+
+t_max_err ck_editor_get(t_ck *x, t_object *attr, long *argc, t_atom **argv)
+{   
+    char alloc;
+    atom_alloc(argc, argv, &alloc); 
+    post("editor_get: %s", x->editor->s_name);
+    t_max_err err =  atom_setsym(*argv, x->editor);
+    if (err != MAX_ERR_NONE) {
+        error("failed: ck_editor_get");
+    }
+    return err;
+}
+
+
+//-----------------------------------------------------------------------------------------------
+// helpers
 
 void ck_stdout_print(const char* msg) { post("%s", msg); }
 
 void ck_stderr_print(const char* msg) { post("%s", msg); }
+
+
+// send a message to max object
+//
+// eg. ck_send_max_msg(x, gensym("launchbrowser"), "http://www.cycling74.com");
+// or (; max launchbrowser http://www.cycling74.com)
+t_max_err ck_send_max_msg(t_ck* x, t_symbol* s, const char* parsestr)
+{
+    t_max_err err;
+
+    t_object *maxobj = (t_object*)object_new(CLASS_NOBOX, gensym("max"));
+    if (maxobj == NULL) {
+        error("could not get max object");
+    }
+    err = object_method_parse(maxobj, s, parsestr, NULL);
+    if (err != MAX_ERR_NONE) {
+        error("could not send msg: ;max %s %s", s->s_name, parsestr);
+        return err;
+    }
+}
 
 
 t_string* ck_get_path_from_external(t_class* c, char* subpath)
@@ -381,30 +509,41 @@ t_string* ck_get_path_from_package(t_class* c, char* subpath)
     return package_dir_s;
 }
 
+t_max_err ck_check_editor(t_ck* x, t_symbol* entry)
+{
+    if (path_exists(entry->s_name)) {
+        x->editor = entry;
+        return MAX_ERR_NONE;
+    }
+    // char cmd[MAX_PATH_CHARS];
+    // snprintf_zero(cmd, MAX_PATH_CHARS, "/bin/sh -c 'which %s'", entry->s_name);
+    // std::string path = get_output(cmd);
+    // if (path == "") {
+    //     error("editor could not be found: %s", entry->s_name);
+    //     return MAX_ERR_GENERIC;
+    // }
+    // x->editor = gensym(path.c_str());
+    // return MAX_ERR_NONE;
+}
 
-t_max_err ck_check_file(t_ck* x, t_symbol* name)
+t_symbol* ck_check_file(t_ck* x, t_symbol* name)
 {
     char filepath[MAX_PATH_CHARS];
     char normpath[MAX_PATH_CHARS];
     strncpy_zero(filepath, name->s_name, MAX_FILENAME_CHARS);
     path_nameconform(filepath, normpath, PATH_STYLE_MAX, PATH_TYPE_BOOT);
-    // post("ck_check_file.name: %s", normpath);
 
 
     // 1. check if file exists
     if (path_exists(normpath)) {
-        // post("ck_check_file.normpath exists: %s", normpath);
-        x->filename = gensym(normpath);
-        return MAX_ERR_NONE;
+        return gensym(normpath);
     }
 
     // 2. check if exists with an `examples` folder prefix
     char eg_file[MAX_PATH_CHARS];
     snprintf_zero(eg_file, MAX_PATH_CHARS, "%s/%s", x->working_dir, filepath);
     if (path_exists(eg_file)) {
-        // post("ck_check_file.eg_file exists: %s", eg_file);
-        x->filename = gensym(eg_file);
-        return MAX_ERR_NONE;
+        return gensym(eg_file);
     }
 
     // 3. use locatefile_extended to search
@@ -417,30 +556,24 @@ t_max_err ck_check_file(t_ck* x, t_symbol* name)
     res = locatefile_extended(filepath, &path, &outtype, &filetypelist, 1);
     if (res != 0)
         error("ck_check_file: locatefile_extended failed");
-        return MAX_ERR_GENERIC;
+        return gensym("");
 
     err = path_toabsolutesystempath(path, filepath, abspath);
     if (err != MAX_ERR_NONE)
         error("ck_check_file: path_toabsolutesystempath failed");
-        return err;
-
-    // post("ck_check_file.abspath: %s", abspath);
+        return gensym("");
 
     normpath[0] = '\0'; // erase it to re-use it
 
     path_nameconform(abspath, normpath, PATH_STYLE_MAX, PATH_TYPE_BOOT);
 
     if (path_exists(normpath)) {
-        // post("ck_check_file.normpath exists: %s", normpath);
-        x->filename = gensym(normpath);
-        return MAX_ERR_NONE;
+        return gensym(normpath);
     }
 
     error("ck_check_file: could not locate %s", name->s_name);
-    return MAX_ERR_GENERIC;
+    return gensym("");
 }
-
-
 
 t_max_err ck_compile_file(t_ck* x, const char* filename)
 {
@@ -456,8 +589,8 @@ t_max_err ck_compile_file(t_ck* x, const char* filename)
 
 t_max_err ck_run_file(t_ck* x)
 {
-    if (x->filename != gensym("")) {
-        return ck_compile_file(x, x->filename->s_name);
+    if (x->run_file != gensym("")) {
+        return ck_compile_file(x, x->run_file->s_name);
     }
     error("ck_run_file: filename slot was empty");
     return MAX_ERR_GENERIC;
@@ -515,7 +648,7 @@ t_max_err ck_bang(t_ck* x)
 t_max_err ck_run(t_ck* x, t_symbol* s)
 {
     if (s != gensym("")) {
-        ck_check_file(x, s);
+        x->run_file = ck_check_file(x, s);
         return ck_run_file(x);
     }
     error("ck_run: eguires a filename to edit");
@@ -531,22 +664,25 @@ t_max_err ck_edit(t_ck* x, t_symbol* s)
     }
 
     if (s != gensym("")) {
-        char conform_path[MAX_PATH_CHARS];
-        path_nameconform(s->s_name, conform_path, PATH_STYLE_MAX, PATH_TYPE_BOOT);
-        post("edit: %s", conform_path);
-        std::string cmd = std::string(x->editor->s_name) + " " + std::string(conform_path);
-        // std::string cmd = std::string("/usr/bin/open -a '") + std::string(x->editor->s_name) + "' " + std::string(conform_path);
-        std::system(cmd.c_str());
-        return MAX_ERR_NONE;
+        x->edit_file = ck_check_file(x, s);
+        if (x->edit_file != gensym("")) {
+            std::string cmd;
+
+            post("edit: %s", x->edit_file->s_name);
+
+            cmd = std::string(x->editor->s_name) + " " + std::string(x->edit_file->s_name);
+            std::system(cmd.c_str());
+            return MAX_ERR_NONE;
+        }
     }
-    error("ck_edit: reguires a filename");
+    error("ck_edit: reguires a valid filename");
     return MAX_ERR_GENERIC;
 }
 
 void ck_dblclick(t_ck* x)
 {
-    if (x->filename != gensym("")) {
-        ck_edit(x, x->filename);
+    if (x->run_file != gensym("")) {
+        ck_edit(x, x->run_file);
     }
 }
 
@@ -574,8 +710,15 @@ t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     std::string args;
     // extract args FILE:arg1:arg2:arg3
     extract_args( path, filename, args );
+    
+    t_symbol* checked_file = ck_check_file(x, gensym(filename.c_str()));
 
-    std::string full_path = std::string(x->working_dir) + "/" + filename; // not portable
+    if (checked_file == gensym("")) {
+        error("could not add file");
+        return MAX_ERR_GENERIC;
+    }
+    
+    std::string full_path = std::string(checked_file->s_name);
 
     // compile but don't run yet (instance == 0)
     if( !x->chuck->compileFile( full_path, args, 0 ) ) {
@@ -664,7 +807,14 @@ t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     // extract args FILE:arg1:arg2:arg3
     extract_args( path, filename, args );
 
-    std::string full_path = std::string(x->working_dir) + "/" + filename; // not portable
+    t_symbol* checked_file = ck_check_file(x, gensym(filename.c_str()));
+
+    if (checked_file == gensym("")) {
+        error("could not replace file");
+        return MAX_ERR_GENERIC;
+    }
+    
+    std::string full_path = std::string(checked_file->s_name);
 
     // compile but don't run yet (instance == 0)
     if( !x->chuck->compileFile( full_path, args, 0 ) ) {
@@ -842,6 +992,7 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         return MAX_ERR_NONE;
     }
 
+    // FIXME: doesn't work in Max (and pd)
     // set '--' as shorthand for ck_remove (last) method
     if (s == gensym("--")) {
         atom_setsym(atoms, gensym("last"));
@@ -855,8 +1006,9 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         return MAX_ERR_NONE;
     }
 
+    // FIXME: doesn't work in Max (and pd)
     // set '^' as shorthand for ck_status method
-    if (s == gensym("=")) {
+    if (s == gensym("^")) {
         ck_status(x);
         return MAX_ERR_NONE;
     }
@@ -1003,6 +1155,11 @@ t_max_err ck_chugins(t_ck* x)
     post("probe chugins:");
     x->chuck->probeChugins();
     return MAX_ERR_NONE;
+}
+
+t_max_err ck_docs(t_ck* x)
+{
+    ck_send_max_msg(x, gensym("launchbrowser"), "https://chuck.stanford.edu/doc");
 }
 
 

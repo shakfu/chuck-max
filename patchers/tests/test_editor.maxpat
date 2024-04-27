@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 341.0, 162.0, 678.0, 598.0 ],
+		"rect" : [ 339.0, 154.0, 678.0, 598.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -40,12 +40,60 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"attr" : "editor",
+					"id" : "obj-15",
+					"maxclass" : "attrui",
+					"numinlets" : 1,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 465.0, 158.0, 188.0, 21.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-14",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 77.0, 158.0, 62.0, 21.0 ],
+					"text" : "editor subl"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-18",
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 80.5, 116.0, 150.0, 19.0 ],
+					"text" : "set path to editor here"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-11",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 197.5, 147.0, 137.0, 21.0 ],
+					"text" : "editor /usr/local/bin/code"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"id" : "obj-10",
 					"linecount" : 4,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 16.5, 41.0, 642.0, 55.0 ],
+					"patching_rect" : [ 16.5, 41.0, 644.0, 55.0 ],
 					"text" : "An external editor can be set by a message as below or by setting the editor attribute in the inspector. Once the editor is set, a file can be edited using the 'edit` msg as below, or by double-clicking the `chuck~` object to edit the last loaded file.\n\nnote that the full path to the editor executable should be given"
 				}
 
@@ -57,7 +105,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 241.0, 110.0, 134.0, 21.0 ],
+					"patching_rect" : [ 238.0, 115.0, 134.0, 21.0 ],
 					"text" : "editor /usr/local/bin/subl"
 				}
 
@@ -815,10 +863,6 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
 					"patching_rect" : [ 238.0, 397.0, 56.0, 21.0 ],
-					"saved_object_attributes" : 					{
-						"file" : "Macintosh HD:/Users/sa/Downloads/projects/chuck-max/examples/stk/blowbotl.ck"
-					}
-,
 					"text" : "chuck~ 2"
 				}
 
@@ -859,7 +903,28 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-11", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
 					"source" : [ "obj-12", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-14", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-15", 0 ]
 				}
 
 			}

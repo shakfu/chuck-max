@@ -1,5 +1,24 @@
 # Dev Notes
 
+## Sending Messages to Maxobject
+
+```c++
+t_max_err ck_send_max_msg(t_ck* x, t_symbol* s, const char* parsestr)
+{
+    t_max_err err;
+
+    t_object *maxobj = (t_object*)object_new(CLASS_NOBOX, gensym("max"));
+    if (maxobj == NULL) {
+        error("could not get max object");
+    }
+    err = object_method_parse(maxobj, s, parsestr, NULL);
+    if (err != MAX_ERR_NONE) {
+        error("could not send msg: ;max %s %s", s->s_name, parsestr);
+        return err;
+    }
+}
+```
+
 ## Getting a default external editor
 
 It seemed to be a bit difficult to retrieve the path of the default external editor.
@@ -16,7 +35,38 @@ if (const char* editor = std::getenv("EDITOR")) {                   // 1
 }
 ```
 
-(1) didn't initially work, but works after a restart? and (2) retrieves only the stem of the path of the configured executable in which `locatefile_extended` doesn't work.
+(1) didn't initially work, but works after a restart or intermittently? and (2) retrieves only the stem of the path of the configured executable in which `locatefile_extended` doesn't work.
+
+```c++
+t_max_err ck_edit(t_ck* x, t_symbol* s)
+{
+    if (x->editor == gensym("")) {
+        error("editor attribute or EDITOR env var not set");
+        return MAX_ERR_GENERIC;
+    }
+
+    if (s != gensym("")) {
+        char conform_path[MAX_PATH_CHARS];
+        std::string cmd;
+
+        path_nameconform(s->s_name, conform_path, PATH_STYLE_MAX, PATH_TYPE_BOOT);
+        post("edit: %s", conform_path);
+        if (x->editor_from_prefs) {
+            post("open editor: %s", x->editor->s_name);
+            cmd = std::string("/usr/bin/open -a '") + std::string(x->editor->s_name) + "' " + std::string(conform_path);
+        } else {
+            post("exec editor: %s", x->editor->s_name);
+            cmd = std::string(x->editor->s_name) + " " + std::string(conform_path);
+            std::system(cmd.c_str());
+        }
+        return MAX_ERR_NONE;
+    }
+    error("ck_edit: reguires a filename");
+    return MAX_ERR_GENERIC;
+}
+```
+
+also see: [get-path-of-executable](https://stackoverflow.com/questions/1528298/get-path-of-executable)
 
 ## Using chuck api more efficiently
 
@@ -106,7 +156,7 @@ Thread 0 Crashed:: CrBrowserMain Dispatch queue: com.apple.main-thread
 18  Faust.chug                             0x141a7aa80 0x140000000 + 27765376
 19  Faust.chug                             0x141a7a9f0 0x140000000 + 27765232
 20  Faust.chug                             0x141a6c33c 0x140000000 + 27706172
-````
+```
 
 ## Fauck and WarpBuf chugins
 

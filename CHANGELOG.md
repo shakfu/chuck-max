@@ -15,6 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Improved path handling: run, add, replace, edit now all use same mechanism to check file validity, fix partial path if file is in `examples`, or otherwise search in Max search path.
+
+- Changed / improved `chuck~.maxhelp` to make it clearer and more readable.
+
+- Added `docs` message to open chuck documentation in browser
+
 - Updated chuck code base to `1.5.2.5-dev (chai)`
 
 - Added fallback search for file based on `locatefile_extended` if given path is not absolute or found in the `chuck-max/examples` folder.
