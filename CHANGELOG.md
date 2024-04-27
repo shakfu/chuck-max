@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Added test for use of global variables and a practical test of its use in a musical patch.
+
+- Fixed bug which prevented sending lists of atoms as chuck arrays.
+
 - Improved path handling: run, add, replace, edit now all use same mechanism to check file validity, fix partial path if file is in `examples`, or otherwise search in Max search path.
 
 - Changed / improved `chuck~.maxhelp` to make it clearer and more readable.

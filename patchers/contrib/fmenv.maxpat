@@ -40,6 +40,31 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-33",
+					"linecount" : 3,
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 596.0, 401.0, 164.0, 42.0 ],
+					"text" : ";\rmax launchbrowser https://github.com/HighHarmonics2"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-22",
+					"linecount" : 2,
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 595.0, 365.0, 165.0, 29.0 ],
+					"text" : "by HighHarmonics2\nhttps://github.com/HighHarmonics2"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"id" : "obj-11",
 					"local" : 1,
 					"maxclass" : "ezdac~",
@@ -780,10 +805,6 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
 					"patching_rect" : [ 170.0, 301.0, 158.0, 22.0 ],
-					"saved_object_attributes" : 					{
-						"debug" : 1
-					}
-,
 					"text" : "chuck~ 2 max/fmenv.ck"
 				}
 

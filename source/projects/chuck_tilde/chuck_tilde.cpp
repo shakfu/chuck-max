@@ -849,11 +849,14 @@ t_max_err ck_clear(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         if (argv->a_type == A_SYM) {
             t_symbol* target = atom_getsym(argv);
             if (target == gensym("globals")) {
-                post("=> [chuck]: clean up global variables without clearing the whole VM");
+                post("[chuck]: clean up global variables without clearing the whole VM");
                 return ck_send_chuck_vm_msg(x, CK_MSG_CLEARGLOBALS);
             } 
             if (target == gensym("vm")) {
                 return ck_send_chuck_vm_msg(x, CK_MSG_CLEARVM); 
+            }
+            if (target == gensym("console")) {
+                return ck_send_max_msg(x, gensym("clearmaxwindow"),""); 
             }
         }
     }
@@ -1018,8 +1021,7 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         case A_FLOAT: {
             float p_float = atom_getfloat(argv);
             ck_debug(x, (char*)"param %s: %f", s->s_name, p_float);            
-            x->chuck->vm()->globals_manager()->setGlobalFloat(s->s_name,
-                                                              p_float);
+            x->chuck->vm()->globals_manager()->setGlobalFloat(s->s_name, p_float);
             break;
         }
         case A_LONG: {
@@ -1034,8 +1036,7 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
                 goto error;
             }
             ck_debug(x, (char*)"param %s: %s", s->s_name, p_sym->s_name);
-            x->chuck->vm()->globals_manager()->setGlobalString(s->s_name,
-                                                               p_sym->s_name);
+            x->chuck->vm()->globals_manager()->setGlobalString(s->s_name, p_sym->s_name);
             break;
         }
         default:
@@ -1046,8 +1047,9 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     } else { // type is a list
 
         if (argv->a_type == A_LONG) { // list of longs
-            t_atom_long* long_array = (t_atom_long*)sysmem_newptr(sizeof(t_atom_long*) * argc);
+            long* long_array = (long*)sysmem_newptr(sizeof(long*) * argc);
             for (int i = 0; i < argc; i++) {
+                // post("i: %d -> %d ", i, atom_getlong(argv + i));
                 long_array[i] = atom_getlong(argv + i);
             }
             x->chuck->vm()->globals_manager()->setGlobalIntArray(
@@ -1059,6 +1061,7 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             double* float_array = (double*)sysmem_newptr(sizeof(double*)
                                                          * argc);
             for (int i = 0; i < argc; i++) {
+                post("i: %d -> %d ", i, atom_getfloat(argv + i));
                 float_array[i] = atom_getfloat(argv + i);
             }
             x->chuck->vm()->globals_manager()->setGlobalFloatArray(
