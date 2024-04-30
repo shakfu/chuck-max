@@ -1,7 +1,7 @@
 // sound file
 // me.dir() gets the directory of the chuck script!
 me.dir() + "../data/amen.wav" => string filename;
-if( me.args() ) me.arg(0) => filename;
+if( me.args() > 0 ) me.arg(0) => filename;
 
 // the patch 
 SndBuf buf => dac;

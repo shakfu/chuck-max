@@ -1,5 +1,14 @@
 # Dev Notes
 
+## How to Sync Chuck <=> Max
+
+- `sync~`
+- `rate~` also see [this article](https://cycling74.com/tutorials/my-favorite-object-rate~#reply-591c77941db19e747db0ca8f)
+- [sync with gen~](https://cycling74.com/forums/question-about-a-patch-in-gen-book-generating-sound-and-organizing-time#reply-6615705ccb02500013795117)
+- [Counting, and a World without bang Messages](https://cycling74.com/tutorials/gen~-for-beginners-part-3-counting-and-a-world-without-bang-messages)
+
+
+
 ## Sending Messages to Maxobject
 
 ```c++
@@ -306,9 +315,7 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
 
 ## Parameters via the `global` keyword
 
-### Issues
-
-#### How to set default values?
+### How to set default global values?
 
 As a general rule, if the chuck code will not run in chuck, then it will not run in chuck-max.
 
@@ -351,14 +358,20 @@ public class EventResponder : MonoBehaviour {
 ```
 
 > The main guiding principle in the design of this keyword is that it is not necessary for ChucK to know anything about the embedding host, or whether it is embedded at all. Instead, `global` variables appear like normal variables within their own ChucK script, but can be inspected, edited, or listened to by other ChucK scripts or by the embedding host.
+> 
 > So far, the `global` keyword is enabled for three types of variables;
 >
 > 1. The first type of global variable is primitives: `ints`, `floats`, and `strings`. The embedding host can get and set their values. The get operation requires the use of a *callback* because the embedding host often runs on a different thread than the audio thread.
+>
 > 2. The second type of global variable is `Events`. ChucK Events are used to pause execution in a ChucK script until the Event signals that it has occurred. The embedding host can *signal* or *broadcast* a global Event (i.e. trigger *one* or *all* ChucK scripts waiting on the event). The embedding host can also register a callback to be called every time a global Event is broadcast, as (B) in the code example above. This callback to user code occurs on the audio thread and thus is timed with sample-level accuracy; a tighter integration of timing between audio and visuals is not achievable.
+>
 > 3. The third type of global variable is `UGens` (unit generators). ChucK UGens are signal processing elements that generate streams of audio. The embedding host can fetch a global UGen’s most recent samples.
+>
 > ...
 > The desire to embed ChucK in Unity motivated the wider libChucK rearchitecture project, which enables ChucK to act as an embeddable component in any C++ project.
+>
 > The ChucK source was separated into core and host code- bases. The core comprises the language parser, which compiles code, and virtual machine (VM), which translates audio inputs to outputs. One embeds ChucK in a new project by simply writing a new host that calls these functions.
+> 
 > The rearchitecture allowed multiple VMs to exist in the same address space (useful for contexts where the number of channels is limited and multiple outputs are desired, such as in a digital audio plugin or Unity’s spatial audio system). **It also enabled the redirection of all ChucK error messages to an optional callback** (e.g. the Unity debug console).
 
 ## Chuck Events

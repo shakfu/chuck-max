@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Added more callback demos for global vars
+
+- Changed `remove` message to able to take more than than one shred_id
+
 - Added test for use of global variables and a practical test of its use in a musical patch.
 
 - Fixed bug which prevented sending lists of atoms as chuck arrays.

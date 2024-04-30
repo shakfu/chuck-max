@@ -54,6 +54,7 @@ typedef struct _ck {
     long current_shred_id;   // current shred id
     t_symbol* editor;        // external text editor for chuck code
     t_symbol* edit_file;     // path of file to edit by external editor
+    // void *ui_outlet;         // outlet of ui messages;
 } t_ck;
 
 
@@ -102,6 +103,7 @@ void ck_dblclick(t_ck* x);
 t_max_err ck_send_max_msg(t_ck* x, t_symbol* s, const char* parsestr);
 t_max_err ck_check_editor(t_ck* x, t_symbol* entry);
 t_symbol* ck_check_file(t_ck* x, t_symbol* name);
+t_max_err ck_compile_code(t_ck* x, const char* code, const char* args);
 t_max_err ck_compile_file(t_ck* x, const char* filename);
 t_max_err ck_run_file(t_ck* x);
 t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type);
@@ -119,24 +121,21 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
 t_max_err ck_register(t_ck* x, t_symbol* s);
 t_max_err ck_unregister(t_ck* x, t_symbol* s);
 
+// callback demo
+t_max_err ck_demo(t_ck* x);
 
 // callbacks
 void cb_demo(void);
+void cb_global_int1(t_CKINT val);
+void cb_global_int2(const char* name, t_CKINT val);
+void cb_global_int3(t_CKINT cb_id, t_CKINT val);
 
 
 // global class pointer variable
 static t_class* ck_class = NULL;
 
 
-//-----------------------------------------------------------------------------------------------
-// callbacks
 
-/* nothing useful here yet */
-
-void cb_demo(void)
-{
-    post("==> demo callback is called!");
-}
 
 
 //-----------------------------------------------------------------------------------------------
@@ -161,6 +160,7 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_status,       "status",   0);
     class_addmethod(c, (method)ck_time,         "time",     0);
 
+    class_addmethod(c, (method)ck_demo,         "demo",     0);
     class_addmethod(c, (method)ck_docs,         "docs",     0);
     class_addmethod(c, (method)ck_info,         "info",     0);
     class_addmethod(c, (method)ck_chugins,      "chugins",  0);
@@ -219,6 +219,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
             ck_get_path_from_package(ck_class, (char*)"/examples"));
 
         t_symbol* filename;
+
         if (argc == 1) {
             if (argv->a_type == A_LONG) {
                 atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);
@@ -236,6 +237,9 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
             x->run_file = ck_check_file(x, filename);
         } 
         // else just use defaults
+
+        // if one wants another outlet
+        // x->ui_outlet = outlet_new((t_pxobject*)x, NULL);
 
         dsp_setup((t_pxobject*)x, x->channels);   // MSP inlets: 2nd arg is # of inlets
     
@@ -448,23 +452,81 @@ void ck_stdout_print(const char* msg) { post("%s", msg); }
 void ck_stderr_print(const char* msg) { post("%s", msg); }
 
 
-// send a message to max object
-//
-// eg. ck_send_max_msg(x, gensym("launchbrowser"), "http://www.cycling74.com");
-// or (; max launchbrowser http://www.cycling74.com)
+Chuck_VM_Shred * ck_shred_lookup(t_ck* x, long id)
+{
+    Chuck_VM_Shreduler* shreduler = x->chuck->vm()->shreduler();
+    return shreduler->lookup(id);
+}
+
+std::vector<t_CKUINT> ck_get_ready_shred_ids(t_ck* x)
+{
+    std::vector<t_CKUINT> shred_ids;
+    Chuck_VM_Shreduler* shreduler = x->chuck->vm()->shreduler();
+    shreduler->get_ready_shred_ids(shred_ids);
+    return shred_ids;
+}
+
+std::vector<t_CKUINT> ck_get_blocked_shred_ids(t_ck* x)
+{
+    std::vector<t_CKUINT> shred_ids;
+    Chuck_VM_Shreduler* shreduler = x->chuck->vm()->shreduler();
+    shreduler->get_blocked_shred_ids(shred_ids);
+    return shred_ids;
+}
+
+std::vector<t_CKUINT>  ck_get_all_shred_ids(t_ck* x)
+{
+    std::vector<t_CKUINT> shred_ids;
+    Chuck_VM_Shreduler* shreduler = x->chuck->vm()->shreduler();
+    shreduler->get_all_shred_ids(shred_ids);
+    return shred_ids;
+}
+
+
+long ck_spork_highest_id(t_ck* x)
+{
+    Chuck_VM_Shreduler* shreduler = x->chuck->vm()->shreduler();
+    return shreduler->highest();
+}
+
+long ck_spork_last_id(t_ck* x)
+{
+    long id = x->chuck->vm()->last_id();
+    post("last_id: %d", id);
+    return id;
+}
+
+long ck_spork_next_id(t_ck* x)
+{
+    long id = x->chuck->vm()->next_id();
+    post("next_id: %d", id);
+    return id;
+}
+
+/**
+ * @brief      Send a message to Max object
+ *
+ * @param      x         object instance
+ * @param      s         method name
+ * @param[in]  parsestr  method args if any
+ * 
+ * eg. (; max launchbrowser http://www.cycling74.com)
+ *
+ * @return     Max error
+ */
 t_max_err ck_send_max_msg(t_ck* x, t_symbol* s, const char* parsestr)
 {
-    t_max_err err;
-
     t_object *maxobj = (t_object*)object_new(CLASS_NOBOX, gensym("max"));
     if (maxobj == NULL) {
         error("could not get max object");
+        return MAX_ERR_GENERIC;
     }
-    err = object_method_parse(maxobj, s, parsestr, NULL);
+    t_max_err err = object_method_parse(maxobj, s, parsestr, NULL);
     if (err != MAX_ERR_NONE) {
         error("could not send msg: ;max %s %s", s->s_name, parsestr);
         return err;
     }
+    return MAX_ERR_NONE;
 }
 
 
@@ -515,15 +577,7 @@ t_max_err ck_check_editor(t_ck* x, t_symbol* entry)
         x->editor = entry;
         return MAX_ERR_NONE;
     }
-    // char cmd[MAX_PATH_CHARS];
-    // snprintf_zero(cmd, MAX_PATH_CHARS, "/bin/sh -c 'which %s'", entry->s_name);
-    // std::string path = get_output(cmd);
-    // if (path == "") {
-    //     error("editor could not be found: %s", entry->s_name);
-    //     return MAX_ERR_GENERIC;
-    // }
-    // x->editor = gensym(path.c_str());
-    // return MAX_ERR_NONE;
+    return MAX_ERR_NONE;
 }
 
 t_symbol* ck_check_file(t_ck* x, t_symbol* name)
@@ -575,6 +629,16 @@ t_symbol* ck_check_file(t_ck* x, t_symbol* name)
     return gensym("");
 }
 
+t_max_err ck_compile_code(t_ck* x, const char* code, const char* args)
+{
+    std::vector<t_CKUINT> vec;
+    if (!x->chuck->compileCode(std::string(code), std::string(args), 1, FALSE, &vec)) {
+        error("could not compile code: %s", code);
+        return MAX_ERR_GENERIC;
+    }
+    return MAX_ERR_NONE;
+}
+
 t_max_err ck_compile_file(t_ck* x, const char* filename)
 {
     if (x->chuck->compileFile(std::string(filename), "", 1)) {
@@ -592,7 +656,7 @@ t_max_err ck_run_file(t_ck* x)
     if (x->run_file != gensym("")) {
         return ck_compile_file(x, x->run_file->s_name);
     }
-    error("ck_run_file: filename slot was empty");
+    error("ck_run_file: filename slot is empty");
     return MAX_ERR_GENERIC;
 }
 
@@ -766,14 +830,29 @@ t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             }
         }
 
-    } else {
-        // default to last
-        msg->type = CK_MSG_REMOVE;
-        msg->param = 0xffffffff;
-    }
+        // handle one arg case
+        msg->reply_cb = (ck_msg_func)0;
+        x->chuck->vm()->queue_msg(msg, 1);
+        return MAX_ERR_NONE;
 
-    msg->reply_cb = (ck_msg_func)0;
-    x->chuck->vm()->queue_msg(msg, 1);
+    } else {
+        // assume message is along :-) the lines of (remove 2 4 1 [..])
+        long* long_array = (long*)sysmem_newptr(sizeof(long*) * argc);
+        t_max_err err = atom_getlong_array(argc, argv, argc, long_array);
+        if (err != MAX_ERR_NONE) {
+            error("remove msg: multiple args can only be ints");
+            return err;
+        }
+        for (int i = 0; i < argc; i++) {
+            // post("removing: long_array[%d] = %d", i, long_array[i]);
+            Chuck_Msg* m = new Chuck_Msg;
+            m->type = CK_MSG_REMOVE;
+            m->param = long_array[i]; // shred id
+            m->reply_cb = (ck_msg_func)0;
+            x->chuck->vm()->queue_msg(m, 1);
+        }
+        sysmem_freeptr(long_array);
+    }
     return MAX_ERR_NONE;
 }
 
@@ -1058,10 +1137,9 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         }
 
         else if (argv->a_type == A_FLOAT) { // list of doubles
-            double* float_array = (double*)sysmem_newptr(sizeof(double*)
-                                                         * argc);
+            double* float_array = (double*)sysmem_newptr(sizeof(double*) * argc);
             for (int i = 0; i < argc; i++) {
-                post("i: %d -> %d ", i, atom_getfloat(argv + i));
+                // post("i: %d -> %d ", i, atom_getfloat(argv + i));
                 float_array[i] = atom_getfloat(argv + i);
             }
             x->chuck->vm()->globals_manager()->setGlobalFloatArray(
@@ -1179,6 +1257,65 @@ t_max_err ck_info(t_ck* x)
 }
 
 
+//-----------------------------------------------------------------------------------------------
+// callbacks
+
+/* nothing useful here yet just minimal demos */
+
+void cb_demo(void)
+{
+    post("==> demo callback is called!");
+}
+
+void cb_global_int1(t_CKINT val)
+{
+    post("cb_global_int1: %d", val);
+}
+
+void cb_global_int2(const char* name, t_CKINT val)
+{
+     post("cb_global_int2: name: %s value: %d", name, val);
+}
+
+void cb_global_int3(t_CKINT cb_id, t_CKINT val)
+{
+     post("cb_global_int3: id: %d value: %d", cb_id, val);
+}
+
+void cb_global_float1(t_CKFLOAT val)
+{
+    post("cb_global_float1: %f", val);
+}
+
+void cb_global_float2(const char* name, t_CKFLOAT val)
+{
+     post("cb_global_float2: name: %s value: %f", name, val);
+}
+
+void cb_global_float3(t_CKINT cb_id, t_CKFLOAT val)
+{
+     post("cb_global_float3: id: %d value: %f", cb_id, val);
+}
+
+void cb_global_string1(const char* val)
+{
+    post("cb_global_string1: %s", val);
+}
+
+void cb_global_string2(const char* name, const char* val)
+{
+     post("cb_global_string2: name: %s value: %s", name, val);
+}
+
+void cb_global_string3(t_CKINT cb_id, const char* val)
+{
+     post("cb_global_string3: id: %d value: %s", cb_id, val);
+}
+
+//-----------------------------------------------------------------------------------------------
+// callback handlers
+
+
 t_max_err ck_register(t_ck* x, t_symbol* s)
 {
     if (!x->cb_map.count(s->s_name)) {
@@ -1209,6 +1346,27 @@ t_max_err ck_unregister(t_ck* x, t_symbol* s)
         return MAX_ERR_NONE;
     };
     return MAX_ERR_GENERIC;
+}
+
+
+t_max_err ck_demo(t_ck* x)
+{
+    // ck_spork_last_id(x);
+    // ck_spork_next_id(x);
+
+    x->chuck->vm()->globals_manager()->getGlobalInt("gint", cb_global_int1);
+    x->chuck->vm()->globals_manager()->getGlobalInt("gint", cb_global_int2);
+    x->chuck->vm()->globals_manager()->getGlobalInt("gint", 3, cb_global_int3);
+
+    x->chuck->vm()->globals_manager()->getGlobalFloat("gfloat", cb_global_float1);
+    x->chuck->vm()->globals_manager()->getGlobalFloat("gfloat", cb_global_float2);
+    x->chuck->vm()->globals_manager()->getGlobalFloat("gfloat", 3, cb_global_float3);
+
+    x->chuck->vm()->globals_manager()->getGlobalString("gstring", cb_global_string1);
+    x->chuck->vm()->globals_manager()->getGlobalString("gstring", cb_global_string2);
+    x->chuck->vm()->globals_manager()->getGlobalString("gstring", 3, cb_global_string3);
+
+    return MAX_ERR_NONE;
 }
 
 
