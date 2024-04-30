@@ -89,6 +89,7 @@ t_max_err ck_signal(t_ck* x, t_symbol* s);      // signal global event
 t_max_err ck_broadcast(t_ck* x, t_symbol* s);   // broadcast global event
 
 // special message handlers
+t_max_err ck_globals(t_ck* x);                  // dump global variabls
 t_max_err ck_docs(t_ck* x);                     // open chuck docs in a browser
 t_max_err ck_info(t_ck* x);                     // get info about running shreds
 t_max_err ck_chugins(t_ck* x);                  // probe and list available chugins
@@ -129,6 +130,12 @@ void cb_demo(void);
 void cb_global_int1(t_CKINT val);
 void cb_global_int2(const char* name, t_CKINT val);
 void cb_global_int3(t_CKINT cb_id, t_CKINT val);
+void cb_global_float1(t_CKFLOAT val);
+void cb_global_float2(const char* name, t_CKFLOAT val);
+void cb_global_float3(t_CKINT cb_id, t_CKFLOAT val);
+void cb_global_string1(const char* val);
+void cb_global_string2(const char* name, const char* val);
+void cb_global_string3(t_CKINT cb_id, const char* val);
 
 
 // global class pointer variable
@@ -161,6 +168,8 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_time,         "time",     0);
 
     class_addmethod(c, (method)ck_demo,         "demo",     0);
+
+    class_addmethod(c, (method)ck_globals,      "globals",  0);
     class_addmethod(c, (method)ck_docs,         "docs",     0);
     class_addmethod(c, (method)ck_info,         "info",     0);
     class_addmethod(c, (method)ck_chugins,      "chugins",  0);
@@ -1262,11 +1271,6 @@ t_max_err ck_info(t_ck* x)
 
 /* nothing useful here yet just minimal demos */
 
-void cb_demo(void)
-{
-    post("==> demo callback is called!");
-}
-
 void cb_global_int1(t_CKINT val)
 {
     post("cb_global_int1: %d", val);
@@ -1312,6 +1316,112 @@ void cb_global_string3(t_CKINT cb_id, const char* val)
      post("cb_global_string3: id: %d value: %s", cb_id, val);
 }
 
+void cb_demo(void)
+{
+    post("==> demo callback is called!");
+}
+
+void cb_global_event1(void)
+{
+    post("cb_global_event1");
+}
+
+void cb_global_event2(const char* name)
+{
+    post("cb_global_event2: %s", name);
+}
+
+void cb_global_event3(t_CKINT cb_id)
+{
+    post("cb_global_event3: id: %d", cb_id);
+}
+
+void cb_global_int_array1(t_CKINT array[], t_CKUINT n)
+{
+    post("cb_global_int_array1: %d", n);
+    for (int i = 0; i < n; i++) {
+        post("array[%d] = %d", i, array[i]);
+    }
+}
+
+void cb_global_int_array2(const char* name, t_CKINT array[], t_CKUINT n)
+{
+    post("cb_global_int_array2: name: %s size: %d", name, n);
+    for (int i = 0; i < n; i++) {
+        post("array[%d] = %d", i, array[i]);
+    }
+}
+
+void cb_global_int_array3(t_CKINT cb_id, t_CKINT array[], t_CKUINT n)
+{
+    post("cb_global_int_array3: cb_id: %d size: %d", cb_id, n);
+    for (int i = 0; i < n; i++) {
+        post("array[%d] = %d", i, array[i]);
+    }
+}
+
+void cb_global_int_array_value1(t_CKINT value)
+{
+    post("cb_global_int_array_value1: value: %d", value);
+}
+
+void cb_global_int_array_value2(const char* name, t_CKINT value)
+{
+    post("cb_global_int_array_value2: name: %s value: %d", name, value);
+}
+
+void cb_global_int_array_value3(t_CKINT cb_id, t_CKINT value)
+{
+    post("cb_global_int_array_value3: cb_id: %d value: %d", cb_id, value);
+}
+
+void cb_global_float_array1(t_CKFLOAT array[], t_CKUINT n)
+{
+    post("cb_global_float_array1: %d", n);
+    for (int i = 0; i < n; i++) {
+        post("array[%d] = %d", i, array[i]);
+    }
+}
+
+void cb_global_float_array2(const char* name, t_CKFLOAT array[], t_CKUINT n)
+{
+    post("cb_global_float_array2: name: %s size: %d", name, n);
+    for (int i = 0; i < n; i++) {
+        post("array[%d] = %d", i, array[i]);
+    }
+}
+
+void cb_global_float_array3(t_CKINT cb_id, t_CKFLOAT array[], t_CKUINT n)
+{
+    post("cb_global_float_array3: cb_id: %d size: %d", cb_id, n);
+    for (int i = 0; i < n; i++) {
+        post("array[%d] = %d", i, array[i]);
+    }
+}
+
+void cb_global_float_array_value1(t_CKFLOAT value)
+{
+    post("cb_global_float_array_value1: value: %d", value);
+}
+
+void cb_global_float_array_value2(const char* name, t_CKFLOAT value)
+{
+    post("cb_global_float_array_value2: name: %s value: %d", name, value);
+}
+
+void cb_global_float_array_value3(t_CKINT cb_id, t_CKFLOAT value)
+{
+    post("cb_global_float_array_value3: cb_id: %d value: %d", cb_id, value);
+}
+
+void cb_get_all_global_vars(const std::vector<Chuck_Globals_TypeValue> & list, void * data)
+{
+    post("cb_get_all_global_vars:");
+    for (auto v : list) {
+        post("type: %s name: %s", v.type.c_str(), v.name.c_str());
+    }
+}
+
 //-----------------------------------------------------------------------------------------------
 // callback handlers
 
@@ -1348,6 +1458,36 @@ t_max_err ck_unregister(t_ck* x, t_symbol* s)
     return MAX_ERR_GENERIC;
 }
 
+t_max_err ck_demo_gevents(t_ck* x)
+{
+    // x->chuck->vm()->globals_manager()->listenForGlobalEvent("gevent", cb_global_event1, false);
+    // x->chuck->vm()->globals_manager()->listenForGlobalEvent("gevent", cb_global_event2, false);
+    // x->chuck->vm()->globals_manager()->listenForGlobalEvent("gevent", 3, cb_global_event3, false);
+    // x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent( const char * name, void (*callback)(void) );
+    // x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent( const char * name, void (*callback)(const char*) );
+    // x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent( const char * name, t_CKINT callbackID, void (*callback)(t_CKINT) );
+}
+
+t_max_err ck_demo_set_global_arrays(t_ck* x)
+{
+    // x->chuck->vm()->globals_manager()->setGlobalIntArray( const char * name, t_CKINT arrayValues[], t_CKUINT numValues );
+    // x->chuck->vm()->globals_manager()->setGlobalIntArrayValue( const char * name, t_CKUINT index, t_CKINT value );
+    // x->chuck->vm()->globals_manager()->setGlobalAssociativeIntArrayValue( const char * name, const char * key, t_CKINT value );
+    // x->chuck->vm()->globals_manager()->setGlobalFloatArray( const char * name, t_CKFLOAT arrayValues[], t_CKUINT numValues );
+    // x->chuck->vm()->globals_manager()->setGlobalFloatArrayValue( const char * name, t_CKUINT index, t_CKFLOAT value );
+    // x->chuck->vm()->globals_manager()->setGlobalAssociativeFloatArrayValue( const char * name, const char * key, t_CKFLOAT value );
+}
+
+
+t_max_err ck_globals(t_ck* x)
+{
+    if (x->chuck->vm()->globals_manager()->getAllGlobalVariables(cb_get_all_global_vars, NULL)) {
+        return MAX_ERR_NONE;
+    }
+    error("could not dump global variable to console");
+    return MAX_ERR_GENERIC;
+}
+
 
 t_max_err ck_demo(t_ck* x)
 {
@@ -1365,6 +1505,32 @@ t_max_err ck_demo(t_ck* x)
     x->chuck->vm()->globals_manager()->getGlobalString("gstring", cb_global_string1);
     x->chuck->vm()->globals_manager()->getGlobalString("gstring", cb_global_string2);
     x->chuck->vm()->globals_manager()->getGlobalString("gstring", 3, cb_global_string3);
+
+    // x->chuck->vm()->globals_manager()->getGlobalUGenSamples( const char * name, SAMPLE* buffer, int numFrames );
+
+    x->chuck->vm()->globals_manager()->getGlobalIntArray("gints", cb_global_int_array1);
+    x->chuck->vm()->globals_manager()->getGlobalIntArray("gints", cb_global_int_array2);
+    x->chuck->vm()->globals_manager()->getGlobalIntArray("gints", 3, cb_global_int_array3);
+
+    x->chuck->vm()->globals_manager()->getGlobalIntArrayValue("gints", 0, cb_global_int_array_value1);
+    x->chuck->vm()->globals_manager()->getGlobalIntArrayValue("gints", 0, cb_global_int_array_value2);
+    x->chuck->vm()->globals_manager()->getGlobalIntArrayValue("gints", 3, 0, cb_global_int_array_value3);
+
+    // x->chuck->vm()->globals_manager()->getGlobalAssociativeIntArrayValue( const char * name, const char * key, void (*callback)(t_CKINT) );
+    // x->chuck->vm()->globals_manager()->getGlobalAssociativeIntArrayValue( const char * name, const char * key, void (*callback)(const char*, t_CKINT) );
+    // x->chuck->vm()->globals_manager()->getGlobalAssociativeIntArrayValue( const char * name, t_CKINT callbackID, const char * key, void (*callback)(t_CKINT, t_CKINT) );
+
+    x->chuck->vm()->globals_manager()->getGlobalFloatArray("gfloats", cb_global_float_array1);
+    x->chuck->vm()->globals_manager()->getGlobalFloatArray("gfloats", cb_global_float_array2);
+    x->chuck->vm()->globals_manager()->getGlobalFloatArray("gfloats", 3, cb_global_float_array3);
+
+    x->chuck->vm()->globals_manager()->getGlobalFloatArrayValue("gfloats", 0, cb_global_float_array_value1);
+    x->chuck->vm()->globals_manager()->getGlobalFloatArrayValue("gfloats", 0, cb_global_float_array_value2);
+    x->chuck->vm()->globals_manager()->getGlobalFloatArrayValue("gfloats", 3, 0, cb_global_float_array_value3);
+
+    // x->chuck->vm()->globals_manager()->getGlobalAssociativeFloatArrayValue( const char * name, const char * key, void (*callback)(t_CKFLOAT) );
+    // x->chuck->vm()->globals_manager()->getGlobalAssociativeFloatArrayValue( const char * name, const char * key, void (*callback)(const char*, t_CKFLOAT) );
+    // x->chuck->vm()->globals_manager()->getGlobalAssociativeFloatArrayValue( const char * name, t_CKINT callbackID, const char * key, void (*callback)(t_CKINT, t_CKFLOAT) );
 
     return MAX_ERR_NONE;
 }

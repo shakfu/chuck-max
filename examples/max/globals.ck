@@ -27,5 +27,5 @@ while( true )
 	}
 	
 	// advance time
-	100::ms => now;
+	5::second => now;
 }
