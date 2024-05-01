@@ -1422,6 +1422,37 @@ void cb_get_all_global_vars(const std::vector<Chuck_Globals_TypeValue> & list, v
     }
 }
 
+
+void cb_global_assoc_int_array_value1(t_CKINT val)
+{
+    post("cb_global_assoc_int_array_value1: %d", val);
+}
+
+void cb_global_assoc_int_array_value2(const char* name, t_CKINT val)
+{
+     post("cb_global_assoc_int_array_value2: name: %s value: %d", name, val);
+}
+
+void cb_global_assoc_int_array_value3(t_CKINT cb_id, t_CKINT val)
+{
+     post("cb_global_assoc_int_array_value3: id: %d value: %d", cb_id, val);
+}
+
+void cb_global_assoc_float_array_value1(t_CKFLOAT val)
+{
+    post("cb_global_assoc_float_array_value1: %f", val);
+}
+
+void cb_global_assoc_float_array_value2(const char* name, t_CKFLOAT val)
+{
+     post("cb_global_assoc_float_array_value2: name: %s value: %f", name, val);
+}
+
+void cb_global_assoc_float_array_value3(t_CKINT cb_id, t_CKFLOAT val)
+{
+     post("cb_global_assoc_float_array_value3: id: %d value: %f", cb_id, val);
+}
+
 //-----------------------------------------------------------------------------------------------
 // callback handlers
 
@@ -1516,9 +1547,9 @@ t_max_err ck_demo(t_ck* x)
     x->chuck->vm()->globals_manager()->getGlobalIntArrayValue("gints", 0, cb_global_int_array_value2);
     x->chuck->vm()->globals_manager()->getGlobalIntArrayValue("gints", 3, 0, cb_global_int_array_value3);
 
-    // x->chuck->vm()->globals_manager()->getGlobalAssociativeIntArrayValue( const char * name, const char * key, void (*callback)(t_CKINT) );
-    // x->chuck->vm()->globals_manager()->getGlobalAssociativeIntArrayValue( const char * name, const char * key, void (*callback)(const char*, t_CKINT) );
-    // x->chuck->vm()->globals_manager()->getGlobalAssociativeIntArrayValue( const char * name, t_CKINT callbackID, const char * key, void (*callback)(t_CKINT, t_CKINT) );
+    x->chuck->vm()->globals_manager()->getGlobalAssociativeIntArrayValue("imap", "a", cb_global_assoc_int_array_value1);
+    x->chuck->vm()->globals_manager()->getGlobalAssociativeIntArrayValue("imap", "a", cb_global_assoc_int_array_value2);
+    x->chuck->vm()->globals_manager()->getGlobalAssociativeIntArrayValue("imap", 3, "a", cb_global_assoc_int_array_value3);
 
     x->chuck->vm()->globals_manager()->getGlobalFloatArray("gfloats", cb_global_float_array1);
     x->chuck->vm()->globals_manager()->getGlobalFloatArray("gfloats", cb_global_float_array2);
@@ -1528,9 +1559,9 @@ t_max_err ck_demo(t_ck* x)
     x->chuck->vm()->globals_manager()->getGlobalFloatArrayValue("gfloats", 0, cb_global_float_array_value2);
     x->chuck->vm()->globals_manager()->getGlobalFloatArrayValue("gfloats", 3, 0, cb_global_float_array_value3);
 
-    // x->chuck->vm()->globals_manager()->getGlobalAssociativeFloatArrayValue( const char * name, const char * key, void (*callback)(t_CKFLOAT) );
-    // x->chuck->vm()->globals_manager()->getGlobalAssociativeFloatArrayValue( const char * name, const char * key, void (*callback)(const char*, t_CKFLOAT) );
-    // x->chuck->vm()->globals_manager()->getGlobalAssociativeFloatArrayValue( const char * name, t_CKINT callbackID, const char * key, void (*callback)(t_CKINT, t_CKFLOAT) );
+    x->chuck->vm()->globals_manager()->getGlobalAssociativeFloatArrayValue("fmap", "a", cb_global_assoc_float_array_value1);
+    x->chuck->vm()->globals_manager()->getGlobalAssociativeFloatArrayValue("fmap", "a", cb_global_assoc_float_array_value2);
+    x->chuck->vm()->globals_manager()->getGlobalAssociativeFloatArrayValue("fmap", 3, "a", cb_global_assoc_float_array_value3);
 
     return MAX_ERR_NONE;
 }

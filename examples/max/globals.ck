@@ -2,6 +2,8 @@ global float gfloat;     // 0.0 - 1.0
 global int gint;         // 0 - 100
 global int gints[6];     // array of 6 ints 
 global float gfloats[6]; // array of 6 floats 
+global int imap[6];      // associate array of ints
+global float fmap[6];    // associate array of floats
 
 
 while( true )
@@ -9,6 +11,14 @@ while( true )
 	<<< "gint (value):", gint >>>;
 
 	<<< "gfloat (value):", gfloat >>>;
+
+	if (imap.size() > 0) {
+		<<< "imap[\"a\"] = ", imap["a"] >>>;
+	}
+
+	if (fmap.size() > 0) {
+		<<< "fmap[\"a\"] = ", fmap["a"] >>>;
+	}
 
 	if (gints.size() > 0) {
 		<<< "gints:", gints >>>;
