@@ -23,17 +23,14 @@
 #include "chuck.h"
 #include "chuck_globals.h"
 
-
 // globals defs
 #define CHANNELS 1
 #define EMBEDDED_CHUGINS 0
 
 namespace fs = std::filesystem;
 
-
 // global variables
 int MX_CK_COUNT = 0;
-
 
 // typedefs
 typedef void (*ck_callback)(void);
@@ -43,13 +40,19 @@ typedef std::unordered_map<std::string, ck_callback> callback_map;
 typedef struct _ck {
     t_pxobject ob;           // the object itself (t_pxobject in MSP)
 
+    // max-related
+    t_symbol* name;          // instance unique name (used for scripting)
+    t_patcher* patcher;      // to send msgs to objects
+    t_box* box;              // the ui box of the chuck~ instance?
+    t_symbol* patcher_dir;   // patcher directory
+
     // chuck-related
     ChucK* chuck;            // chuck instance
     int oid;                 // object id
     long channels;           // n of input/output channels
     t_symbol* run_file;      // path of chuck file to run
-    const char* working_dir; // chuck working directory
-    const char* chugins_dir; // chugins directory
+    t_symbol* working_dir;   // chuck working directory
+    t_symbol* chugins_dir;   // chugins directory
     float* in_chuck_buffer;  // intermediate chuck input buffer
     float* out_chuck_buffer; // intermediate chuck output buffer
     callback_map cb_map;     // callback map<string,callback>
@@ -58,11 +61,8 @@ typedef struct _ck {
     t_symbol* editor;        // external text editor for chuck code
     t_symbol* edit_file;     // path of file to edit by external editor
     // void *ui_outlet;      // outlet of ui messages;
-    t_symbol* name;          // instance unique name (used for scripting)
-    t_patcher* patcher;      // to send msgs to objects
-    t_box* box;              // the ui box of the chuck~ instance?
-} t_ck;;
 
+} t_ck;
 
 
 // method prototypes
@@ -115,8 +115,8 @@ t_max_err ck_compile_code(t_ck* x, const char* code, const char* args);
 t_max_err ck_compile_file(t_ck* x, const char* filename);
 t_max_err ck_run_file(t_ck* x);
 t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type);
-t_string* ck_get_path_from_external(t_class* c, char* subpath);
-t_string* ck_get_path_from_package(t_class* c, char* subpath);
+t_symbol* ck_get_path_from_external(t_class* c, char* subpath);
+t_symbol* ck_get_path_from_package(t_class* c, char* subpath);
 
 // audio processing
 void ck_dsp64(t_ck* x, t_object* dsp64, short* count, double samplerate,
@@ -250,10 +250,10 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->run_file = gensym("");
         x->edit_file = gensym("");
         x->editor = gensym("");
-        x->working_dir = string_getptr(
-            ck_get_path_from_package(ck_class, (char*)"/examples"));
+        x->working_dir = ck_get_path_from_package(ck_class, (char*)"/examples");
         x->patcher = NULL;
         x->box = NULL;
+        x->patcher_dir = gensym("");
 
         t_symbol* filename;
 
@@ -287,11 +287,9 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // chuck-related
         x->chuck = NULL;
 #if EMBEDDED_CHUGINS 
-        x->chugins_dir = string_getptr(
-            ck_get_path_from_external(ck_class, (char*)"/Contents/Resources/chugins"));
+        x->chugins_dir = ck_get_path_from_external(ck_class, (char*)"/Contents/Resources/chugins");
 #else
-        x->chugins_dir = string_getptr(
-            ck_get_path_from_package(ck_class, (char*)"/examples/chugins"));
+        x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins");
 #endif        
         x->in_chuck_buffer = NULL;
         x->out_chuck_buffer = NULL;
@@ -308,11 +306,11 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->chuck->setParam(CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT)0);
 
         // set default chuck examples dirs
-        std::string global_dir = std::string(x->working_dir);
+        std::string global_dir = std::string(x->working_dir->s_name);
         x->chuck->setParam(CHUCK_PARAM_WORKING_DIRECTORY, global_dir);
 
         // set default chuggins dirs
-        std::string chugins_dir = std::string(x->chugins_dir);
+        std::string chugins_dir = std::string(x->chugins_dir->s_name);
         std::list<std::string> chugin_search;
 #if EMBEDDED_CHUGINS
         // add extra package-level chugins directory
@@ -341,8 +339,8 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         post("inputs: %d  outputs: %d ", x->chuck->vm()->m_num_adc_channels,
              x->chuck->vm()->m_num_dac_channels);
         post("file: %s", x->run_file->s_name);
-        post("working dir: %s", x->working_dir);
-        post("chugins dir: %s", x->chugins_dir);
+        post("working dir: %s", x->working_dir->s_name);
+        post("chugins dir: %s", x->chugins_dir->s_name);
 
         if (const char* editor = std::getenv("EDITOR")) {
             post("editor from env: %s", editor);
@@ -362,11 +360,30 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
             error("box object not created.");
 
         // create scripting name
-        x->name = symbol_unique();
+        char name[MAX_FILENAME_CHARS];
+        int res = snprintf_zero(name, MAX_FILENAME_CHARS, "chuck-%d", x->oid);
+        if (res >= 0 && res < MAX_FILENAME_CHARS) {
+            x->name = gensym(name);
+        } else {
+            x->name = symbol_unique(); // fallback to unique symbol name
+        }
         t_max_err err = jbox_set_varname(x->box, x->name);
         if (err != MAX_ERR_NONE) {
-            error("could not set scripting name to box");
+            error("could not set scripting name to chuck~ box");
         }
+
+        t_symbol *p_name = object_attr_getsym(x->patcher, gensym("name"));
+        t_symbol *p_path = object_attr_getsym(x->patcher, gensym("filepath"));
+        // post("name of patcher: %s", p_name->s_name);
+        // post("path of patcher: %s", p_path->s_name);
+        char patcher_dir[MAX_FILENAME_CHARS];
+        char patcher_file[MAX_PATH_CHARS];
+        char patcher_conform_dir[MAX_PATH_CHARS];
+        path_splitnames(p_path->s_name, patcher_dir, patcher_file);
+        // post("dir of patcher: %s", patcher_dir);
+        path_nameconform(patcher_dir, patcher_conform_dir, PATH_STYLE_MAX, PATH_TYPE_BOOT);
+        // post("conform dir of patcher: %s", patcher_conform_dir);
+        x->patcher_dir = gensym(patcher_conform_dir);
     }
     return (x);
 }
@@ -583,7 +600,7 @@ t_max_err ck_send_max_msg(t_ck* x, t_symbol* s, const char* parsestr)
 }
 
 
-t_string* ck_get_path_from_external(t_class* c, char* subpath)
+t_symbol* ck_get_path_from_external(t_class* c, char* subpath)
 {
     char external_path[MAX_PATH_CHARS];
     char external_name[MAX_PATH_CHARS];
@@ -603,25 +620,25 @@ t_string* ck_get_path_from_external(t_class* c, char* subpath)
     if (result != NULL && subpath != NULL) {
         string_append(result, subpath);
     }
-    return result;
+    return gensym(string_getptr(result));
 }
 
-t_string* ck_get_path_from_package(t_class* c, char* subpath)
+t_symbol* ck_get_path_from_package(t_class* c, char* subpath)
 {
     char filename[MAX_FILENAME_CHARS];
     char externals_dir[MAX_PATH_CHARS];
     char package_dir[MAX_PATH_CHARS];
     t_string* package_dir_s;
 
-    t_string* external_path = ck_get_path_from_external(c, NULL);
-    const char* ext_path_c = string_getptr(external_path);
-    path_splitnames(ext_path_c, externals_dir, filename);
+    t_symbol* external_path = ck_get_path_from_external(c, NULL);
+    // const char* ext_path_c = string_getptr(external_path);
+    path_splitnames(external_path->s_name, externals_dir, filename);
     path_splitnames(externals_dir, package_dir, filename);
     package_dir_s = string_new(package_dir);
     if (subpath != NULL) {
         string_append(package_dir_s, subpath);
     }
-    return package_dir_s;
+    return gensym(string_getptr(package_dir_s));
 }
 
 t_max_err ck_check_editor(t_ck* x, t_symbol* entry)
@@ -648,12 +665,20 @@ t_symbol* ck_check_file(t_ck* x, t_symbol* name)
 
     // 2. check if exists with an `examples` folder prefix
     char eg_file[MAX_PATH_CHARS];
-    snprintf_zero(eg_file, MAX_PATH_CHARS, "%s/%s", x->working_dir, filepath);
+    snprintf_zero(eg_file, MAX_PATH_CHARS, "%s/%s", x->working_dir->s_name, filepath);
     if (path_exists(eg_file)) {
         return gensym(eg_file);
     }
 
-    // 3. use locatefile_extended to search
+    // 3. check if file exists in the patcher's directory
+    char patcher_file[MAX_PATH_CHARS];
+    snprintf_zero(patcher_file, MAX_PATH_CHARS, "%s/%s", x->patcher_dir->s_name, filepath);
+    if(path_exists(patcher_file)) {
+        post("patcher_file: %s", patcher_file);
+        return gensym(patcher_file);
+    }
+
+    // 4. use locatefile_extended to search
     char abspath[MAX_PATH_CHARS];
     short path, res;
     t_fourcc outtype;
