@@ -8,6 +8,36 @@
 - [sync with gen~](https://cycling74.com/forums/question-about-a-patch-in-gen-book-generating-sound-and-organizing-time#reply-6615705ccb02500013795117)
 - [Counting, and a World without bang Messages](https://cycling74.com/tutorials/gen~-for-beginners-part-3-counting-and-a-world-without-bang-messages)
 
+Possible to use alternative (active transport) notion? 
+
+```text
+1nd - Dotted whole note - 2880 ticks
+1n - Whole note - 1920 ticks
+1nt - Whole note triplet - 1280 ticks
+2nd - Dotted half note - 1440 ticks
+2n - Half note - 960 ticks
+2nt - Half note triplet - 640 ticks
+4nd - Dotted quarter note - 720 ticks
+4n - Quarter note - 480 ticks
+4nt - Quarter note triplet - 320 ticks
+8nd - Dotted eighth note - 360 ticks
+8n - Eighth note - 240 ticks
+8nt - Eighth note triplet - 160 ticks
+16nd - Dotted sixteenth note - 180 ticks
+16n - Sixteenth note - 120 ticks
+16nt - Sixteenth note triplet - 80 ticks
+32nd - Dotted thirty-second note - 90 ticks
+32n - thirty-second note - 60 ticks
+32nt - thirty-second-note triplet - 40 ticks
+64nd - Dotted sixty-fourth note - 45 ticks
+64n - Sixty-fourth note - 30 ticks
+128n - One-hundred-twenty-eighth note - 15 ticks
+
+
+umenu:
+1nd, 1n, 1nt, 2nd, 2n, 2nt, 4nd, 4n, 4nt, 8nd, 8n, 8nt, 16nd, 16n, 16nt, 32nd, 32n, 32nt, 64nd, 64n, 128n 
+```
+
 
 
 ## Sending Messages to Maxobject

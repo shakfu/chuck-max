@@ -132,7 +132,13 @@ t_max_err ck_unregister(t_ck* x, t_symbol* s);
 // callback demo
 t_max_err ck_demo(t_ck* x);
 
-// callbacks
+
+// callbacks (events)
+void cb_global_event1(void);
+void cb_global_event2(const char* name);
+void cb_global_event3(t_CKINT cb_id);
+
+// callbacks (variables)
 void cb_global_int1(t_CKINT val);
 void cb_global_int2(const char* name, t_CKINT val);
 void cb_global_int3(t_CKINT cb_id, t_CKINT val);
@@ -142,10 +148,6 @@ void cb_global_float3(t_CKINT cb_id, t_CKFLOAT val);
 void cb_global_string1(const char* val);
 void cb_global_string2(const char* name, const char* val);
 void cb_global_string3(t_CKINT cb_id, const char* val);
-void cb_demo(void);
-void cb_global_event1(void);
-void cb_global_event2(const char* name);
-void cb_global_event3(t_CKINT cb_id);
 void cb_global_int_array1(t_CKINT array[], t_CKUINT n);
 void cb_global_int_array2(const char* name, t_CKINT array[], t_CKUINT n);
 void cb_global_int_array3(t_CKINT cb_id, t_CKINT array[], t_CKUINT n);
@@ -158,13 +160,15 @@ void cb_global_float_array3(t_CKINT cb_id, t_CKFLOAT array[], t_CKUINT n);
 void cb_global_float_array_value1(t_CKFLOAT value);
 void cb_global_float_array_value2(const char* name, t_CKFLOAT value);
 void cb_global_float_array_value3(t_CKINT cb_id, t_CKFLOAT value);
-void cb_get_all_global_vars(const std::vector<Chuck_Globals_TypeValue> & list, void * data);
 void cb_global_assoc_int_array_value1(t_CKINT val);
 void cb_global_assoc_int_array_value2(const char* name, t_CKINT val);
 void cb_global_assoc_int_array_value3(t_CKINT cb_id, t_CKINT val);
 void cb_global_assoc_float_array_value1(t_CKFLOAT val);
 void cb_global_assoc_float_array_value2(const char* name, t_CKFLOAT val);
 void cb_global_assoc_float_array_value3(t_CKINT cb_id, t_CKFLOAT val);
+
+// dump all global variables
+void cb_get_all_global_vars(const std::vector<Chuck_Globals_TypeValue> & list, void * data);
 
 
 // global class pointer variable
@@ -243,7 +247,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
     if (x) {
         // set default attributes
-        // defaults can be overriden by compile-time definitions
+        // some defaults can be overriden by compile-time definitions
         x->channels = CHANNELS;
         x->loglevel = CK_LOG_SYSTEM;
         x->current_shred_id = 0;
@@ -274,6 +278,51 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
             x->run_file = ck_check_file(x, filename);
         } 
         // else just use defaults
+
+        // get external editor
+        if (const char* editor = std::getenv("EDITOR")) {
+            post("editor from env: %s", editor);
+            x->editor = gensym(editor);
+        } else {
+            x->editor = gensym("");
+        }
+
+        // set patcher object
+        object_obex_lookup(x, gensym("#P"), (t_patcher**)&x->patcher);
+        if (x->patcher == NULL)
+            error("patcher object not created.");
+
+        // set box object
+        object_obex_lookup(x, gensym("#B"), (t_box**)&x->box);
+        if (x->box == NULL)
+            error("box object not created.");
+
+        // create scripting name
+        char name[MAX_FILENAME_CHARS];
+        int res = snprintf_zero(name, MAX_FILENAME_CHARS, "chuck-%d", x->oid);
+        if (res >= 0 && res < MAX_FILENAME_CHARS) {
+            x->name = gensym(name);
+        } else {
+            x->name = symbol_unique(); // fallback to unique symbol name
+        }
+        t_max_err err = jbox_set_varname(x->box, x->name);
+        if (err != MAX_ERR_NONE) {
+            error("could not set chuck~ box's scripting name");
+        }
+
+        // get patcher directory
+        // t_symbol *p_name = object_attr_getsym(x->patcher, gensym("name"));
+        t_symbol *p_path = object_attr_getsym(x->patcher, gensym("filepath"));
+        // post("name of patcher: %s", p_name->s_name);
+        // post("path of patcher: %s", p_path->s_name);
+        char patcher_dir[MAX_FILENAME_CHARS];
+        char patcher_file[MAX_PATH_CHARS];
+        char patcher_conform_dir[MAX_PATH_CHARS];
+        path_splitnames(p_path->s_name, patcher_dir, patcher_file);
+        // post("dir of patcher: %s", patcher_dir);
+        path_nameconform(patcher_dir, patcher_conform_dir, PATH_STYLE_MAX, PATH_TYPE_BOOT);
+        // post("conform dir of patcher: %s", patcher_conform_dir);
+        x->patcher_dir = gensym(patcher_conform_dir);
 
         // if one wants another outlet
         // x->ui_outlet = outlet_new((t_pxobject*)x, NULL);
@@ -328,7 +377,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // init cb_map and register callbacks
         x->cb_map = callback_map();
-        x->cb_map.emplace("demo", &cb_demo);
+        x->cb_map.emplace("demo", &cb_global_event1);
 
         // init chuck
         x->chuck->init();
@@ -336,54 +385,13 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         ChucK::setLogLevel(x->loglevel);
 
         post("ChucK %s", x->chuck->version());
-        post("inputs: %d  outputs: %d ", x->chuck->vm()->m_num_adc_channels,
-             x->chuck->vm()->m_num_dac_channels);
+        post("inputs: %d  outputs: %d ",
+            x->chuck->vm()->m_num_adc_channels,
+            x->chuck->vm()->m_num_dac_channels);
         post("file: %s", x->run_file->s_name);
         post("working dir: %s", x->working_dir->s_name);
         post("chugins dir: %s", x->chugins_dir->s_name);
-
-        if (const char* editor = std::getenv("EDITOR")) {
-            post("editor from env: %s", editor);
-            x->editor = gensym(editor);
-        } else {
-            x->editor = gensym("");
-        }
-
-        // set patcher object
-        object_obex_lookup(x, gensym("#P"), (t_patcher**)&x->patcher);
-        if (x->patcher == NULL)
-            error("patcher object not created.");
-
-        // set box object
-        object_obex_lookup(x, gensym("#B"), (t_box**)&x->box);
-        if (x->box == NULL)
-            error("box object not created.");
-
-        // create scripting name
-        char name[MAX_FILENAME_CHARS];
-        int res = snprintf_zero(name, MAX_FILENAME_CHARS, "chuck-%d", x->oid);
-        if (res >= 0 && res < MAX_FILENAME_CHARS) {
-            x->name = gensym(name);
-        } else {
-            x->name = symbol_unique(); // fallback to unique symbol name
-        }
-        t_max_err err = jbox_set_varname(x->box, x->name);
-        if (err != MAX_ERR_NONE) {
-            error("could not set scripting name to chuck~ box");
-        }
-
-        t_symbol *p_name = object_attr_getsym(x->patcher, gensym("name"));
-        t_symbol *p_path = object_attr_getsym(x->patcher, gensym("filepath"));
-        // post("name of patcher: %s", p_name->s_name);
-        // post("path of patcher: %s", p_path->s_name);
-        char patcher_dir[MAX_FILENAME_CHARS];
-        char patcher_file[MAX_PATH_CHARS];
-        char patcher_conform_dir[MAX_PATH_CHARS];
-        path_splitnames(p_path->s_name, patcher_dir, patcher_file);
-        // post("dir of patcher: %s", patcher_dir);
-        path_nameconform(patcher_dir, patcher_conform_dir, PATH_STYLE_MAX, PATH_TYPE_BOOT);
-        // post("conform dir of patcher: %s", patcher_conform_dir);
-        x->patcher_dir = gensym(patcher_conform_dir);
+        post("patcher_dir: %s", x->patcher_dir->s_name);
     }
     return (x);
 }
@@ -1385,10 +1393,6 @@ void cb_global_string3(t_CKINT cb_id, const char* val)
      post("cb_global_string3: id: %d value: %s", cb_id, val);
 }
 
-void cb_demo(void)
-{
-    post("==> demo callback is called!");
-}
 
 void cb_global_event1(void)
 {
@@ -1558,25 +1562,25 @@ t_max_err ck_unregister(t_ck* x, t_symbol* s)
     return MAX_ERR_GENERIC;
 }
 
-t_max_err ck_demo_gevents(t_ck* x)
-{
-    // x->chuck->vm()->globals_manager()->listenForGlobalEvent("gevent", cb_global_event1, false);
-    // x->chuck->vm()->globals_manager()->listenForGlobalEvent("gevent", cb_global_event2, false);
-    // x->chuck->vm()->globals_manager()->listenForGlobalEvent("gevent", 3, cb_global_event3, false);
-    // x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent( const char * name, void (*callback)(void) );
-    // x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent( const char * name, void (*callback)(const char*) );
-    // x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent( const char * name, t_CKINT callbackID, void (*callback)(t_CKINT) );
-}
+// t_max_err ck_demo_gevents(t_ck* x)
+// {
+//     x->chuck->vm()->globals_manager()->listenForGlobalEvent("gevent", cb_global_event1, false);
+//     x->chuck->vm()->globals_manager()->listenForGlobalEvent("gevent", cb_global_event2, false);
+//     x->chuck->vm()->globals_manager()->listenForGlobalEvent("gevent", 3, cb_global_event3, false);
+//     x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent( const char * name, void (*callback)(void) );
+//     x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent( const char * name, void (*callback)(const char*) );
+//     x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent( const char * name, t_CKINT callbackID, void (*callback)(t_CKINT) );
+// }
 
-t_max_err ck_demo_set_global_arrays(t_ck* x)
-{
-    // x->chuck->vm()->globals_manager()->setGlobalIntArray( const char * name, t_CKINT arrayValues[], t_CKUINT numValues );
-    // x->chuck->vm()->globals_manager()->setGlobalIntArrayValue( const char * name, t_CKUINT index, t_CKINT value );
-    // x->chuck->vm()->globals_manager()->setGlobalAssociativeIntArrayValue( const char * name, const char * key, t_CKINT value );
-    // x->chuck->vm()->globals_manager()->setGlobalFloatArray( const char * name, t_CKFLOAT arrayValues[], t_CKUINT numValues );
-    // x->chuck->vm()->globals_manager()->setGlobalFloatArrayValue( const char * name, t_CKUINT index, t_CKFLOAT value );
-    // x->chuck->vm()->globals_manager()->setGlobalAssociativeFloatArrayValue( const char * name, const char * key, t_CKFLOAT value );
-}
+// t_max_err ck_demo_set_global_arrays(t_ck* x)
+// {
+//     x->chuck->vm()->globals_manager()->setGlobalIntArray( const char * name, t_CKINT arrayValues[], t_CKUINT numValues );
+//     x->chuck->vm()->globals_manager()->setGlobalIntArrayValue( const char * name, t_CKUINT index, t_CKINT value );
+//     x->chuck->vm()->globals_manager()->setGlobalAssociativeIntArrayValue( const char * name, const char * key, t_CKINT value );
+//     x->chuck->vm()->globals_manager()->setGlobalFloatArray( const char * name, t_CKFLOAT arrayValues[], t_CKUINT numValues );
+//     x->chuck->vm()->globals_manager()->setGlobalFloatArrayValue( const char * name, t_CKUINT index, t_CKFLOAT value );
+//     x->chuck->vm()->globals_manager()->setGlobalAssociativeFloatArrayValue( const char * name, const char * key, t_CKFLOAT value );
+// }
 
 
 t_max_err ck_globals(t_ck* x)

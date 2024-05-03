@@ -456,7 +456,7 @@
 					"autopopulate" : 1,
 					"depth" : 2,
 					"id" : "obj-40",
-					"items" : [ "clarinet.ck", ",", "compressor.ck", ",", "crybaby.ck", ",", "distortion.ck", ",", "fau.ck", ",", "fauReverb.ck", ",", "file-playback.ck", ",", "flanger.ck", ",", "flute.ck", ",", "mx.fauReverb.ck", ",", "noise.ck", ",", "phaser.ck", ",", "polyphony-simple.ck", ",", "polyphony.ck", ",", "reverb.ck", ",", "sidechain-compressor.ck", ",", "smcAdvancedExample.ck", ",", "string.ck", ",", "test-import.ck", ",", "test.ck", ",", "vocoder.ck", ",", "wah.ck" ],
+					"items" : [ "clarinet.ck", ",", "compressor.ck", ",", "crybaby.ck", ",", "distortion.ck", ",", "fau.ck", ",", "fauReverb.ck", ",", "file-playback.ck", ",", "flanger.ck", ",", "flute.ck", ",", "noise.ck", ",", "phaser.ck", ",", "polyphony-simple.ck", ",", "polyphony.ck", ",", "reverb.ck", ",", "sidechain-compressor.ck", ",", "smcAdvancedExample.ck", ",", "string.ck", ",", "test-import.ck", ",", "test.ck", ",", "vocoder.ck", ",", "wah.ck" ],
 					"maxclass" : "umenu",
 					"numinlets" : 1,
 					"numoutlets" : 3,
@@ -652,8 +652,9 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
-					"patching_rect" : [ 238.0, 397.0, 175.0, 21.0 ],
-					"text" : "chuck~ 2 fauck/mx.fauReverb.ck"
+					"patching_rect" : [ 238.0, 397.0, 138.0, 21.0 ],
+					"text" : "chuck~ 2 max/fauverb.ck",
+					"varname" : "chuck-0"
 				}
 
 			}

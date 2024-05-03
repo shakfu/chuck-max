@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 339.0, 154.0, 678.0, 598.0 ],
+		"rect" : [ 128.0, 94.0, 663.0, 734.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -40,97 +40,49 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-59",
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 509.0, 515.0, 120.0, 19.0 ],
+					"text" : "edit msg to edit a file"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-57",
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 462.5, 449.0, 150.0, 19.0 ],
+					"text" : "editor is an attribute"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-54",
+					"linecount" : 2,
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 502.5, 541.0, 129.0, 31.0 ],
+					"presentation_linecount" : 2,
+					"text" : "set path to editor here, path must be abolute"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"attr" : "editor",
-					"id" : "obj-15",
+					"id" : "obj-53",
 					"maxclass" : "attrui",
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 465.0, 158.0, 188.0, 21.0 ]
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-14",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 77.0, 158.0, 62.0, 21.0 ],
-					"text" : "editor subl"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-18",
-					"maxclass" : "comment",
-					"numinlets" : 1,
-					"numoutlets" : 0,
-					"patching_rect" : [ 80.5, 116.0, 150.0, 19.0 ],
-					"text" : "set path to editor here"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-11",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 197.5, 147.0, 137.0, 21.0 ],
-					"text" : "editor /usr/local/bin/code"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-10",
-					"linecount" : 4,
-					"maxclass" : "comment",
-					"numinlets" : 1,
-					"numoutlets" : 0,
-					"patching_rect" : [ 16.5, 41.0, 644.0, 55.0 ],
-					"text" : "An external editor can be set by a message as below or by setting the editor attribute in the inspector. Once the editor is set, a file can be edited using the 'edit` msg as below, or by double-clicking the `chuck~` object to edit the last loaded file.\n\nnote that the full path to the editor executable should be given"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-48",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 238.0, 115.0, 134.0, 21.0 ],
-					"text" : "editor /usr/local/bin/subl"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-64",
-					"maxclass" : "toggle",
-					"numinlets" : 1,
-					"numoutlets" : 1,
-					"outlettype" : [ "int" ],
-					"parameter_enable" : 0,
-					"patching_rect" : [ 103.5, 360.5, 18.0, 18.0 ]
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-53",
-					"maxclass" : "newobj",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 103.5, 387.0, 39.0, 21.0 ],
-					"text" : "gate"
+					"patching_rect" : [ 456.75, 479.0, 188.0, 21.0 ]
 				}
 
 			}
@@ -141,8 +93,228 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 123.5, 359.0, 44.0, 21.0 ],
-					"text" : "edit $1"
+					"patching_rect" : [ 359.0, 546.0, 137.0, 21.0 ],
+					"text" : "editor /usr/local/bin/code"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-50",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 405.5, 479.0, 44.0, 21.0 ],
+					"text" : "globals"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-38",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 476.0, 352.0, 33.0, 21.0 ],
+					"text" : "- 3 4"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-33",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 438.0, 352.0, 29.5, 21.0 ],
+					"text" : "- 6"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-31",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 401.0, 352.0, 29.5, 21.0 ],
+					"text" : "- 5"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-5",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 284.0, 320.0, 66.0, 21.0 ],
+					"text" : "remove 1 2"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-13",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 406.0, 448.0, 43.0, 21.0 ],
+					"text" : "demo"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-42",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 339.5, 448.0, 31.0, 21.0 ],
+					"text" : "docs"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"fontface" : 1,
+					"id" : "obj-77",
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 505.0, 95.0, 124.0, 19.0 ],
+					"text" : "patch parameters",
+					"textjustification" : 1
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-72",
+					"maxclass" : "newobj",
+					"numinlets" : 0,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 89.0, 545.0, 60.0, 21.0 ],
+					"text" : "r to-chuck"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-71",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 215.0, 546.0, 134.0, 21.0 ],
+					"text" : "editor /usr/local/bin/subl"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-69",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 411.5, 514.0, 89.0, 21.0 ],
+					"text" : "edit test/sine.ck"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-66",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 476.0, 320.0, 33.0, 21.0 ],
+					"text" : "- 1 2"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-65",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 364.0, 352.0, 29.5, 21.0 ],
+					"text" : "- 4"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-64",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 438.0, 320.0, 29.5, 21.0 ],
+					"text" : "- 3"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-63",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 401.0, 320.0, 29.5, 21.0 ],
+					"text" : "- 2"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"align" : 1,
+					"id" : "obj-52",
+					"items" : [ 0, ",", 1, ",", 2, ",", 3, ",", 4, ",", 5, ",", 6, ",", 7, ",", 8, ",", 9, ",", 10 ],
+					"maxclass" : "umenu",
+					"numinlets" : 1,
+					"numoutlets" : 3,
+					"outlettype" : [ "int", "", "" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 282.0, 514.0, 46.0, 21.0 ],
+					"textjustification" : 1
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"fontface" : 1,
+					"id" : "obj-48",
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 215.0, 265.0, 210.0, 19.0 ],
+					"text" : "messages",
+					"textjustification" : 1
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-43",
+					"maxclass" : "newobj",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 23.75, 264.0, 61.0, 21.0 ],
+					"text" : "s to-chuck"
 				}
 
 			}
@@ -152,7 +324,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 423.0, 260.0, 26.0, 19.0 ],
+					"patching_rect" : [ 384.0, 616.0, 26.0, 19.0 ],
 					"text" : "off",
 					"textjustification" : 1
 				}
@@ -164,7 +336,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 423.0, 294.0, 26.0, 19.0 ],
+					"patching_rect" : [ 384.0, 650.0, 26.0, 19.0 ],
 					"text" : "~fx",
 					"textjustification" : 1
 				}
@@ -176,42 +348,9 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 423.0, 277.0, 26.0, 19.0 ],
+					"patching_rect" : [ 384.0, 633.0, 26.0, 19.0 ],
 					"text" : "fx",
 					"textjustification" : 1
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-43",
-					"linecount" : 3,
-					"maxclass" : "comment",
-					"numinlets" : 1,
-					"numoutlets" : 0,
-					"patching_rect" : [ 497.0, 387.0, 174.0, 43.0 ],
-					"text" : "Use \"from Max 1\" midi port for MIDI playback of chuck~ patch. Try 'midi/polyfony.ck' example."
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"bgmode" : 0,
-					"border" : 0,
-					"clickthrough" : 0,
-					"enablehscroll" : 0,
-					"enablevscroll" : 0,
-					"id" : "obj-33",
-					"lockeddragscroll" : 0,
-					"lockedsize" : 0,
-					"maxclass" : "bpatcher",
-					"name" : "midi_player.maxpat",
-					"numinlets" : 0,
-					"numoutlets" : 1,
-					"offset" : [ 0.0, 0.0 ],
-					"outlettype" : [ "bang" ],
-					"patching_rect" : [ 508.0, 321.0, 162.0, 59.0 ],
-					"viewvisibility" : 1
 				}
 
 			}
@@ -222,7 +361,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 324.5, 245.0, 29.5, 21.0 ],
+					"patching_rect" : [ 364.0, 320.0, 29.5, 21.0 ],
 					"text" : "- 1"
 				}
 
@@ -234,8 +373,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 9.0, 452.0, 154.0, 21.0 ],
-					"text" : "= 1 stk/honkeytonk-algo3.ck"
+					"patching_rect" : [ 406.0, 384.0, 128.0, 21.0 ],
+					"text" : "= 1 effects/autotune.ck"
 				}
 
 			}
@@ -246,19 +385,29 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 238.0, 327.0, 71.0, 21.0 ],
+					"patching_rect" : [ 339.5, 416.0, 71.0, 21.0 ],
 					"text" : "clear globals"
 				}
 
 			}
 , 			{
 				"box" : 				{
+					"bgcolor" : [ 0.784314, 0.145098, 0.023529, 1.0 ],
+					"bgcolor2" : [ 0.2, 0.2, 0.2, 1.0 ],
+					"bgfillcolor_angle" : 270.0,
+					"bgfillcolor_autogradient" : 0.0,
+					"bgfillcolor_color" : [ 0.784314, 0.145098, 0.023529, 1.0 ],
+					"bgfillcolor_color1" : [ 0.784314, 0.145098, 0.023529, 1.0 ],
+					"bgfillcolor_color2" : [ 0.2, 0.2, 0.2, 1.0 ],
+					"bgfillcolor_proportion" : 0.5,
+					"bgfillcolor_type" : "gradient",
+					"gradient" : 1,
 					"id" : "obj-34",
 					"maxclass" : "message",
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 164.5, 327.0, 52.0, 21.0 ],
+					"patching_rect" : [ 217.0, 416.0, 52.0, 21.0 ],
 					"text" : "clear vm"
 				}
 
@@ -270,7 +419,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 260.5, 287.0, 46.0, 21.0 ],
+					"patching_rect" : [ 284.0, 448.0, 46.0, 21.0 ],
 					"text" : "reset id"
 				}
 
@@ -282,8 +431,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 103.5, 509.0, 57.0, 21.0 ],
-					"text" : "loglevel 0"
+					"patching_rect" : [ 339.0, 514.0, 63.0, 21.0 ],
+					"text" : "loglevel $1"
 				}
 
 			}
@@ -294,7 +443,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 103.5, 481.0, 57.0, 21.0 ],
+					"patching_rect" : [ 215.0, 514.0, 57.0, 21.0 ],
 					"text" : "loglevel"
 				}
 
@@ -306,7 +455,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 9.0, 425.0, 183.0, 21.0 ],
+					"patching_rect" : [ 217.0, 384.0, 183.0, 21.0 ],
 					"text" : "replace 1 stk/honkeytonk-algo1.ck"
 				}
 
@@ -318,7 +467,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 199.5, 259.0, 31.0, 21.0 ],
+					"patching_rect" : [ 217.0, 448.0, 31.0, 21.0 ],
 					"text" : "time"
 				}
 
@@ -330,7 +479,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 254.0, 259.0, 47.0, 21.0 ],
+					"patching_rect" : [ 339.5, 479.0, 47.0, 21.0 ],
 					"text" : "chugins"
 				}
 
@@ -342,7 +491,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 150.0, 259.0, 39.0, 21.0 ],
+					"patching_rect" : [ 217.0, 479.0, 39.0, 21.0 ],
 					"text" : "status"
 				}
 
@@ -357,7 +506,7 @@
 					"orientation" : 1,
 					"outlettype" : [ "signal", "signal", "", "float", "list" ],
 					"parameter_enable" : 1,
-					"patching_rect" : [ 230.75, 456.0, 136.0, 36.0 ],
+					"patching_rect" : [ 30.0, 620.0, 119.0, 36.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
 							"parameter_longname" : "live.gain~",
@@ -378,26 +527,12 @@
 			}
 , 			{
 				"box" : 				{
-					"attr" : "depth",
-					"hidden" : 1,
-					"id" : "obj-5",
-					"maxclass" : "attrui",
-					"numinlets" : 1,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"parameter_enable" : 0,
-					"patching_rect" : [ 4.0, 192.0, 150.0, 21.0 ]
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"id" : "obj-22",
 					"maxclass" : "message",
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 171.0, 287.0, 29.5, 21.0 ],
+					"patching_rect" : [ 284.0, 479.0, 29.5, 21.0 ],
 					"text" : "info"
 				}
 
@@ -409,7 +544,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 347.5, 147.0, 89.0, 21.0 ],
+					"patching_rect" : [ 217.0, 288.0, 89.0, 21.0 ],
 					"text" : "add test/sine.ck"
 				}
 
@@ -421,18 +556,48 @@
 					"maxclass" : "scope~",
 					"numinlets" : 2,
 					"numoutlets" : 0,
-					"patching_rect" : [ 403.0, 448.0, 267.0, 118.0 ]
+					"patching_rect" : [ 215.0, 590.0, 125.5, 118.0 ]
 				}
 
 			}
 , 			{
 				"box" : 				{
-					"id" : "obj-13",
-					"maxclass" : "comment",
+					"format" : 6,
+					"id" : "obj-17",
+					"maxclass" : "flonum",
 					"numinlets" : 1,
-					"numoutlets" : 0,
-					"patching_rect" : [ 357.5, 179.0, 69.0, 19.0 ],
-					"text" : "test effect"
+					"numoutlets" : 2,
+					"outlettype" : [ "", "bang" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 23.75, 199.0, 50.0, 21.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"floatoutput" : 1,
+					"id" : "obj-18",
+					"maxclass" : "slider",
+					"mult" : 0.5,
+					"numinlets" : 1,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 23.75, 103.0, 20.0, 85.0 ],
+					"size" : 1.0,
+					"varname" : "slider"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-14",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 23.75, 229.0, 43.0, 21.0 ],
+					"text" : "wet $1"
 				}
 
 			}
@@ -443,7 +608,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 324.5, 272.0, 56.0, 21.0 ],
+					"patching_rect" : [ 217.0, 320.0, 63.0, 21.0 ],
 					"text" : "remove 2"
 				}
 
@@ -455,7 +620,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 324.5, 299.5, 61.0, 21.0 ],
+					"patching_rect" : [ 217.0, 352.0, 61.0, 21.0 ],
 					"text" : "remove all"
 				}
 
@@ -467,7 +632,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 324.5, 327.0, 68.0, 21.0 ],
+					"patching_rect" : [ 284.0, 352.0, 68.0, 21.0 ],
 					"text" : "remove last"
 				}
 
@@ -479,7 +644,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 39.0, 359.0, 42.0, 21.0 ],
+					"patching_rect" : [ 88.875, 448.5, 42.0, 21.0 ],
 					"text" : "run $1"
 				}
 
@@ -490,7 +655,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 23.5, 230.0, 44.0, 19.0 ],
+					"patching_rect" : [ 56.75, 318.5, 44.0, 19.0 ],
 					"text" : "refresh"
 				}
 
@@ -503,7 +668,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 23.5, 255.0, 24.0, 24.0 ]
+					"patching_rect" : [ 26.75, 316.0, 24.0, 24.0 ]
 				}
 
 			}
@@ -597,8 +762,8 @@
 									"numinlets" : 2,
 									"numoutlets" : 2,
 									"outlettype" : [ "", "" ],
-									"patching_rect" : [ 50.0, 210.0, 158.0, 22.0 ],
-									"text" : "combine input ../../examples"
+									"patching_rect" : [ 50.0, 210.0, 148.0, 22.0 ],
+									"text" : "combine input ../examples"
 								}
 
 							}
@@ -704,7 +869,7 @@
  ]
 					}
 ,
-					"patching_rect" : [ 23.5, 293.0, 66.0, 21.0 ],
+					"patching_rect" : [ 26.75, 354.0, 66.0, 21.0 ],
 					"saved_object_attributes" : 					{
 						"description" : "",
 						"digest" : "",
@@ -721,15 +886,27 @@
 					"autopopulate" : 1,
 					"depth" : 2,
 					"id" : "obj-40",
-					"items" : [ "ai/features/centroid.ck", ",", "ai/features/chroma.ck", ",", "ai/features/features-combined.ck", ",", "ai/features/flux.ck", ",", "ai/features/flux0.ck", ",", "ai/features/kurtosis.ck", ",", "ai/features/mfcc-basic.ck", ",", "ai/features/mfcc-mean.ck", ",", "ai/features/rms.ck", ",", "ai/features/rolloff.ck", ",", "ai/features/rolloff2.ck", ",", "ai/features/sfm.ck", ",", "ai/features/zerox.ck", ",", "ai/genre-classify/feature-extract.ck", ",", "ai/genre-classify/genre-classify.ck", ",", "ai/genre-classify/x-validate.ck", ",", "ai/hmm/hmm-load.ck", ",", "ai/hmm/hmm-train.ck", ",", "ai/knn/knn-search.ck", ",", "ai/knn/knn2-classify.ck", ",", "ai/knn/knn2-search.ck", ",", "ai/mlp/mlp-manual.ck", ",", "ai/mlp/mlp.ck", ",", "ai/mlp/model-load.ck", ",", "ai/mlp/model-save.ck", ",", "ai/pca/pca.ck", ",", "ai/svm/svm-basic.ck", ",", "ai/wekinator/wekinator-basic.ck", ",", "ai/wekinator/wekinator-customize.ck", ",", "ai/wekinator/wekinator-import.ck", ",", "ai/word2vec/poem-i-feel.ck", ",", "ai/word2vec/poem-randomwalk.ck", ",", "ai/word2vec/poem-spew.ck", ",", "ai/word2vec/poem-ungenerate.ck", ",", "ai/word2vec/word2vec-basic.ck", ",", "ai/word2vec/word2vec-prompt.ck", ",", "analysis/autocorr.ck", ",", "analysis/concat.ck", ",", "analysis/dct.ck", ",", "analysis/fft.ck", ",", "analysis/fft1.ck", ",", "analysis/fft2.ck", ",", "analysis/fft3.ck", ",", "analysis/flip.ck", ",", "analysis/ifft.ck", ",", "analysis/ifft2.ck", ",", "analysis/ifft3.ck", ",", "analysis/PitchTrack.ck", ",", "analysis/Sigmund.ck", ",", "analysis/tracking/harm.ck", ",", "analysis/tracking/pitch-fifth.ck", ",", "analysis/tracking/pitch-seventh.ck", ",", "analysis/tracking/pitch-third.ck", ",", "analysis/tracking/pitch-track.ck", ",", "analysis/tracking/Smacking.ck", ",", "analysis/tracking/Tracking.ck", ",", "analysis/win.ck", ",", "analysis/xcorr.ck", ",", "analysis/xsynth.ck", ",", "array/array_append.ck", ",", "array/array_argument.ck", ",", "array/array_assign.ck", ",", "array/array_associative.ck", ",", "array/array_capacity.ck", ",", "array/array_dynamic.ck", ",", "array/array_erase.ck", ",", "array/array_erase2.ck", ",", "array/array_mdim.ck", ",", "array/array_mmixed.ck", ",", "array/array_negative.ck", ",", "array/array_range.ck", ",", "array/array_resize.ck", ",", "array/array_reverse.ck", ",", "array/array_shuffle.ck", ",", "array/array_sort.ck", ",", "array/array_storage.ck", ",", "array/array_sub_assign.ck", ",", "array/array_ugens.ck", ",", "array/array_zero.ck", ",", "array/foreach-1.ck", ",", "array/foreach-2.ck", ",", "array/foreach-3.ck", ",", "array/foreach-4.ck", ",", "array/foreach-5.ck", ",", "array/foreach-6.ck", ",", "array/foreach-auto1.ck", ",", "array/foreach-auto2.ck", ",", "basic/adc.ck", ",", "basic/adsr.ck", ",", "basic/alarm.ck", ",", "basic/args.ck", ",", "basic/bar.ck", ",", "basic/blit.ck", ",", "basic/blit2.ck", ",", "basic/chirp.ck", ",", "basic/chirp2.ck", ",", "basic/comb.ck", ",", "basic/curly++.ck", ",", "basic/curly.ck", ",", "basic/delay.ck", ",", "basic/demo0.ck", ",", "basic/demo1.ck", ",", "basic/demo2.ck", ",", "basic/demo3.ck", ",", "basic/doh.ck", ",", "basic/echo.ck", ",", "basic/envelope.ck", ",", "basic/fm.ck", ",", "basic/fm2.ck", ",", "basic/fm3.ck", ",", "basic/foo.ck", ",", "basic/foo2.ck", ",", "basic/func.ck", ",", "basic/i-robot.ck", ",", "basic/imp.ck", ",", "basic/infnan.ck", ",", "basic/larry++.ck", ",", "basic/larry.ck", ",", "basic/lfo.ck", ",", "basic/moe++.ck", ",", "basic/moe.ck", ",", "basic/oscillatronx.ck", ",", "basic/phasor.ck", ",", "basic/pulse.ck", ",", "basic/rec-auto-stereo.ck", ",", "basic/rec-auto.ck", ",", "basic/rec.ck", ",", "basic/ring.ck", ",", "basic/sndbuf.ck", ",", "basic/step.ck", ",", "basic/tick.ck", ",", "basic/tick2.ck", ",", "basic/unchuck.ck", ",", "basic/valueat.ck", ",", "basic/whirl.ck", ",", "basic/whole.ck", ",", "basic/wind.ck", ",", "basic/wind2.ck", ",", "basic/zerox.ck", ",", "class/constructors.ck", ",", "class/ctors-dtor.ck", ",", "class/destructor.ck", ",", "class/dinky.ck", ",", "class/try.ck", ",", "ctrl/ctrl_break.ck", ",", "ctrl/ctrl_break_nested.ck", ",", "ctrl/ctrl_continue.ck", ",", "ctrl/ctrl_do_until.ck", ",", "ctrl/ctrl_do_while.ck", ",", "ctrl/ctrl_for_loop.ck", ",", "ctrl/ctrl_foreach.ck", ",", "ctrl/ctrl_repeat.ck", ",", "ctrl/ctrl_sequencer.ck", ",", "ctrl/ctrl_until.ck", ",", "ctrl/ctrl_while.ck", ",", "deep/chant.ck", ",", "deep/dither.ck", ",", "deep/dtmf.ck", ",", "deep/follower.ck", ",", "deep/ks-chord.ck", ",", "deep/plu.ck", ",", "deep/plu2.ck", ",", "deep/plu3.ck", ",", "deep/say-chu.ck", ",", "deep/shepard.ck", ",", "deep/thx.ck", ",", "deep/unclap.ck", ",", "effects/ABSaturator.ck", ",", "effects/autotune.ck", ",", "effects/Bitcrusher.ck", ",", "effects/chorus.ck", ",", "effects/ExpDelay.ck", ",", "effects/ExpEnv-modes.ck", ",", "effects/ExpEnv.ck", ",", "effects/FoldbackSaturator-index.ck", ",", "effects/FoldbackSaturator-threshold.ck", ",", "effects/GVerb.ck", ",", "effects/KasFilter-demo.ck", ",", "effects/pitch-shift.ck", ",", "effects/PowerADSR-feedback-beatings.ck", ",", "effects/PowerADSR.ck", ",", "effects/reverb.ck", ",", "effects/Spectacle.ck", ",", "effects/WinFuncEnv.ck", ",", "event/broadcast.ck", ",", "event/event-extend.ck", ",", "event/event-extend2.ck", ",", "event/event-x-bpm-1.ck", ",", "event/event-x-bpm-2.ck", ",", "event/signal.ck", ",", "event/signal4.ck", ",", "extend/chugen.ck", ",", "extend/chugraph.ck", ",", "fauck/clarinet.ck", ",", "fauck/compressor.ck", ",", "fauck/crybaby.ck", ",", "fauck/distortion.ck", ",", "fauck/fau.ck", ",", "fauck/fauReverb.ck", ",", "fauck/file-playback.ck", ",", "fauck/flanger.ck", ",", "fauck/flute.ck", ",", "fauck/mx.fauReverb.ck", ",", "fauck/noise.ck", ",", "fauck/phaser.ck", ",", "fauck/polyphony-simple.ck", ",", "fauck/polyphony.ck", ",", "fauck/reverb.ck", ",", "fauck/sidechain-compressor.ck", ",", "fauck/smcAdvancedExample.ck", ",", "fauck/string.ck", ",", "fauck/test-import.ck", ",", "fauck/test.ck", ",", "fauck/vocoder.ck", ",", "fauck/wah.ck", ",", "filter/bpf.ck", ",", "filter/brf.ck", ",", "filter/dcblocker.ck", ",", "filter/Elliptic-help.ck", ",", "filter/FIR-convolve-homer.ck", ",", "filter/FIR-greyhole-down-up-decimate.ck", ",", "filter/FIR-sinc-explicit.ck", ",", "filter/hpf.ck", ",", "filter/KasFilter.ck", ",", "filter/lpf.ck", ",", "filter/Multicomb.ck", ",", "filter/resonz.ck", ",", "filter/rhpf.ck", ",", "filter/rlpf.ck", ",", "filter/WPDiodeLadder.ck", ",", "filter/WPKorg35.ck", ",", "func/func_doozey.ck", ",", "func/func_obj_arg.ck", ",", "func/func_overload.ck", ",", "func/func_overload_member.ck", ",", "func/func_overload_multi.ck", ",", "func/func_recursion.ck", ",", "func/func_void.ck", ",", "hanoi/hanoi++.ck", ",", "hanoi/hanoi.ck", ",", "hanoi/hanoi2.ck", ",", "hanoi/hanoi3.ck", ",", "hid/gametra.ck", ",", "hid/joy-fm.ck", ",", "hid/joy-noise.ck", ",", "hid/joy-shake.ck", ",", "hid/joy.ck", ",", "hid/kb.ck", ",", "hid/kbhit/clix.ck", ",", "hid/kbhit/clix2.ck", ",", "hid/kbhit/clix3.ck", ",", "hid/kbhit/kbhit.ck", ",", "hid/kbhit/kbhit2.ck", ",", "hid/keyboard-organ.ck", ",", "hid/mouse-abs.ck", ",", "hid/mouse-fm.ck", ",", "hid/mouse.ck", ",", "hid/tilt.ck", ",", "io/chout.ck", ",", "io/read-byte.ck", ",", "io/read-float.ck", ",", "io/read-int.ck", ",", "io/read-line.ck", ",", "io/read-str.ck", ",", "io/read-tokens.ck", ",", "io/read-wav-raw.ck", ",", "io/seek.ck", ",", "io/write-auto.ck", ",", "io/write-byte.ck", ",", "io/write.ck", ",", "io/write2.ck", ",", "machine/crash.ck", ",", "machine/eval-global.ck", ",", "machine/eval.ck", ",", "machine/intsize.ck", ",", "machine/is-realtime.ck", ",", "machine/machine-help.ck", ",", "machine/machine-shred.ck", ",", "machine/test1.ck", ",", "machine/test2.ck", ",", "machine/version.ck", ",", "math/int-dist.ck", ",", "math/map.ck", ",", "math/math-help.ck", ",", "math/maybe.ck", ",", "math/randomize.ck", ",", "max/amen.ck", ",", "max/fmenv.ck", ",", "max/test.ck", ",", "midi/gomidi.ck", ",", "midi/gomidi2.ck", ",", "midi/midifile-play.ck", ",", "midi/midiout.ck", ",", "midi/polyfony.ck", ",", "midi/polyfony2.ck", ",", "multi/i.ck", ",", "multi/n.ck", ",", "multi/we-robot.ck", ",", "oper/oper_arith_chuck.ck", ",", "oper/oper_assign.ck", ",", "oper/oper_logic.ck", ",", "oper/oper_post_inc.ck", ",", "oper/oper_pre_inc.ck", ",", "oper/overload_class.ck", ",", "oper/overload_gru.ck", ",", "oper/overload_overview.ck", ",", "oper/overload_pre_post.ck", ",", "oper/overload_public.ck", ",", "osc/multi-msg/r-multi-msg.ck", ",", "osc/multi-msg/s-multi-msg.ck", ",", "osc/multicast/r.ck", ",", "osc/multicast/s-multicast.ck", ",", "osc/one2many/r.ck", ",", "osc/one2many/s-sender.ck", ",", "osc/osc-dump.ck", ",", "osc/r.ck", ",", "osc/s.ck", ",", "osc/wildcards/r-wildcards.ck", ",", "osc/wildcards/s-multi.ck", ",", "otf/otf_01.ck", ",", "otf/otf_02.ck", ",", "otf/otf_03.ck", ",", "otf/otf_04.ck", ",", "otf/otf_05.ck", ",", "otf/otf_06.ck", ",", "otf/otf_07.ck", ",", "serial/byte.ck", ",", "serial/bytes.ck", ",", "serial/ints-ascii.ck", ",", "serial/ints-bin.ck", ",", "serial/lines.ck", ",", "serial/list.ck", ",", "serial/write-bytes.ck", ",", "serial/write.ck", ",", "shred/ancestor.ck", ",", "shred/dir.ck", ",", "shred/machine.ck", ",", "shred/parent.ck", ",", "shred/powerup.ck", ",", "shred/spork.ck", ",", "shred/spork2-exit.ck", ",", "shred/spork2-remove.ck", ",", "shred/spork2.ck", ",", "spatial/AmbPan3-CCRMA.ck", ",", "spatial/Pan4.ck", ",", "spatial/Pan8.ck", ",", "special/Dyno-compress.ck", ",", "special/Dyno-duck.ck", ",", "special/Dyno-limit.ck", ",", "special/Gen10-test.ck", ",", "special/Gen17-test.ck", ",", "special/Gen5-test.ck", ",", "special/Gen7-test.ck", ",", "special/Gen9-test.ck", ",", "special/GenX-CurveTable-test.ck", ",", "special/GenX-WarpTable-test.ck", ",", "special/LiSa-load.ck", ",", "special/LiSa-munger1.ck", ",", "special/LiSa-munger2.ck", ",", "special/LiSa-munger3.ck", ",", "special/LiSa-simplelooping.ck", ",", "special/LiSa-stereo.ck", ",", "special/LiSa-track1.ck", ",", "special/LiSa-track2.ck", ",", "special/LiSa-track3.ck", ",", "special/LiSa-track4.ck", ",", "special/LiSa-track5.ck", ",", "special/LiSa-trigger.ck", ",", "special/Mesh2D.ck", ",", "special/readme-GenX.ck", ",", "special/readme-LiSa1.ck", ",", "special/readme-LiSa2.ck", ",", "special/scream-o-matic/scream-o-matic.ck", ",", "special/twilight/twilight-granular-kb-interp.ck", ",", "special/twilight/twilight-granular-kb.ck", ",", "stereo/array.ck", ",", "stereo/curly2.ck", ",", "stereo/larry2.ck", ",", "stereo/moe2.ck", ",", "stereo/powerup2.ck", ",", "stereo/stereo-noise.ck", ",", "stereo/ugen-array.ck", ",", "stk/band-o-matic.ck", ",", "stk/bandedwg.ck", ",", "stk/bandedwg2.ck", ",", "stk/blowbotl.ck", ",", "stk/blowbotl2.ck", ",", "stk/blowhole.ck", ",", "stk/blowhole2.ck", ",", "stk/bowed.ck", ",", "stk/bowed2.ck", ",", "stk/brass.ck", ",", "stk/brass2.ck", ",", "stk/clarinet.ck", ",", "stk/clarinet2.ck", ",", "stk/flute.ck", ",", "stk/frenchrn-algo2.ck", ",", "stk/hevymetl-algo3.ck", ",", "stk/hevymetl-dance-now.ck", ",", "stk/hevymetl-trumpet-algo3.ck", ",", "stk/honkeytonk-algo1.ck", ",", "stk/honkeytonk-algo3.ck", ",", "stk/krstlchr-algo7.ck", ",", "stk/mand-o-matic-simple.ck", ",", "stk/mand-o-matic.ck", ",", "stk/mandolin.ck", ",", "stk/modalbar.ck", ",", "stk/modalbar2.ck", ",", "stk/mode-o-matic.ck", ",", "stk/mode-o-test.ck", ",", "stk/modulate.ck", ",", "stk/moog.ck", ",", "stk/moog2.ck", ",", "stk/moogie.ck", ",", "stk/rhodey-song.ck", ",", "stk/rhodey.ck", ",", "stk/saxofony.ck", ",", "stk/shake-cycle.ck", ",", "stk/shake-o-matic.ck", ",", "stk/sitar.ck", ",", "stk/stif-o-karp.ck", ",", "stk/stifkarp.ck", ",", "stk/subnoise-audio.ck", ",", "stk/subnoise-control.ck", ",", "stk/voic-o-form.ck", ",", "stk/wurley.ck", ",", "stk/wurley2.ck", ",", "stk/wurley3.ck", ",", "stk/wvout-24bit.ck", ",", "string/escape.ck", ",", "string/readline.ck", ",", "string/replace.ck", ",", "string/strops.ck", ",", "string/strops2.ck", ",", "string/token.ck", ",", "string/tostr.ck", ",", "test/callback.ck", ",", "test/global-event.ck", ",", "test/local-event.ck", ",", "test/sine.ck", ",", "time/time_operations.ck", ",", "time/time_types.ck", ",", "type/polymorph.ck", ",", "type/type_analysis.ck", ",", "type/type_auto.ck", ",", "type/type_object.ck", ",", "type/type_primitives.ck", ",", "type/type_query.ck", ",", "type/type_type.ck", ",", "util/help.ck", ",", "util/status.ck", ",", "vector/interpolate.ck", ",", "vector/vec2.ck", ",", "vector/vec3.ck", ",", "vector/vec4.ck", ",", "vector/vecs-cast.ck", ",", "warpbuf/mx.warpbuf_basic.ck", ",", "warpbuf/warpbuf_advanced.ck", ",", "warpbuf/warpbuf_basic.ck", ",", "warpbuf/warpbuf_no_warp_file.ck", ",", "warpbuf/warpbuf_silent.ck" ],
+					"items" : [ "ai/features/centroid.ck", ",", "ai/features/chroma.ck", ",", "ai/features/features-combined.ck", ",", "ai/features/flux.ck", ",", "ai/features/flux0.ck", ",", "ai/features/kurtosis.ck", ",", "ai/features/mfcc-basic.ck", ",", "ai/features/mfcc-mean.ck", ",", "ai/features/rms.ck", ",", "ai/features/rolloff.ck", ",", "ai/features/rolloff2.ck", ",", "ai/features/sfm.ck", ",", "ai/features/zerox.ck", ",", "ai/genre-classify/feature-extract.ck", ",", "ai/genre-classify/genre-classify.ck", ",", "ai/genre-classify/x-validate.ck", ",", "ai/hmm/hmm-load.ck", ",", "ai/hmm/hmm-train.ck", ",", "ai/knn/knn-search.ck", ",", "ai/knn/knn2-classify.ck", ",", "ai/knn/knn2-search.ck", ",", "ai/mlp/mlp-manual.ck", ",", "ai/mlp/mlp.ck", ",", "ai/mlp/model-load.ck", ",", "ai/mlp/model-save.ck", ",", "ai/pca/pca.ck", ",", "ai/svm/svm-basic.ck", ",", "ai/wekinator/wekinator-basic.ck", ",", "ai/wekinator/wekinator-customize.ck", ",", "ai/wekinator/wekinator-import.ck", ",", "ai/word2vec/poem-i-feel.ck", ",", "ai/word2vec/poem-randomwalk.ck", ",", "ai/word2vec/poem-spew.ck", ",", "ai/word2vec/poem-ungenerate.ck", ",", "ai/word2vec/word2vec-basic.ck", ",", "ai/word2vec/word2vec-prompt.ck", ",", "analysis/autocorr.ck", ",", "analysis/concat.ck", ",", "analysis/dct.ck", ",", "analysis/fft.ck", ",", "analysis/fft1.ck", ",", "analysis/fft2.ck", ",", "analysis/fft3.ck", ",", "analysis/flip.ck", ",", "analysis/ifft.ck", ",", "analysis/ifft2.ck", ",", "analysis/ifft3.ck", ",", "analysis/PitchTrack.ck", ",", "analysis/Sigmund.ck", ",", "analysis/tracking/harm.ck", ",", "analysis/tracking/pitch-fifth.ck", ",", "analysis/tracking/pitch-seventh.ck", ",", "analysis/tracking/pitch-third.ck", ",", "analysis/tracking/pitch-track.ck", ",", "analysis/tracking/Smacking.ck", ",", "analysis/tracking/Tracking.ck", ",", "analysis/win.ck", ",", "analysis/xcorr.ck", ",", "analysis/xsynth.ck", ",", "array/array_append.ck", ",", "array/array_argument.ck", ",", "array/array_assign.ck", ",", "array/array_associative.ck", ",", "array/array_capacity.ck", ",", "array/array_dynamic.ck", ",", "array/array_erase.ck", ",", "array/array_erase2.ck", ",", "array/array_mdim.ck", ",", "array/array_mmixed.ck", ",", "array/array_negative.ck", ",", "array/array_range.ck", ",", "array/array_resize.ck", ",", "array/array_reverse.ck", ",", "array/array_shuffle.ck", ",", "array/array_sort.ck", ",", "array/array_storage.ck", ",", "array/array_sub_assign.ck", ",", "array/array_ugens.ck", ",", "array/array_zero.ck", ",", "array/foreach-1.ck", ",", "array/foreach-2.ck", ",", "array/foreach-3.ck", ",", "array/foreach-4.ck", ",", "array/foreach-5.ck", ",", "array/foreach-6.ck", ",", "array/foreach-auto1.ck", ",", "array/foreach-auto2.ck", ",", "basic/adc.ck", ",", "basic/adsr.ck", ",", "basic/alarm.ck", ",", "basic/args.ck", ",", "basic/bar.ck", ",", "basic/blit.ck", ",", "basic/blit2.ck", ",", "basic/chirp.ck", ",", "basic/chirp2.ck", ",", "basic/comb.ck", ",", "basic/curly++.ck", ",", "basic/curly.ck", ",", "basic/delay.ck", ",", "basic/demo0.ck", ",", "basic/demo1.ck", ",", "basic/demo2.ck", ",", "basic/demo3.ck", ",", "basic/doh.ck", ",", "basic/echo.ck", ",", "basic/envelope.ck", ",", "basic/fm.ck", ",", "basic/fm2.ck", ",", "basic/fm3.ck", ",", "basic/foo.ck", ",", "basic/foo2.ck", ",", "basic/func.ck", ",", "basic/i-robot.ck", ",", "basic/imp.ck", ",", "basic/infnan.ck", ",", "basic/larry++.ck", ",", "basic/larry.ck", ",", "basic/lfo.ck", ",", "basic/moe++.ck", ",", "basic/moe.ck", ",", "basic/oscillatronx.ck", ",", "basic/phasor.ck", ",", "basic/pulse.ck", ",", "basic/rec-auto-stereo.ck", ",", "basic/rec-auto.ck", ",", "basic/rec.ck", ",", "basic/ring.ck", ",", "basic/sndbuf.ck", ",", "basic/step.ck", ",", "basic/tick.ck", ",", "basic/tick2.ck", ",", "basic/unchuck.ck", ",", "basic/valueat.ck", ",", "basic/whirl.ck", ",", "basic/whole.ck", ",", "basic/wind.ck", ",", "basic/wind2.ck", ",", "basic/zerox.ck", ",", "class/constructors.ck", ",", "class/ctors-dtor.ck", ",", "class/destructor.ck", ",", "class/dinky.ck", ",", "class/try.ck", ",", "ctrl/ctrl_break.ck", ",", "ctrl/ctrl_break_nested.ck", ",", "ctrl/ctrl_continue.ck", ",", "ctrl/ctrl_do_until.ck", ",", "ctrl/ctrl_do_while.ck", ",", "ctrl/ctrl_for_loop.ck", ",", "ctrl/ctrl_foreach.ck", ",", "ctrl/ctrl_repeat.ck", ",", "ctrl/ctrl_sequencer.ck", ",", "ctrl/ctrl_until.ck", ",", "ctrl/ctrl_while.ck", ",", "deep/chant.ck", ",", "deep/dither.ck", ",", "deep/dtmf.ck", ",", "deep/follower.ck", ",", "deep/ks-chord.ck", ",", "deep/plu.ck", ",", "deep/plu2.ck", ",", "deep/plu3.ck", ",", "deep/say-chu.ck", ",", "deep/shepard.ck", ",", "deep/thx.ck", ",", "deep/unclap.ck", ",", "effects/ABSaturator.ck", ",", "effects/autotune.ck", ",", "effects/Bitcrusher.ck", ",", "effects/chorus.ck", ",", "effects/ExpDelay.ck", ",", "effects/ExpEnv-modes.ck", ",", "effects/ExpEnv.ck", ",", "effects/FoldbackSaturator-index.ck", ",", "effects/FoldbackSaturator-threshold.ck", ",", "effects/GVerb.ck", ",", "effects/KasFilter-demo.ck", ",", "effects/pitch-shift.ck", ",", "effects/PowerADSR-feedback-beatings.ck", ",", "effects/PowerADSR.ck", ",", "effects/reverb.ck", ",", "effects/Spectacle.ck", ",", "effects/WinFuncEnv.ck", ",", "event/broadcast.ck", ",", "event/event-extend.ck", ",", "event/event-extend2.ck", ",", "event/event-x-bpm-1.ck", ",", "event/event-x-bpm-2.ck", ",", "event/signal.ck", ",", "event/signal4.ck", ",", "extend/chugen.ck", ",", "extend/chugraph.ck", ",", "fauck/clarinet.ck", ",", "fauck/compressor.ck", ",", "fauck/crybaby.ck", ",", "fauck/distortion.ck", ",", "fauck/fau.ck", ",", "fauck/fauReverb.ck", ",", "fauck/file-playback.ck", ",", "fauck/flanger.ck", ",", "fauck/flute.ck", ",", "fauck/noise.ck", ",", "fauck/phaser.ck", ",", "fauck/polyphony-simple.ck", ",", "fauck/polyphony.ck", ",", "fauck/reverb.ck", ",", "fauck/sidechain-compressor.ck", ",", "fauck/smcAdvancedExample.ck", ",", "fauck/string.ck", ",", "fauck/test-import.ck", ",", "fauck/test.ck", ",", "fauck/vocoder.ck", ",", "fauck/wah.ck", ",", "filter/bpf.ck", ",", "filter/brf.ck", ",", "filter/dcblocker.ck", ",", "filter/Elliptic-help.ck", ",", "filter/FIR-convolve-homer.ck", ",", "filter/FIR-greyhole-down-up-decimate.ck", ",", "filter/FIR-sinc-explicit.ck", ",", "filter/hpf.ck", ",", "filter/KasFilter.ck", ",", "filter/lpf.ck", ",", "filter/Multicomb.ck", ",", "filter/resonz.ck", ",", "filter/rhpf.ck", ",", "filter/rlpf.ck", ",", "filter/WPDiodeLadder.ck", ",", "filter/WPKorg35.ck", ",", "func/func_doozey.ck", ",", "func/func_obj_arg.ck", ",", "func/func_overload.ck", ",", "func/func_overload_member.ck", ",", "func/func_overload_multi.ck", ",", "func/func_recursion.ck", ",", "func/func_void.ck", ",", "hanoi/hanoi++.ck", ",", "hanoi/hanoi.ck", ",", "hanoi/hanoi2.ck", ",", "hanoi/hanoi3.ck", ",", "hid/gametra.ck", ",", "hid/joy-fm.ck", ",", "hid/joy-noise.ck", ",", "hid/joy-shake.ck", ",", "hid/joy.ck", ",", "hid/kb.ck", ",", "hid/kbhit/clix.ck", ",", "hid/kbhit/clix2.ck", ",", "hid/kbhit/clix3.ck", ",", "hid/kbhit/kbhit.ck", ",", "hid/kbhit/kbhit2.ck", ",", "hid/keyboard-organ.ck", ",", "hid/mouse-abs.ck", ",", "hid/mouse-fm.ck", ",", "hid/mouse.ck", ",", "hid/tilt.ck", ",", "io/chout.ck", ",", "io/read-byte.ck", ",", "io/read-float.ck", ",", "io/read-int.ck", ",", "io/read-line.ck", ",", "io/read-str.ck", ",", "io/read-tokens.ck", ",", "io/read-wav-raw.ck", ",", "io/seek.ck", ",", "io/write-auto.ck", ",", "io/write-byte.ck", ",", "io/write.ck", ",", "io/write2.ck", ",", "machine/crash.ck", ",", "machine/eval-global.ck", ",", "machine/eval.ck", ",", "machine/intsize.ck", ",", "machine/is-realtime.ck", ",", "machine/machine-help.ck", ",", "machine/machine-shred.ck", ",", "machine/test1.ck", ",", "machine/test2.ck", ",", "machine/version.ck", ",", "math/int-dist.ck", ",", "math/map.ck", ",", "math/math-help.ck", ",", "math/maybe.ck", ",", "math/randomize.ck", ",", "max/amen.ck", ",", "max/event.ck", ",", "max/fauverb.ck", ",", "max/fmenv.ck", ",", "max/globals.ck", ",", "max/song.ck", ",", "max/test.ck", ",", "max/test3.ck", ",", "max/warp.ck", ",", "midi/gomidi.ck", ",", "midi/gomidi2.ck", ",", "midi/midifile-play.ck", ",", "midi/midiout.ck", ",", "midi/polyfony.ck", ",", "midi/polyfony2.ck", ",", "multi/i.ck", ",", "multi/n.ck", ",", "multi/we-robot.ck", ",", "oper/oper_arith_chuck.ck", ",", "oper/oper_assign.ck", ",", "oper/oper_logic.ck", ",", "oper/oper_post_inc.ck", ",", "oper/oper_pre_inc.ck", ",", "oper/overload_class.ck", ",", "oper/overload_gru.ck", ",", "oper/overload_overview.ck", ",", "oper/overload_pre_post.ck", ",", "oper/overload_public.ck", ",", "osc/multi-msg/r-multi-msg.ck", ",", "osc/multi-msg/s-multi-msg.ck", ",", "osc/multicast/r.ck", ",", "osc/multicast/s-multicast.ck", ",", "osc/one2many/r.ck", ",", "osc/one2many/s-sender.ck", ",", "osc/osc-dump.ck", ",", "osc/r.ck", ",", "osc/s.ck", ",", "osc/wildcards/r-wildcards.ck", ",", "osc/wildcards/s-multi.ck", ",", "otf/otf_01.ck", ",", "otf/otf_02.ck", ",", "otf/otf_03.ck", ",", "otf/otf_04.ck", ",", "otf/otf_05.ck", ",", "otf/otf_06.ck", ",", "otf/otf_07.ck", ",", "serial/byte.ck", ",", "serial/bytes.ck", ",", "serial/ints-ascii.ck", ",", "serial/ints-bin.ck", ",", "serial/lines.ck", ",", "serial/list.ck", ",", "serial/write-bytes.ck", ",", "serial/write.ck", ",", "shred/ancestor.ck", ",", "shred/dir.ck", ",", "shred/machine.ck", ",", "shred/parent.ck", ",", "shred/powerup.ck", ",", "shred/spork.ck", ",", "shred/spork2-exit.ck", ",", "shred/spork2-remove.ck", ",", "shred/spork2.ck", ",", "spatial/AmbPan3-CCRMA.ck", ",", "spatial/Pan4.ck", ",", "spatial/Pan8.ck", ",", "special/Dyno-compress.ck", ",", "special/Dyno-duck.ck", ",", "special/Dyno-limit.ck", ",", "special/Gen10-test.ck", ",", "special/Gen17-test.ck", ",", "special/Gen5-test.ck", ",", "special/Gen7-test.ck", ",", "special/Gen9-test.ck", ",", "special/GenX-CurveTable-test.ck", ",", "special/GenX-WarpTable-test.ck", ",", "special/LiSa-load.ck", ",", "special/LiSa-munger1.ck", ",", "special/LiSa-munger2.ck", ",", "special/LiSa-munger3.ck", ",", "special/LiSa-simplelooping.ck", ",", "special/LiSa-stereo.ck", ",", "special/LiSa-track1.ck", ",", "special/LiSa-track2.ck", ",", "special/LiSa-track3.ck", ",", "special/LiSa-track4.ck", ",", "special/LiSa-track5.ck", ",", "special/LiSa-trigger.ck", ",", "special/Mesh2D.ck", ",", "special/readme-GenX.ck", ",", "special/readme-LiSa1.ck", ",", "special/readme-LiSa2.ck", ",", "special/scream-o-matic/scream-o-matic.ck", ",", "special/twilight/twilight-granular-kb-interp.ck", ",", "special/twilight/twilight-granular-kb.ck", ",", "stereo/array.ck", ",", "stereo/curly2.ck", ",", "stereo/larry2.ck", ",", "stereo/moe2.ck", ",", "stereo/powerup2.ck", ",", "stereo/stereo-noise.ck", ",", "stereo/ugen-array.ck", ",", "stk/band-o-matic.ck", ",", "stk/bandedwg.ck", ",", "stk/bandedwg2.ck", ",", "stk/blowbotl.ck", ",", "stk/blowbotl2.ck", ",", "stk/blowhole.ck", ",", "stk/blowhole2.ck", ",", "stk/bowed.ck", ",", "stk/bowed2.ck", ",", "stk/brass.ck", ",", "stk/brass2.ck", ",", "stk/clarinet.ck", ",", "stk/clarinet2.ck", ",", "stk/flute.ck", ",", "stk/frenchrn-algo2.ck", ",", "stk/hevymetl-algo3.ck", ",", "stk/hevymetl-dance-now.ck", ",", "stk/hevymetl-trumpet-algo3.ck", ",", "stk/honkeytonk-algo1.ck", ",", "stk/honkeytonk-algo3.ck", ",", "stk/krstlchr-algo7.ck", ",", "stk/mand-o-matic-simple.ck", ",", "stk/mand-o-matic.ck", ",", "stk/mandolin.ck", ",", "stk/modalbar.ck", ",", "stk/modalbar2.ck", ",", "stk/mode-o-matic.ck", ",", "stk/mode-o-test.ck", ",", "stk/modulate.ck", ",", "stk/moog.ck", ",", "stk/moog2.ck", ",", "stk/moogie.ck", ",", "stk/rhodey-song.ck", ",", "stk/rhodey.ck", ",", "stk/saxofony.ck", ",", "stk/shake-cycle.ck", ",", "stk/shake-o-matic.ck", ",", "stk/sitar.ck", ",", "stk/stif-o-karp.ck", ",", "stk/stifkarp.ck", ",", "stk/subnoise-audio.ck", ",", "stk/subnoise-control.ck", ",", "stk/voic-o-form.ck", ",", "stk/wurley.ck", ",", "stk/wurley2.ck", ",", "stk/wurley3.ck", ",", "stk/wvout-24bit.ck", ",", "string/escape.ck", ",", "string/readline.ck", ",", "string/replace.ck", ",", "string/strops.ck", ",", "string/strops2.ck", ",", "string/token.ck", ",", "string/tostr.ck", ",", "test/callback.ck", ",", "test/global-event.ck", ",", "test/local-event.ck", ",", "test/sine.ck", ",", "test/sync.ck", ",", "time/time_operations.ck", ",", "time/time_types.ck", ",", "type/polymorph.ck", ",", "type/type_analysis.ck", ",", "type/type_auto.ck", ",", "type/type_object.ck", ",", "type/type_primitives.ck", ",", "type/type_query.ck", ",", "type/type_type.ck", ",", "util/help.ck", ",", "util/status.ck", ",", "vector/interpolate.ck", ",", "vector/vec2.ck", ",", "vector/vec3.ck", ",", "vector/vec4.ck", ",", "vector/vecs-cast.ck", ",", "warpbuf/warpbuf_advanced.ck", ",", "warpbuf/warpbuf_basic.ck", ",", "warpbuf/warpbuf_no_warp_file.ck", ",", "warpbuf/warpbuf_silent.ck" ],
 					"maxclass" : "umenu",
 					"numinlets" : 1,
 					"numoutlets" : 3,
 					"outlettype" : [ "int", "", "" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 23.5, 327.0, 125.0, 21.0 ],
+					"patching_rect" : [ 26.75, 388.0, 143.25, 21.0 ],
 					"prefix" : "~/Downloads/projects/chuck-max/examples/",
 					"types" : ".ck"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-15",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 80.75, 229.0, 102.0, 21.0 ],
+					"text" : "freq_multiplier $1"
 				}
 
 			}
@@ -740,20 +917,57 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 357.5, 200.0, 88.0, 21.0 ],
+					"patching_rect" : [ 339.5, 288.0, 88.0, 21.0 ],
 					"text" : "+ basic/echo.ck"
 				}
 
 			}
 , 			{
 				"box" : 				{
+					"bgcolor" : [ 0.784314, 0.145098, 0.023529, 1.0 ],
+					"bgcolor2" : [ 0.2, 0.2, 0.2, 1.0 ],
+					"bgfillcolor_angle" : 270.0,
+					"bgfillcolor_autogradient" : 0.0,
+					"bgfillcolor_color" : [ 0.784314, 0.145098, 0.023529, 1.0 ],
+					"bgfillcolor_color1" : [ 0.784314, 0.145098, 0.023529, 1.0 ],
+					"bgfillcolor_color2" : [ 0.2, 0.2, 0.2, 1.0 ],
+					"bgfillcolor_proportion" : 0.5,
+					"bgfillcolor_type" : "gradient",
+					"gradient" : 1,
 					"id" : "obj-6",
 					"maxclass" : "message",
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 212.0, 287.0, 34.0, 21.0 ],
+					"patching_rect" : [ 284.0, 416.0, 34.0, 21.0 ],
 					"text" : "reset"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"format" : 6,
+					"id" : "obj-10",
+					"maxclass" : "flonum",
+					"numinlets" : 1,
+					"numoutlets" : 2,
+					"outlettype" : [ "", "bang" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 80.75, 199.0, 50.0, 21.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"floatoutput" : 1,
+					"id" : "obj-2",
+					"maxclass" : "slider",
+					"numinlets" : 1,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 80.75, 103.0, 20.0, 85.0 ],
+					"size" : 20.0
 				}
 
 			}
@@ -767,7 +981,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 403.0, 261.5, 18.0, 50.0 ],
+					"patching_rect" : [ 364.0, 618.0, 18.0, 50.0 ],
 					"size" : 3,
 					"value" : 0
 				}
@@ -780,7 +994,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
-					"patching_rect" : [ 403.0, 327.0, 68.0, 21.0 ],
+					"patching_rect" : [ 363.0, 680.0, 57.0, 21.0 ],
 					"text" : "gate~ 2"
 				}
 
@@ -802,20 +1016,32 @@
 					"numoutlets" : 1,
 					"offset" : [ 0.0, 0.0 ],
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 452.0, 222.0, 225.0, 95.0 ],
+					"patching_rect" : [ 425.0, 588.0, 225.0, 95.0 ],
 					"viewvisibility" : 1
 				}
 
 			}
 , 			{
 				"box" : 				{
+					"id" : "obj-11",
+					"linecount" : 2,
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 16.0, 49.0, 638.0, 43.0 ],
+					"text" : "An external editor can be set by a message as below or by setting the editor attribute in the inspector. Once the editor is set, a file can be edited using the 'edit` msg as below, or by double-clicking the `chuck~` object to edit the last loaded file.\n"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"fontface" : 1,
-					"fontsize" : 12.0,
+					"fontsize" : 14.0,
 					"id" : "obj-8",
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 16.0, 16.0, 359.0, 21.0 ],
+					"patching_rect" : [ 16.0, 16.0, 417.0, 24.0 ],
 					"text" : "chuck~ : test use of external editor"
 				}
 
@@ -826,7 +1052,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 118.25, 230.0, 27.5, 19.0 ],
+					"patching_rect" : [ 28.0, 420.0, 27.5, 19.0 ],
 					"text" : "run"
 				}
 
@@ -839,7 +1065,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 120.0, 255.0, 24.0, 24.0 ]
+					"patching_rect" : [ 29.75, 447.0, 24.0, 24.0 ]
 				}
 
 			}
@@ -849,7 +1075,7 @@
 					"maxclass" : "ezdac~",
 					"numinlets" : 2,
 					"numoutlets" : 0,
-					"patching_rect" : [ 230.75, 517.0, 45.0, 45.0 ]
+					"patching_rect" : [ 30.0, 663.0, 45.0, 45.0 ]
 				}
 
 			}
@@ -862,8 +1088,23 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
-					"patching_rect" : [ 238.0, 397.0, 56.0, 21.0 ],
-					"text" : "chuck~ 2"
+					"patching_rect" : [ 29.75, 590.0, 119.0, 21.0 ],
+					"text" : "chuck~ 2 max/test.ck",
+					"varname" : "chuck-0"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"angle" : 270.0,
+					"bgcolor" : [ 0.831372549019608, 0.831372549019608, 0.831372549019608, 1.0 ],
+					"id" : "obj-76",
+					"maxclass" : "panel",
+					"mode" : 0,
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 14.75, 95.0, 630.0, 165.0 ],
+					"proportion" : 0.5
 				}
 
 			}
@@ -871,6 +1112,7 @@
 		"lines" : [ 			{
 				"patchline" : 				{
 					"destination" : [ "obj-19", 1 ],
+					"hidden" : 1,
 					"order" : 0,
 					"source" : [ "obj-1", 1 ]
 				}
@@ -879,6 +1121,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-19", 0 ],
+					"hidden" : 1,
 					"order" : 0,
 					"source" : [ "obj-1", 0 ]
 				}
@@ -902,14 +1145,15 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-1", 0 ],
-					"source" : [ "obj-11", 0 ]
+					"destination" : [ "obj-15", 0 ],
+					"source" : [ "obj-10", 0 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-12", 0 ]
 				}
 
@@ -917,13 +1161,21 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
+					"source" : [ "obj-13", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-43", 0 ],
 					"source" : [ "obj-14", 0 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-1", 0 ],
+					"destination" : [ "obj-43", 0 ],
 					"source" : [ "obj-15", 0 ]
 				}
 
@@ -931,13 +1183,36 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-16", 0 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-14", 0 ],
+					"source" : [ "obj-17", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-17", 0 ],
+					"source" : [ "obj-18", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-10", 0 ],
+					"source" : [ "obj-2", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-20", 0 ]
 				}
 
@@ -945,6 +1220,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-21", 0 ]
 				}
 
@@ -952,6 +1228,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-22", 0 ]
 				}
 
@@ -959,6 +1236,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-23", 0 ]
 				}
 
@@ -966,6 +1244,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-24", 0 ]
 				}
 
@@ -994,6 +1273,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-27", 0 ]
 				}
 
@@ -1001,6 +1281,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-28", 0 ]
 				}
 
@@ -1008,6 +1289,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-29", 0 ]
 				}
 
@@ -1015,6 +1297,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-3", 0 ]
 				}
 
@@ -1022,6 +1305,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-30", 0 ]
 				}
 
@@ -1029,6 +1313,15 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
+					"source" : [ "obj-31", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-32", 0 ]
 				}
 
@@ -1036,6 +1329,15 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
+					"source" : [ "obj-33", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-34", 0 ]
 				}
 
@@ -1043,6 +1345,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-35", 0 ]
 				}
 
@@ -1050,6 +1353,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 1 ],
+					"hidden" : 1,
 					"order" : 0,
 					"source" : [ "obj-36", 0 ]
 				}
@@ -1058,6 +1362,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"order" : 1,
 					"source" : [ "obj-36", 0 ]
 				}
@@ -1065,16 +1370,9 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-19", 0 ],
-					"order" : 0,
-					"source" : [ "obj-36", 1 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
 					"destination" : [ "obj-25", 1 ],
-					"order" : 1,
+					"hidden" : 1,
+					"order" : 0,
 					"source" : [ "obj-36", 1 ]
 				}
 
@@ -1082,7 +1380,8 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-25", 0 ],
-					"order" : 2,
+					"hidden" : 1,
+					"order" : 1,
 					"source" : [ "obj-36", 1 ]
 				}
 
@@ -1090,6 +1389,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-37", 0 ]
 				}
 
@@ -1097,22 +1397,22 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
+					"source" : [ "obj-38", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-39", 0 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-47", 0 ],
-					"order" : 0,
-					"source" : [ "obj-40", 1 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
 					"destination" : [ "obj-62", 0 ],
-					"order" : 1,
 					"source" : [ "obj-40", 1 ]
 				}
 
@@ -1126,7 +1426,16 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-53", 1 ],
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
+					"source" : [ "obj-42", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-47", 0 ]
 				}
 
@@ -1134,15 +1443,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
-					"source" : [ "obj-48", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-40", 0 ],
 					"hidden" : 1,
-					"midpoints" : [ 13.5, 321.0, 33.0, 321.0 ],
 					"source" : [ "obj-5", 0 ]
 				}
 
@@ -1150,6 +1451,30 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
+					"source" : [ "obj-50", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
+					"source" : [ "obj-52", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-21", 0 ],
+					"source" : [ "obj-52", 1 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-53", 0 ]
 				}
 
@@ -1171,6 +1496,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-6", 0 ]
 				}
 
@@ -1178,14 +1504,63 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
+					"midpoints" : [ 98.375, 526.0, 39.25, 526.0 ],
 					"source" : [ "obj-62", 0 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-53", 0 ],
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
+					"source" : [ "obj-63", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
 					"source" : [ "obj-64", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
+					"source" : [ "obj-65", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
+					"source" : [ "obj-66", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
+					"source" : [ "obj-69", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"hidden" : 1,
+					"source" : [ "obj-71", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-72", 0 ]
 				}
 
 			}
@@ -1227,13 +1602,6 @@
 				"name" : "interfacecolor.js",
 				"bootpath" : "C74:/interfaces",
 				"type" : "TEXT",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "midi_player.maxpat",
-				"bootpath" : "~/Downloads/projects/chuck-max/patchers/tests",
-				"patcherrelativepath" : ".",
-				"type" : "JSON",
 				"implicit" : 1
 			}
 , 			{

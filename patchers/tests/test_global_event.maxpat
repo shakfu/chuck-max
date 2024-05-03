@@ -40,12 +40,34 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-11",
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 291.0, 148.0, 204.0, 19.0 ],
+					"text" : "trigger named event in all shreds"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-10",
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 291.0, 180.0, 204.0, 19.0 ],
+					"text" : "trigger named event in current shred"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"id" : "obj-22",
 					"maxclass" : "message",
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 171.0, 287.0, 29.5, 21.0 ],
+					"patching_rect" : [ 191.0, 287.0, 29.5, 21.0 ],
 					"text" : "info"
 				}
 
@@ -72,18 +94,6 @@
 					"outlettype" : [ "float", "float", "" ],
 					"patching_rect" : [ 357.5, 509.0, 42.0, 21.0 ],
 					"text" : "fzero~"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-20",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 354.5, 189.0, 89.0, 21.0 ],
-					"text" : "run Sine-test.ck"
 				}
 
 			}
@@ -225,7 +235,8 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
 					"patching_rect" : [ 238.0, 397.0, 150.0, 21.0 ],
-					"text" : "chuck~ test/global-event.ck"
+					"text" : "chuck~ test/global-event.ck",
+					"varname" : "chuck-0"
 				}
 
 			}
@@ -287,13 +298,6 @@
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
 					"source" : [ "obj-16", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-1", 0 ],
-					"source" : [ "obj-20", 0 ]
 				}
 
 			}
