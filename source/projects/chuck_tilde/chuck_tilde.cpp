@@ -96,7 +96,8 @@ t_max_err ck_signal(t_ck* x, t_symbol* s);      // signal global event
 t_max_err ck_broadcast(t_ck* x, t_symbol* s);   // broadcast global event
 
 // special message handlers
-t_max_err ck_globals(t_ck* x);                  // dump global variabls
+t_max_err ck_vm(t_ck* x);                       // get vm state
+t_max_err ck_globals(t_ck* x);                  // dump global variables
 t_max_err ck_docs(t_ck* x);                     // open chuck docs in a browser
 t_max_err ck_info(t_ck* x);                     // get info about running shreds
 t_max_err ck_chugins(t_ck* x);                  // probe and list available chugins
@@ -198,7 +199,8 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_time,         "time",     0);
 
     class_addmethod(c, (method)ck_demo,         "demo",     0);
-
+ 
+    class_addmethod(c, (method)ck_vm,           "vm",       0);
     class_addmethod(c, (method)ck_globals,      "globals",  0);
     class_addmethod(c, (method)ck_docs,         "docs",     0);
     class_addmethod(c, (method)ck_info,         "info",     0);
@@ -682,7 +684,7 @@ t_symbol* ck_check_file(t_ck* x, t_symbol* name)
     char patcher_file[MAX_PATH_CHARS];
     snprintf_zero(patcher_file, MAX_PATH_CHARS, "%s/%s", x->patcher_dir->s_name, filepath);
     if(path_exists(patcher_file)) {
-        post("patcher_file: %s", patcher_file);
+        // post("patcher_file: %s", patcher_file);
         return gensym(patcher_file);
     }
 
@@ -796,10 +798,15 @@ t_max_err ck_bang(t_ck* x)
 }
 
 t_max_err ck_run(t_ck* x, t_symbol* s)
-{
+{ 
     if (s != gensym("")) {
-        x->run_file = ck_check_file(x, s);
-        return ck_run_file(x);
+        if (sys_getdspstate()) {
+            x->run_file = ck_check_file(x, s);
+            return ck_run_file(x);            
+        } else {
+            error("can only run/add shred when audio is on");
+            return MAX_ERR_GENERIC;
+        }
     }
     error("ck_run: eguires a filename to edit");
     return MAX_ERR_GENERIC;
@@ -850,6 +857,12 @@ t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         error("first argument must be a symbol");
         return MAX_ERR_GENERIC;
     }
+
+    if (!sys_getdspstate()) {
+        error("can only run/add shred when audio is on");
+        return MAX_ERR_GENERIC;
+    };
+
     filename_sym = atom_getsym(argv);
 
     // get string
@@ -1343,6 +1356,25 @@ t_max_err ck_info(t_ck* x)
 }
 
 
+t_max_err ck_globals(t_ck* x)
+{
+    if (x->chuck->vm()->globals_manager()->getAllGlobalVariables(cb_get_all_global_vars, NULL)) {
+        return MAX_ERR_NONE;
+    }
+    error("could not dump global variable to console");
+    return MAX_ERR_GENERIC;
+}
+
+
+t_max_err ck_vm(t_ck* x)
+{
+    post("VM %d status", x->oid);
+    post("\tinitialized: %d", x->chuck->vm()->has_init());
+    post("\trunning: %d", x->chuck->vm()->running());
+    return MAX_ERR_NONE;
+}
+
+
 //-----------------------------------------------------------------------------------------------
 // callbacks
 
@@ -1581,16 +1613,6 @@ t_max_err ck_unregister(t_ck* x, t_symbol* s)
 //     x->chuck->vm()->globals_manager()->setGlobalFloatArrayValue( const char * name, t_CKUINT index, t_CKFLOAT value );
 //     x->chuck->vm()->globals_manager()->setGlobalAssociativeFloatArrayValue( const char * name, const char * key, t_CKFLOAT value );
 // }
-
-
-t_max_err ck_globals(t_ck* x)
-{
-    if (x->chuck->vm()->globals_manager()->getAllGlobalVariables(cb_get_all_global_vars, NULL)) {
-        return MAX_ERR_NONE;
-    }
-    error("could not dump global variable to console");
-    return MAX_ERR_GENERIC;
-}
 
 
 t_max_err ck_demo(t_ck* x)
