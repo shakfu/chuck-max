@@ -1,0 +1,24 @@
+Thread 62 Crashed:: com.apple.audio.IOThread.client
+0   chuck~                        	       0x14ec1ac34 Chuck_Globals_Manager::get_global_event(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>> const&) + 44 (chuck_globals.cpp:1320)
+1   chuck~                        	       0x14ec272b8 Chuck_Instr_Alloc_Word_Global::execute(Chuck_VM*, Chuck_VM_Shred*) + 476 (chuck_instr.cpp:4162)
+2   chuck~                        	       0x14ec9386c Chuck_VM_Shred::run(Chuck_VM*) + 100 (chuck_vm.cpp:2230)
+3   chuck~                        	       0x14ec93544 Chuck_VM::compute() + 88 (chuck_vm.cpp:567)
+4   chuck~                        	       0x14ec94e00 Chuck_VM::run(long, float const*, float*) + 124 (chuck_vm.cpp:648)
+5   chuck~                        	       0x14ebdf710 ck_perform64(_ck*, object*, double**, long, double**, long, long, long, void*) + 484 (chuck_tilde.cpp:1706)
+6   MaxAudioAPIImpl               	       0x10c9b8fb8 dspchain_tick + 336
+7   MaxAudioAPIImpl               	       0x10c9a4178 plugrunner_tick + 204
+8   MaxAudioAPIImpl               	       0x10c99973c plugrunner_process + 208
+9   MaxAudioAPIImpl               	       0x10c99823c patchernode_process + 408
+10  MaxAudioAPIImpl               	       0x10c994708 mixerengine_process_fun + 76
+11  Max                           	       0x104856460 linklist_funall_imp + 376
+12  MaxAudioAPIImpl               	       0x10c993fc8 mixerengine_processiovector + 924
+13  MaxAudioAPIImpl               	       0x10c9b5024 ad_process + 228
+14  ad_coreaudio                  	       0x10c392d60 adcoreaudio_callback + 516
+15  Max                           	       0x104ac8ff0 juce::CoreAudioClasses::CoreAudioInternal::audioCallback(AudioTimeStamp const*, AudioTimeStamp const*, AudioBufferList const*, AudioBufferList*) + 748
+16  Max                           	       0x104ac8cc4 juce::CoreAudioClasses::CoreAudioInternal::audioIOProc(unsigned int, AudioTimeStamp const*, AudioBufferList const*, AudioTimeStamp const*, AudioBufferList*, AudioTimeStamp const*, void*) + 28
+17  CoreAudio                     	       0x185f14fb8 HALC_ProxyIOContext::IOWorkLoop() + 9508
+18  CoreAudio                     	       0x185f1235c invocation function for block in HALC_ProxyIOContext::HALC_ProxyIOContext(unsigned int, unsigned int) + 108
+19  CoreAudio                     	       0x1860984e4 HALC_IOThread::Entry(void*) + 88
+20  libsystem_pthread.dylib       	       0x1836a6f94 _pthread_start + 136
+21  libsystem_pthread.dylib       	       0x1836a1d34 thread_start + 8
+
