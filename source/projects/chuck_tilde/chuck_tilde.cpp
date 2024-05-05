@@ -60,21 +60,7 @@ typedef struct _ck {
     long current_shred_id;   // current shred id
     t_symbol* editor;        // external text editor for chuck code
     t_symbol* edit_file;     // path of file to edit by external editor
-    // void *ui_outlet;      // outlet of ui messages;
     long run_needs_audio;    // only run/add shred if dsp is on
-
-    t_object* code_editor;  // code editor object
-    // char** code;            // handle to code buffer for code editor
-    // long code_size;         // length of code buffer
-    // t_fourcc code_filetype; // filetype four char code of 'TEXT'
-    // t_fourcc code_outtype;  // savetype four char code of 'TEXT'
-    // char code_filename[MAX_PATH_CHARS]; // file name field
-    // char code_pathname[MAX_PATH_CHARS]; // file path field
-    // short code_path;   // short code for max file system
-    // long run_on_save;  // evaluate/run code in editor on save
-    // long run_on_close; // evaluate/run code in editor on close
-
-
 } t_ck;
 
 
@@ -267,8 +253,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
     t_ck* x = (t_ck*)object_alloc(ck_class);
 
     if (x) {
-        // set default attributes
-        // some defaults can be overriden by compile-time definitions
+        // set default attributes (allcaps can be overriden by compile-time defs)
         x->channels = CK_CHANNELS;
         x->loglevel = CK_LOG_SYSTEM;
         x->current_shred_id = 0;
@@ -280,7 +265,6 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->box = NULL;
         x->patcher_dir = gensym("");
         x->run_needs_audio = 0;
-        x->code_editor = NULL;
 
         t_symbol* filename;
 
@@ -346,9 +330,6 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         path_nameconform(patcher_dir, patcher_conform_dir, PATH_STYLE_MAX, PATH_TYPE_BOOT);
         // post("conform dir of patcher: %s", patcher_conform_dir);
         x->patcher_dir = gensym(patcher_conform_dir);
-
-        // if one wants another outlet
-        // x->ui_outlet = outlet_new((t_pxobject*)x, NULL);
 
         dsp_setup((t_pxobject*)x, x->channels);   // MSP inlets: 2nd arg is # of inlets
     
