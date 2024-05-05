@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Added `run_needs_audio` attribute to ensure that adding or running shred can only happen when dsp is on.
+
 - Added patcher directory to search paths for `add`ed chuck file.
 
 - Added more callback demos for global vars

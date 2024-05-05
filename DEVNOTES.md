@@ -1,6 +1,45 @@
 # Dev Notes
 
 
+## Using Max code editor
+
+
+
+```c++
+
+// struct
+t_object* code_editor;  // code editor object
+char** code;            // handle to code buffer for code editor
+long code_size;         // length of code buffer
+t_fourcc code_filetype; // filetype four char code of 'TEXT'
+t_fourcc code_outtype;  // savetype four char code of 'TEXT'
+char code_filename[MAX_PATH_CHARS]; // file name field
+char code_pathname[MAX_PATH_CHARS]; // file path field
+short code_path;   // short code for max file system
+long run_on_save;  // evaluate/run code in editor on save
+long run_on_close; // evaluate/run code in editor on close
+
+
+
+void ck_dblclick(t_ck* x)
+{
+    if ((x->run_file != gensym("")) && (x->editor != gensym(""))) {
+        ck_edit(x, x->run_file);
+    } else if (x->code_editor) {
+        object_attr_setchar(x->code_editor, gensym("visible"), 1);
+    } else {
+        x->code_editor = (t_object*)object_new(CLASS_NOBOX, gensym("jed"), x, 0);
+        object_method(x->code_editor, gensym("settext"), *x->code, gensym("utf-8"));
+        object_attr_setchar(x->code_editor, gensym("scratch"), 1);
+        object_attr_setsym(x->code_editor, gensym("title"), gensym("ck-editor"));
+    }
+}
+
+// etc.
+
+```
+
+
 ## How to Sync Chuck <=> Max
 
 - `sync~`

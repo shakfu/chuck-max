@@ -24,8 +24,8 @@
 #include "chuck_globals.h"
 
 // globals defs
-#define CHANNELS 1
-#define EMBEDDED_CHUGINS 0
+#define CK_CHANNELS 1
+#define CK_EMBEDDED_CHUGINS 0
 
 namespace fs = std::filesystem;
 
@@ -61,6 +61,19 @@ typedef struct _ck {
     t_symbol* editor;        // external text editor for chuck code
     t_symbol* edit_file;     // path of file to edit by external editor
     // void *ui_outlet;      // outlet of ui messages;
+    long run_needs_audio;    // only run/add shred if dsp is on
+
+    t_object* code_editor;  // code editor object
+    // char** code;            // handle to code buffer for code editor
+    // long code_size;         // length of code buffer
+    // t_fourcc code_filetype; // filetype four char code of 'TEXT'
+    // t_fourcc code_outtype;  // savetype four char code of 'TEXT'
+    // char code_filename[MAX_PATH_CHARS]; // file name field
+    // char code_pathname[MAX_PATH_CHARS]; // file path field
+    // short code_path;   // short code for max file system
+    // long run_on_save;  // evaluate/run code in editor on save
+    // long run_on_close; // evaluate/run code in editor on close
+
 
 } t_ck;
 
@@ -70,7 +83,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv);
 void ck_free(t_ck* x);
 void ck_assist(t_ck* x, void* b, long m, long a, char* s);
 
-// attribute set/get
+// attribute handkers
 t_max_err ck_editor_get(t_ck *x, t_object *attr, long *argc, t_atom **argv);
 t_max_err ck_editor_set(t_ck *x, t_object *attr, long argc, t_atom *argv);
 
@@ -226,13 +239,19 @@ void ext_main(void* r)
 
     CLASS_ATTR_SYM(c,       "editor", 0,        t_ck, editor);
     CLASS_ATTR_BASIC(c,     "editor", 0);
-    CLASS_ATTR_ACCESSORS(c, "editor", NULL, ck_editor_set);
+    CLASS_ATTR_ACCESSORS(c, "editor", NULL,     ck_editor_set);
     // CLASS_ATTR_ACCESSORS(c, "editor", ck_editor_get, ck_editor_set);
 
     CLASS_ATTR_SYM(c,       "file", 0,          t_ck,  run_file);
     CLASS_ATTR_STYLE(c,     "file", 0,          "file");
     CLASS_ATTR_BASIC(c,     "file", 0);
     // CLASS_ATTR_SAVE(c,      "file", 0);
+
+    // can only run / add while dsp is on
+    CLASS_ATTR_LONG(c,      "run_needs_audio", 0,  t_ck, run_needs_audio);
+    CLASS_ATTR_STYLE(c,     "run_needs_audio", 0, "onoff");
+    CLASS_ATTR_BASIC(c,     "run_needs_audio", 0);
+    // CLASS_ATTR_SAVE(c,      "run_needs_audio", 0);
 
     // clang-format on
     //------------------------------------------------------------------------
@@ -250,7 +269,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
     if (x) {
         // set default attributes
         // some defaults can be overriden by compile-time definitions
-        x->channels = CHANNELS;
+        x->channels = CK_CHANNELS;
         x->loglevel = CK_LOG_SYSTEM;
         x->current_shred_id = 0;
         x->run_file = gensym("");
@@ -260,6 +279,8 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->patcher = NULL;
         x->box = NULL;
         x->patcher_dir = gensym("");
+        x->run_needs_audio = 0;
+        x->code_editor = NULL;
 
         t_symbol* filename;
 
@@ -337,7 +358,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // chuck-related
         x->chuck = NULL;
-#if EMBEDDED_CHUGINS 
+#if CK_EMBEDDED_CHUGINS 
         x->chugins_dir = ck_get_path_from_external(ck_class, (char*)"/Contents/Resources/chugins");
 #else
         x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins");
@@ -363,7 +384,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // set default chuggins dirs
         std::string chugins_dir = std::string(x->chugins_dir->s_name);
         std::list<std::string> chugin_search;
-#if EMBEDDED_CHUGINS
+#if CK_EMBEDDED_CHUGINS
         // add extra package-level chugins directory
         chugin_search.push_back(global_dir + "/chugins");
 #endif
@@ -412,9 +433,9 @@ void ck_free(t_ck* x)
 void ck_assist(t_ck* x, void* b, long m, long a, char* s)
 {
     if (m == ASSIST_INLET) { // inlet
-        snprintf_zero(s, 20, "I am inlet %ld", a);
+        snprintf_zero(s, 512, "I am inlet %ld", a);
     } else {                 // outlet
-        snprintf_zero(s, 20, "I am outlet %ld", a);
+        snprintf_zero(s, 512, "I am outlet %ld", a);
     }
 }
 
@@ -800,15 +821,14 @@ t_max_err ck_bang(t_ck* x)
 t_max_err ck_run(t_ck* x, t_symbol* s)
 { 
     if (s != gensym("")) {
-        if (sys_getdspstate()) {
-            x->run_file = ck_check_file(x, s);
-            return ck_run_file(x);            
-        } else {
+        if (x->run_needs_audio && !sys_getdspstate()) {
             error("can only run/add shred when audio is on");
             return MAX_ERR_GENERIC;
         }
+        x->run_file = ck_check_file(x, s);
+        return ck_run_file(x);
     }
-    error("ck_run: eguires a filename to edit");
+    error("ck_run: reguires a filename to edit");
     return MAX_ERR_GENERIC;
 }
 
@@ -816,7 +836,7 @@ t_max_err ck_run(t_ck* x, t_symbol* s)
 t_max_err ck_edit(t_ck* x, t_symbol* s)
 {
     if (x->editor == gensym("")) {
-        error("editor attribute or EDITOR env var not set");
+        error("ck_edit: editor attribute or EDITOR env var not set to full path of editor");
         return MAX_ERR_GENERIC;
     }
 
@@ -824,8 +844,7 @@ t_max_err ck_edit(t_ck* x, t_symbol* s)
         x->edit_file = ck_check_file(x, s);
         if (x->edit_file != gensym("")) {
             std::string cmd;
-
-            post("edit: %s", x->edit_file->s_name);
+            // post("edit: %s", x->edit_file->s_name);
 
             cmd = std::string(x->editor->s_name) + " " + std::string(x->edit_file->s_name);
             std::system(cmd.c_str());
@@ -858,7 +877,7 @@ t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         return MAX_ERR_GENERIC;
     }
 
-    if (!sys_getdspstate()) {
+    if (x->run_needs_audio && !sys_getdspstate()) {
         error("can only run/add shred when audio is on");
         return MAX_ERR_GENERIC;
     };
