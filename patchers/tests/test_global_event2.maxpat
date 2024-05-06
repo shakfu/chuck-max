@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 289.0, 137.0, 678.0, 598.0 ],
+		"rect" : [ 407.0, 143.0, 678.0, 598.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -211,8 +211,8 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 16.0, 16.0, 359.0, 21.0 ],
-					"text" : "test global event"
+					"patching_rect" : [ 16.0, 16.0, 467.0, 21.0 ],
+					"text" : "test global event 2: custom event with randomized sample lengths"
 				}
 
 			}
