@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 79.0, 87.0, 723.0, 582.0 ],
+		"rect" : [ 79.0, 87.0, 742.0, 644.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -40,6 +40,17 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-18",
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 31.0, 84.0, 126.0, 19.0 ],
+					"text" : "same as listen demo 0"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"id" : "obj-37",
 					"maxclass" : "message",
 					"numinlets" : 2,
@@ -59,18 +70,6 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 52.0, 169.0, 77.0, 21.0 ],
 					"text" : "listen demo 1"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-20",
-					"linecount" : 2,
-					"maxclass" : "comment",
-					"numinlets" : 1,
-					"numoutlets" : 0,
-					"patching_rect" : [ 288.0, 91.0, 154.0, 31.0 ],
-					"text" : "(un)register demo requires -> global Event demo;"
 				}
 
 			}
@@ -129,7 +128,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 174.0, 169.0, 67.0, 21.0 ],
+					"patching_rect" : [ 52.0, 105.0, 67.0, 21.0 ],
 					"text" : "listen demo"
 				}
 
@@ -248,8 +247,8 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 16.0, 16.0, 238.0, 21.0 ],
-					"text" : "test register/unregister callbacks"
+					"patching_rect" : [ 16.0, 16.0, 274.0, 21.0 ],
+					"text" : "test listen/unlisten for event"
 				}
 
 			}
