@@ -1,8 +1,89 @@
 # Dev Notes
 
+## Registering and Binding Different Callbacks
+
+Sidestepping limitations of callbacks (see [here](https://isocpp.org/wiki/faq/pointers-to-members) and [here](https://stackoverflow.com/questions/25848690/should-i-use-stdfunction-or-a-function-pointer-in-c)) especially due to lack of capture of context variables, their use is limited in Max as they don't have access to the struct pointer unless it is stored in a global pointer..
+
+The following provides for more than one family of callbacks through the use of maps of function pointers. Probably abandon it due to above limitation.
+
+To have more than 1 callback instance which can be retrieved by name from a map:
+
+```c++
+
+// typedefs
+typedef void (*t_cb_event)(const char*);
+typedef void (*t_cb_int)(const char*, t_CKINT);
+typedef void (*t_cb_float)(const char*, t_CKFLOAT);
+typedef void (*t_cb_string)(const char*, const char*);
+typedef void (*t_cb_int_array)(const char*, t_CKINT[], t_CKUINT);
+typedef void (*t_cb_float_array)(const char*, t_CKFLOAT[], t_CKUINT);
+
+typedef std::unordered_map<std::string, t_cb_event> t_map_cb_event;
+typedef std::unordered_map<std::string, t_cb_int> t_map_cb_int;
+typedef std::unordered_map<std::string, t_cb_float> t_map_cb_float;
+typedef std::unordered_map<std::string, t_cb_string> t_map_cb_string;
+typedef std::unordered_map<std::string, t_cb_int_array> t_map_cb_int_array;
+typedef std::unordered_map<std::string, t_cb_float_array> t_map_cb_float_array;
+
+
+x->default_cb = gensym("default");
+
+// init callback maps
+x->map_cb_event = t_map_cb_event();
+x->map_cb_int = t_map_cb_int();
+x->map_cb_float = t_map_cb_float();
+x->map_cb_string = t_map_cb_string();
+x->map_cb_int_array = t_map_cb_int_array();
+x->map_cb_float_array = t_map_cb_float_array();
+// ? add others
+
+// register callbacks
+x->map_cb_event.emplace("default", &cb_event);
+x->map_cb_int.emplace("default", &cb_get_int);
+x->map_cb_float.emplace("default", &cb_get_float);
+x->map_cb_string.emplace("default", &cb_get_string);
+x->map_cb_int_array.emplace("default", &cb_get_int_array);
+x->map_cb_float_array.emplace("default", &cb_get_float_array);
+// ? add others
+
+// then getting or using a fpointer is a matter of lookup on 'default' or other.
+
+t_max_err ck_register(t_ck* x, t_symbol* s, long listen_forever)
+{
+    if (!x->map_cb_event.count(s->s_name)) {
+        error("event/callback not found: %s", s->s_name);
+        return MAX_ERR_GENERIC;
+    }
+    std::string key = std::string(s->s_name);
+    t_cb_event cb = x->map_cb_event[key];
+    // false: for a one off call, strue: called everytime it is called
+    if (x->chuck->vm()->globals_manager()->listenForGlobalEvent(s->s_name, cb, (bool)listen_forever)) {
+        post("%s event/callback registered", s->s_name);
+        return MAX_ERR_NONE;
+    };
+    return MAX_ERR_GENERIC;
+}
+
+t_max_err ck_unregister(t_ck* x, t_symbol* s)
+{
+    if (!x->map_cb_event.count(s->s_name)) {
+        error("event/callback not found: %s", s->s_name);
+        return MAX_ERR_GENERIC;
+    }
+    std::string key = std::string(s->s_name);
+    t_cb_event cb = x->map_cb_event[key];
+    if (x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent(s->s_name, cb)) {
+        post("%s event/callback unregistered", s->s_name);
+        return MAX_ERR_NONE;
+    };
+    return MAX_ERR_GENERIC;
+}
+
+```
+
+
 
 ## Using Max code editor
-
 
 
 ```c++

@@ -1,5 +1,7 @@
 # TODO
 
+- [ ] Fix run-before-audio bug
+
 - [ ] Fix Faust cleanup bug
 
 - [ ] Add Windows Support

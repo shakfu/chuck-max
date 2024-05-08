@@ -1,3 +1,4 @@
+global string gstring;
 global float gfloat;     // 0.0 - 1.0
 global int gint;         // 0 - 100
 global int gints[6];     // array of 6 ints 
@@ -8,16 +9,18 @@ global float fmap[6];    // associate array of floats
 
 while( true )
 {
+	<<< "gstring (value):", gstring >>>;
+	
 	<<< "gint (value):", gint >>>;
 
 	<<< "gfloat (value):", gfloat >>>;
 
 	if (imap.size() > 0) {
-		<<< "imap[\"a\"] = ", imap["a"] >>>;
+		<<< "imap[\"abd\"] = ", imap["abc"] >>>;
 	}
 
 	if (fmap.size() > 0) {
-		<<< "fmap[\"a\"] = ", fmap["a"] >>>;
+		<<< "fmap[\"def\"] = ", fmap["def"] >>>;
 	}
 
 	if (gints.size() > 0) {
@@ -29,7 +32,7 @@ while( true )
 	}
 
 	if (gfloats.size() > 0) {
-		<<< "gfloats:", gints >>>;
+		<<< "gfloats:", gfloats >>>;
         for( float b : gfloats )
         {
             <<< b >>>;

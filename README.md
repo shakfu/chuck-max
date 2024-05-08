@@ -49,25 +49,58 @@ It is worth reading [ChucK Language Specification's section on Concurrency and S
 
 - The core set of chuck vm messesages is also extended in `chuck-max` with the following utility messages:
 
-| action                            | max msg                      | max msg (alias)              |
-| :-------------------------------- | :--------------------------- | :--------------------------  |
-| set file attribute (does not run) | `file <path>`                |                              |
-| set full path to editor attribute | `editor <path>`              |                              |
-| probe chugins                     | `chugins`                    |                              |
-| list of running shreds            | `info`                       |                              |
-| get/set loglevel (0-10)           | `loglevel` & `loglevel <n>`  |                              |
+| action                                  | max msg                      | 
+| :-------------------------------------- | :--------------------------- | 
+| set file attribute (does not run)       | `file <path>`                | 
+| set full path to editor attribute       | `editor <path>`              |
+| prevent running shreds when dsp is off  | `run_needs_audio`            |
+| open file in external editor            | `edit <path>`                |
+| probe chugins                           | `chugins`                    |
+| list of running shreds                  | `info`                       |
+| get/set loglevel (0-10)                 | `loglevel` & `loglevel <n>`  |
+| get state of chuck vm                   | `vm`                         |
+| launch chuck docs in a browser          | `docs`                       |
+
 
 - Once a shred is running it makes sense to try to change it's parameters so to speak from outside of the process. To this end, ChucK makes available three mechanisms to do so: global variabls, global events, and callbacks which are triggered by the former. `chuck~` maps these chuck language elements to corresponding Max/MSP constructs as per the following table:
 
 | action                            | chuck              | max msg                      |
 | :-------------------------------- | :----------------  | :--------------------------  |
-| change param value                | global variable    | `<name>` `<value>`           |
+| change param value (untyped)      | global variable    | `<name>` `<value>`           |
+  dump global variables to console. | global variable.   | `globals`                    |
 | trigger named event               | global event       | `sig <name>`                 |
 | trigger named event all shreds    | global event       | `broadcast <name>`           |
-| trigger named callback            | global event       | `sig <name>`                 |
-| trigger named callback all shreds | global event       | `broadcast <name>`           |
 
-- This means you can change a global variable by sending a `<variable> <value>` message to a `chuck~` instance. You can trigger an even in the shred by sending a bang to the `chuck~` instance and you can also trigger events and named callbacks by sending `sig` or signal messages, `broadcast` messages as per the above table.
+
+- This means you can change a global variable by sending a `<variable> <value>` message to a `chuck~` instance where the `value` can be an `int`, `float`, `string`, `array of ints` or `floats`, etc.. You can also trigger events by sending `sig` or signal messages, `broadcast` messages as per the above table.
+
+- In addition to the above there is a extensive callback system which includes listening / stop listening for events associated with callbacks, triggering them via `sig` and `broadcast` messages and also setting typed global variables via messages and symmetrically getting their values via typed callbacks:
+
+| example                           | chuck              | max msg                              |
+| :-------------------------------- | :----------------  | :----------------------------------- |
+| listen to event (one shot)        | global event       | `listen <name>` or `listen <name> 0` |
+| listen to event (forever)         | global event       | `listen <name> 1`                    |
+| stop listening to event           | global event       | `unlisten <name>`                    |
+| trigger named callback            | global event       | `sig <name>`                         |
+| trigger named callback all shreds | global event       | `broadcast <name>`                   |
+| get int variable                  | global variable    | `get int <name>`                     |
+| get float variable                | global variable    | `get float <name>`                   |
+| get string variable               | global variable    | `get string <name>`                  |
+| get int array                     | global variable    | `get int[] <name>`                   |
+| get float array                   | global variable    | `get float[] <name>`                 |
+| get int array indexed value       | global variable    | `get int[i] <name> <index>`          |
+| get float array indexed value     | global variable    | `get float[i] <name> <index>`        |
+| get int associative array value   | global variable    | `get int[k] <name> <key>`            |
+| get float associative array value | global variable    | `get float[k] <name> <key>`          |
+| set int variable                  | global variable    | `set int <name> <value>`             |
+| set float variable                | global variable    | `set float <name> <value>`           |
+| set string variable               | global variable    | `set string <name> <value>`          |
+| set int array                     | global variable    | `set int[] <name> v1, v2, ..`        |
+| set float array                   | global variable    | `set float[] <name> v1, v2, ..`      |
+| set int array indexed value       | global variable    | `set int[i] <name> <index> <value>`  |
+| set float array indexed value     | global variable    | `set float[i] <name> <index> <value>`|
+| set int associative array value   | global variable    | `set int[k] <name> <key> <value>`    |
+| set float associative array value | global variable    | `set float[k] <name> <key> <value>`  |
 
 See `help/chuck~.maxhelp` and patchers in the `patchers/tests` directory for a demonstration of current features.
 
@@ -148,13 +181,14 @@ CAVEAT: the Faust chugin has unresolved cleanup bug which may cause Max to crash
 
 Open the help file `help/chuck~.maxhelp` for a demo. Check out the `patchers` folders for further examples of use.
 
-## Missing Chugins
 
-There are two CCRMA chugins which are not yet supported by `chuck-max`:
+## Known Unresolved Bugs
 
-1. `Ladspa`: not yet supported but known to compile without issues.
+1. If a chuck file contains a custom event and the max patch sends a `clear vm` or `reset` before running, and the chuck file is run before Max audio is turned on, it may cause Max to crash. See [github issue #11](https://github.com/shakfu/chuck-max/issues/11) for updates on this
 
-2. `Fluidsynth`: not yet supported.
+2. Use of the `Fauck` or `Faust` chugin will cause Max to crash when the user quits Max even after all patch windows are closed.
+
+
 
 ## Credits
 

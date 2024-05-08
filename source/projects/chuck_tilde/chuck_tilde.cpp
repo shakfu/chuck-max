@@ -33,34 +33,34 @@ namespace fs = std::filesystem;
 int CK_INSTANCE_COUNT = 0;
 
 // typedefs
-typedef void (*ck_named_event_callback)(const char*);
-typedef std::unordered_map<std::string, ck_named_event_callback> callback_map;
+typedef void (*t_cb_event)(const char*);
+typedef std::unordered_map<std::string, t_cb_event> t_map_cb_event;
+
 
 // data structures
 typedef struct _ck {
-    t_pxobject ob;           // the object itself (t_pxobject in MSP)
+    t_pxobject ob;                  // the object itself (t_pxobject in MSP)
 
     // max-related
-    t_symbol* name;          // instance unique name (used for scripting)
-    t_patcher* patcher;      // to send msgs to objects
-    t_box* box;              // the ui box of the chuck~ instance?
-    t_symbol* patcher_dir;   // patcher directory
+    t_symbol* name;                 // instance unique name (used for scripting)
+    t_patcher* patcher;             // to send msgs to objects
+    t_box* box;                     // the ui box of the chuck~ instance?
+    t_symbol* patcher_dir;          // patcher directory
 
     // chuck-related
-    ChucK* chuck;            // chuck instance
-    int oid;                 // object id
-    long channels;           // n of input/output channels
-    t_symbol* run_file;      // path of chuck file to run
-    t_symbol* working_dir;   // chuck working directory
-    t_symbol* chugins_dir;   // chugins directory
-    float* in_chuck_buffer;  // intermediate chuck input buffer
-    float* out_chuck_buffer; // intermediate chuck output buffer
-    callback_map cb_map;     // callback map<string,callback>
-    long loglevel;           // chuck log level
-    long current_shred_id;   // current shred id
-    t_symbol* editor;        // external text editor for chuck code
-    t_symbol* edit_file;     // path of file to edit by external editor
-    long run_needs_audio;    // only run/add shred if dsp is on
+    ChucK* chuck;                   // chuck instance
+    int oid;                        // object id
+    long channels;                  // n of input/output channels
+    t_symbol* run_file;             // path of chuck file to run
+    t_symbol* working_dir;          // chuck working directory
+    t_symbol* chugins_dir;          // chugins directory
+    float* in_chuck_buffer;         // intermediate chuck input buffer
+    float* out_chuck_buffer;        // intermediate chuck output buffer
+    long loglevel;                  // chuck log level
+    long current_shred_id;          // current shred id
+    t_symbol* editor;               // external text editor for chuck code
+    t_symbol* edit_file;            // path of file to edit by external editor
+    long run_needs_audio;           // only run/add shred if dsp is on
 } t_ck;
 
 
@@ -69,7 +69,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv);
 void ck_free(t_ck* x);
 void ck_assist(t_ck* x, void* b, long m, long a, char* s);
 
-// attribute handkers
+// attribute handlers
 t_max_err ck_editor_get(t_ck *x, t_object *attr, long *argc, t_atom **argv);
 t_max_err ck_editor_set(t_ck *x, t_object *attr, long argc, t_atom *argv);
 
@@ -93,6 +93,9 @@ t_max_err ck_time(t_ck* x);                     // current time
 // event/callback message handlers
 t_max_err ck_signal(t_ck* x, t_symbol* s);      // signal global event
 t_max_err ck_broadcast(t_ck* x, t_symbol* s);   // broadcast global event
+t_max_err ck_listen(t_ck* x, t_symbol* s, long listen_forever);
+t_max_err ck_unlisten(t_ck* x, t_symbol* s);
+
 
 // special message handlers
 t_max_err ck_vm(t_ck* x);                       // get vm state
@@ -125,27 +128,23 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
                   double** outs, long numouts, long sampleframes, long flags,
                   void* userparam);
 
-// callback registeration
-t_max_err ck_register(t_ck* x, t_symbol* s);
-t_max_err ck_unregister(t_ck* x, t_symbol* s);
+// global variable get/set via callbacks
+t_max_err ck_get(t_ck* x, t_symbol* s, long argc, t_atom* argv);
+t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 
-// callback demo
-t_max_err ck_demo(t_ck* x);
-
-
-// callbacks (events)
-void cb_global_named_event(const char* name);
+// callbacks (events) -> map_cb_event
+void cb_event(const char* name);
 
 // callbacks (variables)
-void cb_get_global_named_int(const char* name, t_CKINT val);
-void cb_get_global_named_float(const char* name, t_CKFLOAT val);
-void cb_get_global_named_string(const char* name, const char* val);
-void cb_get_global_named_int_array(const char* name, t_CKINT array[], t_CKUINT n);
-void cb_get_global_named_int_array_value(const char* name, t_CKINT value);
-void cb_get_global_named_float_array(const char* name, t_CKFLOAT array[], t_CKUINT n);
-void cb_get_global_named_float_array_value(const char* name, t_CKFLOAT value);
-void cb_get_global_named_assoc_int_array_value(const char* name, t_CKINT val);
-void cb_get_global_named_assoc_float_array_value(const char* name, t_CKFLOAT val);
+void cb_get_int(const char* name, t_CKINT val);
+void cb_get_float(const char* name, t_CKFLOAT val);
+void cb_get_string(const char* name, const char* val);
+void cb_get_int_array(const char* name, t_CKINT array[], t_CKUINT n);
+void cb_get_int_array_value(const char* name, t_CKINT value);
+void cb_get_float_array(const char* name, t_CKFLOAT array[], t_CKUINT n);
+void cb_get_float_array_value(const char* name, t_CKFLOAT value);
+void cb_get_assoc_int_array_value(const char* name, t_CKINT val);
+void cb_get_assoc_float_array_value(const char* name, t_CKFLOAT val);
 
 // dump all global variables
 void cb_get_all_global_vars(const std::vector<Chuck_Globals_TypeValue> & list, void * data);
@@ -177,7 +176,7 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_status,       "status",   0);
     class_addmethod(c, (method)ck_time,         "time",     0);
 
-    class_addmethod(c, (method)ck_demo,         "demo",     0);
+    // class_addmethod(c, (method)ck_demo,         "demo",     0);
  
     class_addmethod(c, (method)ck_vm,           "vm",       0);
     class_addmethod(c, (method)ck_globals,      "globals",  0);
@@ -190,8 +189,10 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_signal,       "sig",      A_SYM, 0);
     class_addmethod(c, (method)ck_broadcast,    "broadcast", A_SYM, 0);
 
-    class_addmethod(c, (method)ck_register,     "register", A_SYM, 0);
-    class_addmethod(c, (method)ck_unregister,   "unregister", A_SYM, 0);
+    class_addmethod(c, (method)ck_get,          "get",      A_GIMME, 0);
+    class_addmethod(c, (method)ck_set,          "set",      A_GIMME, 0);
+    class_addmethod(c, (method)ck_listen,       "listen",   A_SYM, A_DEFLONG, 0);
+    class_addmethod(c, (method)ck_unlisten,     "unlisten", A_SYM, 0);
 
     class_addmethod(c, (method)ck_bang,         "bang",     0);
     class_addmethod(c, (method)ck_anything,     "anything", A_GIMME, 0);
@@ -358,10 +359,6 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // object id corresponds to order of object creation
         x->oid = ++CK_INSTANCE_COUNT;
-
-        // init cb_map and register callbacks
-        x->cb_map = callback_map();
-        x->cb_map.emplace("demo", &cb_global_named_event);
 
         // init chuck
         x->chuck->init();
@@ -544,7 +541,6 @@ std::vector<t_CKUINT>  ck_get_all_shred_ids(t_ck* x)
     return shred_ids;
 }
 
-
 long ck_spork_highest_id(t_ck* x)
 {
     Chuck_VM_Shreduler* shreduler = x->chuck->vm()->shreduler();
@@ -590,7 +586,6 @@ t_max_err ck_send_max_msg(t_ck* x, t_symbol* s, const char* parsestr)
     }
     return MAX_ERR_NONE;
 }
-
 
 t_symbol* ck_get_path_from_external(t_class* c, char* subpath)
 {
@@ -720,7 +715,6 @@ t_max_err ck_compile_file(t_ck* x, const char* filename)
     }
 }
 
-
 t_max_err ck_run_file(t_ck* x)
 {
     if (x->run_file != gensym("")) {
@@ -729,7 +723,6 @@ t_max_err ck_run_file(t_ck* x)
     error("ck_run_file: filename slot is empty");
     return MAX_ERR_GENERIC;
 }
-
 
 t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
 {
@@ -752,7 +745,6 @@ t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
         return MAX_ERR_GENERIC;
     }
 }
-
 
 void ck_debug(t_ck* x, char* fmt, ...)
 {
@@ -793,7 +785,6 @@ t_max_err ck_run(t_ck* x, t_symbol* s)
     return MAX_ERR_GENERIC;
 }
 
-
 t_max_err ck_edit(t_ck* x, t_symbol* s)
 {
     if (x->editor == gensym("")) {
@@ -822,7 +813,6 @@ void ck_dblclick(t_ck* x)
         ck_edit(x, x->run_file);
     }
 }
-
 
 t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
@@ -883,7 +873,6 @@ t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     x->current_shred_id = x->chuck->vm()->process_msg( msg );
     return MAX_ERR_NONE;
 }
-
 
 t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
@@ -1040,7 +1029,6 @@ t_max_err ck_reset(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     return MAX_ERR_GENERIC;
 }
 
-
 t_max_err ck_status(t_ck* x)
 {
     Chuck_VM_Shreduler* shreduler = x->chuck->vm()->shreduler();
@@ -1127,7 +1115,6 @@ t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     error("could not get or set loglevel");
     return MAX_ERR_GENERIC;
 }
-
 
 t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
@@ -1283,9 +1270,6 @@ error:
     return MAX_ERR_GENERIC;
 }
 
-
-
-
 t_max_err ck_signal(t_ck* x, t_symbol* s)
 {
     post("signal: %s", s->s_name);
@@ -1297,7 +1281,6 @@ t_max_err ck_signal(t_ck* x, t_symbol* s)
     }
 }
 
-
 t_max_err ck_broadcast(t_ck* x, t_symbol* s)
 {
     post("broadcast: %s", s->s_name);
@@ -1308,7 +1291,6 @@ t_max_err ck_broadcast(t_ck* x, t_symbol* s)
         return MAX_ERR_GENERIC;
     }
 }
-
 
 t_max_err ck_chugins(t_ck* x)
 {
@@ -1322,7 +1304,6 @@ t_max_err ck_docs(t_ck* x)
     ck_send_max_msg(x, gensym("launchbrowser"), "https://chuck.stanford.edu/doc");
 }
 
-
 t_max_err ck_info(t_ck* x)
 {
     Chuck_VM_Shreduler* shreduler = x->chuck->vm()->shreduler();
@@ -1335,7 +1316,6 @@ t_max_err ck_info(t_ck* x)
     return MAX_ERR_NONE;
 }
 
-
 t_max_err ck_globals(t_ck* x)
 {
     if (x->chuck->vm()->globals_manager()->getAllGlobalVariables(cb_get_all_global_vars, NULL)) {
@@ -1345,7 +1325,6 @@ t_max_err ck_globals(t_ck* x)
     return MAX_ERR_GENERIC;
 }
 
-
 t_max_err ck_vm(t_ck* x)
 {
     post("VM %d status", x->oid);
@@ -1354,20 +1333,16 @@ t_max_err ck_vm(t_ck* x)
     return MAX_ERR_NONE;
 }
 
-
 //-----------------------------------------------------------------------------------------------
-// global event callbacks
+// global event callback
 
-void cb_global_named_event(const char* name)
+void cb_event(const char* name)
 {
-    post("cb_global_named_event: %s", name);
+    post("cb_event: %s", name);
 }
-
 
 //-----------------------------------------------------------------------------------------------
 // global variable callbacks
-
-/* nothing useful here yet just minimal demos */
 
 void cb_get_all_global_vars(const std::vector<Chuck_Globals_TypeValue> & list, void * data)
 {
@@ -1377,140 +1352,234 @@ void cb_get_all_global_vars(const std::vector<Chuck_Globals_TypeValue> & list, v
     }
 }
 
-
-void cb_get_global_named_int(const char* name, t_CKINT val)
+void cb_get_int(const char* name, t_CKINT val)
 {
-     post("cb_get_global_named_int: name: %s value: %d", name, val);
+     post("cb_get_int: name: %s value: %d", name, val);
 }
 
-void cb_get_global_named_float(const char* name, t_CKFLOAT val)
+void cb_get_float(const char* name, t_CKFLOAT val)
 {
-     post("cb_get_global_named_float: name: %s value: %f", name, val);
+     post("cb_get_float: name: %s value: %f", name, val);
 }
 
-void cb_get_global_named_string(const char* name, const char* val)
+void cb_get_string(const char* name, const char* val)
 {
-     post("cb_get_global_named_string: name: %s value: %s", name, val);
+     post("cb_get_string: name: %s value: %s", name, val);
 }
 
-void cb_get_global_named_int_array(const char* name, t_CKINT array[], t_CKUINT n)
+void cb_get_int_array(const char* name, t_CKINT array[], t_CKUINT n)
 {
-    post("cb_get_global_named_int_array: name: %s size: %d", name, n);
+    post("cb_get_int_array: name: %s size: %d", name, n);
     for (int i = 0; i < n; i++) {
         post("array[%d] = %d", i, array[i]);
     }
 }
 
-void cb_get_global_named_int_array_value(const char* name, t_CKINT value)
+void cb_get_float_array(const char* name, t_CKFLOAT array[], t_CKUINT n)
 {
-    post("cb_get_global_named_int_array_value: name: %s value: %d", name, value);
-}
-
-void cb_get_global_named_float_array(const char* name, t_CKFLOAT array[], t_CKUINT n)
-{
-    post("cb_get_global_named_float_array: name: %s size: %d", name, n);
+    post("cb_get_float_array: name: %s size: %d", name, n);
     for (int i = 0; i < n; i++) {
         post("array[%d] = %d", i, array[i]);
     }
 }
 
-void cb_get_global_named_float_array_value(const char* name, t_CKFLOAT value)
+void cb_get_int_array_value(const char* name, t_CKINT value)
 {
-    post("cb_get_global_named_float_array_value: name: %s value: %d", name, value);
+    post("cb_get_int_array_value: name: %s value: %d", name, value);
 }
 
-void cb_get_global_named_assoc_int_array_value(const char* name, t_CKINT val)
+void cb_get_float_array_value(const char* name, t_CKFLOAT value)
 {
-     post("cb_get_global_named_assoc_int_array_value: name: %s value: %d", name, val);
+    post("cb_get_float_array_value: name: %s value: %d", name, value);
 }
 
-void cb_get_global_named_assoc_float_array_value(const char* name, t_CKFLOAT val)
+void cb_get_assoc_int_array_value(const char* name, t_CKINT val)
 {
-     post("cb_get_global_named_assoc_float_array_value: name: %s value: %f", name, val);
+     post("cb_get_assoc_int_array_value: name: %s value: %d", name, val);
+}
+
+void cb_get_assoc_float_array_value(const char* name, t_CKFLOAT val)
+{
+     post("cb_get_assoc_float_array_value: name: %s value: %f", name, val);
 }
 
 //-----------------------------------------------------------------------------------------------
-// callback handlers
+// set/get chuck global variables
 
-
-t_max_err ck_register(t_ck* x, t_symbol* s)
+t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
-    if (!x->cb_map.count(s->s_name)) {
-        error("event/callback not found: %s", s->s_name);
+    if (argc < 3) {
+        error("ck_set: too few # of arguments");
+        return MAX_ERR_GENERIC;        
+    }
+
+    if (!(argv->a_type == A_SYM && (argv+1)->a_type == A_SYM)) {
+        error("ck_get: first two args must be symbols");
         return MAX_ERR_GENERIC;
     }
-    std::string key = std::string(s->s_name);
-    ck_named_event_callback cb = x->cb_map[key];
-    // false: for a one off call, strue: called everytime it is called
-    if (x->chuck->vm()->globals_manager()->listenForGlobalEvent(s->s_name, cb, false)) {
-        post("%s event/callback registered", s->s_name);
+
+    t_symbol* type = atom_getsym(argv);
+    t_symbol* name = atom_getsym(argv+1);
+
+    if (argc == 3) {
+        if (type == gensym("int") && (argv+2)->a_type == A_LONG) {
+            t_atom_long value = atom_getlong(argv+2);
+            if (x->chuck->vm()->globals_manager()->setGlobalInt(name->s_name, (t_CKINT)value)) {
+                post("set %s -> %d", name->s_name, value);
+                return MAX_ERR_NONE;
+            }
+        }
+        else if (type == gensym("float") && (argv+2)->a_type == A_FLOAT) {
+            t_atom_float value = atom_getfloat(argv+2);
+            if (x->chuck->vm()->globals_manager()->setGlobalFloat(name->s_name, (t_CKFLOAT)value)) {
+                post("set %s -> %f", name->s_name, value);
+                return MAX_ERR_NONE;
+            }
+        }
+        else if (type == gensym("string") && (argv+2)->a_type == A_SYM) {
+            t_symbol* value = atom_getsym(argv+2);
+            if (x->chuck->vm()->globals_manager()->setGlobalString(name->s_name, value->s_name)) {
+                post("set %s -> %s", name->s_name, value->s_name);
+                return MAX_ERR_NONE;
+            }
+        }
+        return MAX_ERR_GENERIC;
+    } else if (argc > 3) {
+        int offset = 2;
+        int length = argc - offset;
+
+        if (type == gensym("int[]")) { // list of longs
+            long* long_array = (long*)sysmem_newptr(sizeof(long*) * length);
+            for (int i = 0; i < length; i++) {
+                post("set %s[%d] -> %d ", name->s_name, i, atom_getlong((argv+offset) + i));
+                long_array[i] = atom_getlong((argv+offset) + i);
+            }
+            if (x->chuck->vm()->globals_manager()->setGlobalIntArray(name->s_name, long_array, length)) {
+                sysmem_freeptr(long_array);
+                return MAX_ERR_NONE;
+            }
+        }
+        else if (type == gensym("float[]")) { // list of doubles
+            double* float_array = (double*)sysmem_newptr(sizeof(double*) * length);
+            for (int i = 0; i < length; i++) {
+                post("set %s[%d] -> %f ", name->s_name, i, atom_getfloat((argv+offset) + i));
+                float_array[i] = atom_getfloat((argv+offset) + i);
+            }
+            if (x->chuck->vm()->globals_manager()->setGlobalFloatArray(name->s_name, float_array, length)) {
+                sysmem_freeptr(float_array);
+                return MAX_ERR_NONE;                
+            }
+        }
+        else if (type == gensym("int[i]")) {
+            long index = atom_getlong((argv+2));
+            long value = atom_getlong((argv+3));
+            if (x->chuck->vm()->globals_manager()->setGlobalIntArrayValue(name->s_name, (t_CKUINT)index, (t_CKINT)value)) {
+                post("set %s %d -> %d", name->s_name, index, value);
+                return MAX_ERR_NONE;                
+            }
+        }
+        else if (type == gensym("float[i]")) {
+            long index = atom_getlong((argv+2));
+            long value = atom_getfloat((argv+3));
+            if (x->chuck->vm()->globals_manager()->setGlobalFloatArrayValue(name->s_name, (t_CKUINT)index, (t_CKFLOAT)value)) {                
+                post("set %s %d -> %f", name->s_name, index, value);
+                return MAX_ERR_NONE;
+            }
+        }
+        else if (type == gensym("int[k]")) {
+            t_symbol* key = atom_getsym((argv+2));
+            long value = atom_getlong((argv+3));
+            if (x->chuck->vm()->globals_manager()->setGlobalAssociativeIntArrayValue(name->s_name, key->s_name, (t_CKINT)value))
+                return MAX_ERR_NONE;
+        }
+        else if (type == gensym("float[k]")) {
+            t_symbol* key = atom_getsym((argv+2));
+            long value = atom_getfloat((argv+3));
+            if (x->chuck->vm()->globals_manager()->setGlobalAssociativeFloatArrayValue(name->s_name, key->s_name, (t_CKFLOAT)value))
+                return MAX_ERR_NONE;
+        }
+    }
+    return MAX_ERR_GENERIC;
+}
+
+t_max_err ck_get(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+{
+    if (argc < 2 || argc > 3) {
+        error("ck_get: invalid # of arguments");
+        return MAX_ERR_GENERIC;
+    }
+    
+    if (!(argv->a_type == A_SYM && (argv+1)->a_type == A_SYM)) {
+        error("ck_get: first two args must be symbols");
+        return MAX_ERR_GENERIC;
+    }
+
+    t_symbol* type = atom_getsym(argv);
+    t_symbol* name = atom_getsym(argv+1);
+
+    if (argc == 2) {
+        if (type == gensym("int")) {
+            if (x->chuck->vm()->globals_manager()->getGlobalInt(name->s_name, cb_get_int))
+                return MAX_ERR_NONE;
+        } else if (type == gensym("float")) {
+            if (x->chuck->vm()->globals_manager()->getGlobalFloat(name->s_name, cb_get_float))
+                return MAX_ERR_NONE;
+        } else if (type == gensym("string")) {
+            if (x->chuck->vm()->globals_manager()->getGlobalString(name->s_name, cb_get_string))
+                return MAX_ERR_NONE;
+        } else if (type == gensym("int[]")) {
+            if (x->chuck->vm()->globals_manager()->getGlobalIntArray(name->s_name, cb_get_int_array))
+                return MAX_ERR_NONE;
+        } else if (type == gensym("float[]")) {
+            if (x->chuck->vm()->globals_manager()->getGlobalFloatArray(name->s_name, cb_get_float_array))
+                return MAX_ERR_NONE;
+        }
+        return MAX_ERR_GENERIC;
+    } else if (argc == 3) {
+        if ((argv+2)->a_type == A_LONG) {
+            t_atom_long index = atom_getlong(argv+2);
+            if (type == gensym("int[]") || type == gensym("int[i]")) {
+                if (x->chuck->vm()->globals_manager()->getGlobalIntArrayValue(name->s_name, (t_CKUINT)index, cb_get_int_array_value))
+                    return MAX_ERR_NONE;
+            } else if (type == gensym("float[]") || type == gensym("float[i]")) {
+                if (x->chuck->vm()->globals_manager()->getGlobalFloatArrayValue(name->s_name, (t_CKUINT)index, cb_get_float_array_value))
+                    return MAX_ERR_NONE;
+            }
+            return MAX_ERR_GENERIC;
+        } else if ((argv+2)->a_type == A_SYM) {
+            t_symbol* key = atom_getsym(argv+2);
+            if (type == gensym("int[]") || type == gensym("int[k]")) {
+                if (x->chuck->vm()->globals_manager()->getGlobalAssociativeIntArrayValue(name->s_name, key->s_name, cb_get_assoc_int_array_value))
+                    return MAX_ERR_NONE;;
+            } else if (type == gensym("float[]") || type == gensym("float[k]")) {
+                if (x->chuck->vm()->globals_manager()->getGlobalAssociativeFloatArrayValue(name->s_name, key->s_name, cb_get_assoc_float_array_value))
+                    return MAX_ERR_NONE;;
+            }
+        }
+    }
+    return MAX_ERR_GENERIC;
+}
+
+t_max_err ck_listen(t_ck* x, t_symbol* s, long listen_forever)
+{
+    if (x->chuck->vm()->globals_manager()->listenForGlobalEvent(s->s_name, cb_event, (bool)listen_forever)) {
+        post("listening to event %s", s->s_name);
         return MAX_ERR_NONE;
     };
     return MAX_ERR_GENERIC;
 }
 
-
-t_max_err ck_unregister(t_ck* x, t_symbol* s)
+t_max_err ck_unlisten(t_ck* x, t_symbol* s)
 {
-    if (!x->cb_map.count(s->s_name)) {
-        error("event/callback not found: %s", s->s_name);
-        return MAX_ERR_GENERIC;
-    }
-    std::string key = std::string(s->s_name);
-    ck_named_event_callback cb = x->cb_map[key];
-    if (x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent(s->s_name, cb)) {
-        post("%s event/callback unregistered", s->s_name);
+    if (x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent(s->s_name, cb_event)) {
+        post("stop listening to event %s", s->s_name);
         return MAX_ERR_NONE;
     };
     return MAX_ERR_GENERIC;
 }
-
-// t_max_err ck_demo_gevents(t_ck* x)
-// {
-//     x->chuck->vm()->globals_manager()->listenForGlobalEvent("gevent", cb_global_named_event, false);
-//     x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent( const char * name, void (*callback)(const char*) );
-// }
-
-// t_max_err ck_demo_set_global_arrays(t_ck* x)
-// {
-//     x->chuck->vm()->globals_manager()->setGlobalIntArray( const char * name, t_CKINT arrayValues[], t_CKUINT numValues );
-//     x->chuck->vm()->globals_manager()->setGlobalIntArrayValue( const char * name, t_CKUINT index, t_CKINT value );
-//     x->chuck->vm()->globals_manager()->setGlobalAssociativeIntArrayValue( const char * name, const char * key, t_CKINT value );
-//     x->chuck->vm()->globals_manager()->setGlobalFloatArray( const char * name, t_CKFLOAT arrayValues[], t_CKUINT numValues );
-//     x->chuck->vm()->globals_manager()->setGlobalFloatArrayValue( const char * name, t_CKUINT index, t_CKFLOAT value );
-//     x->chuck->vm()->globals_manager()->setGlobalAssociativeFloatArrayValue( const char * name, const char * key, t_CKFLOAT value );
-// }
-
-t_max_err ck_demo(t_ck* x)
-{
-    // x->chuck->vm()->globals_manager()->getGlobalUGenSamples( const char * name, SAMPLE* buffer, int numFrames );
-
-    // primitives (don't require shreds to be run)
-    x->chuck->vm()->globals_manager()->getGlobalInt("gint", cb_get_global_named_int);
-    x->chuck->vm()->globals_manager()->getGlobalFloat("gfloat", cb_get_global_named_float);
-    x->chuck->vm()->globals_manager()->getGlobalString("gstring", cb_get_global_named_string);
-
-    // (all below require shreds to be run)
-
-    // arrays
-    x->chuck->vm()->globals_manager()->getGlobalIntArray("gints", cb_get_global_named_int_array);
-    x->chuck->vm()->globals_manager()->getGlobalFloatArray("gfloats", cb_get_global_named_float_array);
-
-    // array values    
-    x->chuck->vm()->globals_manager()->getGlobalIntArrayValue("gints", 0, cb_get_global_named_int_array_value);
-    x->chuck->vm()->globals_manager()->getGlobalFloatArrayValue("gfloats", 0, cb_get_global_named_float_array_value);
-
-    // associative array values
-    x->chuck->vm()->globals_manager()->getGlobalAssociativeIntArrayValue("imap", "a", cb_get_global_named_assoc_int_array_value);
-    x->chuck->vm()->globals_manager()->getGlobalAssociativeFloatArrayValue("fmap", "a", cb_get_global_named_assoc_float_array_value);
-
-    return MAX_ERR_NONE;
-}
-
 
 //-----------------------------------------------------------------------------------------------
 // audio processing
-
 
 void ck_dsp64(t_ck* x, t_object* dsp64, short* count, double samplerate,
               long maxvectorsize, long flags)
@@ -1531,7 +1600,6 @@ void ck_dsp64(t_ck* x, t_object* dsp64, short* count, double samplerate,
 
     object_method(dsp64, gensym("dsp_add64"), x, ck_perform64, 0, NULL);
 }
-
 
 void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
                   double** outs, long numouts, long sampleframes, long flags,

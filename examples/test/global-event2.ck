@@ -21,7 +21,7 @@ fun void playImpact(MyEvent p) {
 
 while( true ) {
     pulse => now;
-    Math.random2( 0, 5 ) => pulse.value;
+    Math.random2( 0, 3 ) => pulse.value;
     spork ~ playImpact(pulse);
 }
 

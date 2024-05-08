@@ -1,4 +1,4 @@
-// api largely derived extracted chuck-globals, chuckdesigner
+// api largely derived / extracted from chuck-globals, chuckdesigner
 
 bool run_code(const char* code);
 bool run_file(const char* filename);
