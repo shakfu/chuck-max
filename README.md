@@ -76,7 +76,7 @@ It is worth reading [ChucK Language Specification's section on Concurrency and S
 
 - In addition to the above there is a extensive callback system which includes listening / stop listening for events associated with callbacks, triggering them via `sig` and `broadcast` messages and also setting typed global variables via messages and symmetrically getting their values via typed callbacks:
 
-| example                           | chuck              | max msg                              |
+| action                            | chuck              | max msg                              |
 | :-------------------------------- | :----------------  | :----------------------------------- |
 | listen to event (one shot)        | global event       | `listen <name>` or `listen <name> 0` |
 | listen to event (forever)         | global event       | `listen <name> 1`                    |
@@ -184,9 +184,9 @@ Open the help file `help/chuck~.maxhelp` for a demo. Check out the `patchers` fo
 
 ## Known Unresolved Bugs
 
-1. If a chuck file contains a custom event and the max patch sends a `clear vm` or `reset` before running, and the chuck file is run before Max audio is turned on, it may cause Max to crash. See [github issue #11](https://github.com/shakfu/chuck-max/issues/11) for updates on this
+1. If a chuck file contains a custom event and the Max patch sends a `clear vm` or `reset` before running the chuck file while Max audio is turned off, it may cause Max to crash. See [github issue #11](https://github.com/shakfu/chuck-max/issues/11) for updates on this. The interim solution is to only run chuck files with Max audio on, and there's an attribute `run_needs_audio` to force this and prevent the crash. Thanks to @HighHarmonics2 for discovering this one.
 
-2. Use of the `Fauck` or `Faust` chugin will cause Max to crash when the user quits Max even after all patch windows are closed.
+2. Use of the `Fauck` or `Faust` chugin will cause Max to crash when the user quits Max after all patch windows are closed.
 
 
 
