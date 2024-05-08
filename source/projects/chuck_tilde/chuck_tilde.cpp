@@ -32,10 +32,6 @@ namespace fs = std::filesystem;
 // global variables
 int CK_INSTANCE_COUNT = 0;
 
-// typedefs
-typedef void (*t_cb_event)(const char*);
-typedef std::unordered_map<std::string, t_cb_event> t_map_cb_event;
-
 
 // data structures
 typedef struct _ck {
@@ -175,8 +171,6 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_reset,        "reset",    A_GIMME, 0); // reset -> 'clear vm', 'reset id' 
     class_addmethod(c, (method)ck_status,       "status",   0);
     class_addmethod(c, (method)ck_time,         "time",     0);
-
-    // class_addmethod(c, (method)ck_demo,         "demo",     0);
  
     class_addmethod(c, (method)ck_vm,           "vm",       0);
     class_addmethod(c, (method)ck_globals,      "globals",  0);
@@ -1252,8 +1246,7 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
                 long p_long = atom_getlong(argv + 1);
                 x->chuck->vm()
                     ->globals_manager()
-                    ->setGlobalAssociativeIntArrayValue(s->s_name, key->s_name,
-                                                        p_long);
+                    ->setGlobalAssociativeIntArrayValue(s->s_name, key->s_name, p_long);
                 break;
             }
             default:

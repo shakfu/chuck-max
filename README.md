@@ -49,9 +49,9 @@ It is worth reading [ChucK Language Specification's section on Concurrency and S
 
 - The core set of chuck vm messesages is also extended in `chuck-max` with the following utility messages:
 
-| action                                  | max msg                      | 
-| :-------------------------------------- | :--------------------------- | 
-| set file attribute (does not run)       | `file <path>`                | 
+| action                                  | max msg                      |
+| :-------------------------------------- | :--------------------------- |
+| set file attribute (does not run)       | `file <path>`                |
 | set full path to editor attribute       | `editor <path>`              |
 | prevent running shreds when dsp is off  | `run_needs_audio`            |
 | open file in external editor            | `edit <path>`                |
@@ -61,16 +61,14 @@ It is worth reading [ChucK Language Specification's section on Concurrency and S
 | get state of chuck vm                   | `vm`                         |
 | launch chuck docs in a browser          | `docs`                       |
 
-
 - Once a shred is running it makes sense to try to change it's parameters so to speak from outside of the process. To this end, ChucK makes available three mechanisms to do so: global variabls, global events, and callbacks which are triggered by the former. `chuck~` maps these chuck language elements to corresponding Max/MSP constructs as per the following table:
 
 | action                            | chuck              | max msg                      |
 | :-------------------------------- | :----------------  | :--------------------------  |
 | change param value (untyped)      | global variable    | `<name>` `<value>`           |
-  dump global variables to console. | global variable.   | `globals`                    |
+| dump global variables to console  | global variable    | `globals`                    |
 | trigger named event               | global event       | `sig <name>`                 |
 | trigger named event all shreds    | global event       | `broadcast <name>`           |
-
 
 - This means you can change a global variable by sending a `<variable> <value>` message to a `chuck~` instance where the `value` can be an `int`, `float`, `string`, `array of ints` or `floats`, etc.. You can also trigger events by sending `sig` or signal messages, `broadcast` messages as per the above table.
 
@@ -181,14 +179,11 @@ CAVEAT: the Faust chugin has unresolved cleanup bug which may cause Max to crash
 
 Open the help file `help/chuck~.maxhelp` for a demo. Check out the `patchers` folders for further examples of use.
 
-
 ## Known Unresolved Bugs
 
 1. If a chuck file contains a custom event and the Max patch sends a `clear vm` or `reset` before running the chuck file while Max audio is turned off, it may cause Max to crash. See [github issue #11](https://github.com/shakfu/chuck-max/issues/11) for updates on this. The interim solution is to only run chuck files with Max audio on, and there's an attribute `run_needs_audio` to force this and prevent the crash. Thanks to @HighHarmonics2 for discovering this one.
 
 2. Use of the `Fauck` or `Faust` chugin will cause Max to crash when the user quits Max after all patch windows are closed.
-
-
 
 ## Credits
 

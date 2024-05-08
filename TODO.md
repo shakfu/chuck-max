@@ -1,23 +1,21 @@
 # TODO
 
-- [ ] Fix run-before-audio bug
+- [ ] Fix `run-before-audio` bug
 
 - [ ] Fix Faust cleanup bug
 
 - [ ] Add Windows Support
 
-- [ ] add test for chuck file args (conventional style)
+- [ ] Add max/msp object docs in xml
 
-- [ ] Convert args part of `<filename>:arg1:arg2:argN` to args as atom list, so that
+- [ ] Add doxygen docs
 
-  ```text
-  add stk/honkeytonk-algo1.ck:10:32.1:sample.wav
+- [ ] Add test for chuck file args (conventional style)
 
-  becomes
+- [ ] Convert args part of `<filename>:arg1:arg2:argN` to args as atom list, so that `<filename> arg1 arg2 .. argN`
 
-  add stk/honkeytonk-algo1.ck 10 33.1 sample.wav
-  ```
+- [ ] Add fallback on `ck_dblclick` to max editor if external not found
 
-- [ ] Better examples using Max message for global variables
+- [ ] More (musical) examples...
 
-
+- [x] Better examples using Max message for global variables
