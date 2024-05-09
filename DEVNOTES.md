@@ -1,5 +1,34 @@
 # Dev Notes
 
+## Alternative to std::system
+
+Use `ext_sysprocess`
+
+```diff
+#include "ext_sysprocess.h"
+
+@@ -789,11 +789,11 @@ t_max_err ck_edit(t_ck* x, t_symbol* s)
+     if (s != gensym("")) {
+         x->edit_file = ck_check_file(x, s);
+         if (x->edit_file != gensym("")) {
+-            std::string cmd;
+-            // post("edit: %s", x->edit_file->s_name);
+-
+-            cmd = std::string(x->editor->s_name) + " " + std::string(x->edit_fi
+le->s_name);
+-            std::system(cmd.c_str());
++            if (sysprocess_launch(x->editor->s_name, x->edit_file->s_name) == 0
+) {
++                error("could not open %s with editor %s",
++                    x->edit_file->s_name, x->editor->s_name);
++                return MAX_ERR_GENERIC;
++            }
+             return MAX_ERR_NONE;
+         }
+```
+
+
+
 ## Registering and Binding Different Callbacks
 
 Sidestepping limitations of callbacks (see [here](https://isocpp.org/wiki/faq/pointers-to-members) and [here](https://stackoverflow.com/questions/25848690/should-i-use-stdfunction-or-a-function-pointer-in-c)) especially due to lack of capture of context variables, their use is limited in Max as they don't have access to the struct pointer unless it is stored in a global pointer..

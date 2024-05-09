@@ -41,7 +41,7 @@ It is recommended to choose 2 channels for stereo configuration. If a `<filename
 
 ### Core Messages
 
-- As of the current version, `chuck~` implements the core Chuck vm messages as Max messages:
+As of the current version, `chuck~` implements the core Chuck vm messages as Max messages:
 
 | Action                            | Max msg                      | Max msg (alias)              |
 | :-------------------------------- | :--------------------------- | :--------------------------  |
@@ -62,7 +62,7 @@ It's worth reading the [ChucK Language Specification's section on Concurrency an
 
 ### Utility Messages
 
-- The core set of chuck vm messesages is also extended in `chuck-max` with the following utility messages:
+The core set of chuck vm messesages is also extended in `chuck-max` with the following utility messages:
 
 | Action                                  | Max msg                      |
 | :-------------------------------------- | :--------------------------- |
@@ -87,9 +87,9 @@ Once a shred is running you can change its parameters by sending values from Max
 | Trigger named event               | global event       | `sig <name>`                 |
 | Trigger named event all shreds    | global event       | `broadcast <name>`           |
 
-- You change a global variable by sending a `<variable-name> <value>` message to a `chuck~` instance where the `value` can be an `int`, `float`, `string`, `array of ints` or `floats`, etc. You can also trigger events by sending `sig` or signal messages, `broadcast` messages as per the above table.
+You change a global variable by sending a `<variable-name> <value>` message to a `chuck~` instance where the `value` can be an `int`, `float`, `string`, `array of ints` or `floats`, etc. You can also trigger events by sending `sig` or signal messages, `broadcast` messages as per the above table.
 
-- *Note*: You can't use the ChucK types of `dur` or `time` in Max. Also, while in the above case, the Max msg seems untyped, it must match the type of the chuck global variable. So if you connect a Max number or flownum object to a message box, it needs to match the type of the global variable (int/float).
+*Note*: You can't use the ChucK types of `dur` or `time` in Max. Also, while in the above case, the Max msg seems untyped, it must match the type of the chuck global variable. So if you connect a Max number or flownum object to a message box, it needs to match the type of the global variable (int/float).
 
 See `help/chuck~.maxhelp` and patchers in the `patchers/tests` directory for a demonstration of current features.
 
