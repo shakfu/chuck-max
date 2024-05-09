@@ -28,84 +28,112 @@ This project is currently built on the chuck 1.5.2.5-dev (chai) engine.
   - `[chuck~ <filename>]` : single channel in/out with default chuck file
   - `[chuck~ <N> <filename>]` : N channels with default chuck file
 
+It is recommended to choose 2 channels for stereo configuration. If a `<filename>` argument is given it will be searched for according to the following search rules:
+
+1. Assume it's an absolute path, accept it if it exists
+
+2. Assume that it's a partial path with the package's `examples` folder as a prefix. So if `stk/flute.ck` is given the `<filename>` arg, The absolute path of the package `examples` folder is prepended to the filename and if the resulting path exists, it is accepted.
+
+3. Assume the `<filename>` exists in the parent patcher's directory. If so, accept it. This is useful if you want to package patchers and chuck files together.
+
+4. Use Max's `locatefile_extended` search function to search for the `<filename>` in the Max search path. The first successul result will be used.
+
+
+### Core Messages
+
 - As of the current version, `chuck~` implements the core Chuck vm messages as Max messages:
 
-| action                            | max msg                      | max msg (alias)              |
+| Action                            | Max msg                      | Max msg (alias)              |
 | :-------------------------------- | :--------------------------- | :--------------------------  |
-| add shred                         | `add <file>`                 | `+ <filepath>`               |
-| remove shred                      | `remove <shredID>`           | `- <shredID>`                |
-| remove last shred                 | `remove last`                | `--`                         |
-| remove all shreds                 | `remove all`                 |                              |
-| replace shred                     | `replace <shredID> <file>`   | `= <shredID> <file>`         |
-| vm status                         | `status`                     | `^`                          |
-| clear vm                          | `clear vm`                   | `reset`                      |
-| clear globals                     | `clear globals`              |                              |
-| reset id                          | `reset id`                   |                              |
-| time                              | `time`                       |                              |
+| Add shred                         | `add <file>`                 | `+ <filepath>`               |
+| Remove shred                      | `remove <shredID>`           | `- <shredID>`                |
+| Remove last shred                 | `remove last`                | `--`                         |
+| Remove all shreds                 | `remove all`                 |                              |
+| Replace shred                     | `replace <shredID> <file>`   | `= <shredID> <file>`         |
+| VM status                         | `status`                     | `^`                          |
+| Clear vm                          | `clear vm`                   | `reset`                      |
+| Clear globals                     | `clear globals`              |                              |
+| Reset id                          | `reset id`                   |                              |
+| Time                              | `time`                       |                              |
 
-It is worth reading [ChucK Language Specification's section on Concurrency and Shreds](https://chuck.cs.princeton.edu/doc/language/spork.html) to get a sense of what the above means. The first paragraph will be quoted here since it's quite informative:
+It's worth reading the [ChucK Language Specification's section on Concurrency and Shreds](https://chuck.cs.princeton.edu/doc/language/spork.html) to get a sense of what the above means. The first paragraph will be quoted here since it's quite informative:
 
 > ChucK is able to run many processes concurrently (the process behave as if they are running in parallel). A ChucKian process is called a shred. To spork a shred means creating and adding a new process to the virtual machine. Shreds may be sporked from a variety of places, and may themselves spork new shreds.
 
+### Utility Messages
+
 - The core set of chuck vm messesages is also extended in `chuck-max` with the following utility messages:
 
-| action                                  | max msg                      |
+| Action                                  | Max msg                      |
 | :-------------------------------------- | :--------------------------- |
-| set file attribute (does not run)       | `file <path>`                |
-| set full path to editor attribute       | `editor <path>`              |
-| prevent running shreds when dsp is off  | `run_needs_audio`            |
-| open file in external editor            | `edit <path>`                |
-| probe chugins                           | `chugins`                    |
-| list of running shreds                  | `info`                       |
-| get/set loglevel (0-10)                 | `loglevel` & `loglevel <n>`  |
-| get state of chuck vm                   | `vm`                         |
-| launch chuck docs in a browser          | `docs`                       |
+| Set file attribute (does not run)       | `file <path>`                |
+| Set full path to editor attribute       | `editor <path>`              |
+| Prevent running shreds when dsp is off  | `run_needs_audio`            |
+| Open file in external editor            | `edit <path>`                |
+| Probe chugins                           | `chugins`                    |
+| List of running shreds                  | `info`                       |
+| Get/set loglevel (0-10)                 | `loglevel` & `loglevel <n>`  |
+| Get state of chuck vm                   | `vm`                         |
+| Launch chuck docs in a browser          | `docs`                       |
 
-### Parameters
+### Parameter Messages
 
-Once a shred is running you can change it's parameters by sending values from Max to the `chuck~` object. To this end, ChucK makes available three mechanisms: global variables, global events, and callbacks which are triggered by events. `chuck~` maps these chuck language elements to corresponding Max/MSP constructs as per the following table:
+Once a shred is running you can change its parameters by sending values from Max to the `chuck~` object. To this end, ChucK makes available three mechanisms: global variables, global events, and callbacks which are triggered by events. `chuck~` maps these chuck language elements to corresponding Max/MSP constructs as per the following table:
 
-| action                            | chuck              | max msg                      |
+| Action                            | ChucK              | Max msg                      |
 | :-------------------------------- | :----------------  | :--------------------------  |
-| change param value (untyped)      | global variable    | `<name>` `<value>`           |
-| dump global variables to console  | global variable    | `globals`                    |
-| trigger named event               | global event       | `sig <name>`                 |
-| trigger named event all shreds    | global event       | `broadcast <name>`           |
+| Change param value (untyped)      | global variable    | `<name>` `<value>`           |
+| Dump global variables to console  | global variable    | `globals`                    |
+| Trigger named event               | global event       | `sig <name>`                 |
+| Trigger named event all shreds    | global event       | `broadcast <name>`           |
 
-- You change a global variable by sending a `<variable> <value>` message to a `chuck~` instance where the `value` can be an `int`, `float`, `string`, `array of ints` or `floats`, etc. You can also trigger events by sending `sig` or signal messages, `broadcast` messages as per the above table.
-- *Note: You can't use the ChucK types of `dur` or `time` in Max. Also, while the Max `msg` is untyped, when you connect a Max number or flownum object to a message box, it needs to match the type of the global variable (int/float).*
+- You change a global variable by sending a `<variable-name> <value>` message to a `chuck~` instance where the `value` can be an `int`, `float`, `string`, `array of ints` or `floats`, etc. You can also trigger events by sending `sig` or signal messages, `broadcast` messages as per the above table.
 
-### Callbacks
-
-In addition to the above there is a extensive callback system which includes listening / stop listening for events associated with callbacks, triggering them via `sig` and `broadcast` messages and also setting typed global variables via messages and symmetrically getting their values via typed callbacks:
-
-| action                            | chuck              | max msg                              |
-| :-------------------------------- | :----------------  | :----------------------------------- |
-| listen to event (one shot)        | global event       | `listen <name>` or `listen <name> 0` |
-| listen to event (forever)         | global event       | `listen <name> 1`                    |
-| stop listening to event           | global event       | `unlisten <name>`                    |
-| trigger named callback            | global event       | `sig <name>`                         |
-| trigger named callback all shreds | global event       | `broadcast <name>`                   |
-| get int variable                  | global variable    | `get int <name>`                     |
-| get float variable                | global variable    | `get float <name>`                   |
-| get string variable               | global variable    | `get string <name>`                  |
-| get int array                     | global variable    | `get int[] <name>`                   |
-| get float array                   | global variable    | `get float[] <name>`                 |
-| get int array indexed value       | global variable    | `get int[i] <name> <index>`          |
-| get float array indexed value     | global variable    | `get float[i] <name> <index>`        |
-| get int associative array value   | global variable    | `get int[k] <name> <key>`            |
-| get float associative array value | global variable    | `get float[k] <name> <key>`          |
-| set int variable                  | global variable    | `set int <name> <value>`             |
-| set float variable                | global variable    | `set float <name> <value>`           |
-| set string variable               | global variable    | `set string <name> <value>`          |
-| set int array                     | global variable    | `set int[] <name> v1, v2, ..`        |
-| set float array                   | global variable    | `set float[] <name> v1, v2, ..`      |
-| set int array indexed value       | global variable    | `set int[i] <name> <index> <value>`  |
-| set float array indexed value     | global variable    | `set float[i] <name> <index> <value>`|
-| set int associative array value   | global variable    | `set int[k] <name> <key> <value>`    |
-| set float associative array value | global variable    | `set float[k] <name> <key> <value>`  |
+- *Note*: You can't use the ChucK types of `dur` or `time` in Max. Also, while in the above case, the Max msg seems untyped, it must match the type of the chuck global variable. So if you connect a Max number or flownum object to a message box, it needs to match the type of the global variable (int/float).
 
 See `help/chuck~.maxhelp` and patchers in the `patchers/tests` directory for a demonstration of current features.
+
+### Parameter Messages using Callbacks (Advanced Usage)
+
+In addition to the typical way of changing parameters there is also an extensive callback system which includes listening / stop-listening for events associated with callbacks, triggering them via `sig` and `broadcast` messages and also setting typed global variables via messages and symmetrically getting their values via typed callbacks:
+
+| Action                            | ChucK              | Max msg                              |
+| :-------------------------------- | :----------------  | :----------------------------------- |
+| Listen to event (one shot)        | global event       | `listen <name>` or `listen <name> 0` |
+| Listen to event (forever)         | global event       | `listen <name> 1`                    |
+| Stop listening to event           | global event       | `unlisten <name>`                    |
+| Trigger named callback            | global event       | `sig <name>`                         |
+| Trigger named callback all shreds | global event       | `broadcast <name>`                   |
+| Get int variable                  | global variable    | `get int <name>`                     |
+| Get float variable                | global variable    | `get float <name>`                   |
+| Get string variable               | global variable    | `get string <name>`                  |
+| Get int array                     | global variable    | `get int[] <name>`                   |
+| Get float array                   | global variable    | `get float[] <name>`                 |
+| Get int array indexed value       | global variable    | `get int[i] <name> <index>`          |
+| Get float array indexed value     | global variable    | `get float[i] <name> <index>`        |
+| Get int associative array value   | global variable    | `get int[k] <name> <key>`            |
+| Get float associative array value | global variable    | `get float[k] <name> <key>`          |
+| Set int variable                  | global variable    | `set int <name> <value>`             |
+| Set float variable                | global variable    | `set float <name> <value>`           |
+| Set string variable               | global variable    | `set string <name> <value>`          |
+| Set int array                     | global variable    | `set int[] <name> v1, v2, ..`        |
+| Set float array                   | global variable    | `set float[] <name> v1, v2, ..`      |
+| Set int array indexed value       | global variable    | `set int[i] <name> <index> <value>`  |
+| Set float array indexed value     | global variable    | `set float[i] <name> <index> <value>`|
+| Set int associative array value   | global variable    | `set int[k] <name> <key> <value>`    |
+| Set float associative array value | global variable    | `set float[k] <name> <key> <value>`  |
+
+In order to customize the current set of callbacks (which currently just post the value of the parameters to Max console), an advanced user may want to modify a callback function to do something other than the default and then re-compile the external.
+
+```c++
+void cb_get_int(const char* name, long val)
+{
+     post("cb_get_int: name: %s value: %d", name, val);
+}
+```
+
+*Development Note*: In practice, callbacks in chuck-max are constrained by what their function signature allows, and to do something useful in Max's c-api one will typically want to access the pointer to the object instance of `chuck~` which is not available with any of the callbacks. While it is theoretically possible to make this work if one limits onself to one `chuck~` instance and global variables, it not a *natural* way of accessing the potential of this feature. If callbacks change from function pointers to `std::function` callables, which allow for capturing context, this situation will likely change for the better.
+
 
 ## Requirements
 
