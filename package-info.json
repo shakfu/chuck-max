@@ -1,0 +1,38 @@
+{
+    "author": "Shakeeb Alireza",
+    "description": "A max/msp external which embeds the chuck engine.",
+    "max_version_min": "8.0",
+    "max_version_max": "none",
+    "name": "chuck-max",
+    "os": {
+        "macintosh": {
+            "platform": [
+                "aarch64",
+                "x64"
+            ],
+            "min_version": "none"
+        },
+        "windows": {
+            "platform": [
+                "x64"
+            ],
+            "min_version": "none"
+        }
+    },
+    "package_extra": {
+        "forcerestart": 1,
+        "reverse_domain": "com.github/shakfu",
+        "copyright": "see Licence"
+    },
+    "tags": [
+        "chuck",
+        "dsp",
+        "livecoding",
+        "midi",
+        "osc",
+        "faust",
+    ],
+    "extensible": 0,
+    "version": "0.1.1",
+    "website": "https://github.com/shakfu/chuck-max"
+}

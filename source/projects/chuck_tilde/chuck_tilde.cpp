@@ -31,6 +31,7 @@ namespace fs = std::filesystem;
 
 // global variables
 int CK_INSTANCE_COUNT = 0;
+std::vector<std::string> CK_INSTANCE_NAMES;
 
 
 // data structures
@@ -269,6 +270,9 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
             x->editor = gensym("");
         }
 
+        // object id corresponds to order of object creation
+        x->oid = CK_INSTANCE_COUNT++;
+
         // set patcher object
         object_obex_lookup(x, gensym("#P"), (t_patcher**)&x->patcher);
         if (x->patcher == NULL)
@@ -287,10 +291,17 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         } else {
             x->name = symbol_unique(); // fallback to unique symbol name
         }
+        // register the object in the namespace
+        object_register(CLASS_BOX, x->name, x);
+
+        // set the scripting name
         t_max_err err = jbox_set_varname(x->box, x->name);
         if (err != MAX_ERR_NONE) {
             error("could not set chuck~ box's scripting name");
         }
+
+        // add to the global vector of chuck instance names
+        CK_INSTANCE_NAMES.push_back(std::string(x->name->s_name));
 
         // get patcher directory
         // t_symbol *p_name = object_attr_getsym(x->patcher, gensym("name"));
@@ -350,9 +361,6 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // redirect chuck stdout/stderr to local callbacks
         x->chuck->setStdoutCallback(ck_stdout_print);
         x->chuck->setStderrCallback(ck_stderr_print);
-
-        // object id corresponds to order of object creation
-        x->oid = ++CK_INSTANCE_COUNT;
 
         // init chuck
         x->chuck->init();
@@ -761,6 +769,8 @@ void ck_debug(t_ck* x, char* fmt, ...)
 
 t_max_err ck_bang(t_ck* x)
 {
+    post("CK_INSTANCE_COUNT: %d", CK_INSTANCE_COUNT);
+    post("CK_INSTANCE_NAMES size: %d", CK_INSTANCE_NAMES.size());
     ck_run_file(x);
     return MAX_ERR_NONE;
 }
@@ -1347,17 +1357,17 @@ void cb_get_all_global_vars(const std::vector<Chuck_Globals_TypeValue> & list, v
 
 void cb_get_int(const char* name, t_CKINT val)
 {
-     post("cb_get_int: name: %s value: %d", name, val);
+    post("cb_get_int: name: %s value: %d", name, val);
 }
 
 void cb_get_float(const char* name, t_CKFLOAT val)
 {
-     post("cb_get_float: name: %s value: %f", name, val);
+    post("cb_get_float: name: %s value: %f", name, val);
 }
 
 void cb_get_string(const char* name, const char* val)
 {
-     post("cb_get_string: name: %s value: %s", name, val);
+    post("cb_get_string: name: %s value: %s", name, val);
 }
 
 void cb_get_int_array(const char* name, t_CKINT array[], t_CKUINT n)

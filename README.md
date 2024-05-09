@@ -30,11 +30,11 @@ This project is currently built on the chuck 1.5.2.5-dev (chai) engine.
 
 It is recommended to choose 2 channels for stereo configuration. If a `<filename>` argument is given it will be searched for according to the following search rules:
 
-1. Assume it's an absolute path, accept it if it exists
+1. Assume it's an absolute path, use it if it exists.
 
-2. Assume that it's a partial path with the package's `examples` folder as a prefix. So if `stk/flute.ck` is given the `<filename>` arg, The absolute path of the package `examples` folder is prepended to the filename and if the resulting path exists, it is accepted.
+2. Assume that it's a partial path with the package's `examples` folder as a prefix. So if `stk/flute.ck` is given as `<filename>`, the absolute path of the package `examples` folder is prepended to it and if the resulting path exists, it is used.
 
-3. Assume the `<filename>` exists in the parent patcher's directory. If so, accept it. This is useful if you want to package patchers and chuck files together.
+3. Assume `<filename>` exists in the parent patcher's directory. If so, use it. This is useful if you want to package patchers and chuck files together.
 
 4. Use Max's `locatefile_extended` search function to search for the `<filename>` in the Max search path. The first successul result will be used.
 
@@ -123,17 +123,35 @@ In addition to the typical way of changing parameters there is also an extensive
 | Set int associative array value   | global variable    | `set int[k] <name> <key> <value>`    |
 | Set float associative array value | global variable    | `set float[k] <name> <key> <value>`  |
 
-In order to customize the current set of callbacks (which currently just post the value of the parameters to Max console), an advanced user may want to modify a callback function to do something other than the default and then re-compile the external.
+
+**Developer Note**
+
+In order to customize the current set of callbacks (which currently just post the value of the parameters to the Max console), an *advanced* user will want to modify them to do something other than the default and then re-compile the external.
+
+In practice, callbacks in `chuck-max` are constrained by what their function signatures allow. To do something useful one will typically want to access the pointer to an instance of the `chuck~` object which is not directly available as an argument to any the callbacks. For example, in the case of the `cb_get_int` callback, one only has the parameter name and value:
 
 ```c++
 void cb_get_int(const char* name, long val)
 {
-     post("cb_get_int: name: %s value: %d", name, val);
+    post("cb_get_int: name: %s value: %d", name, val);
 }
 ```
 
-*Development Note*: In practice, callbacks in chuck-max are constrained by what their function signature allows, and to do something useful in Max's c-api one will typically want to access the pointer to the object instance of `chuck~` which is not available with any of the callbacks. While it is theoretically possible to make this work if one limits onself to one `chuck~` instance and global variables, it not a *natural* way of accessing the potential of this feature. If callbacks change from function pointers to `std::function` callables, which allow for capturing context, this situation will likely change for the better.
+To get around this limitation, one can use the knowledge that `chuck~` instances are given the scripting name `chuck-<x>` where `x` is the order of instanciation and that one can get the retrieve the relevant object pointer by using `void *object_findregistered(t_symbol *name_space, t_symbol *s)` as in:
 
+```c++
+void cb_get_int(const char* name, t_CKINT val)
+{
+    t_object* x;
+
+    for (auto name : CK_INSTANCE_NAMES) {
+        x = (t_object*)object_findregistered(CLASS_BOX, gensym(name.c_str()));
+        object_post(x, (char*)"name: %s value: %d", name.c_str(), val);
+    }
+}
+```
+
+It's not elegant, but it works until something better comes along.
 
 ## Requirements
 
