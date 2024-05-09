@@ -61,7 +61,9 @@ It is worth reading [ChucK Language Specification's section on Concurrency and S
 | get state of chuck vm                   | `vm`                         |
 | launch chuck docs in a browser          | `docs`                       |
 
-- Once a shred is running it makes sense to try to change it's parameters so to speak from outside of the process. To this end, ChucK makes available three mechanisms to do so: global variabls, global events, and callbacks which are triggered by the former. `chuck~` maps these chuck language elements to corresponding Max/MSP constructs as per the following table:
+### Parameters
+
+Once a shred is running you can change it's parameters by sending values from Max to the `chuck~` object. To this end, ChucK makes available three mechanisms: global variables, global events, and callbacks which are triggered by events. `chuck~` maps these chuck language elements to corresponding Max/MSP constructs as per the following table:
 
 | action                            | chuck              | max msg                      |
 | :-------------------------------- | :----------------  | :--------------------------  |
@@ -70,9 +72,12 @@ It is worth reading [ChucK Language Specification's section on Concurrency and S
 | trigger named event               | global event       | `sig <name>`                 |
 | trigger named event all shreds    | global event       | `broadcast <name>`           |
 
-- This means you can change a global variable by sending a `<variable> <value>` message to a `chuck~` instance where the `value` can be an `int`, `float`, `string`, `array of ints` or `floats`, etc.. You can also trigger events by sending `sig` or signal messages, `broadcast` messages as per the above table.
+- You change a global variable by sending a `<variable> <value>` message to a `chuck~` instance where the `value` can be an `int`, `float`, `string`, `array of ints` or `floats`, etc. You can also trigger events by sending `sig` or signal messages, `broadcast` messages as per the above table.
+- *Note: You can't use the ChucK types of `dur` or `time` in Max. Also, while the Max `msg` is untyped, when you connect a Max number or flownum object to a message box, it needs to match the type of the global variable (int/float).*
 
-- In addition to the above there is a extensive callback system which includes listening / stop listening for events associated with callbacks, triggering them via `sig` and `broadcast` messages and also setting typed global variables via messages and symmetrically getting their values via typed callbacks:
+### Callbacks
+
+In addition to the above there is a extensive callback system which includes listening / stop listening for events associated with callbacks, triggering them via `sig` and `broadcast` messages and also setting typed global variables via messages and symmetrically getting their values via typed callbacks:
 
 | action                            | chuck              | max msg                              |
 | :-------------------------------- | :----------------  | :----------------------------------- |
