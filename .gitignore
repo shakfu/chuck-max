@@ -3,7 +3,6 @@
 build
 externals/*
 examples/chugins/*.chug
-examples/effects/autotuned-obama.wav
 archive/
 *.chug
 

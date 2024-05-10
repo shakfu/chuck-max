@@ -58,6 +58,7 @@ typedef struct _ck {
     t_symbol* editor;               // external text editor for chuck code
     t_symbol* edit_file;            // path of file to edit by external editor
     long run_needs_audio;           // only run/add shred if dsp is on
+    t_symbol* code;                 // chuck code buffer
 } t_ck;
 
 
@@ -80,6 +81,7 @@ t_max_err ck_edit(t_ck* x, t_symbol* s);        // edit chuck file
 
 // chuck vm message handlers
 t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv);     // add shred from file
+t_max_err ck_eval(t_ck* x, t_symbol* s, long argc, t_atom* argv);    // add chuck code as shred
 t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // remove shreds (all, last, by #)
 t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv); // replace shreds 
 t_max_err ck_clear(t_ck* x, t_symbol* s, long argc, t_atom* argv);   // clear_vm, clear_globals
@@ -104,6 +106,7 @@ t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // get an
 
 // helpers
 bool path_exists(const char* name);
+char* ck_atom_gettext(long ac, t_atom* av);
 void ck_debug(t_ck* x, char* fmt, ...);
 void ck_stdout_print(const char* msg);
 void ck_stderr_print(const char* msg);
@@ -166,6 +169,7 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_edit,         "edit",     A_SYM, 0);
 
     class_addmethod(c, (method)ck_add,          "add",      A_GIMME, 0);
+    class_addmethod(c, (method)ck_eval,         "eval",     A_GIMME, 0);    
     class_addmethod(c, (method)ck_remove,       "remove",   A_GIMME, 0);
     class_addmethod(c, (method)ck_replace,      "replace",  A_GIMME, 0);
     class_addmethod(c, (method)ck_clear,        "clear",    A_GIMME, 0);
@@ -240,6 +244,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->patcher = NULL;
         x->box = NULL;
         x->patcher_dir = gensym("");
+        x->code = gensym("");
         x->run_needs_audio = 0;
 
         t_symbol* filename;
@@ -479,6 +484,20 @@ bool path_exists(const char* name) {
     }
 }
 #endif
+
+// repurposed simplestring_atom_gettext
+char* ck_atom_gettext(long ac, t_atom* av)
+{
+    if (ac && av) {
+        char* text = NULL;
+        long size = 0;
+        atom_gettext(ac, av, &size, &text, OBEX_UTIL_ATOM_GETTEXT_SYM_NO_QUOTE | OBEX_UTIL_ATOM_GETTEXT_NOESCAPE | OBEX_UTIL_ATOM_GETTEXT_LINEBREAK_NODELIM);
+        if (text && size) {
+            return text;
+        }
+    }
+    return NULL;
+}
 
 //-----------------------------------------------------------------------------------------------
 // attribute set/get
@@ -769,8 +788,6 @@ void ck_debug(t_ck* x, char* fmt, ...)
 
 t_max_err ck_bang(t_ck* x)
 {
-    post("CK_INSTANCE_COUNT: %d", CK_INSTANCE_COUNT);
-    post("CK_INSTANCE_NAMES size: %d", CK_INSTANCE_NAMES.size());
     ck_run_file(x);
     return MAX_ERR_NONE;
 }
@@ -877,6 +894,41 @@ t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     x->current_shred_id = x->chuck->vm()->process_msg( msg );
     return MAX_ERR_NONE;
 }
+
+t_max_err ck_eval(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+{
+    if (argc == 0) {
+        error("ck_eval: need at least one arg");
+        return MAX_ERR_GENERIC;
+    }
+
+    if (argc == 1) {
+        t_symbol* s = atom_getsym(argv);
+        if (x->chuck->compileCode(std::string(s->s_name))) {
+            post("ck_eval symbol compiled: success");
+            return MAX_ERR_NONE;
+        }
+        return MAX_ERR_GENERIC;
+    }
+
+    char* text = ck_atom_gettext(argc, argv);
+
+    if (text) {
+        x->code = gensym(text);
+        post("text: %s", text);
+        post("code: %s", x->code->s_name);
+        if (x->chuck->compileCode(std::string(text))) {
+            post("ck_eval text compiled: success");            
+        }        
+        // t_CKBOOL compileCode( const std::string & code, const std::string & argsTogether = "",
+        //                   t_CKUINT count = 1, t_CKBOOL immediate = FALSE, std::vector<t_CKUINT> * shredIDs = NULL );
+        sysmem_freeptr(text);
+        return MAX_ERR_NONE;
+    }
+
+    return MAX_ERR_GENERIC;
+}
+
 
 t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
@@ -1330,7 +1382,7 @@ t_max_err ck_globals(t_ck* x)
 
 t_max_err ck_vm(t_ck* x)
 {
-    post("VM %d status", x->oid);
+    post("VM %d / %d status", x->oid, CK_INSTANCE_COUNT);
     post("\tinitialized: %d", x->chuck->vm()->has_init());
     post("\trunning: %d", x->chuck->vm()->running());
     return MAX_ERR_NONE;

@@ -45,7 +45,8 @@ As of the current version, `chuck~` implements the core Chuck vm messages as Max
 
 | Action                            | Max msg                      | Max msg (alias)              |
 | :-------------------------------- | :--------------------------- | :--------------------------  |
-| Add shred                         | `add <file>`                 | `+ <filepath>`               |
+| Add shred from file               | `add <file>`                 | `+ <filepath>`               |
+| Eval code as shred                | `eval <code>`                |                              |    
 | Remove shred                      | `remove <shredID>`           | `- <shredID>`                |
 | Remove last shred                 | `remove last`                | `--`                         |
 | Remove all shreds                 | `remove all`                 |                              |
@@ -131,7 +132,7 @@ In order to customize the current set of callbacks (which currently just post th
 In practice, callbacks in `chuck-max` are constrained by what their function signatures allow. To do something useful one will typically want to access the pointer to an instance of the `chuck~` object which is not directly available as an argument to any the callbacks. For example, in the case of the `cb_get_int` callback, one only has the parameter name and value:
 
 ```c++
-void cb_get_int(const char* name, long val)
+void cb_get_int(const char* name, t_CKINT val)
 {
     post("cb_get_int: name: %s value: %d", name, val);
 }

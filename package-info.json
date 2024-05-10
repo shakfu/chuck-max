@@ -1,6 +1,6 @@
 {
     "author": "Shakeeb Alireza",
-    "description": "A max/msp external which embeds the chuck engine.",
+    "description": "A Max/MSP external which embeds the ChucK engine.",
     "max_version_min": "8.0",
     "max_version_max": "none",
     "name": "chuck-max",
@@ -11,13 +11,14 @@
                 "x64"
             ],
             "min_version": "none"
-        },
-        "windows": {
-            "platform": [
-                "x64"
-            ],
-            "min_version": "none"
         }
+        // ,
+        // "windows": {
+        //     "platform": [
+        //         "x64"
+        //     ],
+        //     "min_version": "none"
+        // }
     },
     "package_extra": {
         "forcerestart": 1,

@@ -49,11 +49,13 @@ if( 0 || !Machine.realtime() )
 {
     dac => WvOut2 record => blackhole;
     // output file name
-    "./autotuned-obama.wav" => string outfile;
+    //"./autotuned-obama.wav" => string outfile;
+    "/tmp/autotuned-obama.wav" => string outfile;
     // print
     cherr <= "recording to file: '" <= outfile <= "'..." <= IO.nl();
     // set output file name
-    me.dir() + outfile => record.wavFilename;
+    //me.dir() + outfile => record.wavFilename;
+    outfile => record.wavFilename;
 }
 else
 {
