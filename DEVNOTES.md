@@ -298,55 +298,6 @@ see:
     [ ] replace <shredID> <code>
 ```
 
-## Faust.chug causes Max crash on closing (not yet solved)
-
-```text
--------------------------------------
-Translated Report (Full Report Below)
--------------------------------------
-
-Process:               Max [41388]
-
-Crashed Thread:        0  CrBrowserMain  Dispatch queue: com.apple.main-thread
-
-Exception Type:        EXC_CRASH (SIGABRT)
-Exception Codes:       0x0000000000000000, 0x0000000000000000
-
-Termination Reason:    Namespace SIGNAL, Code 6 Abort trap: 6
-Terminating Process:   Max [41388]
-
-Application Specific Information:
-abort() called
-
-
-Kernel Triage:
-VM - (arg = 0x3) mach_vm_allocate_kernel failed within call to vm_map_enter
-
-
-Thread 0 Crashed:: CrBrowserMain Dispatch queue: com.apple.main-thread
-0   libsystem_kernel.dylib                 0x199be2a60 __pthread_kill + 8
-1   libsystem_pthread.dylib                0x199c1ac20 pthread_kill + 288
-2   libsystem_c.dylib                      0x199b27a20 abort + 180
-3   libc++abi.dylib                        0x199bd1d30 abort_message + 132
-4   libc++abi.dylib                        0x199bc1fcc demangling_terminate_handler() + 320
-5   libobjc.A.dylib                        0x1998601e0 _objc_terminate() + 160
-6   libc++abi.dylib                        0x199bd10f4 std::__terminate(void (*)()) + 16
-7   libc++abi.dylib                        0x199bd4348 __cxxabiv1::failed_throw(__cxxabiv1::__cxa_exception*) + 88
-8   libc++abi.dylib                        0x199bd428c __cxa_throw + 308
-9   libc++.1.dylib                         0x199b52a28 std::__1::__throw_system_error(int, char const*) + 100
-10  libc++.1.dylib                         0x199b468c0 std::__1::recursive_mutex::lock() + 40
-11  Faust.chug                             0x140bad3d0 0x140000000 + 12243920
-12  Faust.chug                             0x140de24bc llvm::MCJIT::~MCJIT() + 164
-13  Faust.chug                             0x140de27f4 llvm::MCJIT::~MCJIT() + 12
-14  Faust.chug                             0x141a6d3f4 0x140000000 + 27710452
-15  Faust.chug                             0x141a81b64 0x140000000 + 27794276
-16  Faust.chug                             0x141a72b74 0x140000000 + 27732852
-17  Faust.chug                             0x141a72d48 0x140000000 + 27733320
-18  Faust.chug                             0x141a7aa80 0x140000000 + 27765376
-19  Faust.chug                             0x141a7a9f0 0x140000000 + 27765232
-20  Faust.chug                             0x141a6c33c 0x140000000 + 27706172
-```
-
 ## Fauck and WarpBuf chugins
 
 Fauck chugin can be deployed in two ways for macOS:

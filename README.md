@@ -235,8 +235,6 @@ Open the help file `help/chuck~.maxhelp` for a demo. Check out the `patchers` fo
 
 1. If a chuck file contains a custom event and the Max patch sends a `clear vm` or `reset` before running the chuck file while Max audio is turned off, it may cause Max to crash. See [github issue #11](https://github.com/shakfu/chuck-max/issues/11) for updates on this. The interim solution is to only run chuck files with Max audio on, and there's an attribute `run_needs_audio` to force this and prevent the crash. Thanks to @HighHarmonics2 for discovering this one.
 
-2. Use of the `Fauck` or `Faust` chugin will cause Max to crash when the user quits Max after all patch windows are closed.
-
 ## Credits
 
 This project thanks the following:

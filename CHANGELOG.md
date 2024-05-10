@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Thanks to professor @gewang for [PR-16](https://github.com/shakfu/chuck-max/pull/16) which fixed the Faust crash-on-clone issue.
+
 - Added `eval` method for adding code from max messages and the textedit widget (see `test_eval.maxpat`).
 
 
