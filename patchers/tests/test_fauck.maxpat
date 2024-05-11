@@ -45,7 +45,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 201.5, 261.5, 47.0, 21.0 ],
+					"patching_rect" : [ 150.0, 287.0, 47.0, 21.0 ],
 					"text" : "chugins"
 				}
 
@@ -101,18 +101,6 @@
 					"outlettype" : [ "" ],
 					"parameter_enable" : 0,
 					"patching_rect" : [ 4.0, 192.0, 150.0, 21.0 ]
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-22",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 171.0, 287.0, 29.5, 21.0 ],
-					"text" : "info"
 				}
 
 			}
@@ -666,7 +654,7 @@
 					"outlettype" : [ "signal", "signal" ],
 					"patching_rect" : [ 238.0, 397.0, 138.0, 21.0 ],
 					"text" : "chuck~ 2 max/fauverb.ck",
-					"varname" : "chuck-0"
+					"varname" : "chuck-7"
 				}
 
 			}
@@ -770,13 +758,6 @@
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
 					"source" : [ "obj-20", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-1", 0 ],
-					"source" : [ "obj-22", 0 ]
 				}
 
 			}

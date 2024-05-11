@@ -47,20 +47,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 435.0, 403.0, 138.0, 49.0 ],
-					"presentation_linecount" : 3,
 					"text" : "eval \"SinOsc s  => dac; .3 => s.gain;\r1::hour => now;\""
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-14",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 362.0, 397.0, 29.5, 22.0 ],
-					"text" : "info"
 				}
 
 			}
@@ -208,7 +195,7 @@
 					"outlettype" : [ "signal", "signal" ],
 					"patching_rect" : [ 247.0, 464.0, 57.0, 22.0 ],
 					"text" : "chuck~ 2",
-					"varname" : "chuck-1"
+					"varname" : "chuck-6"
 				}
 
 			}
@@ -307,13 +294,6 @@
 				"patchline" : 				{
 					"destination" : [ "obj-2", 0 ],
 					"source" : [ "obj-13", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-2", 0 ],
-					"source" : [ "obj-14", 0 ]
 				}
 
 			}

@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Added `ck_info`, `ck_warn`, `ck_debug` for more control and consistency wrt console logging.
+
+- Removed `info` message and merged its functionality with `status` message.
+
 - Reorganized `patchers/contrib` folder given prior bug fix.
 
 - Fix for file searching bug bug which now makes it possible in the case of `[chuck~ 2 abc.ck]` for `abc.ck` to be in found in the same folder as the Max patch which references it.

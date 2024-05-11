@@ -112,18 +112,6 @@
 			}
 , 			{
 				"box" : 				{
-					"id" : "obj-3",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 383.0, 184.0, 29.5, 21.0 ],
-					"text" : "info"
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"id" : "obj-21",
 					"maxclass" : "message",
 					"numinlets" : 2,
@@ -192,19 +180,8 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
 					"patching_rect" : [ 450.0, 294.0, 130.0, 21.0 ],
-					"text" : "chuck~ stk/mandolin.ck"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-22",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 78.0, 174.0, 29.5, 21.0 ],
-					"text" : "info"
+					"text" : "chuck~ stk/mandolin.ck",
+					"varname" : "chuck-2"
 				}
 
 			}
@@ -312,7 +289,8 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
 					"patching_rect" : [ 145.0, 284.0, 151.0, 21.0 ],
-					"text" : "chuck~ stk/band-o-matic.ck"
+					"text" : "chuck~ stk/band-o-matic.ck",
+					"varname" : "chuck-3"
 				}
 
 			}
@@ -357,13 +335,6 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
-					"source" : [ "obj-22", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-1", 0 ],
 					"source" : [ "obj-23", 0 ]
 				}
 
@@ -393,13 +364,6 @@
 				"patchline" : 				{
 					"destination" : [ "obj-37", 0 ],
 					"source" : [ "obj-28", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-37", 0 ],
-					"source" : [ "obj-3", 0 ]
 				}
 
 			}

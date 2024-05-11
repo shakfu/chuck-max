@@ -673,8 +673,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 107.333336532115936, 144.000004291534424, 34.0, 22.0 ],
-					"text" : "info"
+					"patching_rect" : [ 107.333336532115936, 144.000004291534424, 41.0, 22.0 ],
+					"text" : "status"
 				}
 
 			}
@@ -806,7 +806,7 @@
 					"outlettype" : [ "signal", "signal" ],
 					"patching_rect" : [ 170.0, 301.0, 107.0, 22.0 ],
 					"text" : "chuck~ 2 fmenv.ck",
-					"varname" : "chuck-2"
+					"varname" : "chuck-22"
 				}
 
 			}

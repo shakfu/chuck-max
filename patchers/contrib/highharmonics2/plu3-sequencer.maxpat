@@ -217,8 +217,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 18.400000274181366, 140.000002086162567, 34.0, 22.0 ],
-					"text" : "info"
+					"patching_rect" : [ 18.400000274181366, 140.000002086162567, 41.0, 22.0 ],
+					"text" : "status"
 				}
 
 			}
@@ -363,7 +363,7 @@
 					"outlettype" : [ "signal", "signal" ],
 					"patching_rect" : [ 79.200001180171967, 227.200003385543823, 125.0, 22.0 ],
 					"text" : "chuck~ 2 plu3-max.ck",
-					"varname" : "chuck-0"
+					"varname" : "chuck-23"
 				}
 
 			}

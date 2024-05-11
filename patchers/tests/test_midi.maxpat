@@ -46,7 +46,6 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 16.0, 359.0, 120.0, 21.0 ],
-					"presentation_linecount" : 2,
 					"text" : "add midi/polyfony2.ck"
 				}
 
@@ -259,18 +258,6 @@
 			}
 , 			{
 				"box" : 				{
-					"id" : "obj-22",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 171.0, 287.0, 29.5, 21.0 ],
-					"text" : "info"
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"automatic" : 1,
 					"id" : "obj-19",
 					"maxclass" : "scope~",
@@ -384,7 +371,8 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
 					"patching_rect" : [ 238.0, 397.0, 142.0, 21.0 ],
-					"text" : "chuck~ 2 midi/polyfony.ck"
+					"text" : "chuck~ 2 midi/polyfony.ck",
+					"varname" : "chuck-10"
 				}
 
 			}
@@ -453,13 +441,6 @@
 				"patchline" : 				{
 					"destination" : [ "obj-1", 0 ],
 					"source" : [ "obj-21", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-1", 0 ],
-					"source" : [ "obj-22", 0 ]
 				}
 
 			}

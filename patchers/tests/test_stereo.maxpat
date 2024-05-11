@@ -83,8 +83,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 171.0, 287.0, 29.5, 21.0 ],
-					"text" : "info"
+					"patching_rect" : [ 171.0, 287.0, 39.0, 21.0 ],
+					"text" : "status"
 				}
 
 			}
@@ -95,8 +95,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 347.5, 147.0, 89.0, 21.0 ],
-					"text" : "run Sine-test.ck"
+					"patching_rect" : [ 347.5, 147.0, 88.0, 21.0 ],
+					"text" : "run test/sine.ck"
 				}
 
 			}
@@ -214,7 +214,8 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
 					"patching_rect" : [ 238.0, 397.0, 136.0, 21.0 ],
-					"text" : "chuck~ 2 spatial/Pan4.ck"
+					"text" : "chuck~ 2 spatial/Pan4.ck",
+					"varname" : "chuck-12"
 				}
 
 			}

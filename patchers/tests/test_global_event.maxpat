@@ -91,8 +91,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 191.0, 287.0, 29.5, 21.0 ],
-					"text" : "info"
+					"patching_rect" : [ 305.0, 287.0, 39.0, 21.0 ],
+					"text" : "status"
 				}
 
 			}
@@ -260,7 +260,7 @@
 					"outlettype" : [ "signal" ],
 					"patching_rect" : [ 238.0, 397.0, 156.0, 21.0 ],
 					"text" : "chuck~ test/global-event2.ck",
-					"varname" : "chuck-0"
+					"varname" : "chuck-8"
 				}
 
 			}

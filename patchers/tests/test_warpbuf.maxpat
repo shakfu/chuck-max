@@ -99,8 +99,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 171.0, 287.0, 29.5, 21.0 ],
-					"text" : "info"
+					"patching_rect" : [ 171.0, 287.0, 39.0, 21.0 ],
+					"text" : "status"
 				}
 
 			}
@@ -456,7 +456,7 @@
 					"autopopulate" : 1,
 					"depth" : 2,
 					"id" : "obj-40",
-					"items" : [ "mx.warpbuf_basic.ck", ",", "warpbuf_advanced.ck", ",", "warpbuf_basic.ck", ",", "warpbuf_no_warp_file.ck", ",", "warpbuf_silent.ck" ],
+					"items" : [ "warpbuf_advanced.ck", ",", "warpbuf_basic.ck", ",", "warpbuf_no_warp_file.ck", ",", "warpbuf_silent.ck" ],
 					"maxclass" : "umenu",
 					"numinlets" : 1,
 					"numoutlets" : 3,
@@ -596,7 +596,8 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
 					"patching_rect" : [ 238.0, 397.0, 191.0, 21.0 ],
-					"text" : "chuck~ 2 warpbuf/warpbuf_basic.ck"
+					"text" : "chuck~ 2 warpbuf/warpbuf_basic.ck",
+					"varname" : "chuck-15"
 				}
 
 			}

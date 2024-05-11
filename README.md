@@ -51,7 +51,7 @@ As of the current version, `chuck~` implements the core Chuck vm messages as Max
 | Remove last shred                 | `remove last`                | `--`                         |
 | Remove all shreds                 | `remove all`                 |                              |
 | Replace shred                     | `replace <shredID> <file>`   | `= <shredID> <file>`         |
-| VM status                         | `status`                     | `^`                          |
+| List running shreds               | `status`                     | `^`                          |
 | Clear vm                          | `clear vm`                   | `reset`                      |
 | Clear globals                     | `clear globals`              |                              |
 | Reset id                          | `reset id`                   |                              |
@@ -72,10 +72,11 @@ The core set of chuck vm messesages is also extended in `chuck-max` with the fol
 | Prevent running shreds when dsp is off  | `run_needs_audio`            |
 | Open file in external editor            | `edit <path>`                |
 | Probe chugins                           | `chugins`                    |
-| List of running shreds                  | `info`                       |
 | Get/set loglevel (0-10)                 | `loglevel` & `loglevel <n>`  |
 | Get state of chuck vm                   | `vm`                         |
 | Launch chuck docs in a browser          | `docs`                       |
+| Clear Max console                       | `clear console`              |
+
 
 ### Parameter Messages
 
