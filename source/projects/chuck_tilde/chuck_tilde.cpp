@@ -114,6 +114,7 @@ void ck_debug(t_ck* x, char* fmt, ...);
 void ck_error(t_ck* x, char* fmt, ...);
 
 // helpers
+void replace_character(char* str, char c1, char c2);
 bool path_exists(const char* name);
 char* ck_atom_gettext(long ac, t_atom* av);
 void ck_dblclick(t_ck* x);
@@ -256,7 +257,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // get external editor
         if (const char* editor = std::getenv("EDITOR")) {
-            ck_info(x, "editor from env: %s", editor);
+            ck_info(x, (char*)"editor from env: %s", editor);
             x->editor = gensym(editor);
         } else {
             x->editor = gensym("");
@@ -268,12 +269,12 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // set patcher object
         object_obex_lookup(x, gensym("#P"), (t_patcher**)&x->patcher);
         if (x->patcher == NULL)
-            ck_error(x, "patcher object not created.");
+            ck_error(x, (char*)"patcher object not created.");
 
         // set box object
         object_obex_lookup(x, gensym("#B"), (t_box**)&x->box);
         if (x->box == NULL)
-            ck_error(x, "box object not created.");
+            ck_error(x, (char*)"box object not created.");
 
         // create scripting name
         char name[MAX_FILENAME_CHARS];
@@ -289,7 +290,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // set the scripting name
         t_max_err err = jbox_set_varname(x->box, x->name);
         if (err != MAX_ERR_NONE) {
-            ck_error(x, "could not set chuck~ box's scripting name");
+            ck_error(x, (char*)"could not set chuck~ box's scripting name");
         }
 
         // add to the global vector of chuck instance names
@@ -314,7 +315,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
                 filename = atom_getsymarg(0, argc, argv);
                 x->run_file = ck_check_file(x, filename);
             } else {
-                ck_error(x, "invalid object arguments");
+                ck_error(x, (char*)"invalid object arguments");
                 return;
             }
         }
@@ -343,7 +344,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         x->chuck = new ChucK();
         if (x->chuck == NULL) {
-            ck_error(x, "critical: could not create chuck object");
+            ck_error(x, (char*)"critical: could not create chuck object");
             return NULL;
         }
         x->chuck->setParam(CHUCK_PARAM_SAMPLE_RATE, (t_CKINT)sys_getsr());
@@ -466,6 +467,20 @@ bool is_path(const char* target)
     return (s.find('/') != std::string::npos);
 }
 
+void replace_character(char* str, char c1, char c2)
+{
+    int j, n = strlen(str);
+    for (int i = j = 0; i < n; i++) {
+        if (str[i] != c1) {
+            str[j++] = str[i];
+        }
+        else {
+            str[j++] = c2;
+        }
+    }
+    str[j] = '\0';
+}
+
 
 /* x-platform solution to check if a path exists
  * 
@@ -508,7 +523,7 @@ char* ck_atom_gettext(long ac, t_atom* av)
 t_max_err ck_editor_set(t_ck *x, t_object *attr, long argc, t_atom *argv)
 {
     t_symbol* editor = atom_getsym(argv);
-    ck_info(x, "editor_set: %s", editor->s_name);
+    ck_info(x, (char*)"editor_set: %s", editor->s_name);
     ck_check_editor(x, editor);
     // x->editor = editor;
     return MAX_ERR_NONE;
@@ -518,10 +533,10 @@ t_max_err ck_editor_get(t_ck *x, t_object *attr, long *argc, t_atom **argv)
 {   
     char alloc;
     atom_alloc(argc, argv, &alloc); 
-    ck_info(x, "editor_get: %s", x->editor->s_name);
+    ck_info(x, (char*)"editor_get: %s", x->editor->s_name);
     t_max_err err =  atom_setsym(*argv, x->editor);
     if (err != MAX_ERR_NONE) {
-        ck_error(x, "failed: ck_editor_get");
+        ck_error(x, (char*)"failed: ck_editor_get");
     }
     return err;
 }
@@ -631,14 +646,14 @@ long ck_spork_highest_id(t_ck* x)
 long ck_spork_last_id(t_ck* x)
 {
     long id = x->chuck->vm()->last_id();
-    ck_info(x, "last_id: %d", id);
+    ck_info(x, (char*)"last_id: %d", id);
     return id;
 }
 
 long ck_spork_next_id(t_ck* x)
 {
     long id = x->chuck->vm()->next_id();
-    ck_info(x, "next_id: %d", id);
+    ck_info(x, (char*)"next_id: %d", id);
     return id;
 }
 
@@ -657,12 +672,12 @@ t_max_err ck_send_max_msg(t_ck* x, t_symbol* s, const char* parsestr)
 {
     t_object *maxobj = (t_object*)object_new(CLASS_NOBOX, gensym("max"));
     if (maxobj == NULL) {
-        ck_error(x, "could not get max object");
+        ck_error(x, (char*)"could not get max object");
         return MAX_ERR_GENERIC;
     }
     t_max_err err = object_method_parse(maxobj, s, parsestr, NULL);
     if (err != MAX_ERR_NONE) {
-        ck_error(x, "could not send msg: ;max %s %s", s->s_name, parsestr);
+        ck_error(x, (char*)"could not send msg: ;max %s %s", s->s_name, parsestr);
         return err;
     }
     return MAX_ERR_NONE;
@@ -755,12 +770,12 @@ t_symbol* ck_check_file(t_ck* x, t_symbol* name)
 
     res = locatefile_extended(filepath, &path, &outtype, &filetypelist, 1);
     if (res != 0)
-        ck_error(x, "ck_check_file: locatefile_extended failed");
+        ck_error(x, (char*)"ck_check_file: locatefile_extended failed");
         return gensym("");
 
     err = path_toabsolutesystempath(path, filepath, abspath);
     if (err != MAX_ERR_NONE)
-        ck_error(x, "ck_check_file: path_toabsolutesystempath failed");
+        ck_error(x, (char*)"ck_check_file: path_toabsolutesystempath failed");
         return gensym("");
 
     normpath[0] = '\0'; // erase it to re-use it
@@ -771,7 +786,7 @@ t_symbol* ck_check_file(t_ck* x, t_symbol* name)
         return gensym(normpath);
     }
 
-    ck_error(x, "ck_check_file: could not locate %s", name->s_name);
+    ck_error(x, (char*)"ck_check_file: could not locate %s", name->s_name);
     return gensym("");
 }
 
@@ -779,7 +794,7 @@ t_max_err ck_compile_code(t_ck* x, const char* code, const char* args)
 {
     std::vector<t_CKUINT> vec;
     if (!x->chuck->compileCode(std::string(code), std::string(args), 1, FALSE, &vec)) {
-        ck_error(x, "could not compile code: %s", code);
+        ck_error(x, (char*)"could not compile code: %s", code);
         return MAX_ERR_GENERIC;
     }
     return MAX_ERR_NONE;
@@ -788,10 +803,10 @@ t_max_err ck_compile_code(t_ck* x, const char* code, const char* args)
 t_max_err ck_compile_file(t_ck* x, const char* filename)
 {
     if (x->chuck->compileFile(std::string(filename), "", 1)) {
-        ck_info(x, "compiled: %s", filename);
+        ck_info(x, (char*)"compiled: %s", filename);
         return MAX_ERR_NONE;
     } else {
-        ck_error(x, "compilation error! : %s", filename);
+        ck_error(x, (char*)"compilation error! : %s", filename);
         return MAX_ERR_GENERIC;
     }
 }
@@ -801,7 +816,7 @@ t_max_err ck_run_file(t_ck* x)
     if (x->run_file != gensym("")) {
         return ck_compile_file(x, x->run_file->s_name);
     }
-    ck_error(x, "ck_run_file: filename slot is empty");
+    ck_error(x, (char*)"ck_run_file: filename slot is empty");
     return MAX_ERR_GENERIC;
 }
 
@@ -811,7 +826,7 @@ t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
 
     msg = new Chuck_Msg;
     if (msg == NULL) {
-        ck_error(x, "ck_send_chuck_vm_msg: could not create chuck msg");
+        ck_error(x, (char*)"ck_send_chuck_vm_msg: could not create chuck msg");
         return MAX_ERR_GENERIC;
     }
     msg->type = msg_type;
@@ -822,7 +837,7 @@ t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
     if (x->chuck->vm()->globals_manager()->execute_chuck_msg_with_globals(msg)) {
         return MAX_ERR_NONE;
     } else {
-        ck_error(x, "ck_send_chuck_vm_msg: could not send error msg");
+        ck_error(x, (char*)"ck_send_chuck_vm_msg: could not send error msg");
         return MAX_ERR_GENERIC;
     }
 }
@@ -834,23 +849,8 @@ t_max_err ck_send_chuck_vm_msg(t_ck* x, Chuck_Msg_Type msg_type)
 
 t_max_err ck_demo(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
-    char* text = ck_atom_gettext(argc, argv);
-    std::vector<std::string> args;
-
-    if (text) {
-        ck_info(x, "demo: '%s'", text);
-
-        // args = split(std::string(text), ' ');
-        args = split(std::string(text));
-
-        for (int i = 0; i < args.size(); ++i) {
-            ck_info(x, "args[%d] = %s", i, args[i].c_str());
-        }
-
-        sysmem_freeptr(text);
-        return MAX_ERR_NONE;
-    }
-    return MAX_ERR_GENERIC;
+    post("nothing here.. for now.");
+    return MAX_ERR_NONE;
 }
 
 
@@ -864,20 +864,20 @@ t_max_err ck_run(t_ck* x, t_symbol* s)
 { 
     if (s != gensym("")) {
         if (x->run_needs_audio && !sys_getdspstate()) {
-            ck_error(x, "can only run/add shred when audio is on");
+            ck_error(x, (char*)"can only run/add shred when audio is on");
             return MAX_ERR_GENERIC;
         }
         x->run_file = ck_check_file(x, s);
         return ck_run_file(x);
     }
-    ck_error(x, "ck_run: reguires a filename to edit");
+    ck_error(x, (char*)"ck_run: reguires a filename to edit");
     return MAX_ERR_GENERIC;
 }
 
 t_max_err ck_edit(t_ck* x, t_symbol* s)
 {
     if (x->editor == gensym("")) {
-        ck_error(x, "ck_edit: editor attribute or EDITOR env var not set to full path of editor");
+        ck_error(x, (char*)"ck_edit: editor attribute or EDITOR env var not set to full path of editor");
         return MAX_ERR_GENERIC;
     }
 
@@ -885,14 +885,14 @@ t_max_err ck_edit(t_ck* x, t_symbol* s)
         x->edit_file = ck_check_file(x, s);
         if (x->edit_file != gensym("")) {
             std::string cmd;
-            // ck_info(x, "edit: %s", x->edit_file->s_name);
+            // ck_info(x, (char*)"edit: %s", x->edit_file->s_name);
 
             cmd = std::string(x->editor->s_name) + " " + std::string(x->edit_file->s_name);
             std::system(cmd.c_str());
             return MAX_ERR_NONE;
         }
     }
-    ck_error(x, "ck_edit: reguires a valid filename");
+    ck_error(x, (char*)"ck_edit: reguires a valid filename");
     return MAX_ERR_GENERIC;
 }
 
@@ -903,26 +903,42 @@ void ck_dblclick(t_ck* x)
     }
 }
 
+
 t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
     t_symbol *filename_sym = _sym_nothing;
 
     if (argc < 1) {
-        ck_error(x, "add message needs at least one <filename> argument");
+        ck_error(x, (char*)"add message needs at least one <filename> argument");
         return MAX_ERR_GENERIC;
     }
 
     if ((argv)->a_type != A_SYM) {
-        ck_error(x, "first argument must be a symbol");
+        ck_error(x, (char*)"first argument must be a symbol");
         return MAX_ERR_GENERIC;
     }
 
     if (x->run_needs_audio && !sys_getdspstate()) {
-        ck_error(x, "can only run/add shred when audio is on");
+        ck_error(x, (char*)"can only run/add shred when audio is on");
         return MAX_ERR_GENERIC;
-    };
+    }
 
-    filename_sym = atom_getsym(argv);
+    if (argc > 1) { // args provided
+        // test if ':' is in the filename
+        t_symbol* firstsym = atom_getsym(argv);
+        char* res = strchr(firstsym->s_name, ':');
+        if (res != NULL) {
+            ck_error(x, (char*)"cannot use both colon-separated args with space-separated args");
+            return MAX_ERR_GENERIC;
+        }
+
+        char* text = ck_atom_gettext(argc, argv);
+        replace_character(text, ' ', ':');
+        filename_sym = gensym(text);
+        sysmem_freeptr(text);
+    } else {
+        filename_sym = atom_getsym(argv);
+    }
 
     // get string
     std::string path = std::string(filename_sym->s_name);
@@ -936,7 +952,7 @@ t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     t_symbol* checked_file = ck_check_file(x, gensym(filename.c_str()));
 
     if (checked_file == gensym("")) {
-        ck_error(x, "could not add file");
+        ck_error(x, (char*)"could not add file");
         return MAX_ERR_GENERIC;
     }
     
@@ -944,7 +960,7 @@ t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 
     // compile but don't run yet (instance == 0)
     if( !x->chuck->compileFile( full_path, args, 0 ) ) {
-        ck_error(x, "could not compile file");
+        ck_error(x, (char*)"could not compile file");
         return MAX_ERR_GENERIC;
     }
 
@@ -961,19 +977,20 @@ t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     // process ADD message, return new shred ID
     x->current_shred_id = x->chuck->vm()->process_msg( msg );
     return MAX_ERR_NONE;
+    
 }
 
 t_max_err ck_eval(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
     if (argc == 0) {
-        ck_error(x, "ck_eval: need at least one arg");
+        ck_error(x, (char*)"ck_eval: need at least one arg");
         return MAX_ERR_GENERIC;
     }
 
     if (argc == 1) {
         t_symbol* s = atom_getsym(argv);
         if (x->chuck->compileCode(std::string(s->s_name))) {
-            ck_info(x, "ck_eval symbol compiled: success");
+            ck_info(x, (char*)"ck_eval symbol compiled: success");
             return MAX_ERR_NONE;
         }
         return MAX_ERR_GENERIC;
@@ -983,10 +1000,10 @@ t_max_err ck_eval(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 
     if (text) {
         x->code = gensym(text);
-        ck_info(x, "text: %s", text);
-        ck_info(x, "code: %s", x->code->s_name);
+        ck_info(x, (char*)"text: %s", text);
+        ck_info(x, (char*)"code: %s", x->code->s_name);
         if (x->chuck->compileCode(std::string(text))) {
-            ck_info(x, "ck_eval text compiled: success");            
+            ck_info(x, (char*)"ck_eval text compiled: success");            
         }        
         // t_CKBOOL compileCode( const std::string & code, const std::string & argsTogether = "",
         //                   t_CKUINT count = 1, t_CKBOOL immediate = FALSE, std::vector<t_CKUINT> * shredIDs = NULL );
@@ -996,7 +1013,6 @@ t_max_err ck_eval(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 
     return MAX_ERR_GENERIC;
 }
-
 
 t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
@@ -1032,11 +1048,11 @@ t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         long* long_array = (long*)sysmem_newptr(sizeof(long*) * argc);
         t_max_err err = atom_getlong_array(argc, argv, argc, long_array);
         if (err != MAX_ERR_NONE) {
-            ck_error(x, "remove msg: multiple args can only be ints");
+            ck_error(x, (char*)"remove msg: multiple args can only be ints");
             return err;
         }
         for (int i = 0; i < argc; i++) {
-            // ck_info(x, "removing: long_array[%d] = %d", i, long_array[i]);
+            // ck_info(x, (char*)"removing: long_array[%d] = %d", i, long_array[i]);
             Chuck_Msg* m = new Chuck_Msg;
             m->type = CK_MSG_REMOVE;
             m->param = long_array[i]; // shred id
@@ -1054,17 +1070,17 @@ t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     t_symbol *filename_sym = _sym_nothing;
 
     if (argc < 2) {
-        ck_error(x, "replace message needs at least two arguments");
+        ck_error(x, (char*)"replace message needs at least two arguments");
         return MAX_ERR_GENERIC;
     }
     if (argv->a_type != A_LONG) {
-        ck_error(x, "first argument must a long");
+        ck_error(x, (char*)"first argument must a long");
         return MAX_ERR_GENERIC;
     }
     shred_id = atom_getlong(argv);
 
     if ((argv+1)->a_type != A_SYM) {
-        ck_error(x, "second argument must be a symbol");
+        ck_error(x, (char*)"second argument must be a symbol");
         return MAX_ERR_GENERIC;
     }
     filename_sym = atom_getsym(argv+1);
@@ -1081,7 +1097,7 @@ t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     t_symbol* checked_file = ck_check_file(x, gensym(filename.c_str()));
 
     if (checked_file == gensym("")) {
-        ck_error(x, "could not replace file");
+        ck_error(x, (char*)"could not replace file");
         return MAX_ERR_GENERIC;
     }
     
@@ -1089,7 +1105,7 @@ t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 
     // compile but don't run yet (instance == 0)
     if( !x->chuck->compileFile( full_path, args, 0 ) ) {
-        ck_error(x, "could not compile file");
+        ck_error(x, (char*)"could not compile file");
         return MAX_ERR_GENERIC;
     }
 
@@ -1120,7 +1136,7 @@ t_max_err ck_clear(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         if (argv->a_type == A_SYM) {
             t_symbol* target = atom_getsym(argv);
             if (target == gensym("globals")) {
-                ck_info(x, "[chuck]: clean up global variables without clearing the whole VM");
+                ck_info(x, (char*)"[chuck]: clean up global variables without clearing the whole VM");
                 return ck_send_chuck_vm_msg(x, CK_MSG_CLEARGLOBALS);
             } 
             if (target == gensym("vm")) {
@@ -1131,7 +1147,7 @@ t_max_err ck_clear(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             }
         }
     }
-    ck_error(x, "must be 'clear globals' or 'clear vm'");
+    ck_error(x, (char*)"must be 'clear globals' or 'clear vm'");
     return MAX_ERR_GENERIC;
 }
 
@@ -1149,7 +1165,7 @@ t_max_err ck_reset(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             } 
         }
     }
-    ck_error(x, "must be 'reset id' or just 'reset' for clearvm");
+    ck_error(x, (char*)"must be 'reset id' or just 'reset' for clearvm");
     return MAX_ERR_GENERIC;
 }
 
@@ -1162,7 +1178,7 @@ t_max_err ck_status(t_ck* x)
         std::vector<Chuck_VM_Shred*> shreds;
         shreduler->get_all_shreds(shreds);
         for (const Chuck_VM_Shred* i : shreds) {
-            ck_info(x, "%d:%s", i->get_id(), i->name.c_str());
+            ck_info(x, (char*)"%d:%s", i->get_id(), i->name.c_str());
         }
     }
 
@@ -1235,17 +1251,17 @@ t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             if ((level >= 0) && (level <= 10)) {
                 name = ck_get_loglevel_name(level);
                 x->loglevel = level;
-                ck_info(x, "setting loglevel to %d (%s)", x->loglevel, name->s_name);
+                ck_info(x, (char*)"setting loglevel to %d (%s)", x->loglevel, name->s_name);
                 ChucK::setLogLevel(x->loglevel);
                 return MAX_ERR_NONE;
             } else {
-                ck_error(x, "loglevel out-of-range: must between 0-10 inclusive. Defaulting to level 2");
+                ck_error(x, (char*)"loglevel out-of-range: must between 0-10 inclusive. Defaulting to level 2");
                 ChucK::setLogLevel(CK_LOG_SYSTEM);
                 return MAX_ERR_GENERIC;
             }
         }
     }
-    ck_error(x,"could not get or set loglevel");
+    ck_error(x, (char*)"could not get or set loglevel");
     return MAX_ERR_GENERIC;
 }
 
@@ -1327,7 +1343,7 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         if (argv->a_type == A_LONG) { // list of longs
             long* long_array = (long*)sysmem_newptr(sizeof(long*) * argc);
             for (int i = 0; i < argc; i++) {
-                // ck_info(x, "i: %d -> %d ", i, atom_getlong(argv + i));
+                // ck_info(x, (char*)"i: %d -> %d ", i, atom_getlong(argv + i));
                 long_array[i] = atom_getlong(argv + i);
             }
             x->chuck->vm()->globals_manager()->setGlobalIntArray(
@@ -1338,7 +1354,7 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         else if (argv->a_type == A_FLOAT) { // list of doubles
             double* float_array = (double*)sysmem_newptr(sizeof(double*) * argc);
             for (int i = 0; i < argc; i++) {
-                // ck_info(x, "i: %d -> %d ", i, atom_getfloat(argv + i));
+                // ck_info(x, (char*)"i: %d -> %d ", i, atom_getfloat(argv + i));
                 float_array[i] = atom_getfloat(argv + i);
             }
             x->chuck->vm()->globals_manager()->setGlobalFloatArray(
@@ -1398,35 +1414,35 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     return MAX_ERR_NONE;
 
 error:
-    ck_error(x, "[ck_anything] cannot set chuck global param");
+    ck_error(x, (char*)"[ck_anything] cannot set chuck global param");
     return MAX_ERR_GENERIC;
 }
 
 t_max_err ck_signal(t_ck* x, t_symbol* s)
 {
-    ck_info(x, "signal: %s", s->s_name);
+    ck_info(x, (char*)"signal: %s", s->s_name);
     if (x->chuck->vm()->globals_manager()->signalGlobalEvent(s->s_name)) {
         return MAX_ERR_NONE;
     } else {
-        ck_error(x, "[ck_signal] signal global event '%s' failed", s->s_name);
+        ck_error(x, (char*)"[ck_signal] signal global event '%s' failed", s->s_name);
         return MAX_ERR_GENERIC;
     }
 }
 
 t_max_err ck_broadcast(t_ck* x, t_symbol* s)
 {
-    ck_info(x, "broadcast: %s", s->s_name);
+    ck_info(x, (char*)"broadcast: %s", s->s_name);
     if (x->chuck->vm()->globals_manager()->broadcastGlobalEvent(s->s_name)) {
         return MAX_ERR_NONE;
     } else {
-        ck_error(x, "[ck_broadcast] broadcast global event '%s' failed", s->s_name);
+        ck_error(x, (char*)"[ck_broadcast] broadcast global event '%s' failed", s->s_name);
         return MAX_ERR_GENERIC;
     }
 }
 
 t_max_err ck_chugins(t_ck* x)
 {
-    ck_info(x, "probe chugins:");
+    ck_info(x, (char*)"probe chugins:");
     x->chuck->probeChugins();
     return MAX_ERR_NONE;
 }
@@ -1441,15 +1457,15 @@ t_max_err ck_globals(t_ck* x)
     if (x->chuck->vm()->globals_manager()->getAllGlobalVariables(cb_get_all_global_vars, NULL)) {
         return MAX_ERR_NONE;
     }
-    ck_error(x, "could not dump global variable to console");
+    ck_error(x, (char*)"could not dump global variable to console");
     return MAX_ERR_GENERIC;
 }
 
 t_max_err ck_vm(t_ck* x)
 {
-    ck_info(x, "VM %d / %d status", x->oid, CK_INSTANCE_COUNT);
-    ck_info(x, "\tinitialized: %d", x->chuck->vm()->has_init());
-    ck_info(x, "\trunning: %d", x->chuck->vm()->running());
+    ck_info(x, (char*)"VM %d / %d status", x->oid, CK_INSTANCE_COUNT);
+    ck_info(x, (char*)"\tinitialized: %d", x->chuck->vm()->has_init());
+    ck_info(x, (char*)"\trunning: %d", x->chuck->vm()->running());
     return MAX_ERR_NONE;
 }
 
@@ -1529,12 +1545,12 @@ void cb_get_assoc_float_array_value(const char* name, t_CKFLOAT val)
 t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
     if (argc < 3) {
-        ck_error(x, "ck_set: too few # of arguments");
+        ck_error(x, (char*)"ck_set: too few # of arguments");
         return MAX_ERR_GENERIC;        
     }
 
     if (!(argv->a_type == A_SYM && (argv+1)->a_type == A_SYM)) {
-        ck_error(x, "ck_get: first two args must be symbols");
+        ck_error(x, (char*)"ck_get: first two args must be symbols");
         return MAX_ERR_GENERIC;
     }
 
@@ -1545,33 +1561,33 @@ t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         if (type == gensym("int") && (argv+2)->a_type == A_LONG) {
             t_atom_long value = atom_getlong(argv+2);
             if (x->chuck->vm()->globals_manager()->setGlobalInt(name->s_name, (t_CKINT)value)) {
-                ck_info(x, "set %s -> %d", name->s_name, value);
+                ck_info(x, (char*)"set %s -> %d", name->s_name, value);
                 return MAX_ERR_NONE;
             }
         }
         else if (type == gensym("float") && (argv+2)->a_type == A_FLOAT) {
             t_atom_float value = atom_getfloat(argv+2);
             if (x->chuck->vm()->globals_manager()->setGlobalFloat(name->s_name, (t_CKFLOAT)value)) {
-                ck_info(x, "set %s -> %f", name->s_name, value);
+                ck_info(x, (char*)"set %s -> %f", name->s_name, value);
                 return MAX_ERR_NONE;
             }
         }
         else if (type == gensym("string") && (argv+2)->a_type == A_SYM) {
             t_symbol* value = atom_getsym(argv+2);
             if (x->chuck->vm()->globals_manager()->setGlobalString(name->s_name, value->s_name)) {
-                ck_info(x, "set %s -> %s", name->s_name, value->s_name);
+                ck_info(x, (char*)"set %s -> %s", name->s_name, value->s_name);
                 return MAX_ERR_NONE;
             }
         }
         return MAX_ERR_GENERIC;
     } else if (argc > 3) {
         int offset = 2;
-        int length = argc - offset;
+        int length = (int)argc - offset;
 
         if (type == gensym("int[]")) { // list of longs
             long* long_array = (long*)sysmem_newptr(sizeof(long*) * length);
             for (int i = 0; i < length; i++) {
-                ck_info(x, "set %s[%d] -> %d ", name->s_name, i, atom_getlong((argv+offset) + i));
+                ck_info(x, (char*)"set %s[%d] -> %d ", name->s_name, i, atom_getlong((argv+offset) + i));
                 long_array[i] = atom_getlong((argv+offset) + i);
             }
             if (x->chuck->vm()->globals_manager()->setGlobalIntArray(name->s_name, long_array, length)) {
@@ -1582,7 +1598,7 @@ t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         else if (type == gensym("float[]")) { // list of doubles
             double* float_array = (double*)sysmem_newptr(sizeof(double*) * length);
             for (int i = 0; i < length; i++) {
-                ck_info(x, "set %s[%d] -> %f ", name->s_name, i, atom_getfloat((argv+offset) + i));
+                ck_info(x, (char*)"set %s[%d] -> %f ", name->s_name, i, atom_getfloat((argv+offset) + i));
                 float_array[i] = atom_getfloat((argv+offset) + i);
             }
             if (x->chuck->vm()->globals_manager()->setGlobalFloatArray(name->s_name, float_array, length)) {
@@ -1594,7 +1610,7 @@ t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             long index = atom_getlong((argv+2));
             long value = atom_getlong((argv+3));
             if (x->chuck->vm()->globals_manager()->setGlobalIntArrayValue(name->s_name, (t_CKUINT)index, (t_CKINT)value)) {
-                ck_info(x, "set %s %d -> %d", name->s_name, index, value);
+                ck_info(x, (char*)"set %s %d -> %d", name->s_name, index, value);
                 return MAX_ERR_NONE;                
             }
         }
@@ -1602,7 +1618,7 @@ t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             long index = atom_getlong((argv+2));
             long value = atom_getfloat((argv+3));
             if (x->chuck->vm()->globals_manager()->setGlobalFloatArrayValue(name->s_name, (t_CKUINT)index, (t_CKFLOAT)value)) {                
-                ck_info(x, "set %s %d -> %f", name->s_name, index, value);
+                ck_info(x, (char*)"set %s %d -> %f", name->s_name, index, value);
                 return MAX_ERR_NONE;
             }
         }
@@ -1625,12 +1641,12 @@ t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 t_max_err ck_get(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
     if (argc < 2 || argc > 3) {
-        ck_error(x, "ck_get: invalid # of arguments");
+        ck_error(x, (char*)"ck_get: invalid # of arguments");
         return MAX_ERR_GENERIC;
     }
     
     if (!(argv->a_type == A_SYM && (argv+1)->a_type == A_SYM)) {
-        ck_error(x, "ck_get: first two args must be symbols");
+        ck_error(x, (char*)"ck_get: first two args must be symbols");
         return MAX_ERR_GENERIC;
     }
 
@@ -1683,7 +1699,7 @@ t_max_err ck_get(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 t_max_err ck_listen(t_ck* x, t_symbol* s, long listen_forever)
 {
     if (x->chuck->vm()->globals_manager()->listenForGlobalEvent(s->s_name, cb_event, (bool)listen_forever)) {
-        ck_info(x, "listening to event %s", s->s_name);
+        ck_info(x, (char*)"listening to event %s", s->s_name);
         return MAX_ERR_NONE;
     };
     return MAX_ERR_GENERIC;
@@ -1692,7 +1708,7 @@ t_max_err ck_listen(t_ck* x, t_symbol* s, long listen_forever)
 t_max_err ck_unlisten(t_ck* x, t_symbol* s)
 {
     if (x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent(s->s_name, cb_event)) {
-        ck_info(x, "stop listening to event %s", s->s_name);
+        ck_info(x, (char*)"stop listening to event %s", s->s_name);
         return MAX_ERR_NONE;
     };
     return MAX_ERR_GENERIC;
