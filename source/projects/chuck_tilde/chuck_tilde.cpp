@@ -1420,7 +1420,7 @@ error:
 
 t_max_err ck_signal(t_ck* x, t_symbol* s)
 {
-    ck_info(x, (char*)"signal: %s", s->s_name);
+    ck_debug(x, (char*)"signal: %s", s->s_name);
     if (x->chuck->vm()->globals_manager()->signalGlobalEvent(s->s_name)) {
         return MAX_ERR_NONE;
     } else {
@@ -1431,7 +1431,7 @@ t_max_err ck_signal(t_ck* x, t_symbol* s)
 
 t_max_err ck_broadcast(t_ck* x, t_symbol* s)
 {
-    ck_info(x, (char*)"broadcast: %s", s->s_name);
+    ck_debug(x, (char*)"broadcast: %s", s->s_name);
     if (x->chuck->vm()->globals_manager()->broadcastGlobalEvent(s->s_name)) {
         return MAX_ERR_NONE;
     } else {
