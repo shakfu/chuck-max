@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 209.0, 106.0, 624.0, 686.0 ],
+		"rect" : [ 142.0, 104.0, 624.0, 686.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -40,6 +40,44 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-15",
+					"linecount" : 3,
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 435.0, 403.0, 138.0, 49.0 ],
+					"presentation_linecount" : 3,
+					"text" : "eval \"SinOsc s  => dac; .3 => s.gain;\r1::hour => now;\""
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-14",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 362.0, 397.0, 29.5, 22.0 ],
+					"text" : "info"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-13",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 439.0, 463.0, 130.0, 22.0 ],
+					"text" : "demo arg1 21 3.2 arg2"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"id" : "obj-10",
 					"maxclass" : "message",
 					"numinlets" : 2,
@@ -47,19 +85,6 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 279.5, 397.0, 71.0, 22.0 ],
 					"text" : "remove last"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-26",
-					"linecount" : 2,
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 439.0, 407.0, 129.0, 35.0 ],
-					"text" : "eval \"SinOsc s => dac;\r1::hour => now;\""
 				}
 
 			}
@@ -228,6 +253,7 @@
 					"fontname" : "Monaco",
 					"fontsize" : 10.0,
 					"id" : "obj-7",
+					"linecount" : 20,
 					"maxclass" : "textedit",
 					"nosymquotes" : 1,
 					"numinlets" : 1,
@@ -236,7 +262,8 @@
 					"outputmode" : 1,
 					"parameter_enable" : 0,
 					"patching_rect" : [ 92.0, 57.0, 476.0, 298.0 ],
-					"tabmode" : 0
+					"tabmode" : 0,
+					"text" : "Blit s => ADSR e => JCRev r => dac;\n.5 => s.gain;\n.05 => r.mix;\n\ne.set( 5::ms, 3::ms, .5, 5::ms );\n\n[ 0, 2, 4, 7, 9, 11 ] @=> int hi[];\n\nwhile( true )\n{\n    Std.mtof( 33 + Math.random2(0,3) * 12 +\n        hi[Math.random2(0,hi.size()-1)] ) => s.freq;\n\n    Math.random2( 1, 5 ) => s.harmonics;\n\n    e.keyOn();\n    120::ms => now;\n    e.keyOff();\n    5::ms => now;\n}"
 				}
 
 			}
@@ -278,6 +305,27 @@
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-2", 0 ],
+					"source" : [ "obj-13", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-2", 0 ],
+					"source" : [ "obj-14", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-2", 0 ],
+					"source" : [ "obj-15", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-1", 1 ],
 					"source" : [ "obj-2", 1 ]
 				}
@@ -294,13 +342,6 @@
 				"patchline" : 				{
 					"destination" : [ "obj-2", 0 ],
 					"source" : [ "obj-25", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-2", 0 ],
-					"source" : [ "obj-26", 0 ]
 				}
 
 			}

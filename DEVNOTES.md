@@ -1,5 +1,7 @@
 # Dev Notes
 
+
+
 ## Alternative to std::system
 
 Use `ext_sysprocess`
@@ -981,3 +983,37 @@ vcproject:
   </ImportGroup>
 </Project>
 ```
+
+
+## Chuck Feature Request: Insert Command
+
+Add an `insert <filename | code> [shredID=last]` command to chuck core vm messages.
+
+The `insert` command corresponds  to the hypothetical msg type `CK_MSG_INSERT`
+
+where the default op looks like `insert <filename|code>  <filename | code> [shredID=last]` applying to the following scenario:
+
+if `shred_1` is launched which consists of
+
+```chuck
+SoundSource s => dac;
+
+1::hour => now;
+```
+
+It should be possible to `insert fx_1.ck` as a second `shred_fx_1` which operates as an effect between `shred_1` and the `dac` such that effectively
+
+```chuck
+shred_1 => shred_fx_1 => dac
+```
+
+of course, it should be possible to similiarly insert another  `shred_fx_2` via `insert fx_2.ck`
+
+```chuck
+shred_1 => shred_fx_1 => shred_fx_2 => dac
+```
+
+and so on ...
+
+An optional additional argument to specify shred_id as in `insert <filename|code> <shredID>`, allows for specifying exactly where to insert in the chain..
+

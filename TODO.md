@@ -2,8 +2,6 @@
 
 - [ ] Fix `run-before-audio` bug
 
-- [ ] Fix Faust cleanup bug
-
 - [ ] Add Windows Support
 
 - [ ] Add max/msp object docs in xml
@@ -17,5 +15,3 @@
 - [ ] Add fallback on `ck_dblclick` to max editor if external not found
 
 - [ ] More (musical) examples...
-
-- [x] Better examples using Max message for global variables
