@@ -71,6 +71,9 @@ void ck_assist(t_ck* x, void* b, long m, long a, char* s);
 t_max_err ck_editor_get(t_ck *x, t_object *attr, long *argc, t_atom **argv);
 t_max_err ck_editor_set(t_ck *x, t_object *attr, long argc, t_atom *argv);
 
+// scratch message handler (used for testing)
+t_max_err ck_demo(t_ck* x, t_symbol* s, long argc, t_atom* argv);
+
 // general message handlers
 t_max_err ck_bang(t_ck* x);                     // (re)load chuck file
 t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv); // set global params by name/value
@@ -95,7 +98,6 @@ t_max_err ck_broadcast(t_ck* x, t_symbol* s);   // broadcast global event
 t_max_err ck_listen(t_ck* x, t_symbol* s, long listen_forever);
 t_max_err ck_unlisten(t_ck* x, t_symbol* s);
 
-
 // special message handlers
 t_max_err ck_vm(t_ck* x);                       // get vm state
 t_max_err ck_globals(t_ck* x);                  // dump global variables
@@ -104,12 +106,16 @@ t_max_err ck_info(t_ck* x);                     // get info about running shreds
 t_max_err ck_chugins(t_ck* x);                  // probe and list available chugins
 t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // get and set loglevels
 
+// error-reporting / logging helpers
+void ck_stdout_print(const char* msg);
+void ck_stderr_print(const char* msg);
+void ck_debug(t_ck* x, char* fmt, ...);
+// void ck_info(t_ck* x, char* fmt, ...);
+void ck_error(t_ck* x, char* fmt, ...);
+
 // helpers
 bool path_exists(const char* name);
 char* ck_atom_gettext(long ac, t_atom* av);
-void ck_debug(t_ck* x, char* fmt, ...);
-void ck_stdout_print(const char* msg);
-void ck_stderr_print(const char* msg);
 void ck_dblclick(t_ck* x);
 t_max_err ck_send_max_msg(t_ck* x, t_symbol* s, const char* parsestr);
 t_max_err ck_check_editor(t_ck* x, t_symbol* entry);
@@ -167,6 +173,8 @@ void ext_main(void* r)
 
     class_addmethod(c, (method)ck_run,          "run",      A_SYM, 0);
     class_addmethod(c, (method)ck_edit,         "edit",     A_SYM, 0);
+
+    class_addmethod(c, (method)ck_demo,         "demo",     A_GIMME, 0);
 
     class_addmethod(c, (method)ck_add,          "add",      A_GIMME, 0);
     class_addmethod(c, (method)ck_eval,         "eval",     A_GIMME, 0);    
@@ -408,7 +416,7 @@ void ck_assist(t_ck* x, void* b, long m, long a, char* s)
 //-----------------------------------------------------------------------------------------------
 // general utilities
 
-std::vector<std::string> split(std::string s, char delimiter)
+std::vector<std::string> split(std::string s, char delimiter = ' ')
 {
     std::vector<std::string> output;
     for (auto cur = std::begin(s), beg = cur;; ++cur) {
@@ -485,7 +493,7 @@ bool path_exists(const char* name) {
 }
 #endif
 
-// repurposed simplestring_atom_gettext
+// repurposed from simplestring_atom_gettext
 char* ck_atom_gettext(long ac, t_atom* av)
 {
     if (ac && av) {
@@ -777,13 +785,48 @@ void ck_debug(t_ck* x, char* fmt, ...)
         vsnprintf(msg, MAX_PATH_CHARS, fmt, va);
         va_end(va);
 
-        object_post((t_object*)x, "[DEBUG] (%d) %s", x->oid, msg);
+        object_post((t_object*)x, "[ck~%d] %s", x->oid, msg);
     }
+}
+
+void ck_error(t_ck* x, char* fmt, ...)
+{
+    char msg[MAX_PATH_CHARS];
+
+    va_list va;
+    va_start(va, fmt);
+    vsnprintf(msg, MAX_PATH_CHARS, fmt, va);
+    va_end(va);
+
+    object_error((t_object*)x, "[ck~%d] %s", x->oid, msg);
+
 }
 
 
 //-----------------------------------------------------------------------------------------------
 // message handlers
+
+
+t_max_err ck_demo(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+{
+    char* text = ck_atom_gettext(argc, argv);
+    std::vector<std::string> args;
+
+    if (text) {
+        post("demo: '%s'", text);
+
+        // args = split(std::string(text), ' ');
+        args = split(std::string(text));
+
+        for (int i = 0; i < args.size(); ++i) {
+            post("args[%d] = %s", i, args[i].c_str());
+        }
+
+        sysmem_freeptr(text);
+        return MAX_ERR_NONE;
+    }
+    return MAX_ERR_GENERIC;
+}
 
 
 t_max_err ck_bang(t_ck* x)
