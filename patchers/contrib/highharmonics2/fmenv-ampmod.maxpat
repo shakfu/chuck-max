@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 692.0, 110.0, 1230.0, 895.0 ],
+		"rect" : [ 176.0, 87.0, 907.0, 676.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -68,7 +68,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 658.16667228937149, 428.000012755393982, 100.000002980232239, 18.0 ],
-					"presentation_linecount" : 2,
 					"text" : "Amp Mod envelope"
 				}
 
@@ -104,7 +103,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 52.333333939313889, 393.166678488254547, 119.333336889743805, 29.0 ],
-					"presentation_linecount" : 3,
 					"text" : "DSP Amp Modulation\n Max/gen~",
 					"textcolor" : [ 0.827450980392157, 0.086274509803922, 0.0, 1.0 ],
 					"textjustification" : 1
@@ -119,7 +117,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 91.999998807907104, 294.500008881092072, 74.000002384185791, 29.0 ],
+					"patching_rect" : [ 91.999998807907104, 294.500008881092072, 75.0, 29.0 ],
 					"text" : "FM synthesis (ChucK)",
 					"textcolor" : [ 0.827450980392157, 0.086274509803922, 0.0, 1.0 ],
 					"textjustification" : 1
@@ -1446,9 +1444,9 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
-					"patching_rect" : [ 170.000005066394806, 298.000008881092072, 142.000004231929779, 22.0 ],
-					"text" : "chuck~ 2 max/fmenv.ck",
-					"varname" : "chuck-0"
+					"patching_rect" : [ 170.000005066394806, 298.000008881092072, 107.0, 22.0 ],
+					"text" : "chuck~ 2 fmenv.ck",
+					"varname" : "chuck-4"
 				}
 
 			}
@@ -1456,7 +1454,7 @@
 		"lines" : [ 			{
 				"patchline" : 				{
 					"destination" : [ "obj-13", 1 ],
-					"midpoints" : [ 302.500009298324585, 325.333343029022217, 211.966671693325054, 325.333343029022217 ],
+					"midpoints" : [ 267.500005066394806, 325.333343029022217, 211.966671693325054, 325.333343029022217 ],
 					"order" : 1,
 					"source" : [ "obj-1", 1 ]
 				}
@@ -1473,7 +1471,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-65", 0 ],
-					"midpoints" : [ 302.500009298324585, 324.666676342487335, 302.500009298324585, 325.333343029022217, 479.0, 325.333343029022217 ],
+					"midpoints" : [ 267.500005066394806, 324.666676342487335, 302.500009298324585, 325.333343029022217, 479.0, 325.333343029022217 ],
 					"order" : 0,
 					"source" : [ "obj-1", 1 ]
 				}

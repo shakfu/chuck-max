@@ -255,26 +255,6 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->code = gensym("");
         x->run_needs_audio = 0;
 
-        t_symbol* filename;
-
-        if (argc == 1) {
-            if (argv->a_type == A_LONG) {
-                atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);
-            } else if (argv->a_type == A_SYM) {
-                filename = atom_getsymarg(0, argc, argv);
-                x->run_file = ck_check_file(x, filename);
-            } else {
-                error("invalid object arguments");
-                return;
-            }
-        }
-        else if (argc >= 2) {
-            atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);  // is 1st arg of object
-            filename = atom_getsymarg(1, argc, argv);    // is 2nd arg of object
-            x->run_file = ck_check_file(x, filename);
-        } 
-        // else just use defaults
-
         // get external editor
         if (const char* editor = std::getenv("EDITOR")) {
             post("editor from env: %s", editor);
@@ -329,6 +309,27 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         path_nameconform(patcher_dir, patcher_conform_dir, PATH_STYLE_MAX, PATH_TYPE_BOOT);
         // post("conform dir of patcher: %s", patcher_conform_dir);
         x->patcher_dir = gensym(patcher_conform_dir);
+
+        // get object instance args
+        t_symbol* filename;
+
+        if (argc == 1) {
+            if (argv->a_type == A_LONG) {
+                atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);
+            } else if (argv->a_type == A_SYM) {
+                filename = atom_getsymarg(0, argc, argv);
+                x->run_file = ck_check_file(x, filename);
+            } else {
+                error("invalid object arguments");
+                return;
+            }
+        }
+        else if (argc >= 2) {
+            atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);  // is 1st arg of object
+            filename = atom_getsymarg(1, argc, argv);    // is 2nd arg of object
+            x->run_file = ck_check_file(x, filename);
+        } 
+        // else just use defaults
 
         dsp_setup((t_pxobject*)x, x->channels);   // MSP inlets: 2nd arg is # of inlets
     

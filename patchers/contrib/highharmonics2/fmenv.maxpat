@@ -804,8 +804,9 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
-					"patching_rect" : [ 170.0, 301.0, 158.0, 22.0 ],
-					"text" : "chuck~ 2 max/fmenv.ck"
+					"patching_rect" : [ 170.0, 301.0, 107.0, 22.0 ],
+					"text" : "chuck~ 2 fmenv.ck",
+					"varname" : "chuck-2"
 				}
 
 			}

@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 695.0, 291.0, 1205.0, 711.0 ],
+		"rect" : [ 212.0, 145.0, 957.0, 711.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 10.0,
@@ -263,19 +263,6 @@
 , 			{
 				"box" : 				{
 					"fontsize" : 12.0,
-					"id" : "obj-18",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 79.200001180171967, 164.800002455711365, 120.0, 22.0 ],
-					"text" : "run max/plu3-max.ck"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"fontsize" : 12.0,
 					"id" : "obj-12",
 					"maxclass" : "newobj",
 					"numinlets" : 0,
@@ -362,7 +349,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "bang" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 79.200001180171967, 130.40000194311142, 31.333334267139435, 31.333334267139435 ]
+					"patching_rect" : [ 79.200001180171967, 130.533334881067276, 31.333334267139435, 31.333334267139435 ]
 				}
 
 			}
@@ -374,8 +361,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 2,
 					"outlettype" : [ "signal", "signal" ],
-					"patching_rect" : [ 79.200001180171967, 227.200003385543823, 106.400001585483551, 22.0 ],
-					"text" : "chuck~ 2",
+					"patching_rect" : [ 79.200001180171967, 227.200003385543823, 125.0, 22.0 ],
+					"text" : "chuck~ 2 plu3-max.ck",
 					"varname" : "chuck-0"
 				}
 
@@ -929,7 +916,7 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-18", 0 ],
+					"destination" : [ "obj-15", 0 ],
 					"source" : [ "obj-14", 0 ]
 				}
 
@@ -937,7 +924,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-63", 1 ],
-					"midpoints" : [ 176.100002765655518, 256.133335590362549, 238.700001180171967, 256.133335590362549 ],
+					"midpoints" : [ 194.700001180171967, 256.133335590362549, 238.700001180171967, 256.133335590362549 ],
 					"source" : [ "obj-15", 1 ]
 				}
 
@@ -985,13 +972,6 @@
 					"destination" : [ "obj-1", 0 ],
 					"midpoints" : [ 332.833342969417572, 266.99999874830246, 536.666660706202151, 266.99999874830246, 536.666660706202151, 145.66666179895401, 549.500016093254089, 145.66666179895401 ],
 					"source" : [ "obj-174", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-15", 0 ],
-					"source" : [ "obj-18", 0 ]
 				}
 
 			}
