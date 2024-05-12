@@ -15,7 +15,7 @@ cmake options:
 
 ```cmake
 -DC74_BUILD_FAT=ON
--DCMAKE_OSX_ARCHITECTURES=arm64;x86_64=ON
+-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64
 ```
 
 In fauck, use of `lipo`:
