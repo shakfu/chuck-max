@@ -180,7 +180,7 @@ function install_libmp3lame() {
 	if [ ! -f ${THIRDPARTY}/install/lib/libmp3lame.a ]; then
 		rm -rf ${THIRDPARTY}/libmp3lame && \
 		mkdir -p build/thirdparty && \
-		git clone --depth=1 https://github.com/Iunusov/libmp3lame-CMAKE.git ${THIRDPARTY}/libmp3lame && \
+		git clone --depth=1 https://github.com/shakfu/libmp3lame.git ${THIRDPARTY}/libmp3lame && \
 		cd ${THIRDPARTY}/libmp3lame && \
 		mkdir -p ${BUILD} && \
 		cd ${BUILD} && \
@@ -270,15 +270,15 @@ function install_libsamplerate() {
 
 
 setup
-# install_libmpg123
+install_libmpg123
 install_libmp3lame
-# install_libopus
-# install_libvorbis
-# install_libflac
-# install_libogg
-# install_faust
-# install_libfaust
-# install_libsndfile
-# install_rubberband
-# install_libsamplerate
+install_libopus
+install_libvorbis
+install_libflac
+install_libogg
+install_faust
+install_libfaust
+install_libsndfile
+install_rubberband
+install_libsamplerate
 
