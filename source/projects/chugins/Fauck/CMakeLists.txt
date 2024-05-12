@@ -113,6 +113,8 @@ target_link_libraries(${CHUGIN_NAME}
     ${THIRDPARTY}/install/lib/libvorbisfile.a
     ${THIRDPARTY}/install/lib/libopus.a
     ${THIRDPARTY}/install/lib/libmpg123.a
+    # ${THIRDPARTY}/install/lib/libout123.a
+    # ${THIRDPARTY}/install/lib/libsyn123.a
     ${THIRDPARTY}/install/lib/libmp3lame.a
     ${THIRDPARTY}/install/lib/libsndfile.a
     "-framework CoreFoundation"

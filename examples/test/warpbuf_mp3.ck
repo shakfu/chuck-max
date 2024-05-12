@@ -1,3 +1,5 @@
+global float xbpm;
+
 fun void heartbeat() {
     while(true) {
         <<<"heartbeat">>>;
@@ -7,21 +9,21 @@ fun void heartbeat() {
 spork~ heartbeat();
 
 WarpBuf s1 => dac;
-WarpBuf s2 => dac;
+
+
+// me.dir() + "assets/nylon2.flac" => s1.read; // flac works
+me.dir() + "../data/nylon2.mp3" => s1.read;
 
 s1.gain(.4);
-s2.gain(.4);
 
 float BPM;
 
 fun void setBPM(float newBPM) {
-    newBPM => BPM => s1.bpm => s2.bpm;
+    newBPM => BPM => s1.bpm;
 }
 
 setBPM(140.);
 
-me.dir() + "assets/sample.mp3" => s1.read;
-me.dir() + "assets/381353__waveplaysfx__drumloop-120-bpm-edm-drum-loop-022.wav" => s2.read;
 
 // optionally "pause" either buffer:
 // 0 => s1.play;
@@ -93,7 +95,7 @@ me.dir() + "assets/381353__waveplaysfx__drumloop-120-bpm-edm-drum-loop-022.wav" 
 // -3. => s1.playhead;
 
 while(true) {
-    setBPM(110+20.*Math.random2(0,4));
+    setBPM(xbpm+20.*Math.random2(0,4));
     (240./BPM)::second => now;
-    Std.rand2(-6, 0) => s2.transpose;
+    Std.rand2(-6, 0) => s1.transpose;
 }

@@ -3,8 +3,8 @@
 CWD=`pwd`
 THIRDPARTY=${CWD}/build/thirdparty
 PREFIX=${THIRDPARTY}/install
-FAUST_VERSION=2.69.3
-# FAUST_VERSION=2.72.14
+#FAUST_VERSION=2.69.3
+FAUST_VERSION=2.72.14
 
 function setup() {
 	mkdir -p ${PREFIX}/include && \
@@ -150,66 +150,45 @@ function install_libmpg123() {
 	if [ ! -f ${THIRDPARTY}/install/lib/libmpg123.a ]; then
 		rm -rf ${THIRDPARTY}/libmpg123 && \
 		mkdir -p build/thirdparty && \
-		git clone --depth=1 https://github.com/gypified/libmpg123.git ${THIRDPARTY}/libmpg123 && \
+		wget https://www.mpg123.de/download/mpg123-1.32.6.tar.bz2 && \
+		tar xvf mpg123-1.32.6.tar.bz2 && \
+		mv mpg123-1.32.6 ${THIRDPARTY}/libmpg123 && \
+		rm -f mpg123-1.32.6.tar.bz2 && \
 		cd ${THIRDPARTY}/libmpg123 && \
 		CFLAGS="-Os -s" ./configure \
-			--with-cpu=generic  \
-			--disable-id3v2 \
-			--disable-lfs-alias \
-			--disable-feature-report \
-			--with-seektable=0 \
-			--disable-16bit \
-			--disable-32bit \
-			--disable-8bit \
-			--disable-messages \
-			--disable-feeder \
-			--disable-ntom \
-			--disable-downsample \
-			--disable-icy \
+			--with-module-suffix=.so \
 			--enable-static \
+			--with-default-audio=coreaudio \
+			--with-cpu=aarch64 \
 			--prefix=${PREFIX} && \
 		make && \
 		make install 
 	fi
 }
 
-
+# patch a per homebrew build
 function install_libmp3lame() {
 	SRC=${THIRDPARTY}/libmp3lame
 	BUILD=${THIRDPARTY}/libmp3lame/build
 	if [ ! -f ${THIRDPARTY}/install/lib/libmp3lame.a ]; then
 		rm -rf ${THIRDPARTY}/libmp3lame && \
 		mkdir -p build/thirdparty && \
-		git clone --depth=1 https://github.com/shakfu/libmp3lame.git ${THIRDPARTY}/libmp3lame && \
+		wget https://downloads.sourceforge.net/project/lame/lame/3.100/lame-3.100.tar.gz && \
+		tar xvf lame-3.100.tar.gz && \
+		mv lame-3.100 ${THIRDPARTY}/libmp3lame && \
+		rm -f lame-3.100.tar.gz && \
+		patch -u ${THIRDPARTY}/libmp3lame/include/libmp3lame.sym \
+			  -i ${CWD}/source/scripts/patch/libmp3lame_sym.patch && \
 		cd ${THIRDPARTY}/libmp3lame && \
-		mkdir -p ${BUILD} && \
-		cd ${BUILD} && \
-		cmake .. \
-			-DCMAKE_INSTALL_PREFIX=${PREFIX} && \
-		cmake --build . --config Release && \
-		cp libmp3lame.a ${PREFIX}/lib
+		CFLAGS="-Os -s" ./configure \
+			--disable-dependency-tracking \
+			--disable-debug \
+			--enable-nasm \
+			--prefix=${PREFIX} && \
+		make && \
+		make install 
 	fi
 }
-
-
-# function install_libmp3lame() {
-# 	SRC=${THIRDPARTY}/libmpg123
-# 	BUILD=${THIRDPARTY}/libmp3lame/build
-# 	if [ ! -f ${THIRDPARTY}/install/lib/libmp3lame.a ]; then
-# 		rm -rf ${THIRDPARTY}/libmp3lame && \
-# 		mkdir -p build/thirdparty && \
-# 		git clone --depth=1 https://github.com/gypified/libmp3lame.git ${THIRDPARTY}/libmp3lame && \
-# 		cd ${THIRDPARTY}/libmp3lame && \
-# 		CFLAGS="-Os -s" ./configure \
-# 			--disable-dependency-tracking  \
-# 			--disable-frontend \
-# 			--enable-static \
-# 			--prefix=${PREFIX} && \
-# 		make && \
-# 		make install 
-# 	fi
-# }
-
 
 function install_libsndfile() {
 	SRC=${THIRDPARTY}/libsndfile
@@ -226,7 +205,7 @@ function install_libsndfile() {
 			-DCMAKE_CXX_FLAGS="-fPIC" \
 			-DBUILD_TESTING=OFF \
 			-DENABLE_EXTERNAL_LIBS=ON \
-			-DENABLE_MPEG=OFF \
+			-DENABLE_MPEG=ON \
 			-DBUILD_PROGRAMS=OFF \
 			-DBUILD_EXAMPLES=OFF \
 			-DENABLE_CPACK=OFF \
@@ -235,7 +214,6 @@ function install_libsndfile() {
 		cmake --build . --target install
 	fi
 }
-
 
 function install_rubberband() {
 	SRC=${THIRDPARTY}/rubberband
@@ -268,17 +246,16 @@ function install_libsamplerate() {
 	fi
 }
 
-
-setup
-install_libmpg123
-install_libmp3lame
-install_libopus
-install_libvorbis
-install_libflac
-install_libogg
-install_faust
-install_libfaust
-install_libsndfile
-install_rubberband
-install_libsamplerate
+setup && \
+	install_libmpg123 && \
+	install_libmp3lame && \
+	install_libopus && \
+	install_libvorbis && \
+	install_libflac && \
+	install_libogg && \
+	install_faust && \
+	install_libfaust && \
+	install_libsndfile && \
+	install_rubberband && \
+	install_libsamplerate
 

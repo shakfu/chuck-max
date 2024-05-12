@@ -1,0 +1,8 @@
+--- libmp3lame.sym	2024-05-12 21:30:41
++++ libmp3lame.new.sym	2024-05-12 21:24:46
+@@ -1,5 +1,4 @@
+ lame_init
+-lame_init_old
+ lame_set_num_samples
+ lame_get_num_samples
+ lame_set_in_samplerate

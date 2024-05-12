@@ -50,3 +50,5 @@ if [ ! -f ${THIRDPARTY}/darwin-universal/Release/lib/libfaustwithllvm.a ]; then
         ${THIRDPARTY}/darwin-arm64/Release/lib/libfaustwithllvm.a -create -output \
         ${THIRDPARTY}/darwin-universal/Release/lib/libfaustwithllvm.a
 fi
+
+

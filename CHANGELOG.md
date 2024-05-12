@@ -15,7 +15,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
-- Added mp3 support to libsndfile-using chugins {Fauck, Warpbuf}
+- Added test for .mp3 use by `WarpBuf`
+
+- Added mp3 support to libsndfile-using chugins {`Fauck`, `WarpBuf`}
 
 - Added alternative max-friendly style for `add` such that `<filename> arg1 arg2 .. argN` is interpretered as `<filename>:arg1:arg2:argN`
 
