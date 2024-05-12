@@ -8,9 +8,8 @@ CHUCK = $(THIRDPARTY)/install/bin/chuck
 
 
 
-.PHONY: all native universal full light fauck warpbuf dev clean reset setup test   \
-		test-fauck test-warpbuf install_deps install_deps_light install_fauck_deps \
-		install_warpbuf_deps
+.PHONY: all native universal full light dev clean reset setup test   \
+		test-fauck test-warpbuf install_deps install_deps_light 
 
 all: native
 
@@ -48,27 +47,6 @@ light: install_deps_light
 		cmake -GXcode .. -DENABLE_WARPBUF=ON -DENABLE_FAUCK=ON && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
-
-install_fauck_deps:
-	./source/scripts/install_fauck_deps.sh
-
-fauck: install_fauck_deps
-	@mkdir -p build && \
-		cd build && \
-		cmake -GXcode .. -DENABLE_FAUCK=ON && \
-		cmake --build . --config '$(CONFIG)' && \
-		cmake --install . --config '$(CONFIG)'
-
-install_warpbuf_deps:
-	./source/scripts/install_warpbuf_deps.sh
-
-warbuf: install_warpbuf_deps
-	@mkdir -p build && \
-		cd build && \
-		cmake -GXcode .. -DENABLE_WARPBUF=ON && \
-		cmake --build . --config '$(CONFIG)' && \
-		cmake --install . --config '$(CONFIG)'
-
 
 link:
 	@cd examples && rm -f chuck && ln -s ../build/$(CONFIG)/chuck .

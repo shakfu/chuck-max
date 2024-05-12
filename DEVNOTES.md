@@ -1,5 +1,72 @@
 # Dev Notes
 
+## callbacks / Python callables
+
+@godlygeek on python discord #c-extensions sub discord:
+
+> there aren't closures in C, but there are in C++ . In C, the typical setup is that every library function that accepts a callback (pointer to some function) also accepts a user data object (void *user_data). The library stores both pointers, and when it calls the callback it passes the user_data pointer to it as well
+> and you, as the user of that library, would pass your Python callable as the user data, and a C function as the callback. The library would call the C function and pass the user data pointer as one of its arguments. The C function would cast the user data argument back to PyObject* and then call using PyObject_CallObject or some such 
+
+
+
+## Build Universal Binaries again
+
+cmake options:
+
+```cmake
+-DC74_BUILD_FAT=ON
+-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64=ON
+```
+
+In fauck, use of `lipo`:
+
+```bash
+# copy arm64 into universal just to use the headers
+cp -r darwin-arm64 darwin-universal
+
+# combine the static libfaust.a from x64 and arm64 into a universal library.
+lipo darwin-x64/Release/lib/libfaust.a darwin-arm64/Release/lib/libfaust.a -create -output darwin-universal/Release/lib/libfaust.a
+```
+and
+
+```bash
+#!/bin/sh
+
+VERSION=2.72.14
+
+if [ "$(uname)" = "Darwin" ]; then
+    echo "You are running macOS"
+    if [ ! -f Faust-$VERSION-arm64.dmg ]; then
+        curl -L https://github.com/grame-cncm/faust/releases/download/$VERSION/Faust-$VERSION-arm64.dmg -o Faust-$VERSION-arm64.dmg
+        hdiutil attach Faust-$VERSION-arm64.dmg
+        mkdir -p "darwin-arm64/Release"
+        cp -R /Volumes/Faust-$VERSION/Faust-$VERSION/* darwin-arm64/Release/
+        hdiutil detach /Volumes/Faust-$VERSION/
+    fi
+    
+    if [ ! -f Faust-$VERSION-x64.dmg ]; then
+        curl -L https://github.com/grame-cncm/faust/releases/download/$VERSION/Faust-$VERSION-x64.dmg -o Faust-$VERSION-x64.dmg
+        hdiutil attach Faust-$VERSION-x64.dmg
+        mkdir -p "darwin-x64/Release"
+        cp -R /Volumes/Faust-$VERSION/Faust-$VERSION/* darwin-x64/Release/
+        hdiutil detach /Volumes/Faust-$VERSION/
+    fi
+elif [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
+    echo "You are running Linux"
+    if [ ! -f libfaust-ubuntu-x86_64.zip ]; then
+        curl -L https://github.com/grame-cncm/faust/releases/download/$VERSION/libfaust-ubuntu-x86_64.zip -o libfaust-ubuntu-x86_64.zip
+        mkdir -p "ubuntu-x86_64/Release"
+        unzip libfaust-ubuntu-x86_64.zip -d ubuntu-x86_64/Release
+    fi
+elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ] || [ "$(expr substr $(uname -s) 1 10)" = "MINGW64_NT" ]; then
+    echo "You are running Windows. You should run \"call download_libfaust.bat\"" >&2
+    exit 1
+else
+    echo "Unknown operating system" >&2
+    exit 1
+fi
+```
+
 
 
 ## Alternative to std::system
