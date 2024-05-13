@@ -73,7 +73,8 @@ package:
 		cp -f CHANGELOG.md $(DIST)/CHANGELOG.md && \
 		cp -f README.md $(DIST)/README.md && \
 		find $(DIST) -name ".DS_Store" -delete && \
-		zip -T -9 -r $(DIST).zip  $(DIST) && \
+		cd build/dist && \
+		zip -T -9 -r chuck-max.zip  chuck-max && \
 		echo "DONE"
 
 

@@ -47,9 +47,11 @@ jobs:
       run: brew install bison flex
 
     - name: install faust + warpbuf (libsndfile) dependencies
+      if: contains(fromJSON('["brew", "full", "light"]'), github.event.inputs.variant)
       run: brew install autoconf autogen automake flac libogg libtool libvorbis opus mpg123 lame
 
     - name: install warpbuf (rubberband) dependencies
+      if: contains(fromJSON('["brew", "full", "light"]'), github.event.inputs.variant)
       run: brew install rubberband libsamplerate
 
     - name: build external
