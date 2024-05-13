@@ -1,5 +1,19 @@
 name: ck-brew-builder
 
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        type: choice
+        description: Please select a build variant
+        default: brew
+        required: true
+        options: 
+          - brew
+          - full
+          - light
+          - base
+
 env:
   arch: darwin-x86
 
@@ -38,7 +52,7 @@ jobs:
       run: brew install rubberband libsamplerate
 
     - name: build external
-      run: make brew
+      run: make ${{ github.event.inputs.variant }}
 
     - uses: actions/upload-artifact@v4
       with:
