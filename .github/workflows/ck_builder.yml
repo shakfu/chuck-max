@@ -55,15 +55,11 @@ jobs:
     - name: build external
       run: make ${{ github.event.inputs.variant }}
 
+    - name: create package for distribution
+      run: make package
+
     - uses: actions/upload-artifact@v4
       with:
-        name: chuck-max-${{ env.arch }}-${{ env.SHA }}
-        path: |
-          examples
-          externals
-          help
-          patchers
-          CHANGELOG.md
-          LICENSE
-          package-info.json
-          README.md
+        name: ${{ github.event.repository.name }}-${{ github.event.inputs.variant }}-${{ env.arch }}-${{ env.SHA }}
+        path: build/dist/${{ github.event.repository.name }}.zip
+

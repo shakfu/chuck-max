@@ -5,6 +5,7 @@ CONFIG = Release
 THIRDPARTY = $(BUILD)/thirdparty
 LIB = $(THIRDPARTY)/install/lib
 CHUCK = $(THIRDPARTY)/install/bin/chuck
+DIST = $(BUILD)/dist/chuck-max
 
 
 .PHONY: all native universal full light dev clean reset setup test   \
@@ -59,6 +60,22 @@ light: install_deps_light
 		cmake -GXcode .. -DENABLE_WARPBUF=ON -DENABLE_FAUCK=ON && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
+
+package:
+	@rm -rf $(DIST) && \
+		mkdir -p $(DIST) && \
+		cp -af examples $(DIST)/examples && \
+		cp -af externals $(DIST)/externals && \
+		cp -rf help $(DIST)/help && \
+		cp -rf patchers $(DIST)/patchers && \
+		cp -f package-info.json $(DIST)/package-info.json && \
+		cp -f LICENSE $(DIST)/LICENSE && \
+		cp -f CHANGELOG.md $(DIST)/CHANGELOG.md && \
+		cp -f README.md $(DIST)/README.md && \
+		find $(DIST) -name ".DS_Store" -delete && \
+		zip -T -9 -r $(DIST).zip  $(DIST) && \
+		echo "DONE"
+
 
 link:
 	@cd examples && rm -f chuck && ln -s ../build/$(CONFIG)/chuck .
