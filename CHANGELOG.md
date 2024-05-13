@@ -35,7 +35,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Added `eval` method for adding code from max messages and the textedit widget (see `test_eval.maxpat`).
 
-
 ## [0.1.1]
 
 see [prerelease 0.1.1](https://github.com/shakfu/chuck-max/releases/tag/0.1.1)
