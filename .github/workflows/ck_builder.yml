@@ -1,4 +1,4 @@
-name: ck-brew-builder
+name: ck-builder
 
 on:
   workflow_dispatch:
