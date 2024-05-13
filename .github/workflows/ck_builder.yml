@@ -1,4 +1,4 @@
-name: ck-builder
+name: ck-brew-builder
 
 on:
   workflow_dispatch:
@@ -6,19 +6,21 @@ on:
       variant:
         type: choice
         description: Please select a build variant
-        default: full
+        default: brew
         required: true
         options: 
+          - brew
+          - native
+          - universal
           - full
           - light
-          - base
+
 env:
   arch: darwin-x86
 
 jobs:
   build:
     runs-on: macos-latest
-    # runs-on: macos-11 # requires changes
 
     steps:
 
@@ -32,20 +34,23 @@ jobs:
       with:
         length: 7
 
-    # - name: Cache downloads
-    #   id: cache-downloads
-    #   uses: actions/cache@v4
-    #   env:
-    #     cache-name: ck-cache-1
-    #   with:
-    #     path: build/downloads
-    #     key: $${{ env.cache-name }}-${{ hashFiles('source/scripts/install_deps.sh') }}
+    - name: Cache downloads
+      id: cache-downloads
+      uses: actions/cache@v4
+      env:
+        cache-name: ck-cache-1
+      with:
+        path: build/thirdparty/downloads
+        key: $${{ env.cache-name }}-${{ hashFiles('source/scripts/dep/install_libfaust.sh') }}
 
-    - name: install build dependencies
+    - name: install chuck dependencies
       run: brew install bison flex
 
-    - name: install libsndfile dependencies
-      run: brew install autoconf autogen automake flac libogg libtool libvorbis opus mpg123
+    - name: install faust + warpbuf (libsndfile) dependencies
+      run: brew install autoconf autogen automake flac libogg libtool libvorbis opus mpg123 lame
+
+    - name: install warpbuf (rubberband) dependencies
+      run: brew install rubberband libsamplerate
 
     - name: build external
       run: make ${{ github.event.inputs.variant }}
@@ -62,4 +67,3 @@ jobs:
           LICENSE
           package-info.json
           README.md
-
