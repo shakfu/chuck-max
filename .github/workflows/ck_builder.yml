@@ -1,4 +1,4 @@
-name: pyjs-builder
+name: ck-builder
 
 on:
   workflow_dispatch:
