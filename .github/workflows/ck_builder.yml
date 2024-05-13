@@ -27,10 +27,10 @@ jobs:
         submodules: 'recursive'
         fetch-depth: '0'
 
-    # - uses: benjlevesque/short-sha@v3.0
-    #   id: short-sha
-    #   with:
-    #     length: 7
+    - uses: benjlevesque/short-sha@v3.0
+      id: short-sha
+      with:
+        length: 7
 
     # - name: Cache downloads
     #   id: cache-downloads
@@ -41,11 +41,11 @@ jobs:
     #     path: build/downloads
     #     key: $${{ env.cache-name }}-${{ hashFiles('source/scripts/install_deps.sh') }}
 
-    - name: install dependencies
-      run: brew update && brew install bison flex
+    - name: install build dependencies
+      run: brew install bison flex
 
     - name: install libsndfile dependencies
-      run: brew install autoconf autogen automake flac libogg libtool libvorbis opus mpg123 pkg-config
+      run: brew install autoconf autogen automake flac libogg libtool libvorbis opus mpg123
 
     - name: build external
       run: make ${{ github.event.inputs.variant }}
@@ -53,6 +53,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: chuck-max-${{ env.arch }}-${{ env.SHA }}
+        path: |
           examples
           externals
           help
