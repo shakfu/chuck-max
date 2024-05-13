@@ -7,9 +7,8 @@ LIB = $(THIRDPARTY)/install/lib
 CHUCK = $(THIRDPARTY)/install/bin/chuck
 
 
-
 .PHONY: all native universal full light dev clean reset setup test   \
-		test-fauck test-warpbuf install_deps install_deps_light 
+		test-fauck test-warpbuf install_deps install_deps_light brew
 
 all: native
 
@@ -33,6 +32,19 @@ install_deps:
 
 install_deps_light:
 	./source/scripts/install_deps_light.sh
+
+
+install_faust:
+	./source/scripts/dep/install_faust.sh
+	./source/scripts/dep/install_libfaust.sh
+
+brew: install_faust
+	@mkdir -p build && \
+		cd build && \
+		cmake -GXcode .. -DENABLE_HOMEBREW=ON -DENABLE_WARPBUF=ON -DENABLE_FAUCK=ON && \
+		cmake --build . --config '$(CONFIG)' && \
+		cmake --install . --config '$(CONFIG)'
+
 
 full: install_deps
 	@mkdir -p build && \
@@ -68,7 +80,10 @@ clean:
 		externals
 
 reset:
-	@rm -rf build externals
+	@rm -rf externals
+	@rm -rf build/CMakeCache.txt build/CMakeFiles build/CMakeScripts build/Release build/build build/sine.ck
+	@rm -rf build/chuck-max.xcodeproj build/cmake_install.cmake build/install_manifest.txt build/source build/build
+	@rm -rf build/thirdparty/faust build/thirdparty/install build/thirdparty/libfaust
 
 setup:
 	@git submodule init

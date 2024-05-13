@@ -69,7 +69,8 @@ target_compile_definitions(${CHUGIN_NAME}
 target_include_directories(${CHUGIN_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${THIRDPARTY}/install/include
+    ${local_prefix}/include
+    # ${THIRDPARTY}/install/include
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/portable_endian/include
     ${CK_SRC_PATH}
 )
@@ -82,24 +83,25 @@ target_link_options(${CHUGIN_NAME}
 
 target_link_directories(${CHUGIN_NAME}
     PUBLIC
-    ${THIRDPARTY}/install/lib
+    # ${THIRDPARTY}/install/lib
+    ${local_prefix}/lib
 )
 
 target_link_libraries(${CHUGIN_NAME}
     PUBLIC
-    ${THIRDPARTY}/install/lib/librubberband.a
-    ${THIRDPARTY}/install/lib/libFLAC.a
-    ${THIRDPARTY}/install/lib/libogg.a
-    ${THIRDPARTY}/install/lib/libvorbis.a
-    ${THIRDPARTY}/install/lib/libvorbisenc.a
-    ${THIRDPARTY}/install/lib/libvorbisfile.a
-    ${THIRDPARTY}/install/lib/libopus.a
-    ${THIRDPARTY}/install/lib/libmpg123.a
-    # ${THIRDPARTY}/install/lib/libout123.a
-    # ${THIRDPARTY}/install/lib/libsyn123.a
-    ${THIRDPARTY}/install/lib/libmp3lame.a
-    ${THIRDPARTY}/install/lib/libsndfile.a
-    ${THIRDPARTY}/install/lib/libsamplerate.a
+    ${local_prefix}/lib/librubberband.a
+    ${local_prefix}/lib/libFLAC.a
+    ${local_prefix}/lib/libogg.a
+    ${local_prefix}/lib/libvorbis.a
+    ${local_prefix}/lib/libvorbisenc.a
+    ${local_prefix}/lib/libvorbisfile.a
+    ${local_prefix}/lib/libopus.a
+    ${local_prefix}/lib/libmpg123.a
+    # ${local_prefix}/lib/libout123.a
+    # ${local_prefix}/lib/libsyn123.a
+    ${local_prefix}/lib/libmp3lame.a
+    ${local_prefix}/lib/libsndfile.a
+    ${local_prefix}/lib/libsamplerate.a
     "-framework CoreFoundation"
     "-framework CoreMIDI"
     "-framework CoreAudio"

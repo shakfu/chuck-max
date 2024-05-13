@@ -24,26 +24,6 @@ set(PROJECT_SRC
     ${CK_SOURCE}
 )
 
-
-# add_custom_target(fauck_deps
-#     BYPRODUCTS
-#         ${THIRDPARTY}/libfaust/lib/libfaustwithllvm.a
-#         ${THIRDPARTY}/install/lib/libFLAC.a
-#         ${THIRDPARTY}/install/lib/libogg.a
-#         ${THIRDPARTY}/install/lib/libvorbis.a
-#         ${THIRDPARTY}/install/lib/libvorbisenc.a
-#         ${THIRDPARTY}/install/lib/libvorbisfile.a
-#         ${THIRDPARTY}/install/lib/libopus.a
-#         ${THIRDPARTY}/install/lib/libmpg123.a
-#         ${THIRDPARTY}/install/lib/libsndfile.a
-#         ${FAUST_DIR}/architecture
-#         ${FAUST_DIR}/compiler
-#         ${FAUST_DIR}/compiler/utils
-#     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-#     COMMAND ${CMAKE_SOURCE_DIR}/source/scripts/install_fauck_deps.sh
-# )
-
-
 add_library(${CHUGIN_NAME}
     MODULE
     ${PROJECT_SRC}
@@ -82,7 +62,8 @@ target_compile_definitions(${CHUGIN_NAME}
 target_include_directories(${CHUGIN_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${THIRDPARTY}/install/include
+    ${local_prefix}/include
+    # ${THIRDPARTY}/install/include
     ${CK_SRC_PATH}
     ${FAUST_DIR}/architecture
     ${FAUST_DIR}/compiler
@@ -100,23 +81,24 @@ target_link_options(${CHUGIN_NAME}
 target_link_directories(${CHUGIN_NAME}
     PUBLIC
     ${LIBFAUST_DIR}/lib
-    ${THIRDPARTY}/install/lib
+    # ${THIRDPARTY}/install/lib
+    ${local_prefix}/lib
 )
 
 target_link_libraries(${CHUGIN_NAME}
     PUBLIC
     ${LIBFAUST_DIR}/lib/libfaustwithllvm.a
-    ${THIRDPARTY}/install/lib/libFLAC.a
-    ${THIRDPARTY}/install/lib/libogg.a
-    ${THIRDPARTY}/install/lib/libvorbis.a
-    ${THIRDPARTY}/install/lib/libvorbisenc.a
-    ${THIRDPARTY}/install/lib/libvorbisfile.a
-    ${THIRDPARTY}/install/lib/libopus.a
-    ${THIRDPARTY}/install/lib/libmpg123.a
-    # ${THIRDPARTY}/install/lib/libout123.a
-    # ${THIRDPARTY}/install/lib/libsyn123.a
-    ${THIRDPARTY}/install/lib/libmp3lame.a
-    ${THIRDPARTY}/install/lib/libsndfile.a
+    ${local_prefix}/lib/libFLAC.a
+    ${local_prefix}/lib/libogg.a
+    ${local_prefix}/lib/libvorbis.a
+    ${local_prefix}/lib/libvorbisenc.a
+    ${local_prefix}/lib/libvorbisfile.a
+    ${local_prefix}/lib/libopus.a
+    ${local_prefix}/lib/libmpg123.a
+    # ${local_prefix}/lib/libout123.a
+    # ${local_prefix}/lib/libsyn123.a
+    ${local_prefix}/lib/libmp3lame.a
+    ${local_prefix}/lib/libsndfile.a
     "-framework CoreFoundation"
     "-framework CoreMIDI"
     "-framework CoreAudio"

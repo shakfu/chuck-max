@@ -6,6 +6,7 @@ project(${THIS_FOLDER_NAME})
 option(C74_BUILD_FAT "Build Universal Externals")
 option(ENABLE_WARPBUF "Build WarpBuf chugin")
 option(ENABLE_FAUCK "Build Fauck chugin")
+option(ENABLE_HOMEBREW "Build using Homebrew dependencies")
 
 # use ccache if available
 find_program(CCACHE_PROGRAM ccache)
@@ -41,10 +42,13 @@ if(CMAKE_HOST_APPLE) # i.e if is_macos check if homebrew is used aand if so get 
         OUTPUT_VARIABLE homebrew_prefix
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    if(DEFINED homebrew_prefix)
+    if(DEFINED homebrew_prefix AND ENABLE_HOMEBREW)
         set(local_prefix ${homebrew_prefix})
+    else()
+        set(local_prefix ${CMAKE_SOURCE_DIR}/build/thirdparty/install)
     endif()
 endif()
+message(STATUS "local_prefix: ${local_prefix}")
 
 MACRO(SUBDIRLIST result curdir)
   FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
