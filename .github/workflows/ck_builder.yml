@@ -52,8 +52,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: chuck-max-${{ env.arch }}-${{ GITHUB_SHA }}
-        path: |
+        name: chuck-max-${{ env.arch }}-${{ env.SHA }}
           examples
           externals
           help
