@@ -42,15 +42,48 @@ jobs:
         path: build/downloads
         key: $${{ env.cache-name }}-${{ hashFiles('source/scripts/install_deps.sh') }}
 
-    - name: install build dependencies
+    - name: install dependencies
       run: brew update && brew install bison flex
+
+    - name: install faust
+      run: source/scripts/dep/install_faust.sh
+
+    - name: install libfaust
+      run: source/scripts/dep/install_libfaust.sh
+
+    - name: install libflac
+      run: source/scripts/dep/install_libflac.sh
+
+    - name: install libogg
+      run: source/scripts/dep/install_libogg.sh
+
+    - name: install libopus
+      run: source/scripts/dep/install_libopus.sh
+
+    - name: install libsamplerate
+      run: source/scripts/dep/install_libsamplerate.sh
+
+    - name: install libsndfile
+      run: source/scripts/dep/install_libsndfile.sh
+
+    - name: install libvorbis
+      run: source/scripts/dep/install_libvorbis.sh
+
+    - name: install rubberband
+      run: source/scripts/dep/install_rubberband.sh
+
+    - name: install libmp3lame
+      run: source/scripts/dep/install_libmp3lame.sh
+
+    - name: install libmpg123
+      run: source/scripts/dep/install_libmpg123.sh
 
     - name: Build externals
       run: make ${{ github.event.inputs.variant }}
 
     - uses: actions/upload-artifact@v4
       with:
-        name: chuck-max
+        name: chuck-max-${{ github.event.inputs.variant }}
         path: |
           examples
           externals
