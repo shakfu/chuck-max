@@ -6,7 +6,7 @@
 
 - [ ] Add github workflow
 
-- [ ] Fix universal builds on macOS
+- [x] Fix universal builds on macOS
 
 - [ ] Add Windows Support
 

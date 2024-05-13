@@ -1,0 +1,63 @@
+name: pyjs-builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        type: choice
+        description: Please select a build variant
+        default: full
+        required: true
+        options: 
+          - full
+          - light
+          - base
+
+env:
+  arch: darwin-x86
+
+jobs:
+  build:
+    runs-on: macos-latest
+    # runs-on: macos-11 # requires changes
+
+    steps:
+
+    - uses: actions/checkout@v3
+      with:
+        submodules: 'recursive'
+        fetch-depth: '0'
+
+    - uses: benjlevesque/short-sha@v1.2
+      id: short-sha
+      with:
+        length: 7
+
+    - name: Cache downloads
+      id: cache-downloads
+      uses: actions/cache@v3
+      env:
+        cache-name: ck-cache-1
+      with:
+        path: build/downloads
+        key: $${{ env.cache-name }}-${{ hashFiles('source/scripts/install_deps.sh') }}
+
+    - name: install build dependencies
+      run: brew update && brew install bison flex
+
+    - name: Build externals
+      run: make ${{ github.event.inputs.variant }}
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: chuck-max
+        path: |
+          examples
+          externals
+          help
+          patchers
+          CHANGELOG.md
+          LICENSE
+          package-info.json
+          README.md
+
