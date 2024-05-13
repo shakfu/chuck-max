@@ -45,6 +45,9 @@ jobs:
     - name: install dependencies
       run: brew update && brew install bison flex
 
+    - name: install libsndfile dependencies
+      run: brew install autoconf autogen automake flac libogg libtool libvorbis opus mpg123 pkg-config
+
     - name: install faust
       run: source/scripts/dep/install_faust.sh
 
@@ -63,9 +66,6 @@ jobs:
     - name: install libsamplerate
       run: source/scripts/dep/install_libsamplerate.sh
 
-    - name: install libsndfile
-      run: source/scripts/dep/install_libsndfile.sh
-
     - name: install libvorbis
       run: source/scripts/dep/install_libvorbis.sh
 
@@ -80,6 +80,9 @@ jobs:
 
     - name: Build externals
       run: make ${{ github.event.inputs.variant }}
+
+    - name: install libsndfile
+      run: source/scripts/dep/install_libsndfile.sh
 
     - uses: actions/upload-artifact@v4
       with:
