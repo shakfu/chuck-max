@@ -19,14 +19,7 @@ It currently has one external (`chuck~`) with the following features and limitat
 
 This project is currently built on the chuck 1.5.2.5-dev (chai) engine.
 
-
-## Quickstart
-
-Binary pre-releases and releases of the `chuck-max` package can be downloaded from the project's [Releases](https://github.com/shakfu/chuck-max/releases) section.
-
-These are codesigned and notarized macOS `arm64`, `x86_64`, and `universal` binary builds. Downloading one of the releases installing the `chuck-max` package into the `$HOME/Documents/Max 8/Packages` folder and checking out the help patcher and examples is a quick way to get started.
-
-CAVEAT: Please note that the current `0.1.1` pre-release is just for demo purposes and does contain a couple of bugs of note: (1) An unresolved obscure bug which you are unlikely to encounter unless you look for it ([detailed below](#known-unresolved-bugs)) and (2) a now fixed faust bug which causes Max to crash at the end of the session.
+Quickstart: Binary pre-releases and releases of the `chuck-max` package can be downloaded from the project's [Releases](https://github.com/shakfu/chuck-max/releases) section.
 
 ## Overview
 

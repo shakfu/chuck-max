@@ -10,7 +10,8 @@ on:
         required: true
         options: 
           - macos-latest
-          - macos-14-arm64
+          - macos-13
+          - macos-12
           # - windows-latest
 
 jobs:

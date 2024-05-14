@@ -1,5 +1,5 @@
 name: ck-builder
-run-name: chuck-max-${{ inputs.variant }}-${{ inputs.platform }}
+run-name: cm-${{ inputs.variant }}-${{ inputs.platform }}
 
 on:
   workflow_dispatch:
@@ -22,6 +22,8 @@ on:
         required: true
         options: 
           - macos-latest
+          - macos-13
+          - macos-12
           # - windows-latest
 
 # env:
@@ -71,6 +73,6 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.repository.name }}-${{ inputs.variant }}-${{ runner.os }}-${{ env.SHA }}
+        name: ${{ github.event.repository.name }}-${{ inputs.variant }}-${{ runner.os }}-${{ runner.arch }}-${{ env.SHA }}
         path: build/dist/${{ github.event.repository.name }}.zip
 
