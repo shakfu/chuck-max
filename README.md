@@ -19,7 +19,7 @@ It currently has one external (`chuck~`) with the following features and limitat
 
 This project is currently built on the chuck 1.5.2.5-dev (chai) engine.
 
-Quickstart: Binary pre-releases and releases of the `chuck-max` package can be downloaded from the project's [Releases](https://github.com/shakfu/chuck-max/releases) section.
+*Quickstart*: packaged binary pre-releases and releases of the `chuck-max` package can be downloaded from the project's [Releases](https://github.com/shakfu/chuck-max/releases) section.
 
 ## Overview
 
@@ -206,7 +206,7 @@ The advanced system consists of the base system + two advanced chugins, `Faust.c
 
 1. The [Fauck](https://github.com/ccrma/fauck) chugin contains the full llvm-based [faust](https://faust.grame.fr) engine and dsp platform which makes it very powerful and also quite large compared to other chugins (at around 45 MB stripped down). It requires at least 2 output channels to work properly. It also uses the [libsndfile](https://github.com/libsndfile/libsndfile) library.
 
-2. The [WarpBuf](https://github.com/ccrma/chugins/tree/main/WarpBuf) chugin makes it possible to time-stretch and independently transpose the pitch of an audio file. It uses the [rubberband](https://github.com/breakfastquay/rubberband) library, [libsndfile](https://github.com/libsndfile/libsndfile), and [libssamplerate](https://github.com/libsndfile/libsamplerate).
+2. The [WarpBuf](https://github.com/ccrma/chugins/tree/main/WarpBuf) chugin makes it possible to time-stretch and independently transpose the pitch of an audio file. It uses the [rubberband](https://github.com/breakfastquay/rubberband) library, [libsndfile](https://github.com/libsndfile/libsndfile), and [libsamplerate](https://github.com/libsndfile/libsamplerate).
 
 To build the two *advanced* chugins, you will some additional dependencies which can also be installed via `Homebrew` as follows:
 

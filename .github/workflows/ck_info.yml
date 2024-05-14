@@ -1,5 +1,5 @@
 name: ck-info
-run-name: info-${{ runner.arch }}-${{ inputs.platform }}
+run-name: info-${{ inputs.platform }}
 
 
 on:
