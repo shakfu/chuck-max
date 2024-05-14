@@ -15,6 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Added a github workflow to automate buildinf the external (no codesigning/notarizing yet)
+
+- Added improved and simplified build guid in README
+
+- Added improved build system using mostly homebrew via `make brew`
+
 - Added test for .mp3 use by `WarpBuf`
 
 - Added mp3 support to libsndfile-using chugins {`Fauck`, `WarpBuf`}

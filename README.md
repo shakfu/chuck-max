@@ -1,6 +1,6 @@
 # chuck-max
 
-A project to minimally embed the [chuck](https://chuck.stanford.edu) engine in a Max/MSP external.
+A [project](https://github.com/shakfu/chuck-ma) to minimally embed the [chuck](https://chuck.stanford.edu) engine in a Max/MSP external.
 
 It currently has one external (`chuck~`) with the following features and limitations:
 
@@ -18,6 +18,15 @@ It currently has one external (`chuck~`) with the following features and limitat
 - Note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
 
 This project is currently built on the chuck 1.5.2.5-dev (chai) engine.
+
+
+## Quickstart
+
+Binary pre-releases and releases of the `chuck-max` package can be downloaded from the project's [Releases](https://github.com/shakfu/chuck-max/releases) section.
+
+These are codesigned and notarized macOS `arm64`, `x86_64`, and `universal` binary builds. Downloading one of the releases installing the `chuck-max` package into the `$HOME/Documents/Max 8/Packages` folder and checking out the help patcher and examples is quick qay to get started.
+
+CAVEAT: Please note that the current `0.1.1` pre-release is just for demo purposes and does contain a couple of bugs of note: (1) An unresolved obscure bug which you are unlikely to encounter unless you look for it ([detailed below](known-unresolved-bugs)) and (2) a now fixed faust bug which causes Max to crash at the end of the session.
 
 ## Overview
 
@@ -155,11 +164,15 @@ void cb_get_int(const char* name, t_CKINT val)
 
 It's not elegant, but it works until something better comes along.
 
-## Requirements
+## Build Requirements and Options
 
-Note that this external is currently only developed and tested on macOS, although a Windows version is on the TODO list.
+Please note that this external is currently only developed and tested on macOS, although a Windows version is on the TODO list (any help on tihs would be appreciated).
 
-It requires the following to be available on your system:
+### A. The Base System
+
+The base `chuck-max` system consists of a Max package with the `chuck~` external, the base [CCRMA chugins](https://github.com/ccrma/chugins) and extensive examples, tests and patchers.
+
+This requires the following to be available on your machine:
 
 1. Xcode from the App store or Xcode Command Line Tools via `xcode-select –install`
 
@@ -172,14 +185,8 @@ It requires the following to be available on your system:
 The last three can be installed using [Homebrew](https://brew.sh) as follows:
 
 ```bash
-
 brew install cmake bison flex
-
 ```
-
-## Compilation
-
-Currently `chuck~` can only be built on macOS. Of course, any help to progrss a windows version variant would be welcome!
 
 The buildsystem consists of a minimal Makefile frontend with CMake driving the build on the backend.
 
@@ -191,46 +198,74 @@ cd chuck-max
 make setup
 ```
 
-Note: `make setup` does two things: (1) retrieve `max-sdk-base` via a git submodule and makes the package and its contents available to be used by Max by creating a symlink of the `chuck-max` folder in `$HOME/Documents/Max 8/Packages`.
+Note that `make setup` does two things: (1) retrieve `max-sdk-base` via a git submodule and makes the package and its contents available to be used by Max by creating a symlink of the `chuck-max` folder in `$HOME/Documents/Max 8/Packages`.
 
-From this point you have three options:
+Now it should be possible to buid the base system with the following two build options:
 
-1. `make`: Base system: (external + base ccrma chugins excluding `Fauck` or `Faust` and `WarpBuf`)*
+- `make` or `make native`: builds the external using your machine's native architecture which is `arm64` for Apple Silicon Macs and `x86_64` for Intel Macs. This is the default build option.
 
-2. `make full`: Base system + `Faust` and `Warpbuf` chugins with full `libsndfile` format support
+- `make universal`: build the external using as a `universal` binary making it compatible with both Mac architectural variants. This is useful if you want share the external with others in custom Max package or standalone.
 
-3. `make light`: Base system + `Faust` and `Warpbuf` chugins with `libsndfile` support only `.wav` files.
 
-[`*`] The [Fauck](https://github.com/ccrma/fauck) or `Faust` chugin will be referred to by either of these names.
+### B. The Advanced System
 
-Also note that by default `make` builds the external according to the *native* architecture of the mac it is compiled on. You can build the base system with universal support by typing `make universal` instead.
+The advanced system consists of the base system + two advanced chugins, `Faust.chug` and `WarpBuf.chug`:
 
-If there's a need to update and re-build the external just type the following in the root of the project.
+1. The [Fauck](https://github.com/ccrma/fauck) chugin contains the full llvm-based [faust](https://faust.grame.fr) engine and dsp platform which makes it very powerful and also quite large compared to other chugins (at around 45 MB stripped down). It requires at least 2 output channels to work properly. It also uses the [libsndfile](https://github.com/libsndfile/libsndfile) library.
+
+2. The [WarpBuf](https://github.com/ccrma/chugins/tree/main/WarpBuf) chugin makes it possible to time-stretch and independently transpose the pitch of an audio file. It uses the [rubberband](https://github.com/breakfastquay/rubberband) library, [libsndfile](https://github.com/libsndfile/libsndfile), and [libssamplerate](https://github.com/libsndfile/libsamplerate).
+
+To build the two *advanced* chugins, you will some additional dependencies which can also be installed via `Homebrew` as follows:
 
 ```bash
-git pull
-make
+brew install autoconf autogen automake flac libogg libtool libvorbis opus mpg123 lame rubberband libsamplerate
 ```
 
-### Install the Warpbuf Chugin (Optional)
+After these are installed, it will be possible to build using the following options:
 
-With `WarpBuf` you can time-stretch and independently transpose the pitch of an audio file.
+- `make brew`: build the external using the previoulsy installed homebrew dependencies, as well as downloaded `faust` headers and a downloaded pre-compiled `libfaust` (`libfaustwithllvm`) library. This is the newer, faster, recommended way of getting a full chuck-max system up and running.
 
-This chugin can be built by `make full` instead of `make` in the build process above or if you are just using cmake then set option `-DENABLE_WARPBUF=ON`
+- `make full`: build the external by building all of the dependencies except for `libfaust` from source. This is the previous way of building a base + advanced chugins system. It is only for advanced builders who want maximum flexibility in their builds.
 
-### Install the Fauck Chugin (Optional)
+- `make light`: Same as `make full` except for `libsndfile` multi-file format support, which means that (.mp3, flac, vorbis, opus, ogg) formats are not supported in this build. Only `.wav` files can be used.
 
-The [fauck chugin](https://github.com/ccrma/fauck) contains the full llvm-based [faust](https://faust.grame.fr) engine and dsp platform which makes it very powerful and also quite large compared to other chugins (at around 45 MB stripped down). It requires at least 2 output channels to work properly.
-
-This chugin can be built by `make full` and `make light` options instead of `make` in the build process above or if you are just using cmake then set option -DENABLE_FAUCK=ON
-
-A future aim is to include a stripped down version of this fauck chugin which only supports .wav files and and only contains the faust standard library in an official `chuck-max` package.
-
-CAVEAT: the Faust chugin has unresolved cleanup bug which may cause Max to crash after all patch windows are closed and Max is exited.
 
 ## Usage
 
 Open the help file `help/chuck~.maxhelp` for a demo. Check out the `patchers` folders for further examples of use.
+
+The `chuck-max` package consists of the following folder:
+
+```text
+chuck-max
+├── examples
+│    ├── ai
+│    ├── analysis
+│    ├── ...
+│    ├── **chugins**
+│    ├── ...
+│    ├── **fauck**
+│    ├── **faust**
+│    ├── ...
+│    ├── **max**
+│    ├── ...
+│    ├── **test**
+│    ├── ...
+│    └── warpbuf
+├── externals
+│    └── chuck~.mxo
+├── help
+└── patchers
+    ├── abstractions
+    ├── contrib
+    └── tests
+```
+
+Start with the `chuck~.maxhelp` file in the `help` folder for an overview of the external's features.
+
+The `examples` directory contains all chuck examples from the chuck repo, and some additional folders: `chugins` containing chugin binaries, `fauck`, containing `faust.chug` examples, `faust`, containing the faust stdlib, `max` chuck files which are used by the max patchers, and `test`, chuck files used by max patcher test files.
+
+In the `patchers` section, there are quite a few patchers demonstrating one feature or other in the `tests` folder, and the `contrib` folder contains excellents advanced examples of uses by `chuck-max` contributors.
 
 ## Known Unresolved Bugs
 
