@@ -24,6 +24,14 @@ jobs:
 
     steps:
 
+    - name: set the architecture pf the build
+      if: contains(fromJSON('["brew", "full", "light"]'), github.event.inputs.variant)
+      run: echo "arch=darwin-x86" >> "$GITHUB_ENV"
+
+    - name: set the architecture pf the build
+      if: contains(fromJSON('["universal"]'), github.event.inputs.variant)
+      run: echo "arch=universal" >> "$GITHUB_ENV"
+
     - uses: actions/checkout@v4
       with:
         submodules: 'recursive'
@@ -62,6 +70,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.repository.name }}-${{ github.event.inputs.variant }}-${{ env.arch }}-${{ env.SHA }}
+        # name: ${{ github.event.repository.name }}-${{ github.event.inputs.variant }}-${{ env.arch }}-${{ env.SHA }}
+        name: ${{ github.event.repository.name }}-${{ github.event.inputs.variant }}-$arch-${{ env.SHA }}
         path: build/dist/${{ github.event.repository.name }}.zip
 
