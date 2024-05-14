@@ -1,0 +1,26 @@
+name: ck-info
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        type: choice
+        description: Please select a supported platform
+        default: macos-latest
+        required: true
+        options: 
+          - macos-latest
+          - macos-14-arm64
+          # - windows-latest
+
+jobs:
+  build:
+    runs-on: ${{ inputs.platform }}
+
+    steps:
+
+    - name: runner information
+      run: |
+        echo "arch: `uname -m`"
+        echo "runner.os: ${{ runner.os }}"
+        echo "runneer.arch: ${{ runner.arch }}"
