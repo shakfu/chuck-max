@@ -1,4 +1,5 @@
 name: ck-builder
+run-name: chuck-max-${{ inputs.variant }}-${{ inputs.platform }}
 
 on:
   workflow_dispatch:
@@ -14,23 +15,23 @@ on:
           - universal
           - full
           - light
+      platform:
+        type: choice
+        description: Please select a supported platform
+        default: macos-latest
+        required: true
+        options: 
+          - macos-latest
+          # - windows-latest
 
-env:
-  arch: darwin-x86
+# env:
+#   arch: darwin-x86
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ${{ inputs.platform }}
 
     steps:
-
-    - name: set the architecture pf the build
-      if: contains(fromJSON('["brew", "full", "light"]'), github.event.inputs.variant)
-      run: echo "arch=darwin-x86" >> "$GITHUB_ENV"
-
-    - name: set the architecture pf the build
-      if: contains(fromJSON('["universal"]'), github.event.inputs.variant)
-      run: echo "arch=universal" >> "$GITHUB_ENV"
 
     - uses: actions/checkout@v4
       with:
@@ -55,22 +56,21 @@ jobs:
       run: brew install bison flex
 
     - name: install faust + warpbuf (libsndfile) dependencies
-      if: contains(fromJSON('["brew", "full", "light"]'), github.event.inputs.variant)
+      if: contains(fromJSON('["brew", "full", "light"]'), inputs.variant)
       run: brew install autoconf autogen automake flac libogg libtool libvorbis opus mpg123 lame
 
     - name: install warpbuf (rubberband) dependencies
-      if: contains(fromJSON('["brew", "full", "light"]'), github.event.inputs.variant)
+      if: contains(fromJSON('["brew", "full", "light"]'), inputs.variant)
       run: brew install rubberband libsamplerate
 
     - name: build external
-      run: make ${{ github.event.inputs.variant }}
+      run: make ${{ inputs.variant }}
 
     - name: create package for distribution
       run: make package
 
     - uses: actions/upload-artifact@v4
       with:
-        # name: ${{ github.event.repository.name }}-${{ github.event.inputs.variant }}-${{ env.arch }}-${{ env.SHA }}
-        name: ${{ github.event.repository.name }}-${{ github.event.inputs.variant }}-$arch-${{ env.SHA }}
+        name: ${{ github.event.repository.name }}-${{ inputs.variant }}-${{ runner.os }}-${{ env.SHA }}
         path: build/dist/${{ github.event.repository.name }}.zip
 
