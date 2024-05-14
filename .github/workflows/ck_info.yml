@@ -1,4 +1,6 @@
 name: ck-info
+run-name: info-${{ runner.arch }}-${{ inputs.platform }}
+
 
 on:
   workflow_dispatch:
@@ -22,6 +24,7 @@ jobs:
 
     - name: runner information
       run: |
+        echo "image: ${{ inputs.platform }}"
         echo "arch: `uname -m`"
         echo "runner.os: ${{ runner.os }}"
         echo "runneer.arch: ${{ runner.arch }}"
