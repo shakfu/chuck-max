@@ -8,11 +8,14 @@ function get_dmg() {
 	ARCH=$1
 	VER=$2
 	mkdir -p ${BUILD}
-	hdiutil attach chuck-max-${VER}-${ARCH}.dmg
+	if [ ! -f ${BUILD}/chuck-max-${VER}-darwin-${ARCH}.dmg ]; then
+		curl -L  https://github.com/shakfu/chuck-max/releases/download/${VER}/chuck-max-${VER}-darwin-${ARCH}.dmg -o ${BUILD}/chuck-max-${VER}-darwin-${ARCH}.dmg
+	fi
+	hdiutil attach ${BUILD}/chuck-max-${VER}-darwin-${ARCH}.dmg
 	rm -rf ${BUILD}/darwin-${ARCH}
 	mkdir -p ${BUILD}/darwin-${ARCH}
-	cp -R /Volumes/CHUCK-MAX/chuck-max ${BUILD}/darwin-${ARCH}/chuck-max
-	hdiutil detach /Volumes/CHUCK-MAX
+	cp -R /Volumes/chuck-max-${VER}-darwin-${ARCH}/chuck-max ${BUILD}/darwin-${ARCH}/chuck-max
+	hdiutil detach /Volumes/chuck-max-${VER}-darwin-${ARCH}
 }
 
 function mk_universal_chugin() {
@@ -75,11 +78,7 @@ function mk_universal_package() {
 
 #mk_universal_chugin 0.1.1
 
-mk_universal_package $1
-
-rm -rf build/dist
-mkdir -p build/dist
-cp -af build/darwin-universal/chuck-max build/dist/chuck-max
+mk_universal_chugin $1
 
 echo "NOTE: the resulting universal package need to be re-codesigned and notarized!"
 

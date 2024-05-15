@@ -13,7 +13,7 @@ VERSION=0.1.2
 
 .PHONY: all native universal full light dev clean reset setup test   \
 		test-fauck test-warpbuf install_deps install_deps_light brew \
-		release sign package dmg sign-dmg notarize staple
+		release sign package dmg sign-dmg notarize staple sign-dist
 
 all: native
 
@@ -82,6 +82,19 @@ sign:
 		codesign --sign 'Developer ID Application: $(DEV_ID)' \
 			--timestamp --deep --force examples/chugins/*.chug && \
 		codesign --verify examples/chugins/*.chug
+
+sign-dist:
+	@codesign --sign 'Developer ID Application: $(DEV_ID)' \
+		--timestamp --deep --force $(DIST)/externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
+		codesign --sign 'Developer ID Application: $(DEV_ID)' \
+			--timestamp --deep --force --options runtime \
+			--entitlements $(ENTITLEMENTS) $(DIST)/externals/chuck\~.mxo && \
+		codesign --verify $(DIST)/externals/chuck\~.mxo && \
+		codesign --verify $(DIST)/externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
+		codesign --sign 'Developer ID Application: $(DEV_ID)' \
+			--timestamp --deep --force $(DIST)/examples/chugins/*.chug && \
+		codesign --verify $(DIST)/examples/chugins/*.chug
+
 
 package:
 	@rm -rf $(DIST) && \
