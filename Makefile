@@ -13,7 +13,8 @@ VERSION=0.1.2
 
 .PHONY: all native universal full light dev clean reset setup test   \
 		test-fauck test-warpbuf install_deps install_deps_light brew \
-		release sign package dmg sign-dmg notarize staple sign-dist
+		release sign package dmg sign-dmg notarize staple sign-dist  \
+		dist-release
 
 all: native
 
@@ -83,19 +84,6 @@ sign:
 			--timestamp --deep --force examples/chugins/*.chug && \
 		codesign --verify examples/chugins/*.chug
 
-sign-dist:
-	@codesign --sign 'Developer ID Application: $(DEV_ID)' \
-		--timestamp --deep --force $(DIST)/externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
-		codesign --sign 'Developer ID Application: $(DEV_ID)' \
-			--timestamp --deep --force --options runtime \
-			--entitlements $(ENTITLEMENTS) $(DIST)/externals/chuck\~.mxo && \
-		codesign --verify $(DIST)/externals/chuck\~.mxo && \
-		codesign --verify $(DIST)/externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
-		codesign --sign 'Developer ID Application: $(DEV_ID)' \
-			--timestamp --deep --force $(DIST)/examples/chugins/*.chug && \
-		codesign --verify $(DIST)/examples/chugins/*.chug
-
-
 package:
 	@rm -rf $(DIST) && \
 		mkdir -p $(DIST) && \
@@ -111,6 +99,18 @@ package:
 		find $(DIST) -name ".DS_Store" -delete && \
 		echo "DONE"
 
+sign-dist:
+	@codesign --sign 'Developer ID Application: $(DEV_ID)' \
+		--timestamp --deep --force $(DIST)/externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
+		codesign --sign 'Developer ID Application: $(DEV_ID)' \
+			--timestamp --deep --force --options runtime \
+			--entitlements $(ENTITLEMENTS) $(DIST)/externals/chuck\~.mxo && \
+		codesign --verify $(DIST)/externals/chuck\~.mxo && \
+		codesign --verify $(DIST)/externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
+		codesign --sign 'Developer ID Application: $(DEV_ID)' \
+			--timestamp --deep --force $(DIST)/examples/chugins/*.chug && \
+		codesign --verify $(DIST)/examples/chugins/*.chug
+
 dmg:
 	@hdiutil create -volname CHUCK-MAX -srcfolder $(BUILD)/dist -ov -format UDBZ $(DMG)
 
@@ -125,6 +125,9 @@ staple:
 	@xcrun stapler staple "$(DMG)"
 
 release: strip sign package dmg sign-dmg notarize staple
+	@echo "DONE"
+
+dist-release: sign-dist dmg sign-dmg notarize staple
 	@echo "DONE"
 
 
@@ -151,7 +154,7 @@ reset:
 	@rm -rf externals
 	@rm -rf build/CMakeCache.txt build/CMakeFiles build/CMakeScripts build/Release build/build build/sine.ck
 	@rm -rf build/chuck-max.xcodeproj build/cmake_install.cmake build/install_manifest.txt build/source build/build
-	@rm -rf build/thirdparty/faust build/thirdparty/install build/thirdparty/libfaust
+	@rm -rf build/thirdparty/faust build/thirdparty/install build/thirdparty/libfaust build/dist
 
 setup:
 	@git submodule init
