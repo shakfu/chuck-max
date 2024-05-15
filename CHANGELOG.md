@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ---
 
-## [0.1.x]
+## [0.1.2]
 
 - Added a github workflow to automate building the external (no codesigning/notarizing yet)
 

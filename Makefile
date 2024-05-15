@@ -6,12 +6,17 @@ THIRDPARTY = $(BUILD)/thirdparty
 LIB = $(THIRDPARTY)/install/lib
 CHUCK = $(THIRDPARTY)/install/bin/chuck
 DIST = $(BUILD)/dist/chuck-max
-
+ARCH=$(shell uname -m)
+DMG=chuck-max-$(VERSION)-$(ARCH).dmg
+ENTITLEMENTS = source/scripts/entitlements.plist
+VERSION=0.1.2
 
 .PHONY: all native universal full light dev clean reset setup test   \
-		test-fauck test-warpbuf install_deps install_deps_light brew
+		test-fauck test-warpbuf install_deps install_deps_light brew \
+		release sign package dmg sign-dmg notarize staple
 
 all: native
+
 
 native:
 	@mkdir -p build && \
@@ -61,6 +66,23 @@ light: install_deps_light
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
+strip:
+	@strip -u -r externals/chuck\~.mxo/Contents/MacOS/chuck\~
+	@strip -x examples/chugins/*.chug
+
+
+sign:
+	@codesign --sign 'Developer ID Application: $(DEV_ID)' \
+		--timestamp --deep --force externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
+		codesign --sign 'Developer ID Application: $(DEV_ID)' \
+			--timestamp --deep --force --options runtime \
+			--entitlements $(ENTITLEMENTS) externals/chuck\~.mxo && \
+		codesign --verify externals/chuck\~.mxo && \
+		codesign --verify externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
+		codesign --sign 'Developer ID Application: $(DEV_ID)' \
+			--timestamp --deep --force examples/chugins/*.chug && \
+		codesign --verify examples/chugins/*.chug
+
 package:
 	@rm -rf $(DIST) && \
 		mkdir -p $(DIST) && \
@@ -72,10 +94,25 @@ package:
 		cp -f LICENSE $(DIST)/LICENSE && \
 		cp -f CHANGELOG.md $(DIST)/CHANGELOG.md && \
 		cp -f README.md $(DIST)/README.md && \
+		rm -f $(DIST)/examples/chuck && \
 		find $(DIST) -name ".DS_Store" -delete && \
-		cd build/dist && \
-		zip -T -9 -r chuck-max.zip  chuck-max && \
 		echo "DONE"
+
+dmg:
+	@hdiutil create -volname CHUCK-MAX -srcfolder $(BUILD)/dist -ov -format UDBZ $(DMG)
+
+sign-dmg:
+	@codesign --sign "Developer ID Application: $(DEV_ID)" --deep --force --verbose --options runtime "$(DMG)" && \
+		codesign --verify --verbose $(DMG)
+
+notarize:
+	@xcrun notarytool submit "$(DMG)" --keychain-profile "$(KEYCHAIN_PROFILE)" --wait
+
+staple:
+	@xcrun stapler staple "$(DMG)"
+
+release: strip sign package dmg sign-dmg notarize staple
+	@echo "DONE"
 
 
 link:

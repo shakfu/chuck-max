@@ -7,6 +7,9 @@ archive/
 *.chug
 scratch.cpp
 
+# local vars
+.env
+
 # Prerequisites
 *.d
 
