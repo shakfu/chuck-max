@@ -89,18 +89,16 @@ target_link_directories(${CHUGIN_NAME}
 
 target_link_libraries(${CHUGIN_NAME}
     PUBLIC
-    ${local_prefix}/lib/librubberband.a
-    ${local_prefix}/lib/libFLAC.a
-    ${local_prefix}/lib/libogg.a
-    ${local_prefix}/lib/libvorbis.a
-    ${local_prefix}/lib/libvorbisenc.a
-    ${local_prefix}/lib/libvorbisfile.a
-    ${local_prefix}/lib/libopus.a
-    ${local_prefix}/lib/libmpg123.a
-    # ${local_prefix}/lib/libout123.a
-    # ${local_prefix}/lib/libsyn123.a
-    ${local_prefix}/lib/libmp3lame.a
+    $<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libFLAC.a>
+    $<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libogg.a>
+    $<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbis.a>
+    $<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbisenc.a>
+    $<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbisfile.a>
+    $<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libopus.a>
+    $<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libmpg123.a>
+    $<$<BOOL:${ENABLE_MP3}>:${local_prefix}/lib/libmp3lame.a>
     ${local_prefix}/lib/libsndfile.a
+    ${local_prefix}/lib/librubberband.a
     ${local_prefix}/lib/libsamplerate.a
     "-framework CoreFoundation"
     "-framework CoreMIDI"

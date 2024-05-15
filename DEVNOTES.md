@@ -1,19 +1,41 @@
 # Dev Notes
 
-## callbacks / Python callables
+## Making Use of Callbacks
 
-@godlygeek on python discord #c-extensions sub discord:
+In order to customize the current set of callbacks (which currently just post the value of the parameters to the Max console), a developer/user will want to modify them to do something other than the default and then re-compile the external.
 
-> there aren't closures in C, but there are in C++ . In C, the typical setup is that every library function that accepts a callback (pointer to some function) also accepts a user data object (void *user_data). The library stores both pointers, and when it calls the callback it passes the user_data pointer to it as well
-> and you, as the user of that library, would pass your Python callable as the user data, and a C function as the callback. The library would call the C function and pass the user data pointer as one of its arguments. The C function would cast the user data argument back to PyObject* and then call using PyObject_CallObject or some such
-
-Next feature request: provide callbacks which resemble the `getAllGlobalVariables` signature and take `void* data` as in:
+In practice, callbacks in `chuck-max` are constrained by what their function signatures allow. To do something useful one will typically want to access the pointer to an instance of the `chuck~` object which is not directly available as an argument to any the callbacks. For example, in the case of the `cb_get_int` callback, one only has the parameter name and value:
 
 ```c++
-void cb_get_all_global_vars(
-    const std::vector<Chuck_Globals_TypeValue> & list,
-    void * data
-)
+void cb_get_int(const char* name, t_CKINT val)
+{
+    post("cb_get_int: name: %s value: %d", name, val);
+}
+```
+
+To get around this limitation, one can use the knowledge that `chuck~` instances are given the scripting name `chuck-<x>` where `x` is the order of instanciation and that one can get to retrieve the relevant object pointer by using `void *object_findregistered(t_symbol *name_space, t_symbol *s)` as in:
+
+```c++
+void cb_get_int(const char* name, t_CKINT val)
+{
+    t_object* x;
+
+    for (auto name : CK_INSTANCE_NAMES) {
+        x = (t_object*)object_findregistered(CLASS_BOX, gensym(name.c_str()));
+        object_post(x, (char*)"name: %s value: %d", name.c_str(), val);
+    }
+}
+```
+
+It's not elegant, but it works until something better comes along such as if `void *` arguments were included in all callbacks:
+
+```c++
+void cb_get_int(const char* name, t_CKINT val, void* data)
+{
+    t_object *x = (t_object*)data;
+
+    // ...
+}
 ```
 
 ## Build Universal Binaries again
@@ -674,3 +696,16 @@ shred_1 => shred_fx_1 => shred_fx_2 => dac
 and so on ...
 
 An optional additional argument to specify shred_id as in `insert <filename|code> <shredID>`, allows for specifying exactly where to insert in the chain..
+
+## Chuck Feature Request: void ptr argument for callbacks
+
+It would make callbacks a lot more useful if at least one consistent variant of available callbacks followed the example of `getAllGlobalVariables`.
+
+```c++
+    t_CKBOOL getAllGlobalVariables( void (*callback)( const std::vector<Chuck_Globals_TypeValue> & list, void * data ), void * data = NULL );
+```
+
+referencing @godlygeek on python discord #c-extensions sub discord:
+
+> there aren't closures in C, but there are in C++ . In C, the typical setup is that every library function that accepts a callback (pointer to some function) also accepts a user data object (void *user_data). The library stores both pointers, and when it calls the callback it passes the user_data pointer to it as well
+> and you, as the user of that library, would pass your Python callable as the user data, and a C function as the callback. The library would call the C function and pass the user data pointer as one of its arguments. The C function would cast the user data argument back to PyObject* and then call using PyObject_CallObject or some such

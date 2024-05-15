@@ -1,8 +1,10 @@
 # chuck-max
 
-A [project](https://github.com/shakfu/chuck-ma) to minimally embed the [chuck](https://chuck.stanford.edu) engine in a Max/MSP external.
+A [project](https://github.com/shakfu/chuck-max) to embed the [chuck](https://chuck.stanford.edu) engine in a Max/MSP external.
 
-It currently has one external (`chuck~`) with the following features and limitations:
+This repo is itself a Max package with one external (`chuck~`) which has the following features and limitations:
+
+- A Max external which embeds the chuck 1.5.2.5-dev (chai) engine.
 
 - Generate and process audio via an embedded chuck engine by running chuck files with `global` parameters controlled and adjusted in realtime by Max messages.
 
@@ -10,16 +12,19 @@ It currently has one external (`chuck~`) with the following features and limitat
 
 - Add, remove, replace audio and audio processes on the fly using Chuck messages via Max messages.
 
-- Includes most of the [base ccrma chugins](https://github.com/ccrma/chugins) including `WarpBuf` and `Fauck` or `Faust` except for the following:
+The package also includes the following:
 
-  - Fluidsynth
-  - Ladspa
+- The complete set of current chuck examples
 
-- Note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
+- Most of the [base CCRMA chugins](https://github.com/ccrma/chugins) including `WarpBuf` and `Fauck` or `Faust` except for `Fluidsynth` and `Ladspa`.
 
-This project is currently built on the chuck 1.5.2.5-dev (chai) engine.
+- Many Max patchers to test and demonstrate usage.
 
-*Quickstart*: packaged binary pre-releases and releases of the `chuck-max` package can be downloaded from the project's [Releases](https://github.com/shakfu/chuck-max/releases) section.
+- Contributed patchers and code examples.
+
+Note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
+
+*Quickstart*  binary pre-releases and releases of the `chuck-max` package are available in the project's [Releases](https://github.com/shakfu/chuck-max/releases) section.
 
 ## Overview
 
@@ -40,7 +45,6 @@ It is recommended to choose 2 channels for stereo configuration. If a `<filename
 
 4. Use Max's `locatefile_extended` search function to search for the `<filename>` in the Max search path. The first successul result will be used.
 
-
 ### Core Messages
 
 As of the current version, `chuck~` implements the core Chuck vm messages as Max messages:
@@ -48,7 +52,7 @@ As of the current version, `chuck~` implements the core Chuck vm messages as Max
 | Action                            | Max msg                      | Max msg (alias)              |
 | :-------------------------------- | :--------------------------- | :--------------------------  |
 | Add shred from file               | `add <file>`                 | `+ <filepath>`               |
-| Eval code as shred                | `eval <code>`                |                              |    
+| Eval code as shred                | `eval <code>`                |                              |
 | Remove shred                      | `remove <shredID>`           | `- <shredID>`                |
 | Remove last shred                 | `remove last`                | `--`                         |
 | Remove all shreds                 | `remove all`                 |                              |
@@ -78,7 +82,6 @@ The core set of chuck vm messesages is also extended in `chuck-max` with the fol
 | Get state of chuck vm                   | `vm`                         |
 | Launch chuck docs in a browser          | `docs`                       |
 | Clear Max console                       | `clear console`              |
-
 
 ### Parameter Messages
 
@@ -127,39 +130,9 @@ In addition to the typical way of changing parameters there is also an extensive
 | Set int associative array value   | global variable    | `set int[k] <name> <key> <value>`    |
 | Set float associative array value | global variable    | `set float[k] <name> <key> <value>`  |
 
-
-**Developer Note**
-
-In order to customize the current set of callbacks (which currently just post the value of the parameters to the Max console), an *advanced* user will want to modify them to do something other than the default and then re-compile the external.
-
-In practice, callbacks in `chuck-max` are constrained by what their function signatures allow. To do something useful one will typically want to access the pointer to an instance of the `chuck~` object which is not directly available as an argument to any the callbacks. For example, in the case of the `cb_get_int` callback, one only has the parameter name and value:
-
-```c++
-void cb_get_int(const char* name, t_CKINT val)
-{
-    post("cb_get_int: name: %s value: %d", name, val);
-}
-```
-
-To get around this limitation, one can use the knowledge that `chuck~` instances are given the scripting name `chuck-<x>` where `x` is the order of instanciation and that one can get the retrieve the relevant object pointer by using `void *object_findregistered(t_symbol *name_space, t_symbol *s)` as in:
-
-```c++
-void cb_get_int(const char* name, t_CKINT val)
-{
-    t_object* x;
-
-    for (auto name : CK_INSTANCE_NAMES) {
-        x = (t_object*)object_findregistered(CLASS_BOX, gensym(name.c_str()));
-        object_post(x, (char*)"name: %s value: %d", name.c_str(), val);
-    }
-}
-```
-
-It's not elegant, but it works until something better comes along.
-
 ## Build Requirements and Options
 
-Please note that this external is currently only developed and tested on macOS, although a Windows version is on the TODO list (any help on this would be appreciated).
+Please note that this external is currently only developed and tested on macOS, although a Windows version is on the TODO list (any help on this front would be much appreciated).
 
 ### A. The Base System
 
@@ -199,7 +172,6 @@ Now it should be possible to buid the base system with the following two build o
 
 - `make universal`: build the external using as a `universal` binary making it compatible with both Mac architectural variants. This is useful if you want share the external with others in custom Max package or standalone.
 
-
 ### B. The Advanced System
 
 The advanced system consists of the base system + two advanced chugins, `Faust.chug` and `WarpBuf.chug`:
@@ -221,7 +193,6 @@ After these are installed, it will be possible to build using the following opti
 - `make full`: build the external by building all of the dependencies except for `libfaust` from source. This is the previous way of building a base + advanced chugins system. It is only for advanced builders who want maximum flexibility in their builds.
 
 - `make light`: Same as `make full` except for `libsndfile` multi-file format support, which means that (.mp3, flac, vorbis, opus, ogg) formats are not supported in this build. Only `.wav` files can be used.
-
 
 ## Usage
 

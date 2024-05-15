@@ -144,74 +144,29 @@ function install_libopus() {
 	fi
 }
 
-# function install_libmpg123() {
-# 	SRC=${THIRDPARTY}/libmpg123
-# 	BUILD=${THIRDPARTY}/libmpg123/build
-# 	if [ ! -f ${THIRDPARTY}/install/lib/libmpg123.a ]; then
-# 		rm -rf ${THIRDPARTY}/libmpg123 && \
-# 		mkdir -p build/thirdparty && \
-# 		git clone --depth=1 https://github.com/gypified/libmpg123.git ${THIRDPARTY}/libmpg123 && \
-# 		cd ${THIRDPARTY}/libmpg123 && \
-# 		CFLAGS="-Os -s" ./configure \
-# 			--with-cpu=generic  \
-# 			--disable-id3v2 \
-# 			--disable-lfs-alias \
-# 			--disable-feature-report \
-# 			--with-seektable=0 \
-# 			--disable-16bit \
-# 			--disable-32bit \
-# 			--disable-8bit \
-# 			--disable-messages \
-# 			--disable-feeder \
-# 			--disable-ntom \
-# 			--disable-downsample \
-# 			--disable-icy \
-# 			--enable-static \
-# 			--prefix=${PREFIX} && \
-# 		make && \
-# 		make install 
-# 	fi
-# }
-
 function install_libmpg123() {
 	SRC=${THIRDPARTY}/libmpg123
 	BUILD=${THIRDPARTY}/libmpg123/build
 	if [ ! -f ${THIRDPARTY}/install/lib/libmpg123.a ]; then
 		rm -rf ${THIRDPARTY}/libmpg123 && \
 		mkdir -p build/thirdparty && \
-		wget https://www.mpg123.de/download/mpg123-1.32.6.tar.bz2 && \
-		tar xvf mpg123-1.32.6.tar.bz2 && \
-		mv mpg123-1.32.6 ${THIRDPARTY}/libmpg123 && \
-		rm -f mpg123-1.32.6.tar.bz2 && \
+		git clone --depth=1 https://github.com/gypified/libmpg123.git ${THIRDPARTY}/libmpg123 && \
 		cd ${THIRDPARTY}/libmpg123 && \
 		CFLAGS="-Os -s" ./configure \
-			--with-module-suffix=.so \
+			--with-cpu=generic  \
+			--disable-id3v2 \
+			--disable-lfs-alias \
+			--disable-feature-report \
+			--with-seektable=0 \
+			--disable-16bit \
+			--disable-32bit \
+			--disable-8bit \
+			--disable-messages \
+			--disable-feeder \
+			--disable-ntom \
+			--disable-downsample \
+			--disable-icy \
 			--enable-static \
-			--with-default-audio=coreaudio \
-			--prefix=${PREFIX} && \
-		make && \
-		make install 
-	fi
-}
-
-# patch a per homebrew build
-function install_libmp3lame() {
-	SRC=${THIRDPARTY}/libmp3lame
-	BUILD=${THIRDPARTY}/libmp3lame/build
-	if [ ! -f ${THIRDPARTY}/install/lib/libmp3lame.a ]; then
-		rm -rf ${THIRDPARTY}/libmp3lame && \
-		mkdir -p build/thirdparty && \
-		wget https://downloads.sourceforge.net/project/lame/lame/3.100/lame-3.100.tar.gz && \
-		tar xvf lame-3.100.tar.gz && \
-		mv lame-3.100 ${THIRDPARTY}/libmp3lame && \
-		rm -f lame-3.100.tar.gz && \
-		patch -u ${THIRDPARTY}/libmp3lame/include/libmp3lame.sym \
-			  -i ${CWD}/source/scripts/patch/libmp3lame_sym.patch && \
-		cd ${THIRDPARTY}/libmp3lame && \
-		CFLAGS="-Os -s" ./configure \
-			--disable-dependency-tracking \
-			--disable-debug \
-			--enable-nasm \
 			--prefix=${PREFIX} && \
 		make && \
 		make install 
@@ -233,7 +188,7 @@ function install_libsndfile() {
 			-DCMAKE_CXX_FLAGS="-fPIC" \
 			-DBUILD_TESTING=OFF \
 			-DENABLE_EXTERNAL_LIBS=ON \
-			-DENABLE_MPEG=ON \
+			-DENABLE_MPEG=OFF \
 			-DBUILD_PROGRAMS=OFF \
 			-DBUILD_EXAMPLES=OFF \
 			-DENABLE_CPACK=OFF \
@@ -276,7 +231,6 @@ function install_libsamplerate() {
 
 setup && \
 	install_libmpg123 && \
-	install_libmp3lame && \
 	install_libopus && \
 	install_libvorbis && \
 	install_libflac && \

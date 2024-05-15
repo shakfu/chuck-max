@@ -14,6 +14,7 @@ on:
           - native
           - universal
           - full
+          - nomp3
           - light
       platform:
         type: choice
@@ -34,6 +35,11 @@ jobs:
     runs-on: ${{ inputs.platform }}
 
     steps:
+
+    - name: job information
+      run: |
+        echo "OS Version: `uname -v`"
+        echo "MacOS SDK Platform Version: `xcrun --show-sdk-platform-version`"
 
     - uses: actions/checkout@v4
       with:

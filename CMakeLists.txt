@@ -6,6 +6,8 @@ project(${THIS_FOLDER_NAME})
 option(C74_BUILD_FAT "Build Universal Externals")
 option(ENABLE_WARPBUF "Build WarpBuf chugin")
 option(ENABLE_FAUCK "Build Fauck chugin")
+option(ENABLE_MP3 "Enable MP3 support for libsndfile")
+option(ENABLE_EXTRA_FORMATS "Enable extra file format for libsndfile")
 option(ENABLE_HOMEBREW "Build using Homebrew dependencies")
 
 # use ccache if available

@@ -24,9 +24,9 @@
         "livecoding",
         "midi",
         "osc",
-        "faust",
+        "faust"
     ],
     "extensible": 0,
-    "version": "0.1.2",
+    "version": "0.1.x",
     "website": "https://github.com/shakfu/chuck-max"
 }

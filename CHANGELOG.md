@@ -13,6 +13,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ---
 
+## [0.1.x]
+
+- Added `nomp3` build variant for a `full - mp3` build (works better on older macos systems)
+
+- Added Makefile-based packaging, codesigning and notarization.
+
 ## [0.1.2]
 
 - Added a github workflow to automate building the external (no codesigning/notarizing yet)

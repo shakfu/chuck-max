@@ -119,7 +119,6 @@ bool path_exists(const char* name);
 char* ck_atom_gettext(long ac, t_atom* av);
 void ck_dblclick(t_ck* x);
 t_max_err ck_send_max_msg(t_ck* x, t_symbol* s, const char* parsestr);
-t_max_err ck_check_editor(t_ck* x, t_symbol* entry);
 t_symbol* ck_check_file(t_ck* x, t_symbol* name);
 t_max_err ck_compile_code(t_ck* x, const char* code, const char* args);
 t_max_err ck_compile_file(t_ck* x, const char* filename);
@@ -234,7 +233,6 @@ void ext_main(void* r)
     class_register(CLASS_BOX, c);
     ck_class = c;
 }
-
 
 void* ck_new(t_symbol* s, long argc, t_atom* argv)
 {
@@ -524,8 +522,10 @@ t_max_err ck_editor_set(t_ck *x, t_object *attr, long argc, t_atom *argv)
 {
     t_symbol* editor = atom_getsym(argv);
     ck_info(x, (char*)"editor_set: %s", editor->s_name);
-    ck_check_editor(x, editor);
-    // x->editor = editor;
+    if (path_exists(editor->s_name)) {
+        x->editor = editor;
+        return MAX_ERR_NONE;
+    }
     return MAX_ERR_NONE;
 }
 
@@ -683,6 +683,13 @@ t_max_err ck_send_max_msg(t_ck* x, t_symbol* s, const char* parsestr)
     return MAX_ERR_NONE;
 }
 
+/**
+ * @brief Get external's path
+ * 
+ * @param c             class
+ * @param subpath       optional subpath (NULL if no subpath)
+ * @return t_symbol*    external path as symbol
+ */
 t_symbol* ck_get_path_from_external(t_class* c, char* subpath)
 {
     char external_path[MAX_PATH_CHARS];
@@ -724,14 +731,6 @@ t_symbol* ck_get_path_from_package(t_class* c, char* subpath)
     return gensym(string_getptr(package_dir_s));
 }
 
-t_max_err ck_check_editor(t_ck* x, t_symbol* entry)
-{
-    if (path_exists(entry->s_name)) {
-        x->editor = entry;
-        return MAX_ERR_NONE;
-    }
-    return MAX_ERR_NONE;
-}
 
 t_symbol* ck_check_file(t_ck* x, t_symbol* name)
 {
@@ -885,7 +884,7 @@ t_max_err ck_edit(t_ck* x, t_symbol* s)
         x->edit_file = ck_check_file(x, s);
         if (x->edit_file != gensym("")) {
             std::string cmd;
-            // ck_info(x, (char*)"edit: %s", x->edit_file->s_name);
+            ck_debug(x, (char*)"edit: %s", x->edit_file->s_name);
 
             cmd = std::string(x->editor->s_name) + " " + std::string(x->edit_file->s_name);
             std::system(cmd.c_str());

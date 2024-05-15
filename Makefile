@@ -11,10 +11,11 @@ DMG=chuck-max-$(VERSION)-$(ARCH).dmg
 ENTITLEMENTS = source/scripts/entitlements.plist
 VERSION=0.1.2
 
-.PHONY: all native universal full light dev clean reset setup test   \
-		test-fauck test-warpbuf install_deps install_deps_light brew \
-		release sign package dmg sign-dmg notarize staple sign-dist  \
-		dist-release
+.PHONY: all native universal full light brew nomp3 dev setup \
+		clean reset  test test-fauck test-warpbuf \
+		install_deps install_deps_light install_deps_nomp3 \
+		sign package dmg sign-dmg notarize staple sign-dist  \
+		release dist-release
 
 all: native
 
@@ -37,6 +38,9 @@ universal:
 install_deps:
 	./source/scripts/install_deps.sh
 
+install_deps_nomp3:
+	./source/scripts/install_deps_nomp3.sh
+
 install_deps_light:
 	./source/scripts/install_deps_light.sh
 
@@ -48,7 +52,12 @@ install_faust:
 brew: install_faust
 	@mkdir -p build && \
 		cd build && \
-		cmake -GXcode .. -DENABLE_HOMEBREW=ON -DENABLE_WARPBUF=ON -DENABLE_FAUCK=ON && \
+		cmake -GXcode .. \
+			-DENABLE_HOMEBREW=ON \
+			-DENABLE_EXTRA_FORMATS=ON \
+			-DENABLE_MP3=ON \
+			-DENABLE_WARPBUF=ON \
+			-DENABLE_FAUCK=ON && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
@@ -56,14 +65,33 @@ brew: install_faust
 full: install_deps
 	@mkdir -p build && \
 		cd build && \
-		cmake -GXcode .. -DENABLE_WARPBUF=ON -DENABLE_FAUCK=ON && \
+		cmake -GXcode .. \
+			-DENABLE_EXTRA_FORMATS=ON \
+			-DENABLE_MP3=ON \
+			-DENABLE_WARPBUF=ON \
+			-DENABLE_FAUCK=ON && \
+		cmake --build . --config '$(CONFIG)' && \
+		cmake --install . --config '$(CONFIG)'
+
+nomp3: install_deps_nomp3
+	@mkdir -p build && \
+		cd build && \
+		cmake -GXcode .. \
+			-DENABLE_EXTRA_FORMATS=ON \
+			-DENABLE_MP3=OFF \
+			-DENABLE_WARPBUF=ON \
+			-DENABLE_FAUCK=ON && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
 light: install_deps_light
 	@mkdir -p build && \
 		cd build && \
-		cmake -GXcode .. -DENABLE_WARPBUF=ON -DENABLE_FAUCK=ON && \
+		cmake -GXcode .. \
+			-DENABLE_EXTRA_FORMATS=OFF \
+			-DENABLE_MP3=OFF \
+			-DENABLE_WARPBUF=ON \
+			-DENABLE_FAUCK=ON && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
@@ -151,7 +179,7 @@ clean:
 		externals
 
 reset:
-	@rm -rf externals
+	@rm -rf externals examples/chugins/*.chug
 	@rm -rf build/CMakeCache.txt build/CMakeFiles build/CMakeScripts build/Release build/build build/sine.ck
 	@rm -rf build/chuck-max.xcodeproj build/cmake_install.cmake build/install_manifest.txt build/source build/build
 	@rm -rf build/thirdparty/faust build/thirdparty/install build/thirdparty/libfaust build/dist

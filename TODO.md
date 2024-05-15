@@ -4,10 +4,6 @@
 
 - [ ] Refactor `ck_run` / `ck_add` relationship
 
-- [x] Add github workflow
-
-- [x] Fix universal builds on macOS
-
 - [ ] Add Windows Support
 
 - [ ] Add Doxygen docs
