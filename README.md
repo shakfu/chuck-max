@@ -134,6 +134,24 @@ In addition to the typical way of changing parameters there is also an extensive
 
 Please note that this external is currently only developed and tested on macOS, although a Windows version is on the TODO list (any help on this front would be much appreciated).
 
+Due to platform changes and library compatibility differences, and also to provide for different levels of user, a number of build variants have been made available with the following feature table / compatability matrix:
+
+| feature/variant | native | universal | brew | full | nomp3 | light |
+| :-------------- | :----: | :-------: | :--: | :--: | :---: | :---: |
+| External        | x      | x         | x    | x    | x     | x     |
+| Base chugins    | x      | x         | x    | x    | x     | x     |
+| Faust.chug      |        |           | x    | x    | x     | x     |
+| WarpBuf.chug    |        |           | x    | x    | x     | x     |
+| .wav            |        |           | x    | x    | x     | x     |
+| .mp3            |        |           | x    | x    |       |       |
+| .flac           |        |           | x    | x    | x     |       |
+| .ogg            |        |           | x    | x    | x     |       |
+| .opus           |        |           | x    | x    | x     |       |
+| .vorbis         |        |           | x    | x    | x     |       |
+| macOS 14        | x      | x         | x    | x    | x     | x     |
+| macOS 13        | x      | x         | x    | x    | x     |       |
+| macOS 12        | x      | x         | x    | x    | x     | x     |
+
 ### A. The Base System
 
 The base `chuck-max` system consists of a Max package with the `chuck~` external, the base [CCRMA chugins](https://github.com/ccrma/chugins) and extensive examples, tests and patchers.
