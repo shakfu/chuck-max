@@ -142,7 +142,7 @@ Due to platform changes and library compatibility differences, and also to provi
 | Base chugins    | x      | x         | x    | x    | x     | x     |
 | Faust.chug      |        |           | x    | x    | x     | x     |
 | WarpBuf.chug    |        |           | x    | x    | x     | x     |
-| .wav            |        |           | x    | x    | x     | x     |
+| .wav            | x      | x         | x    | x    | x     | x     |
 | .mp3            |        |           | x    | x    |       |       |
 | .flac           |        |           | x    | x    | x     |       |
 | .ogg            |        |           | x    | x    | x     |       |
