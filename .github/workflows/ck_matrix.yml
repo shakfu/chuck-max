@@ -6,8 +6,8 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
     strategy:
-      continue-on-error: true
       matrix:
         os:
           - macos-14
@@ -55,7 +55,7 @@ jobs:
 
     - name: install faust + warpbuf (libsndfile) dependencies
       if: contains(fromJSON('["brew", "full", "light"]'), matrix.variant)
-      run: brew install autoconf autogen automake flac libogg libtool libvorbis opus mpg123 lame
+      run: brew install autogen automake flac libogg libvorbis opus mpg123 lame
 
     - name: install warpbuf (rubberband) dependencies
       if: contains(fromJSON('["brew", "full", "light"]'), matrix.variant)
