@@ -54,11 +54,11 @@ jobs:
       run: brew install bison flex
 
     - name: install faust + warpbuf (libsndfile) dependencies
-      if: contains(fromJSON('["brew", "full", "light"]'), matrix.variant)
+      if: contains(fromJSON('["brew", "full", "light", "nomp3"]'), matrix.variant)
       run: brew install autogen automake flac libogg libvorbis opus mpg123 lame
 
     - name: install warpbuf (rubberband) dependencies
-      if: contains(fromJSON('["brew", "full", "light"]'), matrix.variant)
+      if: contains(fromJSON('["brew", "full", "light", "nomp3"]'), matrix.variant)
       run: brew install rubberband libsamplerate
 
     - name: build external
