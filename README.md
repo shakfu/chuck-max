@@ -134,7 +134,7 @@ In addition to the typical way of changing parameters there is also an extensive
 
 Please note that this external is currently only developed and tested on macOS, although a Windows version is on the TODO list (any help on this front would be much appreciated).
 
-Due to platform changes and library compatibility differences, and also to provide for different levels of user, a number of build variants have been made available with the following feature table / compatability matrix:
+Due to platform changes and library compatibility differences, and also to provide for different levels of usage, a number of build variants have been made available. The following matrix shows feature coverage and also compatibility between the different macOS versions:
 
 | feature/variant | native | universal | brew | full | nomp3 | light |
 | :-------------- | :----: | :-------: | :--: | :--: | :---: | :---: |
