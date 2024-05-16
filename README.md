@@ -148,8 +148,8 @@ Due to platform changes and library compatibility differences, and also to provi
 | .ogg            |        |           | x    | x    | x     |       |
 | .opus           |        |           | x    | x    | x     |       |
 | .vorbis         |        |           | x    | x    | x     |       |
-| macOS 14        | x      | x         | x    | x    |       | x     |
-| macOS 13        | x      | x         | x    | x    |       | x     |
+| macOS 14        | x      | x         | x    | x    | x     | x     |
+| macOS 13        | x      | x         | x    | x    | x     | x     |
 | macOS 12        | x      | x         | x    | x    | x     | x     |
 
 ### A. The Base System
