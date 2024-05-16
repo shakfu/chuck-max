@@ -134,23 +134,28 @@ In addition to the typical way of changing parameters there is also an extensive
 
 Please note that this external is currently only developed and tested on macOS, although a Windows version is on the TODO list (any help on this front would be much appreciated).
 
-Due to platform changes and library compatibility differences, and also to provide for different levels of usage, a number of build variants have been made available. The following matrix shows feature coverage and also compatibility between the different macOS versions:
+A number of build variants have been made available to address platform-specific changes and library compatibility issues and also to provide for different levels of usage. 
 
-| feature/variant | native | universal | brew | full | nomp3 | light |
-| :-------------- | :----: | :-------: | :--: | :--: | :---: | :---: |
-| External        | x      | x         | x    | x    | x     | x     |
-| Base chugins    | x      | x         | x    | x    | x     | x     |
-| Faust.chug      |        |           | x    | x    | x     | x     |
-| WarpBuf.chug    |        |           | x    | x    | x     | x     |
-| .wav            | x      | x         | x    | x    | x     | x     |
-| .mp3            |        |           | x    | x    |       |       |
-| .flac           |        |           | x    | x    | x     |       |
-| .ogg            |        |           | x    | x    | x     |       |
-| .opus           |        |           | x    | x    | x     |       |
-| .vorbis         |        |           | x    | x    | x     |       |
-| macOS 14        | x      | x         | x    | x    | x     | x     |
-| macOS 13        | x      | x         | x    | x    | x     | x     |
-| macOS 12        | x      | x         | x    | x    | x     | x     |
+The following matrix shows feature coverage and also differences in compatibility among the different macOS versions:
+
+| feature/variant     | native | universal | brew | full | nomp3 | light |
+| :--------------     | :----: | :-------: | :--: | :--: | :---: | :---: |
+| External            | x      | x         | x    | x    | x     | x     |
+| Base chugins        | x      | x         | x    | x    | x     | x     |
+| Faust.chug          |        |           | x    | x    | x     | x     |
+| WarpBuf.chug        |        |           | x    | x    | x     | x     |
+| .wav                | x      | x         | x    | x    | x     | x     |
+| .mp3                |        |           | x    | x    |       |       |
+| .flac               |        |           | x    | x    | x     |       |
+| .ogg                |        |           | x    | x    | x     |       |
+| .opus               |        |           | x    | x    | x     |       |
+| .vorbis             |        |           | x    | x    | x     |       |
+| macOS 14 (Sonoma)   | x      | x         | x    | x    | x     | x     |
+| macOS 13 (Ventura)  | x      | x         | x    | x    | x     | x     |
+| macOS 12 (Monterey) | x      | x         | x    | x    | x     | x     |
+| macOS 11 (Big Sur)  | x      | x         |      | x    | x     | x     |
+
+Note: results for the above table were obtained by running the [ck_matrix](https://github.com/shakfu/chuck-max/blob/main/.github/workflows/ck_matrix.yml) github workflow which was very useful to isolate reasons for failed builds. For example, the failure of the `brew` variant with macOS 11 is due to [Homebrew](https://brew.sh), in this case, not providinh a static `libsndfile.a`. Since this is not fixable, the user running macOS 11 should, in this case, just choose another build variant and avoid this one.
 
 ### A. The Base System
 
