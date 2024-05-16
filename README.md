@@ -210,6 +210,8 @@ After these are installed, it will be possible to build using the following opti
 
 - `make full`: build the external by building all of the dependencies except for `libfaust` from source. This is the previous way of building a base + advanced chugins system. It is only for advanced builders who want maximum flexibility in their builds.
 
+- `make nomp3`: same as `make full` except without support for the mp3 format. Try this variant if you are unable to build using `make full` on intel mac and/or older macOS versions.
+
 - `make light`: Same as `make full` except for `libsndfile` multi-file format support, which means that (.mp3, flac, vorbis, opus, ogg) formats are not supported in this build. Only `.wav` files can be used.
 
 ## Usage
