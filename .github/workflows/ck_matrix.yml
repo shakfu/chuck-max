@@ -1,5 +1,4 @@
 name: ck-matrix
-run-name: cm-matrix-${{ matrix.os }}-${{ matrix.variant }}
 
 on:
   workflow_dispatch:
