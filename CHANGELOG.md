@@ -15,7 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
-- Added `nomp3` build variant for a `full - mp3` build (works better on older macos systems)
+- Added [pdf cheatsheet of chuck~ methods](https://github.com/shakfu/chuck-max/blob/main/media/chuck-max-cheatsheet.pdf)
+
+- Changed `add` syntax: `add <filename:arg1:arg2:..:argN` is no longer allowed due to the ambiguity entailed by Max automatically adding volname prefixes such `Macintosh HD:`. Args must **only** be provided as Max-friendly space separated format: `add <filename> arg1 arg2 .. argN`
+
+- Added `nomp3` build variant for a `full - mp3` build (works better on older macOS systems)
 
 - Added Makefile-based packaging, codesigning and notarization.
 

@@ -24,7 +24,7 @@ The package also includes the following:
 
 Note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
 
-*Quickstart*  binary pre-releases and releases of the `chuck-max` package are available in the project's [Releases](https://github.com/shakfu/chuck-max/releases) section.
+*For the impatient*: download the `chuck-max` package with pre-compiled externals and chugins from the the project's [Releases](https://github.com/shakfu/chuck-max/releases) section.
 
 ## Overview
 
@@ -51,13 +51,14 @@ As of the current version, `chuck~` implements the core Chuck vm messages as Max
 
 | Action                            | Max msg                      | Max msg (alias)              |
 | :-------------------------------- | :--------------------------- | :--------------------------  |
-| Add shred from file               | `add <file>`                 | `+ <filepath>`               |
+| Add shred from file               | `add <file> [arg1 arg2 .. ]` | `+ <filepath> [args]`        |
+| Run chuck file (save last used)   | `run <file>`                 |                              |
 | Eval code as shred                | `eval <code>`                |                              |
 | Remove shred                      | `remove <shredID>`           | `- <shredID>`                |
-| Remove last shred                 | `remove last`                | `--`                         |
+| Remove last shred                 | `remove last`                |                              |
 | Remove all shreds                 | `remove all`                 |                              |
 | Replace shred                     | `replace <shredID> <file>`   | `= <shredID> <file>`         |
-| List running shreds               | `status`                     | `^`                          |
+| List running shreds               | `status`                     |                              |
 | Clear vm                          | `clear vm`                   | `reset`                      |
 | Clear globals                     | `clear globals`              |                              |
 | Reset id                          | `reset id`                   |                              |
@@ -258,7 +259,7 @@ In the `patchers` section, there are quite a few patchers demonstrating one feat
 
 ## Known Unresolved Bugs
 
-- If a chuck file contains a custom event and the Max patch sends a `clear vm` or `reset` before running the chuck file while Max audio is turned off, it may cause Max to crash. See [github issue #11](https://github.com/shakfu/chuck-max/issues/11) for updates on this. The interim solution is to only run chuck files with Max audio on, and there's an attribute `run_needs_audio` to force this and prevent the crash. Thanks to @HighHarmonics2 for discovering this one.
+- If a chuck file contains a custom event and the Max patch sends a `clear vm` or `reset` before running the chuck file while Max audio is turned off, it may cause Max to crash. The case is demonstrated in the `patchers/tests/crash` section. See [github issue #11](https://github.com/shakfu/chuck-max/issues/11) for updates on this. The interim solution is to only run chuck files with Max audio on, and there's an attribute `run_needs_audio` to force this and prevent the crash. Thanks to @HighHarmonics2 for discovering this one.
 
 ## Credits
 

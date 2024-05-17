@@ -12,12 +12,13 @@
 #include "unistd.h"
 #endif
 
-#include <string>
-#include <unordered_map>
-#include <memory>
 #include <array>
 #include <filesystem>
+#include <memory>
+#include <regex>
 #include <sstream>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "chuck.h"
@@ -465,6 +466,7 @@ bool is_path(const char* target)
     return (s.find('/') != std::string::npos);
 }
 
+
 void replace_character(char* str, char c1, char c2)
 {
     int j, n = strlen(str);
@@ -902,10 +904,11 @@ void ck_dblclick(t_ck* x)
     }
 }
 
-
 t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
     t_symbol *filename_sym = _sym_nothing;
+    // std::regex volname_re("^([a-zA-Z0-9_ :]+)"); // to remove the unavoidable `Macintosh HD:` prefix
+    std::regex volname_re("^(.+:)"); // to remove the unavoidable `Macintosh HD:` prefix
 
     if (argc < 1) {
         ck_error(x, (char*)"add message needs at least one <filename> argument");
@@ -922,28 +925,28 @@ t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         return MAX_ERR_GENERIC;
     }
 
+    t_symbol* dirty_sym = atom_getsym(argv);
+    std::string cleaned = std::regex_replace(std::string(dirty_sym->s_name), volname_re, "");
+
     if (argc > 1) { // args provided
         // test if ':' is in the filename
-        t_symbol* firstsym = atom_getsym(argv);
-        char* res = strchr(firstsym->s_name, ':');
-        if (res != NULL) {
-            ck_error(x, (char*)"cannot use both colon-separated args with space-separated args");
+        std::size_t found = cleaned.find(":");
+        if (found != std::string::npos) {
+            ck_error(x, (char*)"cannot use colon-separated args, use space-separated args instead");
             return MAX_ERR_GENERIC;
         }
 
+        // convert the atom list to text
         char* text = ck_atom_gettext(argc, argv);
-        replace_character(text, ' ', ':');
+        replace_character(text, ' ', ':'); // convert space-separated args to colon-separated args
         filename_sym = gensym(text);
         sysmem_freeptr(text);
     } else {
-        filename_sym = atom_getsym(argv);
+        filename_sym = gensym(cleaned.c_str());
     }
 
-    // get string
     std::string path = std::string(filename_sym->s_name);
-    // filename
     std::string filename;
-    // arguments
     std::string args;
     // extract args FILE:arg1:arg2:arg3
     extract_args( path, filename, args );
@@ -965,19 +968,88 @@ t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 
     // construct chuck msg (must allocate on heap, as VM will clean up)
     Chuck_Msg * msg = new Chuck_Msg();
-    // set type
     msg->type = CK_MSG_ADD;
-    // set code for incoming shred
     msg->code = x->chuck->vm()->carrier()->compiler->output();
-    // create args array
     msg->args = new vector<string>;
-    // extract args again but this time into vector
     extract_args( path, filename, *(msg->args) );
-    // process ADD message, return new shred ID
     x->current_shred_id = x->chuck->vm()->process_msg( msg );
-    return MAX_ERR_NONE;
-    
+    return MAX_ERR_NONE;    
 }
+
+// t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+// {
+//     t_symbol *filename_sym = _sym_nothing;
+
+//     if (argc < 1) {
+//         ck_error(x, (char*)"add message needs at least one <filename> argument");
+//         return MAX_ERR_GENERIC;
+//     }
+
+//     if ((argv)->a_type != A_SYM) {
+//         ck_error(x, (char*)"first argument must be a symbol");
+//         return MAX_ERR_GENERIC;
+//     }
+
+//     if (x->run_needs_audio && !sys_getdspstate()) {
+//         ck_error(x, (char*)"can only run/add shred when audio is on");
+//         return MAX_ERR_GENERIC;
+//     }
+
+//     if (argc > 1) { // args provided
+//         // test if ':' is in the filename
+//         t_symbol* firstsym = atom_getsym(argv);
+//         char* res = strchr(firstsym->s_name, ':');
+//         if (res != NULL) {
+//             ck_error(x, (char*)"cannot use both colon-separated args with space-separated args");
+//             return MAX_ERR_GENERIC;
+//         }
+
+//         char* text = ck_atom_gettext(argc, argv);
+//         replace_character(text, ' ', ':');
+//         filename_sym = gensym(text);
+//         sysmem_freeptr(text);
+//     } else {
+//         filename_sym = atom_getsym(argv);
+//     }
+
+//     // get string
+//     std::string path = std::string(filename_sym->s_name);
+//     // filename
+//     std::string filename;
+//     // arguments
+//     std::string args;
+//     // extract args FILE:arg1:arg2:arg3
+//     extract_args( path, filename, args );
+    
+//     t_symbol* checked_file = ck_check_file(x, gensym(filename.c_str()));
+
+//     if (checked_file == gensym("")) {
+//         ck_error(x, (char*)"could not add file");
+//         return MAX_ERR_GENERIC;
+//     }
+    
+//     std::string full_path = std::string(checked_file->s_name);
+
+//     // compile but don't run yet (instance == 0)
+//     if( !x->chuck->compileFile( full_path, args, 0 ) ) {
+//         ck_error(x, (char*)"could not compile file");
+//         return MAX_ERR_GENERIC;
+//     }
+
+//     // construct chuck msg (must allocate on heap, as VM will clean up)
+//     Chuck_Msg * msg = new Chuck_Msg();
+//     // set type
+//     msg->type = CK_MSG_ADD;
+//     // set code for incoming shred
+//     msg->code = x->chuck->vm()->carrier()->compiler->output();
+//     // create args array
+//     msg->args = new vector<string>;
+//     // extract args again but this time into vector
+//     extract_args( path, filename, *(msg->args) );
+//     // process ADD message, return new shred ID
+//     x->current_shred_id = x->chuck->vm()->process_msg( msg );
+//     return MAX_ERR_NONE;
+// }
 
 t_max_err ck_eval(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {

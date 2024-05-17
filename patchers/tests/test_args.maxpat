@@ -68,7 +68,6 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 48.5, 535.0, 162.0, 21.0 ],
-					"presentation_linecount" : 2,
 					"text" : "add test/args.ck snare.wav $1"
 				}
 
@@ -76,22 +75,24 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-55",
+					"linecount" : 4,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 34.0, 292.0, 248.0, 19.0 ],
-					"text" : "default colon-separated chuck args style"
+					"patching_rect" : [ 211.0, 342.0, 248.0, 55.0 ],
+					"text" : "chuck-style colon-separated chuck args don't work in chuck~ due to the ambiguity caused by Max automatically prefixing the volname to paths as in `Macintosh HD:/Users/me/file.ck`"
 				}
 
 			}
 , 			{
 				"box" : 				{
 					"id" : "obj-54",
+					"linecount" : 4,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 48.5, 410.0, 248.0, 19.0 ],
-					"text" : "alternative space-separated max-friendly args"
+					"patching_rect" : [ 211.0, 435.0, 248.0, 55.0 ],
+					"text" : "Instead use Max-friendly space-separated args which are more readable, composable, and can  benefit from classic techniques such as the use of $-subsitution"
 				}
 
 			}
@@ -123,7 +124,6 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 42.0, 469.0, 155.0, 21.0 ],
-					"presentation_linecount" : 2,
 					"text" : "add test/args.ck snare.wav 1"
 				}
 
@@ -134,7 +134,7 @@
 					"bgcolor2" : [ 0.180392156862745, 0.266666666666667, 0.631372549019608, 1.0 ],
 					"bgfillcolor_angle" : 270.0,
 					"bgfillcolor_autogradient" : 0.0,
-					"bgfillcolor_color" : [ 0.086275, 0.309804, 0.52549, 1.0 ],
+					"bgfillcolor_color" : [ 0.341176, 0.027451, 0.023529, 1.0 ],
 					"bgfillcolor_color1" : [ 0.180392156862745, 0.266666666666667, 0.631372549019608, 1.0 ],
 					"bgfillcolor_color2" : [ 0.2, 0.2, 0.2, 1.0 ],
 					"bgfillcolor_proportion" : 0.5,
@@ -178,7 +178,7 @@
 					"bgcolor2" : [ 0.180392156862745, 0.266666666666667, 0.631372549019608, 1.0 ],
 					"bgfillcolor_angle" : 270.0,
 					"bgfillcolor_autogradient" : 0.0,
-					"bgfillcolor_color" : [ 0.086275, 0.309804, 0.52549, 1.0 ],
+					"bgfillcolor_color" : [ 0.341176, 0.027451, 0.023529, 1.0 ],
 					"bgfillcolor_color1" : [ 0.180392156862745, 0.266666666666667, 0.631372549019608, 1.0 ],
 					"bgfillcolor_color2" : [ 0.2, 0.2, 0.2, 1.0 ],
 					"bgfillcolor_proportion" : 0.5,
@@ -322,15 +322,15 @@
 			}
 , 			{
 				"box" : 				{
-					"bgcolor" : [ 0.180392156862745, 0.266666666666667, 0.631372549019608, 1.0 ],
-					"bgcolor2" : [ 0.180392156862745, 0.266666666666667, 0.631372549019608, 1.0 ],
+					"bgcolor" : [ 0.301960784313725, 0.313725490196078, 0.352941176470588, 1.0 ],
+					"bgcolor2" : [ 0.2, 0.2, 0.2, 1.0 ],
 					"bgfillcolor_angle" : 270.0,
 					"bgfillcolor_autogradient" : 0.0,
-					"bgfillcolor_color" : [ 0.086275, 0.309804, 0.52549, 1.0 ],
-					"bgfillcolor_color1" : [ 0.180392156862745, 0.266666666666667, 0.631372549019608, 1.0 ],
+					"bgfillcolor_color" : [ 0.301960784313725, 0.313725490196078, 0.352941176470588, 1.0 ],
+					"bgfillcolor_color1" : [ 0.301960784313725, 0.313725490196078, 0.352941176470588, 1.0 ],
 					"bgfillcolor_color2" : [ 0.2, 0.2, 0.2, 1.0 ],
 					"bgfillcolor_proportion" : 0.5,
-					"bgfillcolor_type" : "color",
+					"bgfillcolor_type" : "gradient",
 					"gradient" : 1,
 					"id" : "obj-62",
 					"maxclass" : "message",
