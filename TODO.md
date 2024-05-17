@@ -2,8 +2,6 @@
 
 - [ ] Fix `run-before-audio` bug
 
-- [ ] Refactor `ck_run` / `ck_add` relationship
-
 - [ ] Add Windows Support
 
 - [ ] Add Doxygen docs

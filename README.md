@@ -35,13 +35,13 @@ Note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/
   - `[chuck~ <filename>]` : single channel in/out with default chuck file
   - `[chuck~ <N> <filename>]` : N channels with default chuck file
 
-It is recommended to choose 2 channels for stereo configuration. If a `<filename>` argument is given it will be searched for according to the following search rules:
+It's recommended to choose 2 channels for stereo configuration. If a `<filename>` argument is given it will be searched for according to the following rules:
 
 1. Assume it's an absolute path, use it if it exists.
 
 2. Assume that it's a partial path with the package's `examples` folder as a prefix. So if `stk/flute.ck` is given as `<filename>`, the absolute path of the package `examples` folder is prepended to it and if the resulting path exists, it is used.
 
-3. Assume `<filename>` exists in the parent patcher's directory. If so, use it. This is useful if you want to package patchers and chuck files together.
+3. Assume `<filename>` exists in the parent patcher's directory. Test that this is the case and if it is, use it. This is useful if you want to package patchers and chuck files together.
 
 4. Use Max's `locatefile_extended` search function to search for the `<filename>` in the Max search path. The first successul result will be used.
 
@@ -156,7 +156,6 @@ The following matrix shows feature coverage and also differences in compatibilit
 | macOS 12 (Monterey) | x      | x         | x    | x    | x     | x     |
 | macOS 11 (Big Sur)  | x      | x         |      | x    | x     | x     |
 
-Note: results for the above table were obtained by running the [ck_matrix](https://github.com/shakfu/chuck-max/blob/main/.github/workflows/ck_matrix.yml) github workflow which was very useful to isolate reasons for failed builds. For example, the failure of the `brew` variant with macOS 11 is due to [Homebrew](https://brew.sh), in this case, not providinh a static `libsndfile.a`. Since this is not fixable, the user running macOS 11 should, in this case, just choose another build variant and avoid this one.
 
 ### A. The Base System
 
