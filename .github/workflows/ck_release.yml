@@ -1,0 +1,64 @@
+name: ck-release
+
+on:
+  release:
+    types: [created]
+
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      matrix:
+        os:
+          - macos-14
+          - macos-13
+
+
+    steps:
+
+    - name: Job information
+      id: strings
+      shell: bash
+      run: |
+        echo "runner-arch=`uname -m`" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        fetch-depth: '0'
+
+    - name: Cache downloads
+      id: cache-downloads
+      uses: actions/cache@v4
+      env:
+        cache-name: ck-cache-1
+      with:
+        path: build/thirdparty/downloads
+        key: $${{ env.cache-name }}-${{ hashFiles('source/scripts/dep/install_libfaust.sh') }}
+
+    - name: Install chuck dependencies
+      run: brew install bison flex
+
+    - name: Install faust + warpbuf (libsndfile) dependencies
+      if: contains(fromJSON('["brew", "full", "light", "nomp3"]'), matrix.variant)
+      run: brew install autogen automake flac libogg libvorbis opus mpg123 lame
+
+    - name: Install warpbuf (rubberband) dependencies
+      if: contains(fromJSON('["brew", "full", "light", "nomp3"]'), matrix.variant)
+      run: brew install rubberband libsamplerate
+
+    - name: Build external
+      run: make brew
+
+    - name: Create package for distribution
+      run: make package
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ github.event.repository.name }}-${{ github.ref_name }}-darwin-${{ steps.strings.outputs.runner-arch }}
+        path: build/dist/${{ github.event.repository.name }}
+
+
+
