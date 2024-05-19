@@ -53,13 +53,13 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-7",
-					"linecount" : 11,
+					"linecount" : 13,
 					"maxclass" : "message",
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 495.0, 89.0, 261.0, 156.0 ],
-					"text" : "set \"Noise imp => OneZero lowpass => dac;\nlowpass => Delay delay => lowpass;\n.99999 => float R;\n500 => float L;\nL::samp => delay.delay;\nMath.pow( R, L ) => delay.gain;\n-1 => lowpass.zero;\n1 => imp.gain;\nL::samp => now;\n0 => imp.gain;\n(Math.log(.0001) / Math.log(R))::samp => now;\""
+					"patching_rect" : [ 495.0, 89.0, 260.0, 183.0 ],
+					"text" : "set \"global float length;\n\nNoise imp => OneZero lowpass => dac;\nlowpass => Delay delay => lowpass;\n.99999 => float R;\nlength => float L;\nL::samp => delay.delay;\nMath.pow( R, L ) => delay.gain;\n-1 => lowpass.zero;\n1 => imp.gain;\nL::samp => now;\n0 => imp.gain;\n(Math.log(.0001) / Math.log(R))::samp => now;\""
 				}
 
 			}
@@ -163,7 +163,7 @@
 					"fontname" : "Monaco",
 					"fontsize" : 10.0,
 					"id" : "obj-13",
-					"linecount" : 11,
+					"linecount" : 13,
 					"maxclass" : "textedit",
 					"nosymquotes" : 1,
 					"numinlets" : 1,
@@ -173,10 +173,10 @@
 					"parameter_enable" : 0,
 					"patching_rect" : [ 132.0, 89.0, 351.0, 167.0 ],
 					"presentation" : 1,
-					"presentation_linecount" : 11,
+					"presentation_linecount" : 13,
 					"presentation_rect" : [ 2.0, 24.0, 351.0, 172.0 ],
 					"tabmode" : 0,
-					"text" : "Noise imp => OneZero lowpass => dac;\nlowpass => Delay delay => lowpass;\n.99999 => float R;\n500 => float L;\nL::samp => delay.delay;\nMath.pow( R, L ) => delay.gain;\n-1 => lowpass.zero;\n1 => imp.gain;\nL::samp => now;\n0 => imp.gain;\n(Math.log(.0001) / Math.log(R))::samp => now;"
+					"text" : "global float length;\n\nNoise imp => OneZero lowpass => dac;\nlowpass => Delay delay => lowpass;\n.99999 => float R;\nlength => float L;\nL::samp => delay.delay;\nMath.pow( R, L ) => delay.gain;\n-1 => lowpass.zero;\n1 => imp.gain;\nL::samp => now;\n0 => imp.gain;\n(Math.log(.0001) / Math.log(R))::samp => now;"
 				}
 
 			}
