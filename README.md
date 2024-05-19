@@ -2,18 +2,17 @@
 
 ![chuck~ help](https://github.com/shakfu/chuck-max/blob/main/media/screenshot-min.png)
 
-A [project](https://github.com/shakfu/chuck-max) with embeds the [chuck](https://chuck.stanford.edu) engine in a Max/MSP external.
+A project which embeds the [ChucK](https://chuck.stanford.edu) 1.5.2.5-dev (chai) engine in a Max/MSP external.
 
+This repository is itself a Max package with one external (`chuck~`) with the following features and limitations:
 
-This respository is itself a Max package with one external (`chuck~`) with the following features and limitations:
-
-- A Max external which embeds the chuck 1.5.2.5-dev (chai) engine.
-
-- Generate and process audio via an embedded chuck engine by running chuck files with `global` parameters controlled and adjusted in realtime by Max messages.
+- Generate and process audio by running chuck files and evaluating chuck code with `global` parameters controlled and adjusted in realtime by Max messages.
 
 - Layer sounds from a single instance by running multiple chuck files concurrently.
 
-- Add, remove, replace audio and audio processes on the fly using Chuck messages via Max messages.
+- Add, remove, replace audio and audio processes on the fly using chuck messages via Max messages.
+
+- Interact with Max via MIDI and OSC protocols.
 
 The package also includes the following:
 
@@ -25,9 +24,9 @@ The package also includes the following:
 
 - Contributed patchers and code examples.
 
-Note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
-
 *For the impatient*: download the `chuck-max` package with pre-compiled externals and chugins from the the project's [Releases](https://github.com/shakfu/chuck-max/releases) section and check out the [cheatsheat](https://github.com/shakfu/chuck-max/blob/main/media/chuck-max-cheatsheat.pdf).
+
+Note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/pd-chuck) project.
 
 ## Overview
 
@@ -38,7 +37,9 @@ Note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/
   - `[chuck~ <filename>]` : single channel in/out with default chuck file
   - `[chuck~ <N> <filename>]` : N channels with default chuck file
 
-It's recommended to choose 2 channels for stereo configuration. If a `<filename>` argument is given it will be searched for according to the following rules:
+It's recommended to choose 2 channels for stereo audio. 
+
+If a `<filename>` argument is given it will be searched for according to the following rules:
 
 1. Assume it's an absolute path, use it if it exists.
 
