@@ -1,6 +1,9 @@
 # chuck-max
 
+![chuck~ help](https://github.com/shakfu/chuck-max/blob/main/media/screenshot-min.png)
+
 A [project](https://github.com/shakfu/chuck-max) with embeds the [chuck](https://chuck.stanford.edu) engine in a Max/MSP external.
+
 
 This respository is itself a Max package with one external (`chuck~`) with the following features and limitations:
 
@@ -27,8 +30,6 @@ Note that `chuck-max` has a sibling in the [pd-chuck](https://github.com/shakfu/
 *For the impatient*: download the `chuck-max` package with pre-compiled externals and chugins from the the project's [Releases](https://github.com/shakfu/chuck-max/releases) section and check out the [cheatsheat](https://github.com/shakfu/chuck-max/blob/main/media/chuck-max-cheatsheat.pdf).
 
 ## Overview
-
-![chuck~ help](https://github.com/shakfu/chuck-max/blob/main/media/screenshot-min.png)
 
 - The `chuck~` object can take the following arguments:
 
