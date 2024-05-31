@@ -7,6 +7,10 @@ This file sets up everything needed to enable Tidal to send OSC messages to MaxM
 	- pair the parameters between names in Tidal and names in the target
 	- start the OSC stream that sends to both targets
 	- create the channels for use in Tidal (x1, x2, ...)
+
+The code below supports a single OSC target. Substitute this line for multi-target. This will enable OSC to also go to SuperCollider.
+
+oscmap = [(target, [oscplay]), (superdirtTarget, [superdirtShape])] --dual OSC target
 --}
 
 -- define the OSC target to be used for Max
@@ -45,8 +49,8 @@ oscplay = OSC "/play" $ ArgList [
   ("amRDel", Just $ VI 0)
   ]
 
--- oscmap = [(target, [oscplay]), (superdirtTarget, [superdirtShape])] --dual OSC target
-oscmap = [(target, [oscplay])] -- single OSC target
+
+oscmap = [(target, [oscplay])] -- single OSC target - see note above for multi-target
 stream <- startStream defaultConfig oscmap
 
 -- define all custom parameters in Tidal
