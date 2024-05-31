@@ -1,0 +1,15 @@
+
+
+setcps (60/60/8)
+
+x1 $ s "[h!4, P!8]" #orbit 0
+  #fmGain 0.22
+  #fmFreq 111
+  #fmHarm 1.8
+  #fmModIndx 5.7 -- "<3.1 5 7 4 12 >" - (rand * 15 + 2)
+  #envDur 400 -- "<1750 2000 1000 3500>"
+  #envAtt 0.2 #envDec 0.7 #envSusLev 0.8 #envRel 2
+  #envCurAtt 0.1 #envCurDec 0.1 #envCurRel 0.5
+   #amOn 1 #amFreq 8 #amDuty 0.1 #amRDel 400
+
+x1 silence

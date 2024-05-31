@@ -1,0 +1,75 @@
+{--
+This file sets up everything needed to enable Tidal to send OSC messages to MaxMSP. It can also be configured to send messages to both Max/MSP and SuperDirt. It follows the structure defined for OSC in the Tidal Cycles Documentation: https://tidalcycles.org/docs/configuration/MIDIOSC/osc
+
+	- establish an OSC target
+	- set the parameters (arguments) that are sent with the OSC "/play" address pattern
+	- define the mapping between OSC targets and messages (oscmap)
+	- pair the parameters between names in Tidal and names in the target
+	- start the OSC stream that sends to both targets
+	- create the channels for use in Tidal (x1, x2, ...)
+--}
+
+-- define the OSC target to be used for Max
+let target = Target {oName = "oscMAX", -- target name in error msg
+  oAddress = "localhost", -- The target's network address
+  oPort = 5050,           -- The network port the target is listening on
+  oLatency = 0,           -- Delay, to smooth out network jitter/sync signals
+  oSchedule = Live,       -- The scheduling method
+  oWindow = Nothing,      -- Not yet used
+  oHandshake = False,     -- SuperDirt specific
+  oBusPort = Nothing      -- SuperDirt specific
+ }
+
+-- add all parameters to be sent to Max along with default values
+--   VF = float, VI = int, VS = string, Nothing = no default
+-- "Just" is a keyword followed by the type of argument and its default value Just $ VF for float
+oscplay = OSC "/play" $ ArgList [
+  ("orbit", Just $ VI 0),
+  ("s", Nothing), -- without "s" no OSC sent - this is for sound
+  ("fmGain", Just $ VF 0.2),
+  ("fmFreq", Just $ VF 110.0),
+  ("fmHarm", Just $ VF 1.0),
+  ("fmModIndx", Just $ VF 4.0),
+  ("envDur", Just $ VF 1000.0),
+  ("gapDur", Just $ VI 0), -- not really applicable in Tidal patterns
+  ("envAtt", Just $ VF 0.5),
+  ("envDec", Just $ VF 0.5),
+  ("envSusLev", Just $ VF 0),
+  ("envRel", Just $ VF 0.5),
+  ("envCurAtt", Just $ VF 1.0),
+  ("envCurDec", Just $ VF 1.0),
+  ("envCurRel", Just $ VF 1.0),
+  ("amOn", Just $ VI 0),
+  ("amFreq", Just $ VF 0),
+  ("amDuty", Just $ VF 0.5),
+  ("amRDel", Just $ VI 0)
+  ]
+
+-- oscmap = [(target, [oscplay]), (superdirtTarget, [superdirtShape])] --dual OSC target
+oscmap = [(target, [oscplay])] -- single OSC target
+stream <- startStream defaultConfig oscmap
+
+-- define all custom parameters in Tidal
+-- NOTE: left assignment is param name in Tidal, right is oscplay
+
+  fmGain = pF "fmGain"
+  fmHarm = pF "fmHarm"
+  fmModIndx = pF "fmModIndx"
+  fmFreq = pF "fmFreq"
+  envDur = pF "envDur"
+  gapDur = pI "gapDur"
+  envAtt = pF "envAtt"
+  envDec = pF "envDec"
+  envSusLev = pF "envSusLev"
+  envRel = pF "envRel"
+  envCurAtt = pF "envCurAtt"
+  envCurDec = pF "envCurDec"
+  envCurRel = pF "envCurRel"
+  amOn = pI "amOn"
+  amFreq = pF "amFreq"
+  amDuty = pF "amDuty"
+  amRDel = pI "amRDel"
+  noiseGain = pF "noiseGain"
+
+let x1 = streamReplace stream 1
+    x2 = streamReplace stream 2
