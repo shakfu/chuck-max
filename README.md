@@ -4,7 +4,7 @@
 
 A project which embeds the [ChucK](https://chuck.stanford.edu) 1.5.2.6-dev (chai) engine in a Max/MSP external.
 
-This repository is itself a Max package with one external (`chuck~`) with the following features and limitations:
+This repository is itself a Max package which includes one external (`chuck~`) with the following features and limitations:
 
 - Generate and process audio by running chuck files and evaluating chuck code with `global` parameters controlled and adjusted in realtime by Max messages.
 

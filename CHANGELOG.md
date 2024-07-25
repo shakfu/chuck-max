@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Updated chuck code base to `1.5.2.6-dev (chai)`
+
 - Added [pdf cheatsheet of chuck~ methods](https://github.com/shakfu/chuck-max/blob/main/media/chuck-max-cheatsheat.pdf)
 
 - Changed `add` syntax: `add <filename:arg1:arg2:..:argN` is no longer allowed due to the ambiguity entailed by Max automatically adding volname prefixes such `Macintosh HD:`. Args must **only** be provided as Max-friendly space separated format: `add <filename> arg1 arg2 .. argN`
