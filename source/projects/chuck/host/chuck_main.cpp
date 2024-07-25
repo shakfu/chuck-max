@@ -63,6 +63,7 @@ t_CKBOOL global_cleanup();
 void all_stop();
 void all_detach();
 void usage();
+void usage_query();
 void uh();
 t_CKBOOL get_count( const char * arg, t_CKUINT * out );
 static void audio_cb( SAMPLE * in, SAMPLE * out, t_CKUINT numFrames,
@@ -247,7 +248,7 @@ static void version()
 
 //-----------------------------------------------------------------------------
 // name: usage()
-// desc: ...
+// desc: print command line options
 //-----------------------------------------------------------------------------
 void usage()
 {
@@ -262,11 +263,27 @@ void usage()
     CK_FPRINTF_STDERR( "                callback|deprecate:{stop|warn|ignore}|chugin-probe\n" );
     CK_FPRINTF_STDERR( "                chugin-load:{on|off}|chugin-path:<path>|chugin:<name>\n" );
     CK_FPRINTF_STDERR( "                color:{on|off}|pid-file:<path>|cmd-listener:{on|off}\n" );
+    CK_FPRINTF_STDERR( "                query|query:<name>\n" );
     CK_FPRINTF_STDERR( "%s", TC::set_blue().c_str() );
     CK_FPRINTF_STDERR( "   [commands] = add|replace|remove|remove.all|status|time|\n" );
     CK_FPRINTF_STDERR( "                clear.vm|reset.id|abort.shred|exit\n" );
     CK_FPRINTF_STDERR( "       [+-=^] = shortcuts for add, remove, replace, status\n" );
     version();
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: usage_query() | added 1.5.2.5 (nshaheed, ge)
+// desc: print command line options for --query:<name>
+//-----------------------------------------------------------------------------
+void usage_query()
+{
+    CK_FPRINTF_STDERR( "possible names for --query:<name>: \n" );
+    CK_FPRINTF_STDERR( "    VERSION_LANGUAGE : language version (e.g., 1.5.2.0 (chai))\n" );
+    CK_FPRINTF_STDERR( "    VERSION_CHUGIN_API : chugin API version (e.g., 10.1)\n" );
+    CK_FPRINTF_STDERR( "    VERSION : (same as VERSION_LANGUAGE)\n" );
 }
 
 
@@ -979,6 +996,38 @@ t_CKBOOL go( int argc, const char ** argv )
             {
                 doVersion = TRUE;
             }
+            else if( !strncmp( argv[i], "--query:", 8 ) ) // added 1.5.2.5 (nshaheed)
+            {
+                // advance pointer to beginning of argument
+                string str = ::tolower(argv[i]+8);
+
+                // check <name>
+                if( str == "version_language" || str == "version" )
+                {
+                    CK_FPRINTF_STDOUT( "%s\n", CHUCK_VERSION_STRING );
+                }
+                else if( str == "version_chugin_api" )
+                {
+                    CK_FPRINTF_STDOUT( "%d.%d\n", CK_DLL_VERSION_MAJOR, CK_DLL_VERSION_MINOR );
+                }
+                else // no match
+                {
+                    // print error
+                    EM_error2( 0, "invalid argument '%s' for '--query:<name>'", str.c_str() );
+                    // print --query usage
+                    usage_query();
+                }
+
+                // clean up and exit
+                EXIT_with_global_cleanup( 0 );
+            }
+            else if( !strncmp( argv[i], "--query", 7 ) ) // added 1.5.2.5 (nshaheed)
+            {
+                // print --query:<name> usage
+                usage_query();
+                // clean up and exit
+                EXIT_with_global_cleanup( 0 );
+            }
             else
             {
                 // boost log level
@@ -1235,11 +1284,32 @@ t_CKBOOL go( int argc, const char ** argv )
         // check return code
         if( !retval )
         {
-            EM_log( CK_LOG_SYSTEM, "cannot initialize audio device..." );
-            EM_log( CK_LOG_SYSTEM, "| (use --probe see list of available audio devices)" );
-            EM_log( CK_LOG_SYSTEM, "| (use --dac/--adc to explicitly select output/input devices)" );
-            EM_log( CK_LOG_SYSTEM, "| (use --silent/-s for non-realtime)" );
-            EM_log( CK_LOG_SYSTEM, "| (use --help for more details)" );
+            // 1.5.2.5 (ge) update to always print (not log) on error
+            CK_FPRINTF_STDERR( "[chuck]: attempting to initialize real-time audio I/O...\n" );
+            // log
+            CK_FPRINTF_STDERR( "[chuck]:  | real-time audio: %s\n", g_enable_realtime_audio ? "YES" : "NO" );
+            CK_FPRINTF_STDERR( "[chuck]:  | mode: %s\n", block ? "BLOCKING" : "CALLBACK" );
+            CK_FPRINTF_STDERR( "[chuck]:  | sample rate: %ld\n", srate );
+            CK_FPRINTF_STDERR( "[chuck]:  | buffer size: %ld\n", buffer_size );
+            CK_FPRINTF_STDERR( "[chuck]:  | num buffers: %ld\n", num_buffers );
+            CK_FPRINTF_STDERR( "[chuck]:  | adaptive block processing: %ld\n", adaptive_size > 1 ? adaptive_size : 0 );
+            CK_FPRINTF_STDERR( "[chuck]:  | audio driver: %s\n", audio_driver != "" ? audio_driver.c_str() : "(unspecified)");
+            CK_FPRINTF_STDERR( "[chuck]:  | adc:%d \"%s\"\n", adc, ChuckAudio::m_adc_name.c_str() );
+            CK_FPRINTF_STDERR( "[chuck]:  | dac:%d \"%s\"\n", dac, ChuckAudio::m_dac_name.c_str() );
+            CK_FPRINTF_STDERR( "[chuck]:  | channels in: %ld out: %ld\n", adc_chans, dac_chans );
+
+            EM_error2( 0, "cannot initialize audio device..." );
+            CK_FPRINTF_STDERR( "[chuck]:  | (use --probe see list of available audio devices)\n" );
+            CK_FPRINTF_STDERR( "[chuck]:  | (use --dac/--adc to explicitly select output/input devices)\n" );
+            CK_FPRINTF_STDERR( "[chuck]:  | (use --out/--in to explicitly select # of output/input channels)\n" );
+            CK_FPRINTF_STDERR( "[chuck]:  | (use --verbose/-v to see log messages)\n" );
+            CK_FPRINTF_STDERR( "[chuck]:  | (use --silent/-s for non-realtime)\n" );
+            CK_FPRINTF_STDERR( "[chuck]:  | (use --help for more details)\n" );
+            // EM_log( CK_LOG_SYSTEM, "cannot initialize audio device..." );
+            // EM_log( CK_LOG_SYSTEM, "| (use --probe see list of available audio devices)" );
+            // EM_log( CK_LOG_SYSTEM, "| (use --dac/--adc to explicitly select output/input devices)" );
+            // EM_log( CK_LOG_SYSTEM, "| (use --silent/-s for non-realtime)" );
+            // EM_log( CK_LOG_SYSTEM, "| (use --help for more details)" );
             // pop
             EM_poplog();
 
@@ -1314,8 +1384,8 @@ t_CKBOOL go( int argc, const char ** argv )
         EM_log( CK_LOG_SYSTEM, "num buffers: %ld", num_buffers );
         EM_log( CK_LOG_SYSTEM, "adaptive block processing: %ld", adaptive_size > 1 ? adaptive_size : 0 );
         EM_log( CK_LOG_SYSTEM, "audio driver: %s", audio_driver != "" ? audio_driver.c_str() : "(unspecified)");
-        EM_log( CK_LOG_SYSTEM, "adc:[%d] \"%s\"", adc, adc_device_name.c_str() );
-        EM_log( CK_LOG_SYSTEM, "dac:[%d] \"%s\"", dac, dac_device_name.c_str() );
+        EM_log( CK_LOG_SYSTEM, "adc:%d \"%s\"", adc, adc_device_name.c_str() );
+        EM_log( CK_LOG_SYSTEM, "dac:%d \"%s\"", dac, dac_device_name.c_str() );
         // EM_log( CK_LOG_SYSTEM, "adc: %ld dac: %d", adc, dac );
     }
     EM_log( CK_LOG_SYSTEM, "channels in: %ld out: %ld", adc_chans, dac_chans );

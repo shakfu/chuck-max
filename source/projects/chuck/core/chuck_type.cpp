@@ -1119,7 +1119,9 @@ t_CKBOOL type_engine_check_stmt( Chuck_Env * env, a_Stmt stmt )
 
         case ae_stmt_code:
             env->class_scope++;
+            env->curr->value.push(); // 1.5.2.5 (ge) added
             ret = type_engine_check_code_segment( env, &stmt->stmt_code );
+            env->curr->value.pop(); // 1.5.2.5 (ge) added
             env->class_scope--;
             break;
 
@@ -4580,6 +4582,13 @@ t_CKTYPE type_engine_check_exp_func_call( Chuck_Env * env, a_Exp exp_func, a_Exp
     {
         EM_error2( exp_func->where,
             "function call using a non-function value" );
+        // check if f is of type Type | 1.5.2.5 (ge) added
+        if( equals( f, env->ckt_class ) )
+        {
+            // provide hopefully helpful hint
+            EM_error2( 0, " |- (hint: creating an Object variable with a constructor?)" );
+            EM_error2( 0, " |- (...if so, try using the form `%s VARNAME(...)` instead)", f->actual_type->name().c_str() );
+        }
         return NULL;
     }
 

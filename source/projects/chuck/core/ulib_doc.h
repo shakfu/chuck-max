@@ -47,6 +47,8 @@ struct Chuck_Type;
 struct CKDocGroup;
 class CKDocHTMLOutput;
 
+// URL to the chuck examples hosted @ Stanford
+static std::string EXAMPLES_URL_BASE = "https://chuck.stanford.edu/doc/";
 
 
 
@@ -108,6 +110,7 @@ public:
     virtual void begin_static_member_funcs() = 0;
     virtual void end_static_member_funcs() = 0;
     virtual void begin_ctors() = 0;
+    virtual void end_ctors() = 0;
     virtual void begin_member_funcs() = 0;
     virtual void end_member_funcs() = 0;
 
@@ -169,7 +172,7 @@ public:
     // set output format: CKDoc.HTML, CKDoc.TEXT, CKDoc.MARKDOWN, CKDoc.JSON
     t_CKBOOL setOutputFormat( t_CKINT which );
     // get output format
-    t_CKINT getOutpuFormat() const;
+    t_CKINT getOutputFormat() const;
     // set base examples root path
     void setExamplesRoot( const std::string & path );
     // get base examples root path
@@ -188,6 +191,10 @@ public:
     std::string genGroup( CKDocGroup * group, t_CKBOOL clearOutput = TRUE );
     // generate documentation for a single Type
     std::string genType( Chuck_Type * type, t_CKBOOL clearOutput = TRUE );
+
+public:
+    // sort functions and variables | 1.5.2.5 (@kellyyyyyyyyyyyyyyyy @azaday) added
+    t_CKBOOL m_sort_entries;
 
 public:
     // enumeration for output format types

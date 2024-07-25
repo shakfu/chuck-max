@@ -56,6 +56,8 @@ CK_DLL_CTRL( CKDoc_examplesRoot_set );
 CK_DLL_CGET( CKDoc_examplesRoot_get );
 CK_DLL_CTRL( CKDoc_outputFormat_set );
 CK_DLL_CGET( CKDoc_outputFormat_get );
+CK_DLL_MFUN( CKDoc_sort_set );
+CK_DLL_MFUN( CKDoc_sort_get );
 CK_DLL_MFUN( CKDoc_genIndex );
 CK_DLL_MFUN( CKDoc_genCSS );
 CK_DLL_MFUN( CKDoc_genGroups );
@@ -172,6 +174,17 @@ DLL_QUERY ckdoc_query( Chuck_DL_Query * QUERY )
     func->doc = "Set which output format is selected; see CKDoc.HTML, CKDoc.TEXT, CKDoc.MARKDOWN, CKDoc.JSON.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
+    // CKDoc toggle sort | 1.5.2.5 (@kellyyyyyyyyyyyyyyyy @azaday)
+    func = make_new_mfun( "int", "sort", CKDoc_sort_set );
+    func->add_arg( "int", "toggle" );
+    func->doc = "Enable or disable alphabetical sorting of functions and variables.";
+    if( !type_engine_import_mfun( env, func ) ) goto error;
+
+    // CKDoc get sort status | 1.5.2.5 (@kellyyyyyyyyyyyyyyyy @azaday)
+    func = make_new_mfun( "int", "sort", CKDoc_sort_get );
+    func->doc = "Get the current status of alphabetical sorting.";
+    if( !type_engine_import_mfun( env, func ) ) goto error;
+
     // genIndex
     func = make_new_mfun( "string", "genIndex", CKDoc_genIndex );
     func->add_arg( "string", "indexTitle" );
@@ -271,6 +284,384 @@ string type2url( const string & type, const vector<CKDocGroup *> & groups )
 
 
 
+
+//-----------------------------------------------------------------------------
+// name: class CKDocJSONOutput | 1.5.2.5 (terry feng) added
+// desc: JSON output
+//-----------------------------------------------------------------------------
+class CKDocJSONOutput : public CKDocOutput
+{
+private:
+    Chuck_Func * m_func;
+    std::string m_title;
+    Chuck_VM * m_vm_ref;
+    Chuck_Env * m_env_ref;
+    vector< pair<string, string> > m_args;
+
+public:
+    CKDocJSONOutput( Chuck_VM * vm ) : m_func(NULL), m_vm_ref(vm)
+    {
+        // get the env
+        m_env_ref = vm != NULL ? vm->env() : NULL;
+    }
+    // file extension
+    virtual string fileExtension() const { return ".json"; }
+    // render JSON index
+    virtual string renderIndex( const string & indexTitle, const vector<CKDocGroup *> & groups )
+    {
+        ostringstream sout;
+        sout << "{\n";
+
+        for( t_CKINT i = 0; i < groups.size(); ++i )
+        {
+            sout << "  \"" << groups[i]->name << "\": [\n";
+            for( t_CKINT j = 0; j < groups[i]->types.size(); ++j )
+            {
+                sout << "    \"" << groups[i]->types[j]->base_name << "\"";
+                if(j < groups[i]->types.size() - 1)
+                {
+                    sout << ",";
+                }
+                sout << "\n";
+            }
+            sout << "  ]";
+            if(i < groups.size() - 1)
+            {
+                sout << ",";
+            }
+            sout << "\n";
+        }
+        sout << "}\n";
+        return sout.str();
+    }
+
+public:
+    void begin( const string & title )
+    {
+        m_title = trim(title);
+        // check length
+        if( m_title.length() == 0 ) m_title = "";
+        // string to return
+        m_outputStr += "{\n";
+        m_outputStr += "  \"title\": \"" + m_title + "\",\n";
+        m_outputStr += "  \"groups\": [\n";
+    }
+    void heading() { }
+    void end() { m_outputStr += "  ]\n}\n"; }
+    void title(const std::string &_title) { }
+    void begin_body() { }
+    void end_body()
+    { removeTrailingComma(m_outputStr); }
+    void begin_toc() { }
+    void toc_class(Chuck_Type * type) { }
+    void end_toc() { }
+    void begin_classes( CKDocGroup * group ) { }
+    void end_classes() { }
+    void begin_class(Chuck_Type * type, const vector<CKDocGroup *> & groups) 
+    { 
+        m_outputStr += "    {\n";
+        m_outputStr += "      \"name\": \"" + type->base_name + "\",\n";
+        m_outputStr += "      \"description\": \"" + jsonStringify(capitalize_and_periodize(type->doc)) + "\",\n";
+
+        // type heirarchy, iterate through parents
+        Chuck_Type * parent = type->parent;
+        // check if there is a parent class
+        if( parent != NULL )
+        {
+            m_outputStr += "      \"inherits\": [";
+        }
+        while( parent != NULL )
+        {
+            m_outputStr += "\"" + parent->base_name + "\"";
+            parent = parent->parent;
+            if( parent != NULL )
+            {
+                m_outputStr += ", ";
+            }
+        }
+        if( type->parent != NULL ) m_outputStr += "],\n";
+    }
+
+    void end_class() { 
+        removeTrailingComma(m_outputStr);
+        m_outputStr += "    },\n"; 
+    }
+    void begin_examples() { 
+        m_outputStr += "      \"examples\": [\n";
+    }
+    void end_examples() { 
+        removeTrailingComma(m_outputStr);
+        m_outputStr += "      ],\n";
+    }
+    void begin_static_member_vars() { 
+        m_outputStr += "      \"static member variables\": [\n";
+    }
+    void end_static_member_vars() { 
+        removeTrailingComma(m_outputStr);
+        m_outputStr += "      ],\n";
+    }
+    void begin_member_vars() { 
+        m_outputStr += "      \"member variables\": [\n";
+    }
+    void end_member_vars() { 
+        removeTrailingComma(m_outputStr);
+        m_outputStr += "      ],\n";
+    }
+    void begin_static_member_funcs() { 
+        m_outputStr += "      \"static member functions\": [\n";
+    }
+    void end_static_member_funcs() { 
+        removeTrailingComma(m_outputStr);
+        m_outputStr += "      ],\n";
+    }
+    void begin_ctors() { 
+        m_outputStr += "      \"constructors\": [\n";
+    }
+    void end_ctors() { 
+        removeTrailingComma(m_outputStr);
+        m_outputStr += "      ],\n";
+    }
+    void begin_dtor() { }
+    void begin_member_funcs() { 
+        m_outputStr += "      \"member functions\": [\n";
+    }
+    void end_member_funcs() { 
+        removeTrailingComma(m_outputStr);
+        m_outputStr += "      ],\n";
+    }
+    void example(const std::string &name, const std::string &url) 
+    { 
+        // remove the "../"
+        m_outputStr += "        \"" + EXAMPLES_URL_BASE + url.substr(3) + "\",\n";
+    }
+
+    void static_member_var(Chuck_Value * var) 
+    { 
+        m_outputStr += "        {\n";
+        m_outputStr += "          \"name\": \"" + var->name + "\",\n";
+        m_outputStr += "          \"type\": \"" + var->type->base_name + array_depth_to_brackets(var->type->array_depth) + "\",\n";
+        m_outputStr += "          \"description\": \"" + jsonStringify(capitalize_and_periodize(var->doc)) + "\"\n";
+        m_outputStr += "        },\n";
+    }
+
+    void member_var(Chuck_Value * var) 
+    {
+        m_outputStr += "        {\n";
+        m_outputStr += "          \"name\": \"" + var->name + "\",\n";
+        m_outputStr += "          \"type\": \"" + var->type->base_name + array_depth_to_brackets(var->type->array_depth) + "\",\n";
+        m_outputStr += "          \"description\": \"" + jsonStringify(capitalize_and_periodize(var->doc)) + "\"\n";
+        m_outputStr += "        },\n";
+    }
+
+    void begin_static_member_func(Chuck_Func * func) 
+    { 
+        // begin
+        m_outputStr += "        {\n";
+        // function name
+        m_outputStr += "          \"static member function\": \"" + func->base_name + "\",\n";
+        // return type
+        string ret_type = func->def()->ret_type->base_name;
+        string ret_brackets = func->def() && func->def()->ret_type->array_depth ? array_depth_to_brackets(func->def()->ret_type->array_depth) : "";
+        m_outputStr += "          \"return type\": \"" + ret_type + ret_brackets + "\",\n";
+        // save for end_ctor()
+        m_func = func;
+        // clear func arg list
+        m_args.clear();
+    }
+
+    void end_static_member_func() 
+    { 
+        // verify
+        if( !m_func ) return;
+        // output constructor arguments
+        if (m_args.empty()) 
+        {
+            m_outputStr += "          \"arguments\": [],\n";
+        } 
+        else 
+        {
+            m_outputStr += "          \"arguments\": [\n";
+            for (vector< pair<std::string, std::string> >::iterator arg_it = m_args.begin(); arg_it != m_args.end(); ++arg_it)
+            {
+                m_outputStr += "            {\n";
+                m_outputStr += "              \"type\": \"" + arg_it->first + "\",\n";
+                m_outputStr += "              \"name\": \"" + arg_it->second + "\"\n";
+                m_outputStr += "            },\n";
+            }
+            removeTrailingComma(m_outputStr);
+            m_outputStr += "          ],\n";
+        }
+        // description
+        m_outputStr += "          \"description\": \"" + jsonStringify(capitalize_and_periodize(m_func->doc)) + "\"\n";
+        // finish output
+        m_outputStr += "        },\n";
+        // zero out
+        m_func = NULL;
+    }
+
+    void begin_member_func(Chuck_Func * func) 
+    {
+        // begin
+        m_outputStr += "        {\n";
+        // function name
+        m_outputStr += "          \"member function\": \"" + func->base_name + "\",\n";
+        // return type
+        string ret_type = func->def()->ret_type->base_name;
+        string ret_brackets = func->def() && func->def()->ret_type->array_depth ? array_depth_to_brackets(func->def()->ret_type->array_depth) : "";
+        m_outputStr += "          \"return type\": \"" + ret_type + ret_brackets + "\",\n";
+        // save for end_member_func()
+        m_func = func;
+        // clear func arg list
+        m_args.clear();
+    }
+
+    void end_member_func() 
+    {
+        // verify
+        if( !m_func ) return;
+        // output constructor arguments
+        if (m_args.empty()) 
+        {
+            m_outputStr += "          \"arguments\": [],\n";
+        } 
+        else 
+        {
+            m_outputStr += "          \"arguments\": [\n";
+            for (vector< pair<std::string, std::string> >::iterator arg_it = m_args.begin(); arg_it != m_args.end(); ++arg_it)
+            {
+                m_outputStr += "            {\n";
+                m_outputStr += "              \"type\": \"" + arg_it->first + "\",\n";
+                m_outputStr += "              \"name\": \"" + arg_it->second + "\"\n";
+                m_outputStr += "            },\n";
+            }
+            removeTrailingComma(m_outputStr);
+            m_outputStr += "          ],\n";
+        }
+        // description
+        m_outputStr += "          \"description\": \"" + jsonStringify(capitalize_and_periodize(m_func->doc)) + "\"\n";
+        // finish output
+        m_outputStr += "        },\n";
+        // zero out
+        m_func = NULL;
+    }
+
+    void begin_ctor( Chuck_Func * func ) 
+    { 
+        // begin
+        m_outputStr += "        {\n";
+        // function name
+        m_outputStr += "          \"constructor\": \"" + func->base_name + "\",\n";
+        // save for end_ctor()
+        m_func = func;
+        // clear func arg list
+        m_args.clear();
+    }
+
+    void end_ctor() 
+    {
+        // verify
+        if( !m_func ) return;
+        // output constructor arguments
+        if (m_args.empty()) 
+        {
+            m_outputStr += "          \"arguments\": [],\n";
+        } 
+        else 
+        {
+            m_outputStr += "          \"arguments\": [\n";
+            for (vector< pair<std::string, std::string> >::iterator arg_it = m_args.begin(); arg_it != m_args.end(); ++arg_it)
+            {
+                m_outputStr += "            {\n";
+                m_outputStr += "              \"type\": \"" + arg_it->first + "\",\n";
+                m_outputStr += "              \"name\": \"" + arg_it->second + "\"\n";
+                m_outputStr += "            },\n";
+            }
+            removeTrailingComma(m_outputStr);
+            m_outputStr += "          ],\n";
+        }
+        // description
+        m_outputStr += "          \"description\": \"" + jsonStringify(capitalize_and_periodize(m_func->doc)) + "\"\n";
+        // finish output
+        m_outputStr += "        },\n";
+        // zero out
+        m_func = NULL;
+    }
+
+    void func_arg( a_Arg_List arg ) 
+    {
+        // argument type
+        string arg_type = arg->type->base_name;
+        string arg_brackets = arg->type->array_depth ? array_depth_to_brackets(arg->type->array_depth) : "";
+        string type = arg_type + arg_brackets;
+        // argument name
+        string name = varnameclean(S_name(arg->var_decl->xid));
+
+        m_args.push_back(make_pair(type, name));
+    }
+
+public:
+    // compute array_depth and return brackets string
+    static string array_depth_to_brackets( int depth )
+    {
+        string brackets = "";
+        for( int i = 0; i < depth; i++ )
+        {
+            brackets += "[]";
+        }
+        return brackets;
+    }
+
+    // remove brackets from varname
+    static std::string varnameclean( std::string vn )
+    {
+        // strip []
+        vn.erase(std::remove(vn.begin(), vn.end(), '['), vn.end());
+        vn.erase(std::remove(vn.begin(), vn.end(), ']'), vn.end());
+        return vn;
+    }
+
+    // make valid JSON string
+    static std::string jsonStringify( const std::string & str ) 
+    {
+        // copy
+        string jsonStr = string(str);
+        // convert b-slash to double b-slash
+        replaceAll(jsonStr, std::string("\\"), string("\\\\"));
+        // convert quotes
+        replaceAll(jsonStr, std::string("\""), string("\\\""));
+        // convert newlines to spaces
+        replace(jsonStr.begin(), jsonStr.end(), '\n', ' ');
+        // remove double spaces
+        replaceAll(jsonStr, std::string("  "), string(" "));
+        return jsonStr;
+    }
+
+    // replace string `from` instances with `to`
+    static void replaceAll( std::string & str, const std::string & from, const std::string & to ) {
+        if (from.empty()) return;
+        size_t pos = 0;
+        while ((pos = str.find(from, pos)) != std::string::npos)
+        {
+            str.replace(pos, from.length(), to);
+            pos += to.length();
+        }
+    }
+
+    // remove trailing comma if present
+    static void removeTrailingComma( std::string & str )
+    {
+        // if last or second to last character is a comma, remove it
+        // accounts for the possibility of a comma followed by a newline
+        if (str[str.length() - 1] == ',')
+        {
+            str.erase(str.length() - 1, 1);
+        } 
+        else if (str[str.length() - 2] == ',')
+        {
+            str.erase(str.length() - 2, 1);
+        }
+    }
+};
 
 
 //-----------------------------------------------------------------------------
@@ -461,10 +852,15 @@ public:
         m_outputStr += "<h3 class=\"class_section_header\">constructors</h3>\n<div class=\"members\">\n";
     }
 
+    void end_ctors() // 1.5.2.5
+    {
+        m_outputStr += "</div>\n";
+    }
+
     void begin_dtor() // 1.5.2.0
     {
         m_outputStr += "<h3 class=\"class_section_header\">destructor</h3>\n<div class=\"members\">\n";
-    }
+    } 
 
     void begin_member_funcs()
     {
@@ -521,7 +917,7 @@ public:
         }
         m_outputStr += "</span> ";
 
-        // function name
+        // member name
         m_outputStr += "<span class=\"membername\">" + var->name + "</span></p>";
 
         if(var->doc.size() > 0)
@@ -811,6 +1207,8 @@ CKDoc::CKDoc( Chuck_VM * vm )
     // reset
     m_format = FORMAT_NONE;
     m_output = NULL;
+    // enable alphabetical sorting by default
+    m_sort_entries = true;
 
     // default
     setOutputFormat( FORMAT_HTML );
@@ -995,13 +1393,16 @@ t_CKBOOL CKDoc::setOutputFormat( t_CKINT which )
         case FORMAT_HTML:
             m_output = new CKDocHTMLOutput( m_vm_ref );
             break;
+        case FORMAT_JSON:
+            m_output = new CKDocJSONOutput( m_vm_ref );
+            break;
 
         // currently unsupported
         case FORMAT_TEXT:
         case FORMAT_MARKDOWN:
-        case FORMAT_JSON:
             EM_error3( "[CKDoc]: unsupported format '%s'...", formats[which] );
             goto error;
+            break;
 
         // unrecognized
         default:
@@ -1025,7 +1426,7 @@ error:
 // name: getOutputFormat()
 // desc: get output format
 //-----------------------------------------------------------------------------
-t_CKINT CKDoc::getOutpuFormat() const
+t_CKINT CKDoc::getOutputFormat() const
 {
     return m_format;
 }
@@ -1316,12 +1717,15 @@ string CKDoc::genType( Chuck_Type * type, t_CKBOOL clearOutput )
             }
         }
 
-        // sort
-        sort( svars.begin(), svars.end(), ck_comp_value );
-        sort( mvars.begin(), mvars.end(), ck_comp_value );
-        sort( sfuncs.begin(), sfuncs.end(), ck_comp_func );
-        sort( mfuncs.begin(), mfuncs.end(), ck_comp_func );
-        sort( ctors.begin(), ctors.end(), ck_comp_func_args );
+        // sort | 1.5.2.5 (@kellyyyyyyyyyyyyyyyy @azaday) added check
+        if( m_sort_entries )
+        {
+            sort( svars.begin(), svars.end(), ck_comp_value );
+            sort( mvars.begin(), mvars.end(), ck_comp_value );
+            sort( sfuncs.begin(), sfuncs.end(), ck_comp_func );
+            sort( mfuncs.begin(), mfuncs.end(), ck_comp_func );
+            sort( ctors.begin(), ctors.end(), ck_comp_func_args );
+        }
 
         // whether to potentially insert a default constructor | 1.5.2.0
         t_CKBOOL insertDefaultCtor = type_engine_has_implicit_def_ctor( type );
@@ -1329,7 +1733,7 @@ string CKDoc::genType( Chuck_Type * type, t_CKBOOL clearOutput )
         // constructors | 1.5.2.0 (ge) added
         if( ctors.size() || insertDefaultCtor )
         {
-            // begin member functions
+            // begin constructors
             output->begin_ctors();
 
             // add default constructor, if non-explicitly specified
@@ -1359,12 +1763,12 @@ string CKDoc::genType( Chuck_Type * type, t_CKBOOL clearOutput )
                     output->func_arg(args);
                     args = args->next;
                 }
-                // end the func
+                // end the constructor
                 output->end_ctor();
             }
 
             // end member functions
-            output->end_member_funcs();
+            output->end_ctors();
         }
 
         // destructor | 1.5.2.0 (ge) added but not added
@@ -1487,10 +1891,17 @@ t_CKBOOL CKDoc::outputToDir( const string & outputDir, const string & indexTitle
 
     // gen index
     if( !outputToFile( path + "index" + m_output->fileExtension(), genIndex( indexTitle ) ) ) goto error;
-    // gen CSS
-    if( !outputToFile( path + "ckdoc.css", genCSS() ) ) goto error;
+
+    // if format is HTML
+    if( getOutputFormat() == FORMAT_HTML )
+    {
+        // gen CSS
+        if( !outputToFile( path + "ckdoc.css", genCSS() ) ) goto error;
+    }
+
     // gen groups
     genGroups( groupOutput );
+
     // for each group
     for( t_CKINT i = 0; i < m_groups.size(); i++ )
     {
@@ -1731,14 +2142,27 @@ CK_DLL_CTRL( CKDoc_outputFormat_set )
     // attempt to set
     ckdoc->setOutputFormat( format );
     // return (could be different than requested)
-    RETURN->v_int = ckdoc->getOutpuFormat();
+    RETURN->v_int = ckdoc->getOutputFormat();
 }
 
 CK_DLL_CGET( CKDoc_outputFormat_get )
 {
     CKDoc * ckdoc = (CKDoc *)OBJ_MEMBER_UINT(SELF, CKDoc_offset_data);
     // return
-    RETURN->v_int = ckdoc->getOutpuFormat();
+    RETURN->v_int = ckdoc->getOutputFormat();
+}
+
+CK_DLL_MFUN( CKDoc_sort_set )
+{
+    CKDoc * ckdoc = (CKDoc *)OBJ_MEMBER_UINT(SELF, CKDoc_offset_data);
+    ckdoc->m_sort_entries = GET_NEXT_INT(ARGS);
+    RETURN->v_int = ckdoc->m_sort_entries;
+}
+
+CK_DLL_MFUN( CKDoc_sort_get )
+{
+    CKDoc * ckdoc = (CKDoc *)OBJ_MEMBER_UINT(SELF, CKDoc_offset_data);
+    RETURN->v_int = ckdoc->m_sort_entries;
 }
 
 CK_DLL_MFUN( CKDoc_genIndex )
