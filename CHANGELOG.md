@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Updated chuck code base `1.5.3.2-dev (chai)`
+
 - Updated chuck code base to `1.5.2.6-dev (chai)`
 
 - Added [pdf cheatsheet of chuck~ methods](https://github.com/shakfu/chuck-max/blob/main/media/chuck-max-cheatsheat.pdf)
