@@ -2,7 +2,7 @@
 
 ![chuck~ help](https://github.com/shakfu/chuck-max/blob/main/media/screenshot-min.png)
 
-A project which embeds the [ChucK](https://chuck.stanford.edu) 1.5.3.2-dev (chai) engine in a Max/MSP external.
+A project which embeds the [ChucK](https://chuck.stanford.edu) 1.5.4.2-dev (chai) engine in a Max/MSP external.
 
 This repository is itself a Max package which includes one external (`chuck~`) with the following features and limitations:
 
