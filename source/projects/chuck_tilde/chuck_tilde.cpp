@@ -356,7 +356,10 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         std::string global_dir = std::string(x->working_dir->s_name);
         x->chuck->setParam(CHUCK_PARAM_WORKING_DIRECTORY, global_dir);
 
-        // set default chuggins dirs
+        // enable chugins
+        x->chuck->setParam(CHUCK_PARAM_CHUGIN_ENABLE, (t_CKINT)1);
+
+        // set default chugins dirs
         std::string chugins_dir = std::string(x->chugins_dir->s_name);
         std::list<std::string> chugin_search;
 #if CK_EMBEDDED_CHUGINS
@@ -364,7 +367,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         chugin_search.push_back(global_dir + "/chugins");
 #endif
         chugin_search.push_back(chugins_dir);
-        x->chuck->setParam(CHUCK_PARAM_USER_CHUGIN_DIRECTORIES, chugin_search);
+        x->chuck->setParam(CHUCK_PARAM_IMPORT_PATH_SYSTEM, chugin_search);
 
         // redirect chuck stdout/stderr to local callbacks
         x->chuck->setStdoutCallback(ck_stdout_print);

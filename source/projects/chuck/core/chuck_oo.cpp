@@ -1,25 +1,26 @@
 /*----------------------------------------------------------------------------
   ChucK Strongly-timed Audio Programming Language
-    Compiler and Virtual Machine
+    Compiler, Virtual Machine, and Synthesis Engine
 
   Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
   This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  it under the dual-license terms of EITHER the MIT License OR the GNU
+  General Public License (the latter as published by the Free Software
+  Foundation; either version 2 of the License or, at your option, any
+  later version).
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful and/or
+  interesting, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  MIT Licence and/or the GNU General Public License for details.
 
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-  U.S.A.
+  You should have received a copy of the MIT License and the GNU General
+  Public License (GPL) along with this program; a copy of the GPL can also
+  be obtained by writing to the Free Software Foundation, Inc., 59 Temple
+  Place, Suite 330, Boston, MA 02111-1307 U.S.A.
 -----------------------------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
@@ -291,16 +292,16 @@ Chuck_Object::~Chuck_Object()
         // SPENCER TODO: HACK! is there a better way to call the dtor?
         // has_pre-dtor: related to info->pre_dtor, but different since info is shared with arrays
         // of this type (via new_array_type()), but this flag pertains to this type only
-        if( type->info && type->has_pre_dtor ) // 1.5.0.0 (ge) added type->info check
+        if( type->nspc && type->has_pre_dtor ) // 1.5.0.0 (ge) added type->info check
         {
             // make sure
-            assert( type->info->pre_dtor );
+            assert( type->nspc->pre_dtor );
             // check origin of dtor
-            if( type->info->pre_dtor->native_func ) // c++-defined deconstructor
+            if( type->nspc->pre_dtor->native_func ) // c++-defined deconstructor
             {
                 // REFACTOR-2017: do we know which VM to pass in? (diff main/sub instance?)
                 // pass in type-associated vm and current shred | 1.5.1.8
-                ((f_dtor)(type->info->pre_dtor->native_func))( this, vm, shred, Chuck_DL_Api::instance() );
+                ((f_dtor)(type->nspc->pre_dtor->native_func))( this, vm, shred, Chuck_DL_Api::instance() );
             }
             else // chuck-defined deconstructor
             {
@@ -924,16 +925,55 @@ static bool ck_compare_sint( t_CKUINT lhs, t_CKUINT rhs )
     // sort by 2-norm / magnitude
     return (t_CKINT)lhs < (t_CKINT)rhs;
 }
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: ck_compare_string()
+// desc: compare function for sorting uints as chuck strings
+//-----------------------------------------------------------------------------
+static bool ck_compare_string( t_CKUINT lhs, t_CKUINT rhs )
+{
+    const std::string& lhs_str = ((Chuck_String*)lhs)->str();
+    const std::string& rhs_str = ((Chuck_String*)rhs)->str();
+
+    return lhs_str.compare(rhs_str) < 0;
+}
+
+
+
+
 //-----------------------------------------------------------------------------
 // name: sort()
 // desc: sort the array in ascending order
 //-----------------------------------------------------------------------------
 void Chuck_ArrayInt::sort()
 {
-    // if object references sort as unsigned
-    if( m_is_obj ) std::sort( m_vector.begin(), m_vector.end() );
-    // if not object references, sort as signed ints
-    else std::sort( m_vector.begin(), m_vector.end(), ck_compare_sint );
+    // check size
+    if( size() == 0 ) return;
+
+    // if object references | 1.5.4.0 (azaday) added
+    if( m_is_obj )
+    {
+        // if this is a string[]
+        if( this->type_ref->array_depth == 1 && this->type_ref->base_name == "string" )
+        {
+            // sort as string array
+            std::sort( m_vector.begin(), m_vector.end(), ck_compare_string );
+        }
+        else // not string object array
+        {
+            // sort object pointers as unsigned ints
+            std::sort( m_vector.begin(), m_vector.end() );
+        }
+    }
+    // if not object references
+    else
+    {
+        // sort as signed ints
+        std::sort( m_vector.begin(), m_vector.end(), ck_compare_sint );
+    }
 }
 
 

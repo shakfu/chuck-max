@@ -20,7 +20,7 @@
   along with this program; if not, write to the Free Software
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
   U.S.A.
- -----------------------------------------------------------------------------*/
+-----------------------------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
 // name: util_platforms.h
@@ -48,6 +48,8 @@ FILE * ck_tmpfile();
 
 // check if is dir
 t_CKBOOL ck_isdir( const std::string & path );
+// check if file exists
+t_CKBOOL ck_fileexists( const std::string & path );
 
 // do any platform-specific setup to enable ANSI escape codes
 t_CKBOOL ck_configANSI_ESCcodes();

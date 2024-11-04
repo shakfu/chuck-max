@@ -1,25 +1,26 @@
 /*----------------------------------------------------------------------------
   ChucK Strongly-timed Audio Programming Language
-    Compiler and Virtual Machine
+    Compiler, Virtual Machine, and Synthesis Engine
 
   Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
   This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  it under the dual-license terms of EITHER the MIT License OR the GNU
+  General Public License (the latter as published by the Free Software
+  Foundation; either version 2 of the License or, at your option, any
+  later version).
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful and/or
+  interesting, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  MIT Licence and/or the GNU General Public License for details.
 
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-  U.S.A.
+  You should have received a copy of the MIT License and the GNU General
+  Public License (GPL) along with this program; a copy of the GPL can also
+  be obtained by writing to the Free Software Foundation, Inc., 59 Temple
+  Place, Suite 330, Boston, MA 02111-1307 U.S.A.
 -----------------------------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
@@ -212,10 +213,16 @@ t_CKUINT otf_process_msg( Chuck_VM * vm, Chuck_Compiler * compiler,
         // (added 1.3.5.2)
         std::string full_path = get_full_path( msg->buffer );
 
-        // special FILE descriptor mode; set autoClose to FALSE ('cleanup' will close fd)
-        compiler->set_file2parse( fd, FALSE );
-        // parse, type-check, and emit
-        if( !compiler->go( msg->buffer, full_path ) )
+        // construct a target to be compiled | 1.5.4.0 (ge)
+        Chuck_CompileTarget * target = new Chuck_CompileTarget();
+        // set file descriptor
+        target->fd2parse = fd;
+        // set fields
+        target->filename = msg->buffer;
+        target->absolutePath = full_path;
+
+        // parse, type-check, and emit; compiler will memory-manage target (no need to delete here)
+        if( !compiler->compile( target ) )
         {
             CK_SAFE_DELETE(cmd);
             goto cleanup;
@@ -287,7 +294,8 @@ t_CKUINT otf_process_msg( Chuck_VM * vm, Chuck_Compiler * compiler,
 
 cleanup:
     // close file handle
-    if( fd ) fclose( fd );
+    // if( fd ) fclose( fd );
+    // 1.5.4.1 (ge) not needed, file handle should be cleaned up as part of compile-target
 
     return ret;
 }
@@ -333,15 +341,23 @@ t_CKINT otf_send_file( const char * fname, OTF_Net_Msg & msg, const char * op,
         return FALSE;
     }
 
+    // make a target
+    Chuck_CompileTarget * target = new Chuck_CompileTarget();
+    target->fd2parse = fd;
+    target->filename = filename;
+
+    // set current target
+    EM_setCurrentTarget( target );
+
     // check to see if at least parses
-    if( !chuck_parse( filename ) )
+    if( !chuck_parse( target ) )
     {
         // error message
         EM_error2( 0, "(parse error) skipping file '%s' for [%s]...", filename.c_str(), op );
         // reset parser (clean up) | 1.5.1.5
         reset_parse();
-        // close file descriptor
-        fclose( fd );
+        // clean up target, including closing the fd
+        CK_SAFE_DELETE( target );
         return FALSE;
     }
     // reset parser (clean up) | 1.5.1.5
@@ -407,8 +423,8 @@ t_CKINT otf_send_file( const char * fname, OTF_Net_Msg & msg, const char * op,
     // pop log
     EM_poplog();
 
-    // close
-    fclose( fd );
+    // clean up target, including closing the fd
+    CK_SAFE_DELETE( target );
 
     return TRUE;
 }

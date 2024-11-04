@@ -1,25 +1,26 @@
 /*----------------------------------------------------------------------------
   ChucK Strongly-timed Audio Programming Language
-    Compiler and Virtual Machine
+    Compiler, Virtual Machine, and Synthesis Engine
 
   Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
   This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  it under the dual-license terms of EITHER the MIT License OR the GNU
+  General Public License (the latter as published by the Free Software
+  Foundation; either version 2 of the License or, at your option, any
+  later version).
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful and/or
+  interesting, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  MIT Licence and/or the GNU General Public License for details.
 
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-  U.S.A.
+  You should have received a copy of the MIT License and the GNU General
+  Public License (GPL) along with this program; a copy of the GPL can also
+  be obtained by writing to the Free Software Foundation, Inc., 59 Temple
+  Place, Suite 330, Boston, MA 02111-1307 U.S.A.
 -----------------------------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
@@ -37,6 +38,13 @@
 #include <string>
 #include <vector>
 #include <list>
+#include <sys/types.h>
+#include <sys/stat.h>
+#ifndef WIN32
+  #include <unistd.h>
+#endif
+
+
 
 
 // int to ascii
@@ -103,14 +111,29 @@ std::string extract_filepath_dir( const std::string & filepath );
 // get filename portion of a filepath (minus the directory portion) | 1.5.2.5 (ge) added
 std::string extract_filepath_file( const std::string & filepath );
 
+// get extension portion of a filepath (minus the directory and file portions) | 1.5.4.0 (ge) added
+std::string extract_filepath_ext( const std::string & filepath );
+
+// desc: create absolute path using existing filepath and incoming path
+// EG: existing == "foo/bar.ck", incoming == "thing/poo.ck" => returns foo/thing/poo.ck
+// NOTE: if incoming is detected as absolute path, incoming is returned without change
+// (intended for use with import paths being relative to the file importing them)
+std::string transplant_filepath( const std::string & existing, const std::string & incoming );
+
 // convert \ to / (on Windows)
 std::string normalize_directory_separator( const std::string & filepath );
+
+// normalize directory name (including always with trailing /)
+std::string normalize_directory_name( const std::string & dir );
 
 // check if path is absolute on the underlying platform
 t_CKBOOL is_absolute_path( const std::string & path );
 
 // split "x:y:z"-style path list into {"x","y","z"}
-void parse_path_list( std::string & str, std::list<std::string> & lst );
+void parse_path_list( const std::string & str, std::list<std::string> & lst );
+// append list to list
+void append_path_list( std::list<std::string> & list,
+                       const std::list<std::string> & appendMe );
 
 // generate auto filename (usually with date-time) with file prefix and extension
 std::string autoFilename( const std::string & prefix, const std::string & extension );
@@ -138,6 +161,9 @@ t_CKBOOL subdir_ok2recurse( const std::string & dirName,
 
 // get formatted timestamp of current system time; no new line
 std::string timestamp_formatted(); // e.g., "Sat Jun 24 04:18:42 2023"
+
+// unformatted last-write timestamp of a file | 1.5.4.0 (ge)
+time_t file_last_write_time( const std::string & filename );
 
 // tokenize a string into a vector of strings, by delimiters
 void tokenize( const std::string & str, std::vector<std::string> & tokens, const std::string & delimiters );

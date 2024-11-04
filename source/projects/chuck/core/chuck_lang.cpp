@@ -1,25 +1,26 @@
 /*----------------------------------------------------------------------------
   ChucK Strongly-timed Audio Programming Language
-    Compiler and Virtual Machine
+    Compiler, Virtual Machine, and Synthesis Engine
 
   Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
   This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  it under the dual-license terms of EITHER the MIT License OR the GNU
+  General Public License (the latter as published by the Free Software
+  Foundation; either version 2 of the License or, at your option, any
+  later version).
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful and/or
+  interesting, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  MIT Licence and/or the GNU General Public License for details.
 
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-  U.S.A.
+  You should have received a copy of the MIT License and the GNU General
+  Public License (GPL) along with this program; a copy of the GPL can also
+  be obtained by writing to the Free Software Foundation, Inc., 59 Temple
+  Place, Suite 330, Boston, MA 02111-1307 U.S.A.
 -----------------------------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
@@ -86,10 +87,15 @@ t_CKBOOL init_class_object( Chuck_Env * env, Chuck_Type * type )
     func->doc = "output helpful information about a class or an instance thereof.";
     if( !type_engine_import_sfun( env, func ) ) goto error;
 
-    // add getType() // 1.5.0.0
+    // add typeOf() // 1.5.0.0
     func = make_new_sfun( "Type", "typeOf", object_typeInfo );
     func->doc = "get the type of this object (or class).";
     if( !type_engine_import_sfun( env, func ) ) goto error;
+
+    // add typeOfInstance() // 1.5.4.0 (nshaheed, ge) added
+    func = make_new_mfun( "Type", "typeOfInstance", object_typeInstanceInfo );
+    func->doc = "get the instanced type of this object.";
+    if( !type_engine_import_mfun( env, func ) ) goto error;
 
 //    // add dump()
 //    func = make_new_mfun( "void", "dump", object_dump );
@@ -1633,6 +1639,18 @@ CK_DLL_SFUN( object_typeInfo )
     }
 }
 
+// get the instanced type info
+CK_DLL_MFUN( object_typeInstanceInfo )
+{
+    // get the object reference
+    Chuck_Object * self = SELF;
+
+    // if null, return null
+    if( !self ) return;
+
+    // return the type
+    RETURN->v_object = self->type_ref;
+}
 
 // ctor
 CK_DLL_CTOR( ugen_ctor )
@@ -3435,25 +3453,34 @@ CK_DLL_MFUN( type_children )
 
     // instantiate
     Chuck_ArrayInt * ret = new Chuck_ArrayInt( TRUE );
+    // initialize as chuck object
     initialize_object( ret, VM->env()->ckt_array, SHRED, VM );
-
-    // results
-    vector<Chuck_Type *> types;
-    // get types
-    VM->env()->nspc_top()->get_types( types );
-    // clear
+    // clear the vector
     ret->m_vector.clear();
-    // iterate
-    for( t_CKINT i = 0; i < types.size(); i++ )
+
+    // get the current top-most namespace
+    Chuck_Namespace * nspc = VM->env()->nspc_top();
+    // while we have a namespace
+    while( nspc != NULL )
     {
-        // skip me
-        if( equals( types[i], me ) ) continue;
-        // skip if not a subclass of me
-        if( !isa( types[i], me ) ) continue;
-        // copy
-        ret->m_vector.push_back( (t_CKINT)types[i] );
-        // add reference
-        CK_SAFE_ADD_REF( types[i] );
+        // results
+        vector<Chuck_Type *> types;
+        // get types
+        nspc->get_types( types );
+        // iterate
+        for( t_CKINT i = 0; i < types.size(); i++ )
+        {
+            // skip me
+            if( equals( types[i], me ) ) continue;
+            // skip if not a subclass of me
+            if( !isa( types[i], me ) ) continue;
+            // append to vector
+            ret->m_vector.push_back( (t_CKINT)types[i] );
+            // add reference
+            CK_SAFE_ADD_REF( types[i] );
+        }
+        // go up the namespace, e.g., from [user] to [global]
+        nspc = nspc->parent;
     }
 
     // return

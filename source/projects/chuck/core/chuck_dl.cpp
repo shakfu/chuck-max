@@ -1,25 +1,26 @@
 /*----------------------------------------------------------------------------
   ChucK Strongly-timed Audio Programming Language
-    Compiler and Virtual Machine
+    Compiler, Virtual Machine, and Synthesis Engine
 
   Copyright (c) 2003 Ge Wang and Perry R. Cook. All rights reserved.
     http://chuck.stanford.edu/
     http://chuck.cs.princeton.edu/
 
   This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  it under the dual-license terms of EITHER the MIT License OR the GNU
+  General Public License (the latter as published by the Free Software
+  Foundation; either version 2 of the License or, at your option, any
+  later version).
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful and/or
+  interesting, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  MIT Licence and/or the GNU General Public License for details.
 
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-  U.S.A.
+  You should have received a copy of the MIT License and the GNU General
+  Public License (GPL) along with this program; a copy of the GPL can also
+  be obtained by writing to the Free Software Foundation, Inc., 59 Temple
+  Place, Suite 330, Boston, MA 02111-1307 U.S.A.
 -----------------------------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
@@ -47,15 +48,37 @@ using namespace std;
 
 
 
+//-----------------------------------------------------------------------------
+// three types of import search paths
+//-----------------------------------------------------------------------------
+// * system paths: for loading chugins/ck files on VM startup
+//   contents persists across clearVM
+// * user paths: user .ck and .chug files; not automatically loaded on startup;
+//   @import on demand to use; contents removed by clearVM
+// * packages path: packages installed and managed by ChuMP | 1.5.4.0 (ge & nshaheed)
+//   @import on demand to use; contents removed by clearVM
+//   (=v ChuMP =v ChucK Manager of Packages)
+//-----------------------------------------------------------------------------
 #if defined(__PLATFORM_APPLE__)
-char g_default_chugin_path[] = "/usr/local/lib/chuck:/Library/Application Support/ChucK/chugins:~/Library/Application Support/ChucK/chugins:~/.chuck/lib";
+char g_default_path_system[] = "/usr/local/lib/chuck:/Library/Application Support/ChucK/chugins";
+char g_default_path_packages[] = "~/.chuck/packages";
+char g_default_path_user[] = "~/Library/Application Support/ChucK/chugins:~/.chuck/lib";
 #elif defined(__PLATFORM_WINDOWS__)
-char g_default_chugin_path[] = "C:\\Windows\\system32\\ChucK;C:\\Program Files\\ChucK\\chugins;C:\\Program Files (x86)\\ChucK\\chugins;C:\\Users\\%USERNAME%\\Documents\\ChucK\\chugins";
+char g_default_path_system[] = "C:\\Windows\\system32\\ChucK;C:\\Program Files\\ChucK\\chugins;C:\\Program Files (x86)\\ChucK\\chugins;";
+char g_default_path_packages[] = "C:\\Users\\%USERNAME%\\Documents\\ChucK\\packages";
+char g_default_path_user[] = "C:\\Users\\%USERNAME%\\Documents\\ChucK\\chugins";
 #else // Linux / Cygwin
-char g_default_chugin_path[] = "/usr/local/lib/chuck:~/.chuck/lib";
+char g_default_path_system[] = "/usr/local/lib/chuck";
+char g_default_path_packages[] = "~/.chuck/packages";
+char g_default_path_user[] = "~/.chuck/lib";
 #endif
 
-char g_chugin_path_envvar[] = "CHUCK_CHUGIN_PATH";
+// environment variables
+char g_envvar_path_system[] = "CHUCK_IMPORT_PATH_SYSTEM";
+char g_envvar_path_packages[] = "CHUCK_IMPORT_PATH_PACKAGES";
+char g_envvar_path_user[] = "CHUCK_IMPORT_PATH_USER";
+// deprecated; should use the above
+char g_envvar_path_deprecated[] = "CHUCK_CHUGIN_PATH";
 
 
 
@@ -960,6 +983,9 @@ Chuck_Carrier * Chuck_DL_Query::carrier() const { return m_carrier; }
 //-----------------------------------------------------------------------------
 t_CKBOOL Chuck_DLL::load( const char * filename, const char * func, t_CKBOOL lazy )
 {
+    // return value
+    t_CKBOOL ret = TRUE;
+
     // open
     m_handle = dlopen( filename, lazy ? RTLD_LAZY : RTLD_NOW );
 
@@ -967,19 +993,31 @@ t_CKBOOL Chuck_DLL::load( const char * filename, const char * func, t_CKBOOL laz
     if( !m_handle )
     {
         m_last_error = dlerror();
-        return FALSE;
+        ret = FALSE;
+        goto cleanup;
     }
 
     // save the filename
-    m_filename = filename;
+    m_filename = normalize_directory_separator(filename);
     m_done_query = FALSE;
     m_func = func;
 
     // if not lazy, do it
     if( !lazy && !this->query() )
-        return FALSE;
+    {
+        // clean up the handle | 1.5.4.1 (ge) added here
+        dlclose( m_handle );
+        m_handle = NULL;
 
-    return TRUE;
+        // FYI last error should be set from within query()
+        ret = FALSE;
+        goto cleanup;
+    }
+
+cleanup:
+
+    // return
+    return ret;
 }
 
 
@@ -1817,7 +1855,7 @@ static t_CKBOOL CK_DLL_CALL ck_get_mvar(Chuck_DL_Api::Object o, const char * nam
     Chuck_Object* obj = (Chuck_Object*)o;
     Chuck_Type* type = obj->type_ref;
     // check type
-    if (type->info == NULL)
+    if (type->nspc == NULL)
     {
         // put error here
         EM_error2(0, "get mvar: ck_get_mvar: object has no type info");
@@ -1826,7 +1864,7 @@ static t_CKBOOL CK_DLL_CALL ck_get_mvar(Chuck_DL_Api::Object o, const char * nam
 
     vector<Chuck_Value*> vars;
     Chuck_Value* var = NULL;
-    type->info->get_values(vars);
+    type->nspc->get_values(vars);
     // iterate over retrieved functions
     for (vector<Chuck_Value*>::iterator v = vars.begin(); v != vars.end(); v++)
     {
@@ -2986,15 +3024,48 @@ extern "C"
   #include "Windows/MinWindows.h"
 #endif // #ifndef __CHUNREAL_ENGINE__
 
-void *dlopen( const char *path, int mode )
+void * dlopen( const char * path, int mode )
 {
+    // return
+    void * retval = NULL;
+    // copy into string
+    std::string platformPath = path;
+
+    // add DLL search path | 1.5.4.0 (ge & nshaheed) added
+    // (e.g., for chugins that have DLL dependencies)
+    // replace '/' with '\\'
+    std::replace( platformPath.begin(), platformPath.end(), '/', '\\' );
+    // the dll search path to add
+    string dll_path = extract_filepath_dir( platformPath );
+    // the relateive _deps directory
+    string dll_deps_path = dll_path + "_deps\\";
+    // convert to wchar
+    wstring dll_pathw = wstring( dll_path.begin(), dll_path.end() );
+    wstring dll_deps_pathw = wstring( dll_deps_path.begin(), dll_deps_path.end() );
+    // add to the dll search path, for resolving the chugin's own DLL dependencies
+    DLL_DIRECTORY_COOKIE cookie_path = AddDllDirectory( dll_pathw.c_str() );
+    // add the relateive _deps directory to the search path as well
+    DLL_DIRECTORY_COOKIE cookie_deps_path = AddDllDirectory( dll_deps_pathw.c_str() );
+
 #ifndef __CHUNREAL_ENGINE__
-    return (void *)LoadLibrary(path);
+    // 1.5.4.0 (ge) change from LoadLibrary to LoadLibraryEx to specific 
+    // LOAD_LIBRARY_SEARCH_DEFAULT_DIRS -- this is needed, apparently,
+    // to take directories added by AddDllDirectory() into account, which
+    // is needed to load DLL dependencies of chugins...
+    // https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-adddlldirectory
+    retval = (void *)LoadLibraryEx( platformPath.c_str(), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS );
 #else
     // 1.5.0.0 (ge) | #chunreal; explicitly call ASCII version
     // the build envirnment seems to force UNICODE
-    return (void *)LoadLibraryA(path);
+    retval = (void *)LoadLibraryExA( platformPath.c_str(), NULL, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS );
 #endif
+
+    // undo the AddDllDirectory()
+    if( cookie_path ) RemoveDllDirectory( cookie_path );
+    if( cookie_deps_path ) RemoveDllDirectory( cookie_deps_path );
+
+    // return
+    return retval;
 }
 
 int dlclose( void *handle )

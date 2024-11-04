@@ -20,7 +20,7 @@
   along with this program; if not, write to the Free Software
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
   U.S.A.
- -----------------------------------------------------------------------------*/
+-----------------------------------------------------------------------------*/
 
 //-----------------------------------------------------------------------------
 // name: util_platforms.cpp
@@ -306,6 +306,20 @@ t_CKBOOL ck_isdir( const std::string & path )
     return (stat( path.c_str(), &fs )==0 && fs.st_mode & S_IFDIR);
 }
 
+
+
+
+//-----------------------------------------------------------------------------
+// name: ck_fileexists()
+// desc: check if file exists
+//-----------------------------------------------------------------------------
+t_CKBOOL ck_fileexists( const std::string & path )
+{
+    // shuttle
+    struct stat fs;
+    // stat the path; 0 means success
+    return ( stat( path.c_str(), &fs ) == 0 );
+}
 
 
 
