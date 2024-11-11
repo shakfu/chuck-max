@@ -761,9 +761,9 @@ std::string expandFilePathWindows( const string & path )
 
 //-----------------------------------------------------------------------------
 // name: get_full_path()
-// desc: get full path to file
+// desc: get full path to file; if treatAsDir is TRUE, then don't auto-match .ck
 //-----------------------------------------------------------------------------
-std::string get_full_path( const std::string & fp )
+std::string get_full_path( const std::string & fp, t_CKBOOL treatAsDir )
 {
 #ifndef __PLATFORM_WINDOWS__
 
@@ -771,13 +771,15 @@ std::string get_full_path( const std::string & fp )
     char * result = realpath(fp.c_str(), buf);
 
     // try with .ck extension
-    if( result == NULL && !extension_matches(fp, ".ck") )
+    if( result == NULL && !treatAsDir && !extension_matches(fp, ".ck") )
         result = realpath((fp + ".ck").c_str(), buf);
 
-    if( result == NULL )
-        return fp;
-    else
-        return buf;
+    // get the return value
+    string ret = result ? buf : fp;
+    // if treat as dir, ensure trailing / 1.5.4.2 (ge & nshaheed) added
+    if( treatAsDir ) ret = normalize_directory_name(ret);
+    // return
+    return ret;
 
 #else // windows
 
@@ -797,7 +799,7 @@ std::string get_full_path( const std::string & fp )
     }
 
     // try with .ck extension
-    if( result == 0 && !extension_matches(fp, ".ck") )
+    if( result == 0 && !treatAsDir && !extension_matches(fp, ".ck") )
     {
 #ifndef __CHUNREAL_ENGINE__
         result = GetFullPathName((fp + ".ck").c_str(), MAX_PATH, buf, NULL);
@@ -807,10 +809,12 @@ std::string get_full_path( const std::string & fp )
 #endif
     }
 
-    if( result == 0 )
-        return fp;
-    else
-        return normalize_directory_separator(buf);
+    // get the return value
+    string ret = result ? normalize_directory_separator(buf) : fp;
+    // if treat as dir, ensure trailing / 1.5.4.2 (ge & nshaheed) added
+    if( treatAsDir ) ret = normalize_directory_name(ret);
+    // return
+    return ret;
 
 #endif // __PLATFORM_WINDOWS__
 }

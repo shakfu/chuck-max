@@ -10,10 +10,7 @@ set(THIRDPARTY ${CMAKE_SOURCE_DIR}/build/thirdparty)
 
 # all of the c/cpp files that compose this chugin
 file(GLOB PROJECT_SRC
-    src/AbletonClipInfo.h
-    src/WarpBufChugin.h
-    src/WarpBufChugin.cpp
-    src/WarpBufChuginDLL.cpp
+	FluidSynth.cpp
 )
 
 # where the chuck headers are
@@ -21,22 +18,9 @@ set(CK_SRC_PATH
     "../chuck/include/"
 )
 
-# add_custom_target(warpbuf_deps
-#     # TARGET  ${CHUGIN_NAME} PRE_BUILD
-#     BYPRODUCTS  
-#         ${THIRDPARTY}/install/lib/librubberband.a
-#         ${THIRDPARTY}/install/lib/libsndfile.a
-#         ${THIRDPARTY}/install/lib/libsamplerate.a
-#     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-#     COMMAND ${CMAKE_SOURCE_DIR}/source/scripts/install_warpbuf_deps.sh
-# )
-
 add_library(${CHUGIN_NAME}
     ${PROJECT_SRC}
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/portable_endian/include/portable_endian.h
 )
-
-# add_dependencies(${CHUGIN_NAME} warpbuf_deps)
 
 set_target_properties(${CHUGIN_NAME} PROPERTIES CXX_STANDARD 17)
 set_target_properties(${CHUGIN_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -61,8 +45,6 @@ target_compile_definitions(${CHUGIN_NAME}
     $<$<BOOL:${APPLE}>:__MACOSX_CORE__>
     $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:__CK_DLL_STATIC__>
     HAVE_CONFIG_H
-    HAVE_LIBSAMPLERATE
-    HAVE_VDSP
     USE_PTHREADS
 )
 
@@ -70,9 +52,8 @@ target_include_directories(${CHUGIN_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${local_prefix}/include
-    # ${THIRDPARTY}/install/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/portable_endian/include
     ${CK_SRC_PATH}
+    # /opt/homebrew/opt/fluid-synth/include
 )
 
 target_link_options(${CHUGIN_NAME}
@@ -89,6 +70,17 @@ target_link_directories(${CHUGIN_NAME}
 
 target_link_libraries(${CHUGIN_NAME}
     PUBLIC
+    -liconv
+    -lreadline
+
+    ${local_prefix}/lib/libfluidsynth.a
+    ${local_prefix}/lib/libportaudio.a
+    ${local_prefix}/lib/libportaudiocpp.a
+    ${local_prefix}/lib/libglib-2.0.a
+    ${local_prefix}/lib/libgthread-2.0.a
+    ${local_prefix}/lib/libintl.a
+    # ${local_prefix}/lib/libgettextlib.a
+
     $<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libFLAC.a>
     $<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libogg.a>
     $<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbis.a>
@@ -102,22 +94,26 @@ target_link_libraries(${CHUGIN_NAME}
     ${local_prefix}/lib/libsamplerate.a
     "$<$<BOOL:${APPLE}>:-framework CoreFoundation>"
     "$<$<BOOL:${APPLE}>:-framework CoreMIDI>"
+    "$<$<BOOL:${APPLE}>:-framework CoreServices>"
     "$<$<BOOL:${APPLE}>:-framework CoreAudio>"
+    "$<$<BOOL:${APPLE}>:-framework AudioUnit>"
+    "$<$<BOOL:${APPLE}>:-framework AudioToolbox>"
+    "$<$<BOOL:${APPLE}>:-framework AppKit>"
     "$<$<BOOL:${APPLE}>:-framework Accelerate>"
 )
 
-# set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/examples")
+
 install(
     TARGETS ${CHUGIN_NAME}
     LIBRARY DESTINATION chugins
-    # LIBRARY DESTINATION ${CMAKE_SOURCE_DIR}/examples/chugins
 )
 
-# set (DST ${CMAKE_SOURCE_DIR}/externals/chuck~.mxo/Contents/Resources/chugins)
 set (DST ${CMAKE_SOURCE_DIR}/examples/chugins)
 
+if(APPLE)
 install(
-    CODE "execute_process (COMMAND codesign -vf -s - ${DST}/WarpBuf.chug)" 
+    CODE "execute_process (COMMAND codesign -vf -s - ${DST}/FluidSynth.chug)" 
 )
+endif()
 
 

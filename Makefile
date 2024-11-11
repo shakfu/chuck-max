@@ -12,8 +12,8 @@ DMG=chuck-max-$(VERSION)-$(ARCH).dmg
 ENTITLEMENTS = source/scripts/entitlements.plist
 VERSION=0.1.2
 
-.PHONY: all native universal full light brew nomp3 dev setup \
-		clean reset  test test-fauck test-warpbuf \
+.PHONY: all native universal full light brew brew2 nomp3 dev setup \
+		clean reset  test test-fauck test-warpbuf test-fluidsynth \
 		install_deps install_deps_light install_deps_nomp3 \
 		sign package dmg sign-dmg notarize staple sign-dist  \
 		release dist-release
@@ -59,6 +59,20 @@ brew: install_faust
 			-DENABLE_MP3=ON \
 			-DENABLE_WARPBUF=ON \
 			-DENABLE_FAUCK=ON && \
+		cmake --build . --config '$(CONFIG)' && \
+		cmake --install . --config '$(CONFIG)'
+
+
+brew2: install_faust
+	@mkdir -p build && \
+		cd build && \
+		cmake -GXcode .. \
+			-DENABLE_HOMEBREW=ON \
+			-DENABLE_EXTRA_FORMATS=ON \
+			-DENABLE_MP3=ON \
+			-DENABLE_WARPBUF=ON \
+			-DENABLE_FAUCK=ON \
+			-DENABLE_FLUIDSYNTH=ON && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
@@ -204,4 +218,6 @@ test-fauck:
 test-warpbuf:
 	@cd examples && ./chuck --chugin-path:chugins warpbuf/warpbuf_basic.ck -v3
 
+test-fluidsynth:
+	@cd examples && ./chuck --chugin-path:chugins fluidsynth/FluidSynth-play.ck -v3
 

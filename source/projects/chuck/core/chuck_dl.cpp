@@ -64,7 +64,7 @@ char g_default_path_system[] = "/usr/local/lib/chuck:/Library/Application Suppor
 char g_default_path_packages[] = "~/.chuck/packages";
 char g_default_path_user[] = "~/Library/Application Support/ChucK/chugins:~/.chuck/lib";
 #elif defined(__PLATFORM_WINDOWS__)
-char g_default_path_system[] = "C:\\Windows\\system32\\ChucK;C:\\Program Files\\ChucK\\chugins;C:\\Program Files (x86)\\ChucK\\chugins;";
+char g_default_path_system[] = "C:\\Windows\\system32\\ChucK;C:\\Program Files\\ChucK\\chugins;C:\\Program Files (x86)\\ChucK\\chugins";
 char g_default_path_packages[] = "C:\\Users\\%USERNAME%\\Documents\\ChucK\\packages";
 char g_default_path_user[] = "C:\\Users\\%USERNAME%\\Documents\\ChucK\\chugins";
 #else // Linux / Cygwin
@@ -3037,6 +3037,10 @@ void * dlopen( const char * path, int mode )
     std::replace( platformPath.begin(), platformPath.end(), '/', '\\' );
     // the dll search path to add
     string dll_path = extract_filepath_dir( platformPath );
+    // if empty string, use current directory
+    if( dll_path == "" ) dll_path = ".\\";
+    // AddDllDirectory expects only fullpaths
+    dll_path = get_full_path( dll_path, TRUE );
     // the relateive _deps directory
     string dll_deps_path = dll_path + "_deps\\";
     // convert to wchar

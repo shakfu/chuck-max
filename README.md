@@ -149,12 +149,14 @@ The following matrix shows feature coverage and also differences in compatibilit
 | Base chugins        | x      | x         | x    | x    | x     | x     |
 | Faust.chug          |        |           | x    | x    | x     | x     |
 | WarpBuf.chug        |        |           | x    | x    | x     | x     |
+| FluidSynth.chug     |        |           | x    |      |       |       |
 | .wav                | x      | x         | x    | x    | x     | x     |
 | .mp3                |        |           | x    | x    |       |       |
 | .flac               |        |           | x    | x    | x     |       |
 | .ogg                |        |           | x    | x    | x     |       |
 | .opus               |        |           | x    | x    | x     |       |
 | .vorbis             |        |           | x    | x    | x     |       |
+| macOS 15 (Sequoia)  | x      | x         | x    | x    | x     | x     |
 | macOS 14 (Sonoma)   | x      | x         | x    | x    | x     | x     |
 | macOS 13 (Ventura)  | x      | x         | x    | x    | x     | x     |
 | macOS 12 (Monterey) | x      | x         | x    | x    | x     | x     |
@@ -215,6 +217,8 @@ brew install autoconf autogen automake flac libogg libtool libvorbis opus mpg123
 After these are installed, it should be possible, subject to the compatibility matrix above, to build the advanced system with one of the following options:
 
 - `make brew`: build the external using the previously installed homebrew dependencies, as well as downloaded `faust` headers and a downloaded pre-compiled `libfaust` (`libfaustwithllvm`) library. This is the newer, faster, recommended way of getting a full chuck-max system up and running.
+
+- `make brew2`: preliminary experimental support (currently not working) for building `FluidSynth.chug` is provided with this make target but this requires additional dependencies to be installed via `brew install glib portaudio gettext fluid-synth`
 
 - `make full`: build the external by manually building all of the dependencies except for `libfaust` from source. This is the previous way of building an advanced system. It is currently only for advanced developers who want maximum flexibility in their builds.
 
