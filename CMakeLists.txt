@@ -3,12 +3,15 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment ve
 string(REGEX REPLACE "(.*)/" "" THIS_FOLDER_NAME "${CMAKE_CURRENT_SOURCE_DIR}")
 project(${THIS_FOLDER_NAME})
 
-option(C74_BUILD_FAT "Build Universal Externals")
+
 option(ENABLE_WARPBUF "Build WarpBuf chugin")
 option(ENABLE_FAUCK "Build Fauck chugin")
 option(ENABLE_MP3 "Enable MP3 support for libsndfile")
 option(ENABLE_EXTRA_FORMATS "Enable extra file format for libsndfile")
+
+# macos options
 option(ENABLE_HOMEBREW "Build using Homebrew dependencies")
+option(BUILD_UNIVERSAL "Build Universal Externals")
 
 # use ccache if available
 find_program(CCACHE_PROGRAM ccache)
@@ -23,12 +26,12 @@ if (APPLE)
                 message(STATUS "Xcode 10 or higher is required. Please install from the Mac App Store.")
                 return ()
             # elseif(${XCODE_VERSION} VERSION_GREATER_EQUAL 12)
-            #     set(C74_BUILD_FAT YES)
+            #     set(BUILD_UNIVERSAL YES)
             endif ()
     endif ()
 
     if (NOT CMAKE_OSX_ARCHITECTURES)
-        if(C74_BUILD_FAT)
+        if(BUILD_UNIVERSAL)
             set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "macOS architecture" FORCE)
         else()
             set(CMAKE_OSX_ARCHITECTURES ${CMAKE_SYSTEM_PROCESSOR} CACHE STRING "macOS architecture" FORCE)

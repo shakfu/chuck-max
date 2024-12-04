@@ -51,6 +51,7 @@ target_compile_definitions(${CHUGIN_NAME}
 target_include_directories(${CHUGIN_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    # ${THIRDPARTY}/install/include
     ${local_prefix}/include
     ${CK_SRC_PATH}
     # /opt/homebrew/opt/fluid-synth/include
@@ -73,6 +74,7 @@ target_link_libraries(${CHUGIN_NAME}
     -liconv
     -lreadline
 
+    # ${THIRDPARTY}/install/lib/libfluidsynth.a
     ${local_prefix}/lib/libfluidsynth.a
     ${local_prefix}/lib/libportaudio.a
     ${local_prefix}/lib/libportaudiocpp.a
