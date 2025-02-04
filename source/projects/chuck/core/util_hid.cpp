@@ -6387,6 +6387,11 @@ Linux general HID support
 #include <linux/joystick.h>
 #include <linux/input.h>
 
+#if defined(__USE_X11__)
+// for Mouse | 1.5.4.2 (ge) added
+#include <X11/Xlib.h>
+#endif
+
 #define CK_HID_DIR ("/dev/input")
 #define CK_HID_MOUSEFILE ("mouse%d")
 #define CK_HID_JOYSTICKFILE ("js%d")
@@ -7800,7 +7805,204 @@ const char * Keyboard_name( int k )
 #endif
 
 
+#ifdef __PLATFORM_WINDOWS__
+
+// multiple monitors info:
+// https://stackoverflow.com/questions/4631292/how-to-detect-the-current-screen-resolution
+t_CKBOOL GetMonitorRealResolution( HMONITOR monitor, t_CKFLOAT * pixelsWidth, t_CKFLOAT * pixelsHeight )
+{
+    // zero out
+    *pixelsWidth = *pixelsHeight = 0;
+
+    // get monitor info
+    MONITORINFOEX info; info.cbSize = sizeof( MONITORINFOEX );
+    if( !GetMonitorInfoA( monitor, &info ) ) return FALSE;
+
+    // get display setting
+    DEVMODE devmode; devmode.dmSize = sizeof( DEVMODE );
+    if( !EnumDisplaySettingsA( info.szDevice, ENUM_CURRENT_SETTINGS, &devmode ) ) return FALSE;
+
+    // get monitor pixel dimensions (note does not take DPI scaling into account; see below for alternate method)
+    *pixelsWidth = (t_CKFLOAT)devmode.dmPelsWidth;
+    *pixelsHeight = (t_CKFLOAT)devmode.dmPelsHeight;
+
+    // done
+    return TRUE;
+}
+
+#endif
+
+//-----------------------------------------------------------------------------
+// unified easy mouse functions
+//-----------------------------------------------------------------------------
+// name: ck_get_mouse_xy_normalize() | 1.5.4.2 (ge & spencer) added
+// desc: get normalize [0,1] mouse cursor position
+//-----------------------------------------------------------------------------
+t_CKVEC2 ck_get_mouse_xy_normalize()
+{
+    t_CKVEC2 retval; retval.x = retval.y = 0;
+
+#ifdef __PLATFORM_APPLE__
+    // get screen coords
+    CGEventRef cg_event = CGEventCreate(NULL);
+    CGPoint mouseLocation = CGEventGetLocation(cg_event);
+
+    t_CKFLOAT cursorX = (t_CKFLOAT)mouseLocation.x;
+    t_CKFLOAT cursorY = (t_CKFLOAT)mouseLocation.y;
+
+    CGDirectDisplayID display;
+    CGDisplayCount displayCount;
+
+    if( CGGetDisplaysWithPoint( mouseLocation, 1, &display, &displayCount ) == kCGErrorSuccess )
+    {
+        CGRect bounds = CGDisplayBounds( display );
+        retval.x = ( (t_CKFLOAT)(mouseLocation.x-bounds.origin.x) ) / bounds.size.width;
+        retval.y = ( (t_CKFLOAT)(mouseLocation.y-bounds.origin.y) ) / bounds.size.height;
+    }
+
+    // reclaim
+    CFRelease( cg_event );
+#elif defined(__PLATFORM_WINDOWS__)
+
+    t_CKINT x = 0, y = 0;
+    t_CKFLOAT logicalWidth = 0, logicalHeight = 0;
+    POINT pt;
+    MONITORINFOEX info; info.cbSize = sizeof( MONITORINFOEX );
+    DEVMODE devmode; devmode.dmSize = sizeof( DEVMODE );
+    HMONITOR monitor = NULL;
+
+    // get cursor position; in a mutliple monitor setup, this could return negative values
+    // for monitors to the left or above the primary monitor
+    if( !GetCursorPos( &pt ) ) goto done;
+    // get the monitor that contains the point
+    monitor = MonitorFromPoint( pt, MONITOR_DEFAULTTONEAREST ); if( !monitor ) goto done;
+    // get monitor info
+    if( !GetMonitorInfo( monitor, &info ) ) goto done;
+    // get logical width and height, this takes DPI scaling into account
+    // e.g., in Settings->Display->Make everything bigger (Windows 10, 11)
+    logicalWidth = (t_CKFLOAT)info.rcMonitor.right - info.rcMonitor.left;
+    logicalHeight = (t_CKFLOAT)info.rcMonitor.bottom - info.rcMonitor.top;
+    // map to monitor coordinate
+    x = (t_CKINT)pt.x - info.rcMonitor.left;
+    y = (t_CKINT)pt.y - info.rcMonitor.top;
+    // normalize
+    retval.x = x / logicalWidth;
+    retval.y = y / logicalHeight;
+
+    // cerr << pt.x << " " << pt.y << " => " << x << " " << y << " " << " offset: "
+    //      << info.rcMonitor.left << " " << info.rcMonitor.top
+    //      << " dim: " << logicalWidth << " " << logicalHeight
+    //      << " return: " << retval.x << " " << retval.y << endl;
+
+    // t_CKFLOAT screenWidth = GetSystemMetrics( SM_CXVIRTUALSCREEN );
+    // t_CKFLOAT screenHeight = GetSystemMetrics( SM_CYVIRTUALSCREEN );
+#elif defined(__PLATFORM_LINUX__)
+
+  #if defined(__USE_X11__)
+    // stuff to query
+    Window root;
+    XWindowAttributes attributes;
+    int qRootX, qRootY, qChildX, qChildY;
+    Window qRoot, qChild;
+    unsigned int qMask;
+    // open connection to X server
+    Display * display = XOpenDisplay( nullptr );
+    if( !display )
+    {
+        // print error
+        std::cerr << "Mouse cannot open display (X server)..." << std::endl;
+	goto done;
+    }
+    // get root window
+    root = DefaultRootWindow( display );
+    // get the point
+    XQueryPointer( display, root, &qRoot, &qChild, &qRootX, &qRootY, &qChildX, &qChildY, &qMask );
+    // get window attributes
+    XGetWindowAttributes( display, root, &attributes );
+    // copy to return value
+    retval.x = (t_CKFLOAT)qRootX / attributes.width;
+    retval.y = (t_CKFLOAT)qRootY / attributes.height;
+    // close the connection
+    XCloseDisplay(display);
+  #else // no __USE_X11__
+    cerr << "Mouse needs X11 on Linux; to use, re-compile chuck with USE_X11=1" << endl;
+  #endif // if defined(__USE_X11__)
+
+#else
+    // unsupported, for now; return 0,0
+#endif
+
+done:
+    // done
+    return retval;
+}
+//-----------------------------------------------------------------------------
+// name: ck_get_mouse_xy_absolute() | 1.5.4.2 (ge & spencer) added
+// desc: get absolute mouse cursor position, dependent on screen resolution
+//-----------------------------------------------------------------------------
+t_CKVEC2 ck_get_mouse_xy_absolute()
+{
+    t_CKVEC2 retval; retval.x = retval.y = 0;
+#ifdef __PLATFORM_APPLE__
+    // get screen coords
+    CGEventRef cg_event = CGEventCreate(NULL);
+    CGPoint mouseLocation = CGEventGetLocation(cg_event);
+    // return value
+    retval.x = (t_CKFLOAT)mouseLocation.x;
+    retval.y = (t_CKFLOAT)mouseLocation.y;
+    // reclaim
+    CFRelease( cg_event );
+#elif defined(__PLATFORM_WINDOWS__)
+    // get screen coords
+    POINT pt;
+    if( GetCursorPos( &pt ) )
+    {
+        retval.x = pt.x;
+        retval.y = pt.y;
+    }
+#elif defined(__PLATFORM_LINUX__)
+
+  #if defined(__USE_X11__)
+    // stuff to query
+    Window root;
+    int qRootX, qRootY, qChildX, qChildY;
+    Window qRoot, qChild;
+    unsigned int qMask;
+    // open connection to X server
+    Display * display = XOpenDisplay( nullptr );
+    if( !display )
+    {
+        // print error
+        std::cerr << "Mouse cannot open display (X server)..." << std::endl;
+	goto done;
+    }
+    // get root window
+    root = DefaultRootWindow( display );
+    // get the point
+    XQueryPointer( display, root, &qRoot, &qChild, &qRootX, &qRootY, &qChildX, &qChildY, &qMask );
+    // copy to return value
+    retval.x = qRootX;
+    retval.y = qRootY;
+    // close the connection
+    XCloseDisplay(display);
+  #else // no __USE_X11__
+    cerr << "Mouse needs X11 on Linux; to use, re-compile chuck with USE_X11=1" << endl;
+  #endif // if defined(__USE_X11__)
+
+#else
+    // unsupported platform; nothing to do for now; return 0,0
+#endif // platform select
+
+done:
+    return retval;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
 #pragma mark Hid graveyard
+//-----------------------------------------------------------------------------
 /***** empty functions for stuff that isn't yet cross platform *****/
 #ifndef __PLATFORM_APPLE__
 /*** empty functions for Mac-only stuff ***/

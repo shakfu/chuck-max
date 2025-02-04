@@ -1,4 +1,4 @@
-MAX_VERSION := 8
+MAX_VERSION := 9
 CHUCK_PACKAGE := "$(HOME)/Documents/Max\ $(MAX_VERSION)/Packages/chuck-max"
 SCRIPTS := source/scripts
 BUILD := build

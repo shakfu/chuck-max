@@ -344,7 +344,7 @@ a_Stmt new_stmt_from_case( a_Exp exp, uint32_t lineNum, uint32_t posNum )
     return a;
 }
 
-a_Stmt new_stmt_from_import( a_Import list, uint32_t line, uint32_t where ) // 1.5.2.5 (ge) added
+a_Stmt new_stmt_from_import( a_Import list, uint32_t line, uint32_t where ) // 1.5.4.0 (ge) added
 {
     a_Stmt a = (a_Stmt)checked_malloc( sizeof(struct a_Stmt_) );
     a->s_type = ae_stmt_import;
@@ -356,7 +356,19 @@ a_Stmt new_stmt_from_import( a_Import list, uint32_t line, uint32_t where ) // 1
     return a;
 }
 
-a_Import new_import( c_str str, a_Id_List list, uint32_t line, uint32_t where ) // 1.5.2.5 (ge) added
+a_Stmt new_stmt_from_doc( a_Doc list, uint32_t line, uint32_t where ) // 1.5.4.4 (ge) added
+{
+    a_Stmt a = (a_Stmt)checked_malloc( sizeof(struct a_Stmt_) );
+    a->s_type = ae_stmt_doc;
+    a->stmt_doc.list = list;
+    a->line = line; a->where = where;
+    a->stmt_doc.line = line; a->stmt_doc.where = where;
+    a->stmt_doc.self = a;
+
+    return a;
+}
+
+a_Import new_import( c_str str, a_Id_List list, uint32_t line, uint32_t where ) // 1.5.4.0 (ge) added
 {
     a_Import a = (a_Import)checked_malloc( sizeof(struct a_Import_) );
 
@@ -399,6 +411,25 @@ a_Import new_import( c_str str, a_Id_List list, uint32_t line, uint32_t where ) 
 }
 
 a_Import prepend_import( a_Import target, a_Import list, uint32_t lineNum, uint32_t posNum )
+{
+    target->next = list;
+    return target;
+}
+
+a_Doc new_doc( c_str str, uint32_t line, uint32_t where ) // 1.5.4.4 (ge) added
+{
+    a_Doc a = (a_Doc)checked_malloc( sizeof(struct a_Doc_) );
+
+    // copy allocated string pointer
+    a->desc = str; // no strdup( str ); <-- str should have been allocated in alloc_str()
+
+    // set line info
+    a->line = line; a->where = where;
+
+    return a;
+}
+
+a_Doc prepend_doc( a_Doc target, a_Doc list, uint32_t lineNum, uint32_t posNum )
 {
     target->next = list;
     return target;
@@ -1373,6 +1404,9 @@ void delete_stmt( a_Stmt stmt )
     case ae_stmt_import:
         delete_stmt_from_import( stmt );
         break;
+    case ae_stmt_doc: // 1.5.4.4 (ge) added
+        delete_stmt_from_doc( stmt );
+        break;
     }
 
     CK_SAFE_FREE( stmt );
@@ -1467,6 +1501,27 @@ void delete_stmt_from_import( a_Stmt stmt )
     {
         // delete the content
         CK_SAFE_FREE( i->what );
+        // get next before we delete this one
+        next = i->next;
+        // delete the import target
+        CK_SAFE_FREE( i );
+        // move to the next one
+        i = next;
+    }
+}
+
+void delete_stmt_from_doc( a_Stmt stmt )
+{
+    EM_log( CK_LOG_FINEST, "deleting stmt %p (doc)...", (void *)stmt );
+
+    // pointer
+    a_Doc next = NULL, i = stmt->stmt_doc.list;
+
+    // iterate instead of recurse to avoid stack overflow
+    while( i )
+    {
+        // delete the content
+        CK_SAFE_FREE( i->desc );
         // get next before we delete this one
         next = i->next;
         // delete the import target
@@ -1581,6 +1636,9 @@ void delete_exp( a_Exp e )
     {
         // TODO: release reference type
         // TODO: release reference owner
+        // 1.5.4.4 (ge) actually -- the above may not be necessary if:
+        // 1) they are not ref-counted in the first place; e.g., see type_engine_check_exp() which assigned `type`
+        // AND 2) the AST is cleaned up before types and nspcs etc.
 
         // delete content in this exp
         delete_exp_contents( e );
@@ -1682,7 +1740,13 @@ void delete_exp_decl( a_Exp e )
 void delete_exp_from_id( a_Exp_Primary e )
 {
     // TODO: do we need to anything with the Symbol?
+    // 1.5.4.4 (ge) symbols are additive but also also unique per string thus growth bounded -- can keep around, in practice
     EM_log( CK_LOG_FINEST, "deleting exp (primary ID '%s') [%p]...", S_name(e->var), (void *)e );
+
+    // TODO: release reference func_alias #2024-ctor-this
+    // 1.5.4.4 (ge) actually -- the above may not be necessary if:
+    // 1) func_alisa not ref-counted in the first place; e.g., see xxx() which assigned `func_alias`
+    // AND 2) the AST is cleaned up before the func etc.
 }
 
 void delete_exp_from_str( a_Exp_Primary e )

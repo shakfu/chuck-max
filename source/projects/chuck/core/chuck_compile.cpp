@@ -746,7 +746,7 @@ t_CKBOOL Chuck_Compiler::compile_entire_file( Chuck_Context * context )
 
 
 //-----------------------------------------------------------------------------
-// name: compile_import_only() // 1.5.2.5 (ge) added
+// name: compile_import_only() | 1.5.4.0 (ge) added
 // desc: import only public definitions (classes and operator overloads)
 //-----------------------------------------------------------------------------
 t_CKBOOL Chuck_Compiler::compile_import_only( Chuck_Context * context )
@@ -831,17 +831,17 @@ t_CKBOOL type_engine_scan_import( Chuck_Env * env, a_Stmt_List stmt_list,
         if( stmt_list->stmt && stmt_list->stmt->s_type == ae_stmt_import )
         {
             // get the import list
-            a_Import import = stmt_list->stmt->stmt_import.list;
+            a_Import importList = stmt_list->stmt->stmt_import.list;
             // loop over import list
-            while( import )
+            while( importList )
             {
                 // resolve, using importer's absolute path, expandSearch == TRUE
-                string abs = compiler->resolveFilename( import->what, target->absolutePath, TRUE );
+                string abs = compiler->resolveFilename( importList->what, target->absolutePath, TRUE );
                 // if cannot resolve filename
                 if( abs == "" )
                 {
                     // print error
-                    EM_error2( import->where, "no such file: '%s'", import->what );
+                    EM_error2( importList->where, "no such file: '%s'", importList->what );
                     // done
                     return FALSE;
                 }
@@ -863,7 +863,7 @@ t_CKBOOL type_engine_scan_import( Chuck_Env * env, a_Stmt_List stmt_list,
                         if( !compiler->importChugin( abs, TRUE, theFile, errorStr ) )
                         {
                             // print error (chugin loading only prints to log)
-                            EM_error2( import->where, "cannot load chugin: '%s'...", theFile.c_str() );
+                            EM_error2( importList->where, "cannot load chugin: '%s'...", theFile.c_str() );
                             EM_error2( 0, "...(reason) %s", errorStr.length() ? errorStr.c_str() : "[none provided, unhelpfully (try running with more verbose log-level)]" );
                             EM_error2( 0, "...in file '%s'", abs.c_str() );
                             // error encountered in chugin load, bailing out
@@ -887,7 +887,7 @@ t_CKBOOL type_engine_scan_import( Chuck_Env * env, a_Stmt_List stmt_list,
                         // make new target with import only
                         t = new Chuck_CompileTarget( te_do_import_only );
                         // set filename, with transplant path, expand search if necessary
-                        if( !compiler->openFile( t, import->what, target, TRUE, import->where ) )
+                        if( !compiler->openFile( t, importList->what, target, TRUE, importList->where ) )
                         {
                             // clean up
                             CK_SAFE_DELETE( t );
@@ -899,9 +899,9 @@ t_CKBOOL type_engine_scan_import( Chuck_Env * env, a_Stmt_List stmt_list,
                     }
                 }
                 // add to target
-                target->dependencies.push_back( ImportTargetNode( t, import->where, import->line ) );
+                target->dependencies.push_back( ImportTargetNode( t, importList->where, importList->line ) );
                 // next in list
-                import = import->next;
+                importList = importList->next;
             }
         }
 
@@ -1110,9 +1110,11 @@ cleanup:
     EM_setCurrentTarget( NULL );
 
     // commit
-    if( ret ) env()->global()->commit();
+    if( ret ) // 1.5.4.3 (ge) update to call commit_namespaces | was: env()->global()->commit();
+    { env()->commit_namespaces(); }
     // or rollback
-    else env()->global()->rollback();
+    else // 1.5.4.3 (ge) update to call commit_namespaces | was: env()->global()->rollback();
+    { env()->rollback_namespaces(); }
 
     // unload the context from the type-checker
     if( !type_engine_unload_context( env() ) )
@@ -1446,10 +1448,9 @@ t_CKBOOL scan_external_modules_in_directory( const string & directory,
     // cannot open
     if( !dir ) return FALSE;
 
-    // do first read | 1.5.0.0 (ge + eito) #chunreal
-    struct dirent * de = readdir( dir );
     // while( (de = readdir(dir)) ) <- UE5 forces us to not do this
-    for( de = readdir(dir); de != NULL; de = readdir(dir) )
+    // iterate over directory entries | 1.5.0.0 (ge + eito) #chunreal
+    for( struct dirent * de = readdir( dir ); de != NULL; de = readdir(dir) )
     {
         t_CKBOOL is_regular = false;
         t_CKBOOL is_directory = false;
@@ -2509,8 +2510,6 @@ t_CKBOOL Chuck_Compiler::openFile( Chuck_CompileTarget * target,
         return FALSE;
     }
 
-    // open file
-    target->fd2parse = fopen( target->absolutePath.c_str(), "rb" );
     // check for directory
     if( ck_isdir( target->absolutePath ) )
     {
@@ -2520,6 +2519,8 @@ t_CKBOOL Chuck_Compiler::openFile( Chuck_CompileTarget * target,
         return FALSE;
     }
 
+    // open file
+    target->fd2parse = fopen( target->absolutePath.c_str(), "rb" );
     // if still unresolved
     if( !target->fd2parse )
     {

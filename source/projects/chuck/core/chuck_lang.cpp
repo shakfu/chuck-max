@@ -209,6 +209,12 @@ t_CKBOOL init_class_ugen( Chuck_Env * env, Chuck_Type * type )
     func->doc = "get the ugen's buffered operation mode.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
+//    // add attachToOriginShred
+//    func = make_new_mfun( "Shred", "attachToOriginShred", ugen_originShred );
+//    func->add_arg( "Shred", "shred" );
+//    func->doc = "(Use with care) by default, a UGen is attached to its origin Shred (the Shred the UGen was created on); if that Shred is removed (e.g., by Machine.remove()), it will disconnect its UGens' audio connections. This methods makes it possible for UGen to be attached to either a different Shred or to no Shred if `null` is passed in. The latter makes this UGen a kind of \"free agent\" that is subject to the garbage collector as usual, but no longer to a origin Shred. This is useful ";
+//    if( !type_engine_import_mfun( env, func ) ) goto error;
+
     // end
     type_engine_import_class_end( env );
 
@@ -606,20 +612,35 @@ t_CKBOOL init_class_shred( Chuck_Env * env, Chuck_Type * type )
     func->doc = "get the operand stack size hint (in bytes) for shreds sporked from this one.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
-    // add parent() | 1.5.2.0 (nshaheed)
-    func = make_new_sfun( "Shred", "parent", shred_parent );
+    // add parent() | 1.5.2.0 (nshaheed) | 1.5.4.2 (ge) sfun => mfun
+    func = make_new_mfun( "Shred", "parent", shred_parent );
     func->doc = "get the calling shred's parent shred (i.e., the shred that sporked the calling shred). Returns null if there is no parent Shred. (Related: see Shred.ancestor())";
-    if( !type_engine_import_sfun( env, func ) ) goto error;
+    if( !type_engine_import_mfun( env, func ) ) goto error;
 
-    // add ancestor() | 1.5.2.0 (nshaheed)
-    func = make_new_sfun( "Shred", "ancestor", shred_ancestor );
+    // add ancestor() | 1.5.2.0 (nshaheed) | 1.5.4.2 (ge) sfun => mfun
+    func = make_new_mfun( "Shred", "ancestor", shred_ancestor );
     func->doc = "get the calling shred's \"ancestor\" shred (i.e., the top-level shred). Returns itself if the calling shred is the top-level shred. (Related: see Shred.parent())";
-    if( !type_engine_import_sfun( env, func ) ) goto error;
+    if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add gc() | 1.5.2.0 (ge) added
     // func = make_new_mfun( "void", "gc", shred_gc );
     // func->doc = "manually trigger a per-shred garbage collection pass; can be used to clean up certain UGens/objects without waiting for the shred to complete; use with care.";
     // if( !type_engine_import_mfun( env, func ) ) goto error;
+
+    // add pc() | 1.5.4.2 (ge) | 1.5.4.2 (ge) sfun => mfun
+    func = make_new_mfun( "int", "pc", shred_pc );
+    func->doc = "get the calling shred's current program counter (CP); useful for debugging, general information, or amusement.";
+    if( !type_engine_import_mfun( env, func ) ) goto error;
+
+    // add pc() | 1.5.4.2 (ge) | 1.5.4.2 (ge) sfun => mfun
+    func = make_new_mfun( "int", "regSP", shred_reg_stack_sp );
+    func->doc = "get the calling shred's current register/operand stack pointer; useful for debugging, general information, or amusement.";
+    if( !type_engine_import_mfun( env, func ) ) goto error;
+
+    // add pc() | 1.5.4.2 (ge) | 1.5.4.2 (ge) sfun => mfun
+    func = make_new_mfun( "int", "memSP", shred_mem_stack_sp );
+    func->doc = "get the calling shred's current memory/call stack pointer; useful for debugging, general information, or amusement.";
+    if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add examples
     if( !type_engine_import_add_ex( env, "shred/spork.ck" ) ) goto error;
@@ -687,6 +708,11 @@ t_CKBOOL init_class_vec2( Chuck_Env * env, Chuck_Type * type )
     func = make_new_mfun( "void", "normalize", vec2_normalize );
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
+    // add dot() product | 1.5.4.2 (ge & azaday) added
+    func = make_new_mfun( "float", "dot", vec2_dot );
+    func->add_arg( "vec2", "rhs" );
+    if( !type_engine_import_mfun( env, func ) ) goto error;
+
     // end the class import
     type_engine_import_class_end( env );
 
@@ -739,6 +765,16 @@ t_CKBOOL init_class_vec3( Chuck_Env * env, Chuck_Type * type )
 
     // add normalize()
     func = make_new_mfun( "void", "normalize", vec3_normalize );
+    if( !type_engine_import_mfun( env, func ) ) goto error;
+
+    // add dot() product | 1.5.4.2 (ge & azaday) added
+    func = make_new_mfun( "float", "dot", vec3_dot );
+    func->add_arg( "vec3", "rhs" );
+    if( !type_engine_import_mfun( env, func ) ) goto error;
+
+    // add cross() product | same as vec3 * vec3
+    func = make_new_mfun( "vec3", "cross", vec3_cross );
+    func->add_arg( "vec3", "rhs" );
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add interp()
@@ -832,6 +868,17 @@ t_CKBOOL init_class_vec4( Chuck_Env * env, Chuck_Type * type )
     func = make_new_mfun( "void", "normalize", vec4_normalize );
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
+    // add dot() product | 1.5.4.2 (ge & azaday) added
+    func = make_new_mfun( "float", "dot", vec4_dot );
+    func->add_arg( "vec4", "rhs" );
+    if( !type_engine_import_mfun( env, func ) ) goto error;
+
+    // add cross() product | same as vec4 * vec4
+    // (which ignores w and computes a 3d cross product)
+    func = make_new_mfun( "vec4", "cross", vec4_cross );
+    func->add_arg( "vec4", "rhs" );
+    if( !type_engine_import_mfun( env, func ) ) goto error;
+
     // end the class import
     type_engine_import_class_end( env );
 
@@ -918,6 +965,12 @@ t_CKBOOL init_class_string( Chuck_Env * env, Chuck_Type * type )
     func->add_arg("int", "index");
     func->add_arg("int", "theChar");
     func->doc = "set the character at the specified index.";
+    if( !type_engine_import_mfun( env, func ) ) goto error;
+
+    // add append()
+    func = make_new_mfun( "string", "appendChar", string_appendChar );
+    func->add_arg( "int", "theChar" );
+    func->doc = "append a character by its ASCII code and return a reference to itself; same as using the << operator `STR << INT`";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add substring()
@@ -1028,7 +1081,7 @@ t_CKBOOL init_class_string( Chuck_Env * env, Chuck_Type * type )
 
     // add toFloat()
     func = make_new_mfun( "float", "toFloat", string_toFloat );
-    func->doc = "Attempt to convert the contents of the string to an float and return the result, or 0 if conversion failed.";
+    func->doc = "attempt to convert the contents of the string to an float and return the result, or 0 if conversion failed.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
     // add parent()
@@ -1064,12 +1117,78 @@ t_CKBOOL init_class_string( Chuck_Env * env, Chuck_Type * type )
     // end the class import
     type_engine_import_class_end( env );
 
+    // add operator overload: string+string | 1.5.4.2 (ge)
+    func = make_new_op_binary( "string", ae_op_plus, string_op_string_plus_string );
+    func->add_arg( "string", "obj" );
+    func->add_arg( "string", "str" );
+    if( !type_engine_import_op_overload( env, func ) ) goto error_post_class;
+
+    // add operator overload: int+string | 1.5.4.2 (ge)
+    func = make_new_op_binary( "string", ae_op_plus, string_op_int_plus_string );
+    func->add_arg( "int", "ival" );
+    func->add_arg( "string", "str" );
+    if( !type_engine_import_op_overload( env, func ) ) goto error_post_class;
+    // add operator overload: string+int | 1.5.4.2 (ge)
+    func = make_new_op_binary( "string", ae_op_plus, string_op_string_plus_int );
+    func->add_arg( "string", "obj" );
+    func->add_arg( "int", "ival" );
+    if( !type_engine_import_op_overload( env, func ) ) goto error_post_class;
+
+    // add operator overload: int+string | 1.5.4.2 (ge)
+    func = make_new_op_binary( "string", ae_op_plus, string_op_float_plus_string );
+    func->add_arg( "float", "fval" );
+    func->add_arg( "string", "str" );
+    if( !type_engine_import_op_overload( env, func ) ) goto error_post_class;
+    // add operator overload: string+int | 1.5.4.2 (ge)
+    func = make_new_op_binary( "string", ae_op_plus, string_op_string_plus_float );
+    func->add_arg( "string", "obj" );
+    func->add_arg( "float", "fval" );
+    if( !type_engine_import_op_overload( env, func ) ) goto error_post_class;
+
+    // add operator overload: string == string | 1.5.4.2 (ge)
+    func = make_new_op_binary( "int", ae_op_eq, string_op_string_eq_string );
+    func->add_arg( "string", "obj" );
+    func->add_arg( "string", "str" );
+    if( !type_engine_import_op_overload( env, func ) ) goto error_post_class;
+
+    // add operator overload: string != string | 1.5.4.2 (ge)
+    func = make_new_op_binary( "int", ae_op_neq, string_op_string_neq_string );
+    func->add_arg( "string", "obj" );
+    func->add_arg( "string", "str" );
+    if( !type_engine_import_op_overload( env, func ) ) goto error_post_class;
+
+    // add operator overload: string < string | 1.5.4.2 (ge)
+    func = make_new_op_binary( "int", ae_op_lt, string_op_string_lt_string );
+    func->add_arg( "string", "obj" );
+    func->add_arg( "string", "str" );
+    if( !type_engine_import_op_overload( env, func ) ) goto error_post_class;
+
+    // add operator overload: string <= string | 1.5.4.2 (ge)
+    func = make_new_op_binary( "int", ae_op_le, string_op_string_le_string );
+    func->add_arg( "string", "obj" );
+    func->add_arg( "string", "str" );
+    if( !type_engine_import_op_overload( env, func ) ) goto error_post_class;
+
+    // add operator overload: string > string | 1.5.4.2 (ge)
+    func = make_new_op_binary( "int", ae_op_gt, string_op_string_gt_string );
+    func->add_arg( "string", "obj" );
+    func->add_arg( "string", "str" );
+    if( !type_engine_import_op_overload( env, func ) ) goto error_post_class;
+
+    // add operator overload: string >= string | 1.5.4.2 (ge)
+    func = make_new_op_binary( "int", ae_op_ge, string_op_string_ge_string );
+    func->add_arg( "string", "obj" );
+    func->add_arg( "string", "str" );
+    if( !type_engine_import_op_overload( env, func ) ) goto error_post_class;
+
     return TRUE;
 
 error:
 
     // end the class import
     type_engine_import_class_end( env );
+
+error_post_class:
 
     return FALSE;
 }
@@ -1420,6 +1539,12 @@ t_CKBOOL init_class_type( Chuck_Env * env, Chuck_Type * type )
     func = make_new_sfun( "Type", "of", type_typeOf_polar );
     func->add_arg( "polar", "val" );
     func->doc = "return the Type associated with 'polar'.";
+    if( !type_engine_import_sfun( env, func ) ) goto error;
+
+    // add typeOf()
+    func = make_new_sfun( "Type", "of", type_typeOf_vec2 );
+    func->add_arg( "vec2", "val" );
+    func->doc = "return the Type associated with 'vec2'.";
     if( !type_engine_import_sfun( env, func ) ) goto error;
 
     // add typeOf()
@@ -2216,6 +2341,16 @@ CK_DLL_MFUN( vec2_normalize )
     }
 }
 
+CK_DLL_MFUN( vec2_dot ) // 1.5.4.2 (ge & azaday) added
+{
+    // get lhs value
+    t_CKVEC2 lhs = *((t_CKVEC2 *)SELF);
+    // get rhs from argument
+    t_CKVEC2 rhs = GET_NEXT_VEC2(ARGS);
+    // compute dot product and set as return value
+    RETURN->v_float = lhs.x*rhs.x + lhs.y*rhs.y;
+}
+
 
 //-----------------------------------------------------------------------------
 // vec3 API
@@ -2262,6 +2397,28 @@ CK_DLL_MFUN( vec3_normalize )
         vec3->y /= mag;
         vec3->z /= mag;
     }
+}
+
+CK_DLL_MFUN( vec3_dot ) // 1.5.4.2 (ge & azaday) added
+{
+    // get lhs value
+    t_CKVEC3 lhs = *((t_CKVEC3 *)SELF);
+    // get rhs from argument
+    t_CKVEC3 rhs = GET_NEXT_VEC3(ARGS);
+    // compute dot product and set as return value
+    RETURN->v_float = lhs.x*rhs.x + lhs.y*rhs.y + lhs.z*rhs.z;
+}
+
+CK_DLL_MFUN( vec3_cross ) // 1.5.4.2 (ge & azaday) added
+{
+    // get lhs value
+    t_CKVEC3 lhs = *((t_CKVEC3 *)SELF);
+    // get rhs from argument
+    t_CKVEC3 rhs = GET_NEXT_VEC3(ARGS);
+    // compute cross product and set as return value
+    RETURN->v_vec3.x = lhs.y*rhs.z - lhs.z*rhs.y;
+    RETURN->v_vec3.y = lhs.z*rhs.x - lhs.x*rhs.z;
+    RETURN->v_vec3.z = lhs.x*rhs.y - lhs.y*rhs.x;
 }
 
 CK_DLL_MFUN( vec3_interp )
@@ -2400,6 +2557,31 @@ CK_DLL_MFUN( vec4_normalize )
     }
 }
 
+CK_DLL_MFUN( vec4_dot ) // 1.5.4.2 (ge & azaday) added
+{
+    // get lhs value
+    t_CKVEC4 lhs = *((t_CKVEC4 *)SELF);
+    // get rhs from argument
+    t_CKVEC4 rhs = GET_NEXT_VEC4(ARGS);
+    // compute dot product and set as return value
+    RETURN->v_float = lhs.x*rhs.x + lhs.y*rhs.y + lhs.z*rhs.z + lhs.w*rhs.w;
+}
+
+CK_DLL_MFUN( vec4_cross ) // 1.5.4.2 (ge & azaday) added
+{
+    // get lhs value
+    t_CKVEC3 lhs = *((t_CKVEC3 *)SELF);
+    // get rhs from argument
+    t_CKVEC3 rhs = GET_NEXT_VEC3(ARGS);
+    // compute cross product and set as return value
+    // 4D cross product is undefined; as a shorthand we do a 3D cross product
+    // w is ignored in the calcluation, and the resulting w component is set to 0
+    RETURN->v_vec4.x = lhs.y*rhs.z - lhs.z*rhs.y;
+    RETURN->v_vec4.y = lhs.z*rhs.x - lhs.x*rhs.z;
+    RETURN->v_vec4.z = lhs.x*rhs.y - lhs.y*rhs.x;
+    RETURN->v_vec4.w = 0;
+}
+
 
 
 
@@ -2530,68 +2712,103 @@ CK_DLL_SFUN( shred_fromId ) // added 1.3.2.0
 
 CK_DLL_MFUN( shred_ctrl_hintChildMemSize ) // 1.5.1.5
 {
+    // get this pointer
+    Chuck_VM_Shred * shred = (Chuck_VM_Shred *)SELF;
     // get arg
     t_CKINT sizeInBytes = GET_NEXT_INT(ARGS);
     // set
-    RETURN->v_int = SHRED->childSetMemSize( sizeInBytes );
+    RETURN->v_int = shred->childSetMemSize( sizeInBytes );
 }
 
 
 CK_DLL_MFUN( shred_cget_hintChildMemSize ) // 1.5.1.5
 {
+    // get this pointer
+    Chuck_VM_Shred * shred = (Chuck_VM_Shred *)SELF;
     // set
-    RETURN->v_int = SHRED->childGetMemSize();
+    RETURN->v_int = shred->childGetMemSize();
 }
 
 
 CK_DLL_MFUN( shred_ctrl_hintChildRegSize ) // 1.5.1.5
 {
+    // get this pointer
+    Chuck_VM_Shred * shred = (Chuck_VM_Shred *)SELF;
     // get arg
     t_CKINT sizeInBytes = GET_NEXT_INT(ARGS);
     // set
-    RETURN->v_int = SHRED->childSetRegSize( sizeInBytes );
+    RETURN->v_int = shred->childSetRegSize( sizeInBytes );
 }
 
 
 CK_DLL_MFUN( shred_cget_hintChildRegSize ) // 1.5.1.5
 {
+    // get this pointer
+    Chuck_VM_Shred * shred = (Chuck_VM_Shred *)SELF;
     // set
-    RETURN->v_int = SHRED->childGetRegSize();
+    RETURN->v_int = shred->childGetRegSize();
 }
 
 
-CK_DLL_SFUN( shred_parent ) // added 1.5.2.0 (nshaheed)
+CK_DLL_MFUN( shred_parent ) // added 1.5.2.0 (nshaheed)
 {
+    // get this pointer
+    Chuck_VM_Shred * shred = (Chuck_VM_Shred *)SELF;
     // get the parent
-    Chuck_VM_Shred * parent = SHRED->parent;
+    Chuck_VM_Shred * parent = shred->parent;
     // set return value
     RETURN->v_object = parent;
 }
 
 
-CK_DLL_SFUN( shred_ancestor ) // added 1.5.2.0 (nshaheed)
+CK_DLL_MFUN( shred_ancestor ) // added 1.5.2.0 (nshaheed)
 {
-    // current shred
-    Chuck_VM_Shred * curr = SHRED;
+    // get this pointer
+    Chuck_VM_Shred * shred = (Chuck_VM_Shred *)SELF;
 
     // iterate up until parent is null; it's possible that
     // ancestor() returns the calling shred, if called on
     // the top-level "ancestor" shred
-    while( curr->parent != NULL )
+    while( shred->parent != NULL )
     {
         // set curr as parent
-        curr = curr->parent;
+        shred = shred->parent;
     }
 
     // set return value
-    RETURN->v_object = curr;
+    RETURN->v_object = shred;
 }
 
+CK_DLL_MFUN( shred_pc ) // added 1.5.4.2 (ge)
+{
+    // get this pointer
+    Chuck_VM_Shred * shred = (Chuck_VM_Shred *)SELF;
+    // set return value to shred program counter
+    RETURN->v_int = shred->pc;
+}
+
+CK_DLL_MFUN( shred_reg_stack_sp ) // added 1.5.4.2 (ge)
+{
+    // get this pointer
+    Chuck_VM_Shred * shred = (Chuck_VM_Shred *)SELF;
+    // set return value to shred register/operand stack pointer
+    RETURN->v_int = (t_CKINT)shred->reg->sp;
+}
+
+CK_DLL_MFUN( shred_mem_stack_sp ) // added 1.5.4.2 (ge)
+{
+    // get this pointer
+    Chuck_VM_Shred * shred = (Chuck_VM_Shred *)SELF;
+    // set return value to shred register/operand stack pointer
+    RETURN->v_int = (t_CKINT)shred->mem->sp;
+}
 
 CK_DLL_MFUN( shred_gc ) // added 1.5.2.0 (ge)
 {
+    // get this pointer
+    Chuck_VM_Shred * shred = (Chuck_VM_Shred *)SELF;
     // invoke manual per-shred GC pass
-    SHRED->gc();
+    shred->gc();
 }
 
 
@@ -2695,6 +2912,22 @@ CK_DLL_MFUN(string_setCharAt)
     s.at(index) = the_char;
     str->set( s );
     RETURN->v_int = str->str().at(index);
+}
+
+CK_DLL_MFUN(string_appendChar)
+{
+    Chuck_String * str = (Chuck_String *)SELF;
+    t_CKINT the_char = GET_NEXT_INT(ARGS);
+    char c = (char)the_char;
+
+    // get the internal string representation
+    std::string s = str->str();
+    // append the character
+    s += c;
+    // set it back
+    str->set( s );
+    // return the string itself
+    RETURN->v_string = str;
 }
 
 CK_DLL_MFUN(string_substring)
@@ -2886,6 +3119,12 @@ CK_DLL_MFUN(string_findStr)
     Chuck_String * str = (Chuck_String *) SELF;
     Chuck_String * the_str = GET_NEXT_STRING(ARGS);
 
+    if( the_str == NULL ) // 1.5.4.2 (ge) added
+    {
+        ck_throw_exception( SHRED, "NullPointer", "string argument in .find()" );
+        return;
+    }
+
     string::size_type index = str->str().find(the_str->str());
 
     if(index == string::npos)
@@ -2900,9 +3139,15 @@ CK_DLL_MFUN(string_findStrStart)
     Chuck_String * the_str = GET_NEXT_STRING(ARGS);
     t_CKINT start = GET_NEXT_INT(ARGS);
 
+    if( the_str == NULL ) // 1.5.4.2 (ge) added
+    {
+        ck_throw_exception( SHRED, "NullPointer", "string argument in .find()" );
+        return;
+    }
+
     if(start < 0 || start >= str->str().length())
     {
-        ck_throw_exception(SHRED, "IndexOutOfBounds", start);
+        ck_throw_exception( SHRED, "IndexOutOfBounds", start );
         RETURN->v_int = -1;
         return;
     }
@@ -2954,6 +3199,12 @@ CK_DLL_MFUN(string_rfindStr)
     Chuck_String * str = (Chuck_String *) SELF;
     Chuck_String * the_str = GET_NEXT_STRING(ARGS);
 
+    if( the_str == NULL ) // 1.5.4.2 (ge) added
+    {
+        ck_throw_exception( SHRED, "NullPointer", "string argument in .find()" );
+        return;
+    }
+
     string::size_type index = str->str().rfind(the_str->str());
 
     if(index == string::npos)
@@ -2967,6 +3218,12 @@ CK_DLL_MFUN(string_rfindStrStart)
     Chuck_String * str = (Chuck_String *) SELF;
     Chuck_String * the_str = GET_NEXT_STRING(ARGS);
     t_CKINT start = GET_NEXT_INT(ARGS);
+
+    if( the_str == NULL ) // 1.5.4.2 (ge) added
+    {
+        ck_throw_exception( SHRED, "NullPointer", "string argument in .find()" );
+        return;
+    }
 
     if(start < 0 || start >= str->str().length())
     {
@@ -3061,6 +3318,166 @@ CK_DLL_MFUN( string_get_at )
     RETURN->v_int = s->str.length();
 }
 */
+
+// 1.5.4.2 (ge) added
+CK_DLL_GFUN( string_op_string_plus_string )
+{
+    Chuck_String * left = GET_NEXT_STRING(ARGS);
+    Chuck_String * right = GET_NEXT_STRING(ARGS);
+
+    if( left == NULL || right == NULL ) // 1.5.4.2 (ge) added
+    {
+        ck_throw_exception( SHRED, "NullPointer", "argument(s) to @operator+(string,string)" );
+        return;
+    }
+
+    string lhs = left->str();
+    string rhs = right->str();
+
+    // return value
+    RETURN->v_string = (Chuck_String *)instantiate_and_initialize_object(SHRED->vm_ref->env()->ckt_string, SHRED);
+    RETURN->v_string->set( lhs + rhs );
+}
+
+CK_DLL_GFUN( string_op_int_plus_string )
+{
+    t_CKINT left = GET_NEXT_INT(ARGS);
+    Chuck_String * right = GET_NEXT_STRING(ARGS);
+
+    if( right == NULL ) // 1.5.4.2 (ge) added
+    {
+        ck_throw_exception( SHRED, "NullPointer", "argument(s) to @operator+(int,string)" );
+        return;
+    }
+
+    string rhs = right->str();
+
+    // return value
+    RETURN->v_string = (Chuck_String *)instantiate_and_initialize_object(SHRED->vm_ref->env()->ckt_string, SHRED);
+    RETURN->v_string->set( std::to_string(left) + rhs );
+}
+
+CK_DLL_GFUN( string_op_string_plus_int )
+{
+    Chuck_String * left = GET_NEXT_STRING(ARGS);
+    t_CKINT right = GET_NEXT_INT(ARGS);
+
+    if( left == NULL ) // 1.5.4.2 (ge) added
+    {
+        ck_throw_exception( SHRED, "NullPointer", "argument(s) to @operator+(string,int)" );
+        return;
+    }
+
+    string lhs = left->str();
+
+    // return value
+    RETURN->v_string = (Chuck_String *)instantiate_and_initialize_object(SHRED->vm_ref->env()->ckt_string, SHRED);
+    RETURN->v_string->set( lhs + std::to_string(right) );
+}
+
+CK_DLL_GFUN( string_op_float_plus_string )
+{
+    t_CKFLOAT left = GET_NEXT_FLOAT(ARGS);
+    Chuck_String * right = GET_NEXT_STRING(ARGS);
+
+    if( right == NULL ) // 1.5.4.2 (ge) added
+    {
+        ck_throw_exception( SHRED, "NullPointer", "argument(s) to @operator+(float,string)" );
+        return;
+    }
+
+    string rhs = right->str();
+
+    // return value
+    RETURN->v_string = (Chuck_String *)instantiate_and_initialize_object(SHRED->vm_ref->env()->ckt_string, SHRED);
+    RETURN->v_string->set( std::to_string(left) + rhs );
+}
+
+CK_DLL_GFUN( string_op_string_plus_float )
+{
+    Chuck_String * left = GET_NEXT_STRING(ARGS);
+    t_CKFLOAT right = GET_NEXT_FLOAT(ARGS);
+
+    if( left == NULL ) // 1.5.4.2 (ge) added
+    {
+        ck_throw_exception( SHRED, "NullPointer", "argument(s) to @operator+(string,float)" );
+        return;
+    }
+
+    string lhs = left->str();
+
+    // return value
+    RETURN->v_string = (Chuck_String *)instantiate_and_initialize_object(SHRED->vm_ref->env()->ckt_string, SHRED);
+    RETURN->v_string->set( lhs + std::to_string(right) );
+}
+
+CK_DLL_GFUN( string_op_string_eq_string )
+{
+    Chuck_String * left = GET_NEXT_STRING(ARGS);
+    Chuck_String * right = GET_NEXT_STRING(ARGS);
+
+    // if both non-null
+    if( left && right ) RETURN->v_int = (left->str() == right->str());
+    // only one is null
+    else if( (left && !right) || (!left && right) ) RETURN->v_int = FALSE;
+    // both null
+    else RETURN->v_int = TRUE;
+}
+
+CK_DLL_GFUN( string_op_string_neq_string )
+{
+    Chuck_String * left = GET_NEXT_STRING(ARGS);
+    Chuck_String * right = GET_NEXT_STRING(ARGS);
+
+    // if both non-null
+    if( left && right ) RETURN->v_int = (left->str() != right->str());
+    // if at least one is null
+    else RETURN->v_int = FALSE;
+}
+
+CK_DLL_GFUN( string_op_string_lt_string )
+{
+    Chuck_String * left = GET_NEXT_STRING(ARGS);
+    Chuck_String * right = GET_NEXT_STRING(ARGS);
+
+    // if both non-null
+    if( left && right ) RETURN->v_int = (left->str() < right->str());
+    // if at least one is null
+    else RETURN->v_int = FALSE;
+}
+
+CK_DLL_GFUN( string_op_string_le_string )
+{
+    Chuck_String * left = GET_NEXT_STRING(ARGS);
+    Chuck_String * right = GET_NEXT_STRING(ARGS);
+
+    // if both non-null
+    if( left && right ) RETURN->v_int = (left->str() <= right->str());
+    // if at least one is null
+    else RETURN->v_int = FALSE;
+}
+
+CK_DLL_GFUN( string_op_string_gt_string )
+{
+    Chuck_String * left = GET_NEXT_STRING(ARGS);
+    Chuck_String * right = GET_NEXT_STRING(ARGS);
+
+    // if both non-null
+    if( left && right ) RETURN->v_int = (left->str() > right->str());
+    // if at least one is null
+    else RETURN->v_int = FALSE;
+}
+
+CK_DLL_GFUN( string_op_string_ge_string )
+{
+    Chuck_String * left = GET_NEXT_STRING(ARGS);
+    Chuck_String * right = GET_NEXT_STRING(ARGS);
+
+    // if both non-null
+    if( left && right ) RETURN->v_int = (left->str() >= right->str());
+    // if at least one is null
+    else RETURN->v_int = FALSE;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -3441,7 +3858,7 @@ CK_DLL_MFUN( type_parent )
     // get self as type
     Chuck_Type * type = (Chuck_Type *)SELF;
     // get parent type
-    RETURN->v_object = type->parent;
+    RETURN->v_object = type->parent_type;
 }
 
 CK_DLL_MFUN( type_children )
@@ -3613,6 +4030,11 @@ CK_DLL_SFUN( type_typeOf_complex )
 CK_DLL_SFUN( type_typeOf_polar )
 {
     RETURN->v_object = VM->env()->ckt_polar;
+}
+
+CK_DLL_SFUN( type_typeOf_vec2 )
+{
+    RETURN->v_object = VM->env()->ckt_vec2;
 }
 
 CK_DLL_SFUN( type_typeOf_vec3 )

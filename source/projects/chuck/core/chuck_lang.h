@@ -171,13 +171,16 @@ CK_DLL_MFUN( shred_getArg );
 CK_DLL_MFUN( shred_sourcePath ); // added 1.3.0.0
 CK_DLL_MFUN( shred_sourceDir ); // added 1.3.0.0
 CK_DLL_MFUN( shred_sourceDir2 ); // added 1.3.2.0
-CK_DLL_SFUN( shred_fromId ); // added 1.3.2.0
-CK_DLL_SFUN( shred_parent ); // added 1.5.2.0 (nshaheed)
-CK_DLL_SFUN( shred_ancestor ); // added 1.5.2.0 (nshaheed)
+CK_DLL_MFUN( shred_parent ); // added 1.5.2.0 (nshaheed)
+CK_DLL_MFUN( shred_ancestor ); // added 1.5.2.0 (nshaheed)
+CK_DLL_MFUN( shred_pc ); // added 1.5.4.2 (ge)
+CK_DLL_MFUN( shred_reg_stack_sp ); // added 1.5.4.2 (ge)
+CK_DLL_MFUN( shred_mem_stack_sp ); // added 1.5.4.2 (ge)
 CK_DLL_MFUN( shred_ctrl_hintChildMemSize ); // added 1.5.1.5
 CK_DLL_MFUN( shred_cget_hintChildMemSize ); // added 1.5.1.5
 CK_DLL_MFUN( shred_ctrl_hintChildRegSize ); // added 1.5.1.5
 CK_DLL_MFUN( shred_cget_hintChildRegSize ); // added 1.5.1.5
+CK_DLL_SFUN( shred_fromId ); // added 1.3.2.0
 
 
 //-----------------------------------------------------------------------------
@@ -235,6 +238,7 @@ CK_DLL_MFUN( string_set_at );
 CK_DLL_MFUN( string_get_at );
 CK_DLL_MFUN( string_charAt);
 CK_DLL_MFUN( string_setCharAt);
+CK_DLL_MFUN( string_appendChar );
 CK_DLL_MFUN( string_substring);
 CK_DLL_MFUN( string_substringN);
 CK_DLL_MFUN( string_insert);
@@ -253,6 +257,17 @@ CK_DLL_MFUN( string_erase);
 CK_DLL_MFUN( string_toInt);
 CK_DLL_MFUN( string_toFloat);
 CK_DLL_MFUN( string_parent);
+CK_DLL_GFUN( string_op_string_plus_string ); // 1.5.4.2 (ge) added
+CK_DLL_GFUN( string_op_int_plus_string );
+CK_DLL_GFUN( string_op_string_plus_int );
+CK_DLL_GFUN( string_op_float_plus_string );
+CK_DLL_GFUN( string_op_string_plus_float );
+CK_DLL_GFUN( string_op_string_eq_string );
+CK_DLL_GFUN( string_op_string_neq_string );
+CK_DLL_GFUN( string_op_string_lt_string );
+CK_DLL_GFUN( string_op_string_le_string );
+CK_DLL_GFUN( string_op_string_gt_string );
+CK_DLL_GFUN( string_op_string_ge_string );
 
 
 //-----------------------------------------------------------------------------
@@ -263,10 +278,13 @@ CK_DLL_MFUN( vec2_set );
 CK_DLL_MFUN( vec2_setAll );
 CK_DLL_MFUN( vec2_magnitude );
 CK_DLL_MFUN( vec2_normalize );
+CK_DLL_MFUN( vec2_dot );
 CK_DLL_MFUN( vec3_set );
 CK_DLL_MFUN( vec3_setAll );
 CK_DLL_MFUN( vec3_magnitude );
 CK_DLL_MFUN( vec3_normalize );
+CK_DLL_MFUN( vec3_dot );
+CK_DLL_MFUN( vec3_cross );
 CK_DLL_MFUN( vec3_interp );
 CK_DLL_MFUN( vec3_interp_delta_float );
 CK_DLL_MFUN( vec3_interp_delta_dur );
@@ -278,6 +296,8 @@ CK_DLL_MFUN( vec4_set );
 CK_DLL_MFUN( vec4_setAll );
 CK_DLL_MFUN( vec4_magnitude );
 CK_DLL_MFUN( vec4_normalize );
+CK_DLL_MFUN( vec4_dot );
+CK_DLL_MFUN( vec4_cross );
 
 
 //-----------------------------------------------------------------------------
@@ -304,6 +324,7 @@ CK_DLL_SFUN( type_typeOf_time ); // Type.typeOf( time )
 CK_DLL_SFUN( type_typeOf_dur ); // Type.typeOf( dur )
 CK_DLL_SFUN( type_typeOf_complex ); // Type.typeOf( complex )
 CK_DLL_SFUN( type_typeOf_polar ); // Type.typeOf( polar )
+CK_DLL_SFUN( type_typeOf_vec2 ); // Type.typeOf( vec2 )
 CK_DLL_SFUN( type_typeOf_vec3 ); // Type.typeOf( vec3 )
 CK_DLL_SFUN( type_typeOf_vec4 ); // Type.typeOf( vec4 )
 CK_DLL_SFUN( type_getTypes );

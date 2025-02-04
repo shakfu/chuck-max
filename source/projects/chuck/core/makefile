@@ -18,6 +18,13 @@ LD=g++
 
 CFLAGS+=-I. -Ilo
 
+ifneq ($(COVERAGE_REPORT),)
+CFLAGS+=-fprofile-arcs
+CFLAGS+=-ftest-coverage
+LDFLAGS+=-lgcov
+LDFLAGS+=--coverage
+endif
+
 ifneq ($(CHUCK_STAT),)
 CFLAGS+= -D__CHUCK_STAT_TRACK__
 endif
@@ -34,6 +41,12 @@ endif
 
 ifneq ($(CHUCK_STRICT),)
 CFLAGS+= -Wall
+endif
+
+# use X11? (Linux)
+ifneq ($(USE_X11),)
+CFLAGS+= -D__USE_X11__
+LDFLAGS+= -lX11
 endif
 
 # ifneq ($(findstring arm,$(shell uname -m)),)

@@ -65,6 +65,8 @@ CK_DLL_MFUN( CKDoc_genGroups );
 CK_DLL_MFUN( CKDoc_genType_type );
 CK_DLL_MFUN( CKDoc_genType_str );
 CK_DLL_MFUN( CKDoc_outputToDir );
+CK_DLL_SFUN( CKDoc_set_describe );
+CK_DLL_SFUN( CKDoc_get_describe );
 // offset
 static t_CKUINT CKDoc_offset_data = 0;
 
@@ -222,6 +224,19 @@ DLL_QUERY ckdoc_query( Chuck_DL_Query * QUERY )
     func->doc = "Generate everything as files into the output directory.";
     if( !type_engine_import_mfun( env, func ) ) goto error;
 
+    // // describe
+    // func = make_new_sfun( "int", "describe", CKDoc_set_describe );
+    // func->add_arg( "Object", "target" );
+    // func->add_arg( "string", "description" );
+    // func->doc = "Associate a description with `target`, which must be either a Type (i.e., a class) or a function. Returns true on sucess; returns false if target is neither a class nor  function, or if describe() was called on a target without sufficient permission to update its description.";
+    // if( !type_engine_import_sfun( env, func ) ) goto error;
+
+    // describe
+    func = make_new_sfun( "string", "describe", CKDoc_get_describe );
+    func->add_arg( "Object", "target" );
+    func->doc = "Returns the description associated with `target`, which must be either a Type (i.e., a class) or a function.";
+    if( !type_engine_import_sfun( env, func ) ) goto error;
+
     // end the class import
     type_engine_import_class_end( env );
 
@@ -365,7 +380,7 @@ public:
         m_outputStr += "      \"description\": \"" + jsonStringify(capitalize_and_periodize(type->doc)) + "\",\n";
 
         // type heirarchy, iterate through parents
-        Chuck_Type * parent = type->parent;
+        Chuck_Type * parent = type->parent_type;
         // check if there is a parent class
         if( parent != NULL )
         {
@@ -374,13 +389,13 @@ public:
         while( parent != NULL )
         {
             m_outputStr += "\"" + parent->base_name + "\"";
-            parent = parent->parent;
+            parent = parent->parent_type;
             if( parent != NULL )
             {
                 m_outputStr += ", ";
             }
         }
-        if( type->parent != NULL ) m_outputStr += "],\n";
+        if( type->parent_type != NULL ) m_outputStr += "],\n";
     }
 
     void end_class() { 
@@ -773,7 +788,7 @@ public:
         m_outputStr += "<h2 class=\"class_title\" name=\"" + type->base_name + "\">" + type->base_name + "</h2>\n";
 
         // type heirarchy
-        Chuck_Type * parent = type->parent;
+        Chuck_Type * parent = type->parent_type;
         // check if there is a parent class
         if( parent != NULL )
         {
@@ -788,10 +803,10 @@ public:
                          + "\" class=\"" + css_class_for_type(m_env_ref, parent)
                          + "\">" + parent->base_name + "</a> ",
             // go up the inheritance chain
-            parent = parent->parent;
+            parent = parent->parent_type;
         }
         // end the tag
-        if( type->parent != NULL ) m_outputStr += "</h4>\n";
+        if( type->parent_type != NULL ) m_outputStr += "</h4>\n";
 
         if(type->doc.size() > 0)
         {
@@ -1686,6 +1701,8 @@ string CKDoc::genType( Chuck_Type * type, t_CKBOOL clearOutput )
             // value is a function
             if( isa( value->type, value->type->env()->ckt_function ) )
                 continue;
+            // check if should skip | 1.5.4.5 (ge)
+            if( CKDoc::shouldSkip(value) ) continue;
 
             // static or instance?
             if( value->is_static ) svars.push_back( value );
@@ -1699,10 +1716,12 @@ string CKDoc::genType( Chuck_Type * type, t_CKBOOL clearOutput )
             Chuck_Func * func = *f;
 
             // check
-            if(func == NULL) continue;
+            if( func == NULL ) continue;
+            // check if should skip | 1.5.4.5 (ge)
+            if( CKDoc::shouldSkip(func) ) continue;
+
             // if already seen (overloaded?)
-            if( func_names.count(func->name) )
-                continue;
+            if( func_names.count(func->name) ) continue;
             // first one
             func_names[func->name] = 1;
             // static or instance?
@@ -1868,6 +1887,45 @@ string CKDoc::genType( Chuck_Type * type, t_CKBOOL clearOutput )
 
     // return result
     return output->str();
+}
+
+
+
+
+#define CKDOC_HIDDEN_STRING "(hidden)"
+//-----------------------------------------------------------------------------
+// name: shouldSkip()
+// desc: whether to skip an entry in the final output | 1.5.4.5 (ge) added
+//-----------------------------------------------------------------------------
+t_CKBOOL CKDoc::shouldSkip( const std::string & docStr )
+{
+    return docStr.find( CKDOC_HIDDEN_STRING ) != std::string::npos;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: shouldSkip()
+// desc: whether to skip a function in the final output | 1.5.4.5 (ge) added
+//-----------------------------------------------------------------------------
+t_CKBOOL CKDoc::shouldSkip( const Chuck_Func * func )
+{
+    if( !func ) return TRUE;
+    return func->doc.find( CKDOC_HIDDEN_STRING ) != std::string::npos;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: shouldSkip()
+// desc: whether to skip an entry in the final output | 1.5.4.5 (ge) added
+//-----------------------------------------------------------------------------
+t_CKBOOL CKDoc::shouldSkip( const Chuck_Value * var )
+{
+    if( !var ) return TRUE;
+    return var->doc.find( CKDOC_HIDDEN_STRING ) != std::string::npos;
 }
 
 
@@ -2259,6 +2317,118 @@ CK_DLL_MFUN( CKDoc_outputToDir )
     ckdoc->outputToDir( thePath, theTitle );
 }
 
+CK_DLL_SFUN( CKDoc_set_describe )
+{
+    Chuck_Object * target = GET_NEXT_OBJECT(ARGS);
+    Chuck_String * desc = GET_NEXT_STRING(ARGS);
+    string str = desc ? desc->str() : "";
+    RETURN->v_int = FALSE;
+
+    // check it
+    if( !target )
+    {
+        CK_FPRINTF_STDERR( "CKDoc.describe(): null target argument; no action taken.\n" );
+        return;
+    }
+
+    // check target type
+    Chuck_Type * type = target->type_ref;
+    if( !isa(type,VM->env()->ckt_class) && !isa(type,VM->env()->ckt_function) )
+    {
+        CK_FPRINTF_STDERR( "CKDoc.describe(): target type must be either Type (i.e., a class) or a function; no action taken.\n" );
+        return;
+    }
+
+    // if a class
+    if( isa(type,VM->env()->ckt_class) )
+    {
+        Chuck_Type * targetType = (Chuck_Type *)target;
+        // check this isn't a system type
+        if( targetType->m_locked || VM->env()->global()->contains( targetType ) )
+        {
+            CK_FPRINTF_STDERR( "CKDoc.describe(): cannot modify description for system-defined type '%s'\n", targetType->name().c_str() );
+            return;
+        }
+        // check this isn't a system type
+        if( targetType->doc != "" )
+        {
+            CK_FPRINTF_STDERR( "CKDoc.describe(): cannot overwrite a description after it has already been set (type: '%s')", targetType->name().c_str() );
+            return;
+        }
+        // update the doc string
+        targetType->doc = trim(str);
+    }
+    // if a func
+    else if( isa(type,VM->env()->ckt_function) )
+    {
+        Chuck_Func * targetFunc = (Chuck_Func *)target;
+        // get containing type, if there is one
+        Chuck_Type * funcOwner = targetFunc->ownerType();
+        // check this isn't a system type
+        if( VM->env()->global()->contains( funcOwner ) )
+        {
+            CK_FPRINTF_STDERR( "CKDoc.describe(): cannot modify description for system-defined function '%s'\n", targetFunc->signature(FALSE,FALSE).c_str() );
+            return;
+        }
+        // check this isn't a system type
+        if( targetFunc->doc != "" )
+        {
+            CK_FPRINTF_STDERR( "CKDoc.describe(): cannot overwrite a description after it has already been set (function: '%s'", targetFunc->signature(FALSE,FALSE).c_str() );
+            return;
+        }
+        // update the doc string
+        targetFunc->doc = trim(str);
+    }
+    else
+    {
+        // should not get here
+        CK_FPRINTF_STDERR( "CKDoc.describe(): internal error -- unaccounted Object type '%s", target->type_ref->name().c_str() );
+        return;
+    }
+
+    // return affirmative
+    RETURN->v_int = TRUE;
+}
+
+CK_DLL_SFUN( CKDoc_get_describe )
+{
+    Chuck_Object * target = GET_NEXT_OBJECT(ARGS);
+    // type of object
+    Chuck_Type * targetType = NULL;
+    string doc = "";
+
+    // check it
+    if( !target ) goto done;
+    targetType = target->type_ref;
+
+    // if a class
+    if( isa(targetType,VM->env()->ckt_class) )
+    {
+        // target is a Type type
+        Chuck_Type * type = (Chuck_Type *)target;
+        // copy the document string
+        doc = type->doc;
+    }
+    // if a func
+    else if( isa(targetType,VM->env()->ckt_function) )
+    {
+        // target is a function
+        Chuck_Func * func = (Chuck_Func *)target;
+        // copy the document string
+        doc = func->doc;
+    }
+    else
+    {
+        // use the target's type and copy the document string
+        doc = targetType->doc;
+    }
+
+done:
+    // return a new chuck string
+    RETURN->v_string = (Chuck_String *)instantiate_and_initialize_object( VM->env()->ckt_string, VM );
+    // set the contents
+    RETURN->v_string->set( doc );
+}
 
 
 

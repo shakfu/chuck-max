@@ -54,7 +54,6 @@ function update_chugins() {
 	move_to_new README.md && \
 	# move special cases
 	mv ${PROJECTS_DIR}/chugins/Fauck ${PROJECTS_DIR}/chugins-new/Fauck && \
-	mv ${PROJECTS_DIR}/chugins/MIAP ${PROJECTS_DIR}/chugins-new/MIAP && \
 	mv ${PROJECTS_DIR}/chugins/WarpBuf ${PROJECTS_DIR}/chugins-new/WarpBuf && \
 	# chugins
 	update_new_chugin ABSaturator && \

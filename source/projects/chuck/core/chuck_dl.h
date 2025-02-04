@@ -348,6 +348,8 @@ typedef t_CKBOOL (CK_DLL_CALL * f_mainthreadhook)( void * bindle );
 typedef t_CKBOOL (CK_DLL_CALL * f_mainthreadquit)( void * bindle );
 // callback function, called on host shutdown
 typedef void (CK_DLL_CALL * f_callback_on_shutdown)( void * bindle );
+// sample rate update callback | 1.5.4.2 (ge) added
+typedef void (CK_DLL_CALL * f_callback_on_srate_update)( t_CKUINT srate, void * bindle );
 // shreds watcher callback
 typedef void (CK_DLL_CALL * f_shreds_watcher)( Chuck_VM_Shred * SHRED, t_CKINT CODE, t_CKINT PARAM, Chuck_VM * VM, void * BINDLE );
 // type instantiation callback
@@ -424,6 +426,8 @@ typedef t_CKBOOL (CK_DLL_CALL * f_end_class)( Chuck_DL_Query * query );
 typedef Chuck_DL_MainThreadHook * (CK_DLL_CALL * f_create_main_thread_hook)( Chuck_DL_Query * query, f_mainthreadhook hook, f_mainthreadquit quit, void * bindle );
 // register a callback to be called on host shutdown, e.g., for chugin cleanup
 typedef void (CK_DLL_CALL * f_register_callback_on_shutdown)( Chuck_DL_Query * query, f_callback_on_shutdown cb, void * bindle );
+// register a callback to be called on sample rate change
+typedef void (CK_DLL_CALL * f_register_callback_on_srate_update)( Chuck_DL_Query * query, f_callback_on_srate_update cb, void * bindle );
 // register a callback function to receive notification from the VM about shreds (add, remove, etc.)
 typedef void (CK_DLL_CALL * f_register_shreds_watcher)( Chuck_DL_Query * query, f_shreds_watcher cb, t_CKUINT options, void * bindle );
 // unregister a shreds notification callback
@@ -618,6 +622,15 @@ public:
     // un-register shred notifcations
     f_unregister_shreds_watcher unregister_shreds_watcher;
 
+public:
+    // -------------
+    // register callback to be invoked by chuck host on
+    // sample rate changes | 1.5.4.2 (ge) added
+    // -------------
+    f_register_callback_on_srate_update register_callback_on_srate_update;
+
+
+
 
 //-------------------------------------------------------------------------
 // HOST ONLY beyond this point...
@@ -626,7 +639,7 @@ public:
     //-------------------------------------------------------------------------
     // NOTE: everything below std::anything cannot be reliably accessed by
     // offset across DLL/shared-library boundaries, since std::anything could
-    // be variable size;
+    // be variable size; *** chugins should never access anything below ***
     //-------------------------------------------------------------------------
     // *** put everything to be accessed from chugins ABOVE this point! ***
     //-------------------------------------------------------------------------
@@ -672,14 +685,16 @@ public:
     Chuck_Carrier * carrier() const;
 
 public:
+    // get sample rate; to be called by host only; (chugins use API->vm->srate)
+    t_CKUINT srate();
     // flag any error encountered during the query | 1.5.0.5 (ge) added
     t_CKBOOL errorEncountered;
-    // host sample rate
-    t_CKUINT srate;
 
 protected:
     // REFACTOR-2017: carrier ref
     Chuck_Carrier * m_carrier;
+    // host sample rate
+    t_CKUINT m_srate;
 };
 
 
@@ -883,11 +898,14 @@ struct Chuck_DL_Arg
 
 
 //------------------------------------------------------------------------------
-// alternative functions to make stuff
+// alternative functions to make stuff`
 //------------------------------------------------------------------------------
 Chuck_DL_Func * make_new_ctor( f_ctor ctor );
 Chuck_DL_Func * make_new_mfun( const char * t, const char * n, f_mfun mfun );
 Chuck_DL_Func * make_new_sfun( const char * t, const char * n, f_sfun sfun );
+Chuck_DL_Func * make_new_op_binary( const char * t, ae_Operator op, f_gfun gfun );
+Chuck_DL_Func * make_new_op_prefix( const char * t, ae_Operator op, f_gfun gfun );
+Chuck_DL_Func * make_new_op_postfix( const char * t, ae_Operator op, f_gfun gfun );
 Chuck_DL_Value * make_new_arg( const char * t, const char * n );
 Chuck_DL_Value * make_new_mvar( const char * t, const char * n, t_CKBOOL c = FALSE );
 Chuck_DL_Value * make_new_svar( const char * t, const char * n, t_CKBOOL c, void * a );

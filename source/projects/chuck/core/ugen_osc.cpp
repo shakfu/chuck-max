@@ -44,6 +44,13 @@ static t_CKUINT g_srateOsc = 0;
 // for member data offset
 static t_CKUINT osc_offset_data = 0;
 
+//-----------------------------------------------------------------------------
+// this is called for this module to know when sample rate changes | 1.5.4.2 (ge) added
+//-----------------------------------------------------------------------------
+void osc_srate_update_cb( t_CKUINT srate, void * userdata ) { g_srateOsc = srate; }
+
+
+
 
 //-----------------------------------------------------------------------------
 // name: osc_query()
@@ -52,7 +59,9 @@ static t_CKUINT osc_offset_data = 0;
 DLL_QUERY osc_query( Chuck_DL_Query * QUERY )
 {
     // srate
-    g_srateOsc = QUERY->srate;
+    g_srateOsc = QUERY->srate();
+    // register callback to be notified if/when sample rate changes | 1.5.4.2 (ge) added
+    QUERY->register_callback_on_srate_update( QUERY, osc_srate_update_cb, NULL );
     // get the env
     Chuck_Env * env = QUERY->env();
 
@@ -1067,7 +1076,10 @@ static void _transition( t_CKDOUBLE a, t_CKDOUBLE alpha, t_CKDOUBLE b,
 DLL_QUERY genX_query( Chuck_DL_Query * QUERY )
 {
     // srate
-    g_srateOsc = QUERY->srate;
+    g_srateOsc = QUERY->srate();
+    // register callback to be notified if/when sample rate changes | 1.5.4.2 (ge) added
+    QUERY->register_callback_on_srate_update( QUERY, osc_srate_update_cb, NULL );
+
     // get the env
     Chuck_Env * env = QUERY->env();
     std::string doc;

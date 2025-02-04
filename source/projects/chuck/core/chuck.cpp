@@ -273,6 +273,18 @@ t_CKBOOL ChucK::matchParam( const std::string & lhs, const std::string & rhs )
 void ChucK::enactParam( const std::string & name, t_CKINT value )
 {
     // check and set
+    if( matchParam(name,CHUCK_PARAM_SAMPLE_RATE) )
+    {
+        // check
+        if( value <= 0 )
+        {
+            EM_error2( 0, "(warning) attempt to set CHUCK_PARAM_SAMPLE_RATE to invalid value '%d'; sample rate unchanged...", value );
+            return;
+        }
+        // update VM to new sample rate
+        // (NOTE: this could be pre-initialization, so need to check VM pointer)
+        if( vm() ) vm()->update_srate( value );
+    }
     if( matchParam(name,CHUCK_PARAM_TTY_COLOR) )
     {
         // set the global override switch
@@ -326,12 +338,18 @@ t_CKBOOL ChucK::setParamFloat( const std::string & name, t_CKFLOAT value )
     std::string key = tolower(name);
     // check read-only
     if( readOnlyParam(key) ) return FALSE;
-    // check
+    // check param type
     if( m_params.count( key ) > 0 && m_param_types[key] == ck_param_float )
     {
         // insert into map
         m_params[key] = ck_ftoa( value, 32 );
         return TRUE;
+    }
+    // if param is an int, e.g., sample rate | 1.5.4.2 (ge)
+    else if( m_params.count( key ) > 0 && m_param_types[key] == ck_param_int )
+    {
+        // round and redirect to setParam() as int
+        return setParam( name, (t_CKINT)(value+.05) );
     }
     else
     {
@@ -428,6 +446,11 @@ t_CKFLOAT ChucK::getParamFloat( const std::string & name )
     {
         std::istringstream s( m_params[key] );
         s >> result;
+    }
+    else if( m_params.count( key ) > 0 && m_param_types[key] == ck_param_int )
+    {
+        // get int and return as float | 1.5.4.2 (ge)
+        return (t_CKFLOAT)getParamInt(name);
     }
     return result;
 }
@@ -891,7 +914,7 @@ void ChucK::probeChugins()
 
     // check
     if( ck_libs_to_preload.size() == 0 )
-        EM_log( CK_LOG_INFO, "(no auto-load chuck files found)" );
+        EM_log( CK_LOG_INFO, "(no chuck files found)" );
 
     // pop log
     EM_poplog();
@@ -1361,11 +1384,29 @@ t_CKBOOL ChucK::start()
 //-----------------------------------------------------------------------------
 void ChucK::run( const SAMPLE * input, SAMPLE * output, t_CKINT numFrames )
 {
-    // make sure we started...
-    if( !m_started ) this->start();
+    // make sure we started
+    if( !m_started && !this->start() ) return;
 
     // call the callback
     m_carrier->vm->run( numFrames, input, output );
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: removeAllShreds() | 1.5.4.4 (ge) added
+// desc: remove all shreds currently in the VM
+//   |- (NOTE: not synchronous or truly immediate but is thread-safe;
+//   |-  this will happen at the top of the next VM compute() call)
+//-----------------------------------------------------------------------------
+void ChucK::removeAllShreds()
+{
+    // check
+    if( !m_carrier->vm ) return;
+
+    // request VM to remove all shreds asap (thread-safe)
+    m_carrier->vm->remove_all_shreds();
 }
 
 
@@ -1541,6 +1582,28 @@ void ChucK::poop()
     #ifndef __DISABLE_OTF_SERVER__
     ::uh();
     #endif
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: bind()
+// desc: additional native chuck bindings/types (use with extra caution)
+//-----------------------------------------------------------------------------
+t_CKBOOL ChucK::bind( f_ck_query queryFunc, const std::string & name )
+{
+    // check if we have initialized a compiler
+    if( !compiler() )
+    {
+        // error message
+        EM_error2( 0, "cannot bind() -- ChucK/compiler is not initialized..." );
+        // done
+        return FALSE;
+    }
+
+    // perform the bind
+    return compiler()->bind( queryFunc, name );
 }
 
 
