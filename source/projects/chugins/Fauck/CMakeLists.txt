@@ -74,7 +74,6 @@ target_link_options(${CHUGIN_NAME}
     PUBLIC
     $<$<CONFIG:RELEASE>:-s>
     # -shared
-    -lc++
 )
 
 

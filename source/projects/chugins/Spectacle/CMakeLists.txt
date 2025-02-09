@@ -1,3 +1,4 @@
+set(CMAKE_CXX_STANDARD 14)
 set(path "${CMAKE_CURRENT_SOURCE_DIR}")
 cmake_path(GET path STEM PARENT_DIR)
 
@@ -63,7 +64,6 @@ target_include_directories(${CHUGIN_NAME}
 target_link_options(${CHUGIN_NAME}
 	PUBLIC
 	-shared
-	-lc++
 )
 
 # target_link_libraries(${CHUGIN_NAME}

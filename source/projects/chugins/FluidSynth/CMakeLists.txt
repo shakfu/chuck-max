@@ -1,3 +1,4 @@
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version" FORCE)
 
 set(path "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -22,7 +23,7 @@ add_library(${CHUGIN_NAME}
     ${PROJECT_SRC}
 )
 
-set_target_properties(${CHUGIN_NAME} PROPERTIES CXX_STANDARD 17)
+# set_target_properties(${CHUGIN_NAME} PROPERTIES CXX_STANDARD 17)
 set_target_properties(${CHUGIN_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(BUILD_SHARED_LIBS)
@@ -60,7 +61,6 @@ target_include_directories(${CHUGIN_NAME}
 target_link_options(${CHUGIN_NAME}
     PUBLIC
     -shared
-    -lc++
 )
 
 target_link_directories(${CHUGIN_NAME}

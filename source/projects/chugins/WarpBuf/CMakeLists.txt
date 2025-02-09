@@ -78,7 +78,6 @@ target_include_directories(${CHUGIN_NAME}
 target_link_options(${CHUGIN_NAME}
     PUBLIC
     -shared
-    -lc++
 )
 
 target_link_directories(${CHUGIN_NAME}

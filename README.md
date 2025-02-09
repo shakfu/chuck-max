@@ -18,7 +18,7 @@ The package also includes the following:
 
 - The complete set of current chuck examples
 
-- Most of the [base CCRMA chugins](https://github.com/ccrma/chugins) including `WarpBuf` and `Fauck` or `Faust` except for `Fluidsynth` and `Ladspa`.
+- Most of the [base CCRMA chugins](https://github.com/ccrma/chugins) including `WarpBuf` and `Fauck` or `Faust` except for `Fluidsynth` (which builds but doesn't work) and `Ladspa`.
 
 - Many Max patchers to test and demonstrate usage.
 
@@ -218,7 +218,7 @@ After these are installed, it should be possible, subject to the compatibility m
 
 - `make brew`: build the external using the previously installed homebrew dependencies, as well as downloaded `faust` headers and a downloaded pre-compiled `libfaust` (`libfaustwithllvm`) library. This is the newer, faster, recommended way of getting a full chuck-max system up and running.
 
-- `make brew2`: preliminary experimental support (currently not working) for building `FluidSynth.chug` is provided with this make target but this requires additional dependencies to be installed via `brew install glib portaudio gettext fluid-synth`
+- `make brew2`: preliminary experimental support (**currently not working**) for building `FluidSynth.chug` is provided with this make target but this requires additional dependencies to be installed via `brew install glib portaudio gettext fluid-synth` and also downloading [soundfonts](https://github.com/positively4th/fluid4node/tree/master/sf2) and specifying their location in the example files. Unfortunately, despite fluidsynth work independently as an executable with the same soundfonts, this chugin does not generate sound (YET!).
 
 - `make full`: build the external by manually building all of the dependencies except for `libfaust` from source. This is the previous way of building an advanced system. It is currently only for advanced developers who want maximum flexibility in their builds.
 
