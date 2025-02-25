@@ -9,7 +9,10 @@ a + b => vec4 sum;
 a - b => vec4 diff;
 // cross product (ignores w component)
 a * b => vec4 c;
-
+// another way to do cross product (ignores w component)
+a.cross(b) => vec4 cross;
+// dot product (function)
+a.dot(b) => float dot;
 
 // print sum!
 <<< "sum:", sum >>>;
@@ -17,7 +20,8 @@ a * b => vec4 c;
 <<< "diff:", diff >>>;
 // print cross product
 <<< "cross product:", c >>>;
-
+// print dot product
+<<< "dot product:", dot >>>;
 
 // array
 [ a, b, c ] @=> vec4 group[];

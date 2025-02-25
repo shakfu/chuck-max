@@ -9,6 +9,10 @@ a + b => vec3 sum;
 a - b => vec3 diff;
 // cross product
 a * b => vec3 c;
+// another way to do cross product (function)
+a.cross(b) => vec3 cross;
+// dot product (function)
+a.dot(b) => float dot;
 
 // print sum!
 <<< "sum:", sum >>>;
@@ -16,6 +20,8 @@ a * b => vec3 c;
 <<< "diff:", diff >>>;
 // print cross product
 <<< "cross product:", c >>>;
+// print dot product
+<<< "dot product:", dot >>>;
 
 // array
 [ a, b, @(-1,1,0) ] @=> vec3 group[];
@@ -37,3 +43,4 @@ v.normalize();
 5 * v => vec3 v2;
 // print result
 <<< "scalar multiply:", v2 >>>;
+

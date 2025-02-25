@@ -1046,6 +1046,11 @@ t_CKBOOL Chuck_DLL::load( const char * filename, const char * func, t_CKBOOL laz
     m_done_query = FALSE;
     m_func = func;
 
+    // set the enclosing directory (without the filename)
+    ck_setinfo( &m_query, CHUGIN_INFO_INSTALL_DIR, extract_filepath_dir( m_filename ).c_str() );
+    // set the filename (without the dir)
+    ck_setinfo( &m_query, CHUGIN_INFO_INSTALL_FILE, extract_filepath_file( m_filename ).c_str() );
+
     // if not lazy, do it
     if( !lazy && !this->query() )
     {
@@ -3100,7 +3105,7 @@ void * dlopen( const char * path, int mode )
     // if empty string, use current directory
     if( dll_path == "" ) dll_path = ".\\";
     // AddDllDirectory expects only fullpaths
-    dll_path = get_full_path( dll_path, TRUE );
+    dll_path = normalize_filepath( dll_path, TRUE );
     // the relateive _deps directory
     string dll_deps_path = dll_path + "_deps\\";
     // convert to wchar

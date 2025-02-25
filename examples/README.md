@@ -35,3 +35,31 @@ For `chuck-max`, the following changes was made to the chuck examples directory:
 
     - `chugins`, for additional package-level chugins
 
+    - `data`, added `amen.wav`
+    
+    - `midid/data`, added `africa.mid`, and `yiruma.mid`
+    
+    - `stk/honkeytonk-algo3.ck`
+    
+    - `tests` folder with external specific tests.
+    
+- changed:
+
+    - `effects/autotune.ck` to generout output file in `/tmp/` instead of locally
+
+```c++
+{
+    dac => WvOut2 record => blackhole;
+    // output file name
+    //"./autotuned-obama.wav" => string outfile;
+    "/tmp/autotuned-obama.wav" => string outfile;
+    "./autotuned-obama.wav" => string outfile;
+    // print
+    cherr <= "recording to file: '" <= outfile <= "'..." <= IO.nl();
+    // set output file name
+    //me.dir() + outfile => record.wavFilename;
+    outfile => record.wavFilename;
+    me.dir() + outfile => record.wavFilename;
+}
+```
+

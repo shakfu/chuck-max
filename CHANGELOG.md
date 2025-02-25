@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
+- Updated chuck code base and examples to `chuck 1.5.4.5-dev (chai)`
+
 - Defaults to Max 9 builds
 
 - Updated chuck code base to `chuck 1.5.4.5-dev`
