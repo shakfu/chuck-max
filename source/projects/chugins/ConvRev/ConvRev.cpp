@@ -24,11 +24,6 @@
 #include <mutex>
 #include <string>
 #include <thread>
-
-#if __EMSCRIPTEN__
-#include <thread>
-#endif
-
 #include <vector>
 
 #ifdef __EMSCRIPTEN__
