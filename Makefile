@@ -21,7 +21,7 @@ VERSION=0.1.2
 all: native
 
 
-native:
+native: install_sf2
 	@mkdir -p build && \
 		cd build && \
 		cmake -GXcode .. && \
@@ -45,14 +45,14 @@ install_deps_nomp3:
 install_deps_light:
 	./source/scripts/install_deps_light.sh
 
-install_faust:
+install_faust: 
 	./source/scripts/dep/install_faust.sh
 	./source/scripts/dep/install_libfaust.sh
 
 install_sf2:
 	./source/scripts/download_sf2.sh
 
-brew: install_faust
+brew: install_faust install_sf2
 	@mkdir -p build && \
 		cd build && \
 		cmake -GXcode .. \
@@ -65,7 +65,7 @@ brew: install_faust
 		cmake --install . --config '$(CONFIG)'
 
 
-brew2: install_faust
+brew2: install_faust install_sf2
 	@mkdir -p build && \
 		cd build && \
 		cmake -GXcode .. \

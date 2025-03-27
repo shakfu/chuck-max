@@ -8,7 +8,7 @@
 f.open(me.dir() + "/sf2/FluidR3_GM.sf2");
 ```
 
-Note that `FluidR3_GM.sf2` and `FluidR3_GS.sf2` are downloaded from the github and installed in `examples/fluidsynth/sf2`
+Note that `FluidR3_GM.sf2` and `FluidR3_GS.sf2` are downloaded from github and installed in `examples/fluidsynth/sf2` via `make install_sf2`.
 
 
 ## Testing via the chuck exectuable

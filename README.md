@@ -149,7 +149,7 @@ The following matrix shows feature coverage and also differences in compatibilit
 | Base chugins        | x      | x         | x    | x    | x     | x     |
 | Faust.chug          |        |           | x    | x    | x     | x     |
 | WarpBuf.chug        |        |           | x    | x    | x     | x     |
-| FluidSynth.chug     |        |           | x    |      |       |       |
+| FluidSynth.chug     | x      |           | x    |      |       |       |
 | .wav                | x      | x         | x    | x    | x     | x     |
 | .mp3                |        |           | x    | x    |       |       |
 | .flac               |        |           | x    | x    | x     |       |
@@ -161,6 +161,9 @@ The following matrix shows feature coverage and also differences in compatibilit
 | macOS 13 (Ventura)  | x      | x         | x    | x    | x     | x     |
 | macOS 12 (Monterey) | x      | x         | x    | x    | x     | x     |
 | macOS 11 (Big Sur)  | x      | x         |      | x    | x     | x     |
+
+
+Note the the `native` variant will build `FluidSynth.chug` if its dependencies are available.
 
 ### A. The Base System
 
