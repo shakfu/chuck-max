@@ -1,13 +1,16 @@
+@import "FluidSynth";
+
 NRev rev => dac;
 0.01 => rev.mix;
 
 MidiFileIn min;
 MidiMsg msg;
 
-"HS_African_Percussion.sf2" => string sfont;
+//me.dir() + "/sf2/FluidR3_GM.sf2" => string sfont;
+me.dir() + "/sf2/HS_African_Percussion.sf2" => string sfont;
 if(me.args() > 0) me.arg(0) => sfont;
 
-me.sourceDir() + "/bwv772.mid" => string filename;
+me.dir() + "/mid/bwv772.mid" => string filename;
 if(me.args() > 1) me.arg(1) => filename;
 
 if(!min.open(filename))
@@ -22,6 +25,7 @@ FluidSynth m => rev;
 m => dac;
 0.91 => m.gain;
 m.open(sfont);
+
 
 int done;
 

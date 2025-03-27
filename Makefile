@@ -14,8 +14,8 @@ VERSION=0.1.2
 
 .PHONY: all native universal full light brew brew2 nomp3 dev setup \
 		clean reset  test test-fauck test-warpbuf test-fluidsynth \
-		install_deps install_deps_light install_deps_nomp3 \
-		sign package dmg sign-dmg notarize staple sign-dist  \
+		install_deps install_deps_light install_deps_nomp3 install_sf2 \
+		sign package dmg sign-dmg notarize staple sign-dist \
 		release dist-release
 
 all: native
@@ -45,10 +45,12 @@ install_deps_nomp3:
 install_deps_light:
 	./source/scripts/install_deps_light.sh
 
-
 install_faust:
 	./source/scripts/dep/install_faust.sh
 	./source/scripts/dep/install_libfaust.sh
+
+install_sf2:
+	./source/scripts/download_sf2.sh
 
 brew: install_faust
 	@mkdir -p build && \

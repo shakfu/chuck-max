@@ -1,3 +1,4 @@
+@import "FluidSynth";
 
 // synchronize to period
 0.75::second => dur T;
@@ -5,7 +6,8 @@ T - (now % T) => now;
 
 // connect patch
 FluidSynth f => NRev reverb => dac;
-f.open("/usr/share/sounds/sf2/FluidR3_GM.sf2");
+f.open(me.dir() + "/sf2/FluidR3_GM.sf2");
+
 .75 => f.gain;
 0.02 => reverb.mix;
 

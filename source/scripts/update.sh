@@ -99,7 +99,6 @@ function update_chugins() {
 }
 
 
-
 function update() {
 	update_chuck
 	update_chugins
@@ -108,3 +107,5 @@ function update() {
 }
 
 update
+
+
