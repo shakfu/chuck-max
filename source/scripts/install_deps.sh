@@ -274,6 +274,24 @@ function install_libsamplerate() {
 	fi
 }
 
+function install_fluidsynth() {
+	SRC=${THIRDPARTY}/fluidsynth
+	if [ ! -f ${THIRDPARTY}/install/lib/libfluidsynth.a ]; then
+		rm -rf ${THIRDPARTY}/fluidsynth && \
+		mkdir -p ${THIRDPARTY} && \
+		git clone --depth=1 https://github.com/FluidSynth/fluidsynth.git ${THIRDPARTY}/fluidsynth && \
+		cd ${SRC} && \
+		mkdir build && cd build && \
+		cmake .. \
+			-DBUILD_SHARED_LIBS=OFF \
+			-Denable-framework=OFF \
+			-Denable-readline=OFF \
+			-Denable-sdl2=OFF && \
+		cmake --build . --config Release && \
+		cmake --install . --prefix ${PREFIX}
+	fi
+}
+
 setup && \
 	install_libmpg123 && \
 	install_libmp3lame && \
@@ -285,5 +303,5 @@ setup && \
 	install_libfaust && \
 	install_libsndfile && \
 	install_rubberband && \
-	install_libsamplerate
-
+	install_libsamplerate && \
+	install_fluidsynth

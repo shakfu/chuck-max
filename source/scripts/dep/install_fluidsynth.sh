@@ -13,7 +13,7 @@ function setup() {
 function install_fluidsynth() {
 	SRC=${THIRDPARTY}/fluidsynth
 	if [ ! -f ${THIRDPARTY}/install/lib/libfluidsynth.a ]; then
-		rm -rf ${THIRDPARTY}/rubberband && \
+		rm -rf ${THIRDPARTY}/fluidsynth && \
 		mkdir -p ${THIRDPARTY} && \
 		git clone --depth=1 https://github.com/FluidSynth/fluidsynth.git ${THIRDPARTY}/fluidsynth && \
 		cd ${SRC} && \

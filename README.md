@@ -149,7 +149,7 @@ The following matrix shows feature coverage and also differences in compatibilit
 | Base chugins        | x      | x         | x    | x    | x     | x     |
 | Faust.chug          |        |           | x    | x    | x     | x     |
 | WarpBuf.chug        |        |           | x    | x    | x     | x     |
-| FluidSynth.chug     | x      |           | x    |      |       |       |
+| FluidSynth.chug     | x      | x         | x    |      |       |       |
 | .wav                | x      | x         | x    | x    | x     | x     |
 | .mp3                |        |           | x    | x    |       |       |
 | .flac               |        |           | x    | x    | x     |       |
@@ -211,17 +211,17 @@ The advanced system consists of the base system + two advanced chugins, `Faust.c
 
 2. The [WarpBuf](https://github.com/ccrma/chugins/tree/main/WarpBuf) chugin makes it possible to time-stretch and independently transpose the pitch of an audio file. It uses the [rubberband](https://github.com/breakfastquay/rubberband), [libsndfile](https://github.com/libsndfile/libsndfile), and [libsamplerate](https://github.com/libsndfile/libsamplerate) libraries.
 
-To build these two chugins, you will need some additional dependencies which can also be installed via `Homebrew` as follows:
+3. The [FluidSynth](https://github.com/FluidSynth/fluidsynth?tab=readme-ov-file) chugin is a software synthesizer based on the SoundFont 2 specifications. On MacOS, it requires `brew install fluidsynth pkg-config`
+
+To build these three chugins, you will need some additional dependencies which can also be installed via `Homebrew` as follows:
 
 ```bash
-brew install autoconf autogen automake flac libogg libtool libvorbis opus mpg123 lame rubberband libsamplerate
+brew install autoconf autogen automake fluidsynth flac libogg libtool libvorbis opus mpg123 lame pkg-config rubberband libsamplerate
 ```
 
 After these are installed, it should be possible, subject to the compatibility matrix above, to build the advanced system with one of the following options:
 
-- `make brew`: build the external using the previously installed homebrew dependencies, as well as downloaded `faust` headers and a downloaded pre-compiled `libfaust` (`libfaustwithllvm`) library. This is the newer, faster, recommended way of getting a full chuck-max system up and running.
-
-- `make brew2`: preliminary experimental support for building `FluidSynth.chug` is provided with this make target but this requires additional dependencies to be installed via `brew install glib portaudio gettext fluid-synth`. Download some standard [soundfonts](https://github.com/positively4th/fluid4node/tree/master/sf2) via `make install_sf2`.
+- `make brew`: build the external using the previously installed homebrew dependencies, as well as downloaded `faust` headers and a downloaded pre-compiled `libfaust` (`libfaustwithllvm`) library, and some standard soundfonts to run the tests. This is the newer, faster, recommended way of getting a full chuck-max system up and running.
 
 - `make full`: build the external by manually building all of the dependencies except for `libfaust` from source. This is the previous way of building an advanced system. It is currently only for advanced developers who want maximum flexibility in their builds.
 
