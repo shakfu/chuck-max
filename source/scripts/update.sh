@@ -69,6 +69,7 @@ function update_chugins() {
 	update_new_chugin FoldbackSaturator && \
 	update_new_chugin GVerb && \
 	update_new_chugin KasFilter && \
+	update_new_chugin Ladspa && \
 	update_new_chugin Line && \
 	update_new_chugin MagicSine && \
 	update_new_chugin Mesh2D && \

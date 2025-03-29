@@ -16,9 +16,9 @@ This repository is itself a Max package which includes one external (`chuck~`) w
 
 The package also includes the following:
 
-- The complete set of current chuck examples
+- The complete set of current chuck examples.
 
-- Most of the [base CCRMA chugins](https://github.com/ccrma/chugins) including `WarpBuf`, `Fauck` or `Faust` and  `Fluidsynth`, except `Ladspa`.
+- All of the [CCRMA chugins](https://github.com/ccrma/chugins) including `WarpBuf`, `Fauck` (Faust) and  `Fluidsynth`.
 
 - Many Max patchers to test and demonstrate usage.
 

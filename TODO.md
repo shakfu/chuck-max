@@ -8,6 +8,6 @@
 
 - [ ] Add Max/MSP object docs in XML
 
-- [ ] Add fallback on `ck_dblclick` to  Max builtin editor if external editor not found
+- [ ] Add fallback on `ck_dblclick` to Max builtin editor if external editor not found
 
 - [ ] More (musical) examples combining Max / chuck ...
