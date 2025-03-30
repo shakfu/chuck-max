@@ -20,6 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Added `XML.chug`, last remaining CCRMA chugin.
 
+- Added `Ladspa.chug`.
+
 - `FluidSynth` now works! Can be built if dependencies are available (see README), also added a script to download a couple of standard soundfonts using `make install_sf2`
 
 - Updated chuck to `chuck 1.5.5.1-dev (chai)`
