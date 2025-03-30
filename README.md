@@ -18,7 +18,7 @@ The package also includes the following:
 
 - The complete set of current chuck examples.
 
-- All of the [CCRMA chugins](https://github.com/ccrma/chugins) including `WarpBuf`, `Fauck` (Faust) and  `Fluidsynth`.
+- All of the [CCRMA chugins](https://github.com/ccrma/chugins) including `WarpBuf`, `Faust` and `Fluidsynth`.
 
 - Many Max patchers to test and demonstrate usage.
 

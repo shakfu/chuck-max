@@ -93,6 +93,7 @@ function update_chugins() {
 	update_new_chugin WPKorg35 && \
 	update_new_chugin Wavetable && \
 	update_new_chugin WinFuncEnv && \
+	update_new_chugin XML && \
 	#rm -rf ${PROJECTS_DIR}/chugins-new/chuginate
 	mv ${PROJECTS_DIR}/chugins ${PROJECTS_DIR}/chugins-old && \
 	mv ${PROJECTS_DIR}/chugins-new ${PROJECTS_DIR}/chugins && \

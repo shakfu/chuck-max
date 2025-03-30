@@ -15,7 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.1.x]
 
-- `FluidSynth` now works! Can be build if dependencies are available (see README), also added a script to download a couple of standard soundfonts via `make install_sf2`
+
+## [0.1.3]
+
+- Added `XML.chug`, last remaining CCRMA chugin.
+
+- `FluidSynth` now works! Can be built if dependencies are available (see README), also added a script to download a couple of standard soundfonts using `make install_sf2`
 
 - Updated chuck to `chuck 1.5.5.1-dev (chai)`
 
