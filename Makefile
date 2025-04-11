@@ -15,21 +15,21 @@ VERSION=0.1.2
 .PHONY: all native universal full light brew brew2 nomp3 dev setup \
 		clean reset  test test-fauck test-warpbuf test-fluidsynth \
 		install_deps install_deps_light install_deps_nomp3 \
-		full2 install_sf2 install_fs_deps \
+		full2 install_fs_deps \
 		sign package dmg sign-dmg notarize staple sign-dist \
 		release dist-release
 
 all: native
 
 
-native: install_sf2
+native: 
 	@mkdir -p build && \
 		cd build && \
 		cmake -GXcode .. && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
-universal: install_sf2
+universal: 
 	@mkdir -p build && \
 		cd build && \
 		cmake -GXcode -DBUILD_UNIVERSAL=ON .. && \
@@ -50,13 +50,13 @@ install_faust:
 	./source/scripts/dep/install_faust.sh
 	./source/scripts/dep/install_libfaust.sh
 
-install_sf2:
+:
 	./source/scripts/download_sf2.sh
 
 install_fs_deps:
 	./source/scripts/install_fluidsynth_deps.sh
 
-brew: install_faust install_sf2
+brew: install_faust 
 	@mkdir -p build && \
 		cd build && \
 		cmake -GXcode .. \
@@ -82,7 +82,7 @@ full: install_deps
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
-full2: install_deps install_fs_deps install_sf2
+full2: install_deps install_fs_deps 
 	@mkdir -p build && \
 		cd build && \
 		cmake -GXcode .. \

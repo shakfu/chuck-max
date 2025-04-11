@@ -261,7 +261,7 @@ chuck-max
 
 Start with the `chuck~.maxhelp` file in the `help` folder for an overview of the external's features. The `media` folder also has a [pdf cheatsheet](https://github.com/shakfu/chuck-max/blob/main/media/chuck-max-cheatsheat.pdf) of available `chuck~` methods.
 
-The `examples` directory contains all chuck examples from the chuck repo, and some additional folders: `chugins` containing chugin binaries, `fauck`, containing `faust.chug` examples, `faust`, containing the faust stdlib, `max` chuck files which are used by the max patchers, and `test`, chuck files used by max patcher test files.
+The `examples` directory contains all chuck examples from the chuck repo, and some additional folders: `chugins` containing chugin binaries, `fauck`, containing `faust.chug` examples, `faust`, containing the faust stdlib, `fluidsynth`, containing fluidsynth examples and soundfonts, `max`, containing chuck files which are used by the max patchers, and `test`, chuck files used by max patcher test files.
 
 In the `patchers` section, there are quite a few patchers demonstrating one feature or other in the `tests` folder, and the `contrib` folder contains excellents advanced examples of uses by `chuck-max` contributors.
 

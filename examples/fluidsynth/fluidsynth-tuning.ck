@@ -22,7 +22,7 @@ Forrest Cahoon (forrest.cahoon@gmail.com)
 // set up a FluidSynth object
 FluidSynth f => dac;
 //f.open("/usr/share/sounds/sf2/FluidR3_GM.sf2");
-f.open(me.dir() + "/sf2/FluidR3_GM.sf2");
+f.open(me.dir() + "/sf2/GM.sf2");
 .75 => f.gain;
 
 // A simple function for us to test with
