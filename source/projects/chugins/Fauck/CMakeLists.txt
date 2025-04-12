@@ -51,9 +51,8 @@ target_compile_options(${CHUGIN_NAME}
 target_compile_definitions(${CHUGIN_NAME}
     PUBLIC
     NOBUNDLE
-    $<$<BOOL:${APPLE}>:__APPLE__>
-    $<$<BOOL:${APPLE}>:__MACOSX_CORE__>
-    $<$<BOOL:${APPLE}>:__PLATFORM_APPLE__>
+    $<$<PLATFORM_ID:Darwin>:__MACOSX_CORE__>
+    $<$<PLATFORM_ID:Darwin>:__PLATFORM_APPLE__>
     $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:__CK_DLL_STATIC__>
     _USRDLL
     FAUCK_EXPORTS
