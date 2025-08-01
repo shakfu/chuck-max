@@ -315,7 +315,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
                 x->run_file = ck_check_file(x, filename);
             } else {
                 ck_error(x, (char*)"invalid object arguments");
-                return;
+                return NULL;
             }
         }
         else if (argc >= 2) {
@@ -387,7 +387,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         post("chugins dir: %s", x->chugins_dir->s_name);
         post("patcher_dir: %s", x->patcher_dir->s_name);
     }
-    return (x);
+    return x;
 }
 
 
@@ -448,6 +448,11 @@ std::string join(std::vector<std::string> elements,
     return os.str();
 }
 
+
+#ifdef _WIN32
+#define popen _popen
+#define pclose _pclose
+#endif
 
 std::string get_output(const char* cmd) {
     std::array<char, 128> buffer;
@@ -1044,7 +1049,7 @@ t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 
     } else {
         // assume message is along :-) the lines of (remove 2 4 1 [..])
-        long* long_array = (long*)sysmem_newptr(sizeof(long*) * argc);
+        t_atom_long* long_array = (t_atom_long*)sysmem_newptr(sizeof(t_atom_long) * argc);
         t_max_err err = atom_getlong_array(argc, argv, argc, long_array);
         if (err != MAX_ERR_NONE) {
             ck_error(x, (char*)"remove msg: multiple args can only be ints");
@@ -1340,7 +1345,7 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     } else { // type is a list
 
         if (argv->a_type == A_LONG) { // list of longs
-            long* long_array = (long*)sysmem_newptr(sizeof(long*) * argc);
+            t_atom_long* long_array = (t_atom_long*)sysmem_newptr(sizeof(t_atom_long) * argc);
             for (int i = 0; i < argc; i++) {
                 // ck_info(x, (char*)"i: %d -> %d ", i, atom_getlong(argv + i));
                 long_array[i] = atom_getlong(argv + i);
@@ -1449,6 +1454,7 @@ t_max_err ck_chugins(t_ck* x)
 t_max_err ck_docs(t_ck* x)
 {
     ck_send_max_msg(x, gensym("launchbrowser"), "https://chuck.stanford.edu/doc");
+    return MAX_ERR_NONE;
 }
 
 t_max_err ck_globals(t_ck* x)
@@ -1584,7 +1590,7 @@ t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         int length = (int)argc - offset;
 
         if (type == gensym("int[]")) { // list of longs
-            long* long_array = (long*)sysmem_newptr(sizeof(long*) * length);
+            t_atom_long* long_array = (t_atom_long*)sysmem_newptr(sizeof(t_atom_long) * length);
             for (int i = 0; i < length; i++) {
                 ck_info(x, (char*)"set %s[%d] -> %d ", name->s_name, i, atom_getlong((argv+offset) + i));
                 long_array[i] = atom_getlong((argv+offset) + i);

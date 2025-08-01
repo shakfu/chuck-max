@@ -28,13 +28,20 @@ add_library(
     ${PROJECT_SRC}
 )
 
-
 target_include_directories(${PROJECT_NAME}
     PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CHUCK_INCLUDE}
 )
 
+
+if(MSVC)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY
+    # Link dynamically to the multi-threaded DLL runtime (default)
+    # MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+    # OR, to link statically to the multi-threaded runtime
+    MSVC_RUNTIME_LIBRARY "MultiThreaded")
+endif()
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC
@@ -47,13 +54,21 @@ target_link_libraries(${PROJECT_NAME}
     "$<$<PLATFORM_ID:Darwin>:-framework Foundation>"
     "$<$<PLATFORM_ID:Darwin>:-F/System/Library/PrivateFrameworks>"
     "$<$<PLATFORM_ID:Darwin>:-weak_framework MultitouchSupport>"
-    -lc++
-    -lm
+    # "$<$<PLATFORM_ID:Windows>:dsound>"
+    # "$<$<PLATFORM_ID:Windows>:dinput8>"
+    # "$<$<PLATFORM_ID:Windows>:dxguid>"
+    # "$<$<PLATFORM_ID:Windows>:wsock32>"
+    # "$<$<PLATFORM_ID:Windows>:ws2_32>"
+    # "$<$<PLATFORM_ID:Windows>:winmm>"
+    # -lc++
+    # -lm
     chuck_lib
 )
 
 
-add_custom_command(TARGET ${PROJECT_NAME} 
+
+
+add_custom_command(TARGET ${PROJECT_NAME}
     POST_BUILD
     COMMAND ${CMAKE_SOURCE_DIR}/source/scripts/postprocess.py ${CMAKE_SOURCE_DIR}
 )

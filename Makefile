@@ -1,3 +1,5 @@
+# os of current system
+PLATFORM = $(shell uname)
 MAX_VERSION := 9
 CHUCK_PACKAGE := "$(HOME)/Documents/Max\ $(MAX_VERSION)/Packages/chuck-max"
 SCRIPTS := source/scripts
@@ -12,6 +14,10 @@ DMG=chuck-max-$(VERSION)-$(ARCH).dmg
 ENTITLEMENTS = source/scripts/entitlements.plist
 VERSION=0.1.2
 
+ifeq ($(PLATFORM), Darwin)
+GENERATOR ?= "-GXcode"
+endif
+
 .PHONY: all native universal full light brew brew2 nomp3 dev setup \
 		clean reset  test test-fauck test-warpbuf test-fluidsynth \
 		install_deps install_deps_light install_deps_nomp3 \
@@ -25,14 +31,14 @@ all: native
 native: 
 	@mkdir -p build && \
 		cd build && \
-		cmake -GXcode .. && \
+		cmake $(GENERATOR) .. && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
 universal: 
 	@mkdir -p build && \
 		cd build && \
-		cmake -GXcode -DBUILD_UNIVERSAL=ON .. && \
+		cmake $(GENERATOR) -DBUILD_UNIVERSAL=ON .. && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
@@ -59,7 +65,7 @@ install_fs_deps:
 brew: install_faust 
 	@mkdir -p build && \
 		cd build && \
-		cmake -GXcode .. \
+		cmake $(GENERATOR) .. \
 			-DENABLE_HOMEBREW=ON \
 			-DENABLE_EXTRA_FORMATS=ON \
 			-DENABLE_MP3=ON \
@@ -73,7 +79,7 @@ brew: install_faust
 full: install_deps
 	@mkdir -p build && \
 		cd build && \
-		cmake -GXcode .. \
+		cmake $(GENERATOR) .. \
 			-DENABLE_EXTRA_FORMATS=ON \
 			-DENABLE_MP3=ON \
 			-DENABLE_WARPBUF=ON \
@@ -85,7 +91,7 @@ full: install_deps
 full2: install_deps install_fs_deps 
 	@mkdir -p build && \
 		cd build && \
-		cmake -GXcode .. \
+		cmake $(GENERATOR) .. \
 			-DENABLE_EXTRA_FORMATS=ON \
 			-DENABLE_MP3=ON \
 			-DENABLE_WARPBUF=ON \
@@ -98,7 +104,7 @@ full2: install_deps install_fs_deps
 nomp3: install_deps_nomp3
 	@mkdir -p build && \
 		cd build && \
-		cmake -GXcode .. \
+		cmake $(GENERATOR) .. \
 			-DENABLE_EXTRA_FORMATS=ON \
 			-DENABLE_MP3=OFF \
 			-DENABLE_WARPBUF=ON \
@@ -109,7 +115,7 @@ nomp3: install_deps_nomp3
 light: install_deps_light
 	@mkdir -p build && \
 		cd build && \
-		cmake -GXcode .. \
+		cmake $(GENERATOR) .. \
 			-DENABLE_EXTRA_FORMATS=OFF \
 			-DENABLE_MP3=OFF \
 			-DENABLE_WARPBUF=ON \
