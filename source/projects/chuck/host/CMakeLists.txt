@@ -22,13 +22,14 @@ endif()
 
 target_compile_definitions(chuck
 	PUBLIC
-	$<$<BOOL:${APPLE}>:__MACOSX_CORE__>
-	$<$<BOOL:${WIN32}>:__WINDOWS_DS__>
-	$<$<BOOL:${WIN32}>:__WINDOWS_ASIO__>
-	$<$<BOOL:${WIN32}>:__WINDOWS_WASAPI__>
-	$<$<BOOL:${WIN32}>:WIN32>
-	$<$<BOOL:${WIN32}>:NDEBUG>
-	$<$<BOOL:${WIN32}>:_CONSOLE>
+	$<$<PLATFORM_ID:Darwin>:__MACOSX_CORE__>
+	$<$<PLATFORM_ID:Windows>:__PLATFORM_WIN32__>
+	$<$<PLATFORM_ID:Windows>:__WINDOWS_DS__>
+	$<$<PLATFORM_ID:Windows>:__WINDOWS_ASIO__>
+	$<$<PLATFORM_ID:Windows>:__WINDOWS_WASAPI__>
+	$<$<PLATFORM_ID:Windows>:WIN32>
+	$<$<PLATFORM_ID:Windows>:NDEBUG>
+	$<$<PLATFORM_ID:Windows>:_CONSOLE>
 	HAVE_CONFIG_H
 )
 
@@ -44,15 +45,15 @@ target_include_directories(chuck
 
 target_link_libraries(chuck
 	PUBLIC
-	"$<$<BOOL:${APPLE}>:-framework CoreAudio>"
-	"$<$<BOOL:${APPLE}>:-framework CoreMIDI>"
-	"$<$<BOOL:${APPLE}>:-framework CoreFoundation>"
-	"$<$<BOOL:${APPLE}>:-framework IOKit>"
-	"$<$<BOOL:${APPLE}>:-framework Carbon>"
-	"$<$<BOOL:${APPLE}>:-framework AppKit>"
-	"$<$<BOOL:${APPLE}>:-framework Foundation>"
-	"$<$<BOOL:${APPLE}>:-F/System/Library/PrivateFrameworks>"
-	"$<$<BOOL:${APPLE}>:-weak_framework MultitouchSupport>"
+	"$<$<PLATFORM_ID:Darwin>:-framework CoreAudio>"
+	"$<$<PLATFORM_ID:Darwin>:-framework CoreMIDI>"
+	"$<$<PLATFORM_ID:Darwin>:-framework CoreFoundation>"
+	"$<$<PLATFORM_ID:Darwin>:-framework IOKit>"
+	"$<$<PLATFORM_ID:Darwin>:-framework Carbon>"
+	"$<$<PLATFORM_ID:Darwin>:-framework AppKit>"
+	"$<$<PLATFORM_ID:Darwin>:-framework Foundation>"
+	"$<$<PLATFORM_ID:Darwin>:-F/System/Library/PrivateFrameworks>"
+	"$<$<PLATFORM_ID:Darwin>:-weak_framework MultitouchSupport>"
 	-lc++
 	-lm
 	chuck_lib

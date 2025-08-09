@@ -58,7 +58,7 @@ target_compile_options(${CHUGIN_NAME}
 target_compile_definitions(${CHUGIN_NAME}
     PUBLIC
     __APPLE__
-    $<$<BOOL:${APPLE}>:__MACOSX_CORE__>
+    $<$<PLATFORM_ID:Darwin>:__MACOSX_CORE__>
     $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:__CK_DLL_STATIC__>
     HAVE_CONFIG_H
     HAVE_LIBSAMPLERATE
@@ -99,10 +99,10 @@ target_link_libraries(${CHUGIN_NAME}
     ${local_prefix}/lib/libsndfile.a
     ${local_prefix}/lib/librubberband.a
     ${local_prefix}/lib/libsamplerate.a
-    "$<$<BOOL:${APPLE}>:-framework CoreFoundation>"
-    "$<$<BOOL:${APPLE}>:-framework CoreMIDI>"
-    "$<$<BOOL:${APPLE}>:-framework CoreAudio>"
-    "$<$<BOOL:${APPLE}>:-framework Accelerate>"
+    "$<$<PLATFORM_ID:Darwin>:-framework CoreFoundation>"
+    "$<$<PLATFORM_ID:Darwin>:-framework CoreMIDI>"
+    "$<$<PLATFORM_ID:Darwin>:-framework CoreAudio>"
+    "$<$<PLATFORM_ID:Darwin>:-framework Accelerate>"
 )
 
 # set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/examples")

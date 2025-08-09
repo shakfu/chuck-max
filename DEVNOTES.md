@@ -620,7 +620,7 @@ Need example of how to use this.
 ## Windows Support
 
 ```cmake
-$<$<AND:$<BOOL:${WIN32}>,$<BOOL:${ENABLE_WARNINGS}>>:/W4>
+$<$<AND:$<PLATFORM_ID:Windows>,$<BOOL:${ENABLE_WARNINGS}>>:/W4>
 
 ```
 

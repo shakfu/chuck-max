@@ -12,8 +12,10 @@ execute_process(
 endif()
 
 set(C_CORE
-	$<$<BOOL:${APPLE}>:chuck.tab.c>
-	$<$<BOOL:${APPLE}>:chuck.yy.c>
+	$<$<PLATFORM_ID:Darwin>:chuck.tab.c>
+	$<$<PLATFORM_ID:Darwin>:chuck.yy.c>
+	$<$<PLATFORM_ID:Windows>:chuck.tab.c>
+	$<$<PLATFORM_ID:Windows>:chuck.yy.c>
 	util_network.c
 	util_raw.c
 	util_xforms.c
@@ -78,7 +80,7 @@ set(LO_C_CORE
 	lo/pattern_match.c
 	lo/send.c
 	lo/server.c
-	$<$<BOOL:${APPLE}>:lo/server_thread.c>
+	$<$<PLATFORM_ID:Darwin>:lo/server_thread.c>
 	lo/timetag.c
 )
 
@@ -100,7 +102,9 @@ target_compile_options(chuck_lib
 
 target_compile_definitions(chuck_lib
 	PUBLIC
-	$<$<BOOL:${APPLE}>:__MACOSX_CORE__>
+	$<$<PLATFORM_ID:Darwin>:__MACOSX_CORE__>
+	$<$<PLATFORM_ID:Windows>:__PLATFORM_WINDOWS__>
+	$<$<PLATFORM_ID:Windows>:__PLATFORM_WIN32__>
 	$<$<CONFIG:Debug>:__CHUCK_DEBUG__>
 	HAVE_CONFIG_H
 )

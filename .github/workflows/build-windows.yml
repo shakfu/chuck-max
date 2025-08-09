@@ -1,0 +1,28 @@
+name: build-windows
+on: 
+  workflow_dispatch:
+    inputs:
+      os:
+        type: choice
+        description: Select a Windows version
+        default: windows-2022
+        required: true
+        options: 
+          - windows-latest
+          - windows-2025
+          - windows-2022
+
+
+jobs:
+  build:
+    runs-on: ${{ inputs.os }}
+
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        fetch-depth: '0'
+
+    - name: build chuck
+      run: make
