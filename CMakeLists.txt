@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.19)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version" FORCE)
 string(REGEX REPLACE "(.*)/" "" THIS_FOLDER_NAME "${CMAKE_CURRENT_SOURCE_DIR}")
-project(${THIS_FOLDER_NAME})
 
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+
+project(${THIS_FOLDER_NAME})
 
 option(ENABLE_WARPBUF "Build WarpBuf chugin")
 option(ENABLE_FAUCK "Build Fauck chugin")
@@ -12,6 +14,7 @@ option(ENABLE_EXTRA_FORMATS "Enable extra file format for libsndfile")
 # macos options
 option(ENABLE_HOMEBREW "Build using Homebrew dependencies")
 option(BUILD_UNIVERSAL "Build Universal Externals")
+
 
 # use ccache if available
 find_program(CCACHE_PROGRAM ccache)

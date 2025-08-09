@@ -14,8 +14,6 @@ endif()
 set(C_CORE
 	$<$<PLATFORM_ID:Darwin>:chuck.tab.c>
 	$<$<PLATFORM_ID:Darwin>:chuck.yy.c>
-	$<$<PLATFORM_ID:Windows>:chuck.tab.c>
-	$<$<PLATFORM_ID:Windows>:chuck.yy.c>
 	util_network.c
 	util_raw.c
 	util_xforms.c
