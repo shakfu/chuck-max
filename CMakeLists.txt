@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.19)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version" FORCE)
 string(REGEX REPLACE "(.*)/" "" THIS_FOLDER_NAME "${CMAKE_CURRENT_SOURCE_DIR}")
 
-set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+if(CMAKE_HOST_WIN32)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+endif()
 
 project(${THIS_FOLDER_NAME})
 
