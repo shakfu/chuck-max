@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.19)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version" FORCE)
 string(REGEX REPLACE "(.*)/" "" THIS_FOLDER_NAME "${CMAKE_CURRENT_SOURCE_DIR}")
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 if(CMAKE_HOST_WIN32)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
 endif()
@@ -12,6 +16,7 @@ option(ENABLE_WARPBUF "Build WarpBuf chugin")
 option(ENABLE_FAUCK "Build Fauck chugin")
 option(ENABLE_MP3 "Enable MP3 support for libsndfile")
 option(ENABLE_EXTRA_FORMATS "Enable extra file format for libsndfile")
+option(BUILD_EMBED_HOST "Build embedded host example")
 
 # macos options
 option(ENABLE_HOMEBREW "Build using Homebrew dependencies")

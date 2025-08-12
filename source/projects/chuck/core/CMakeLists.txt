@@ -1,6 +1,4 @@
 
-set(CMAKE_CXX_STANDARD 14)
-
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 if (CMAKE_HOST_APPLE)
@@ -14,6 +12,7 @@ endif()
 set(C_CORE
 	$<$<PLATFORM_ID:Darwin>:chuck.tab.c>
 	$<$<PLATFORM_ID:Darwin>:chuck.yy.c>
+	$<$<PLATFORM_ID:Windows>:chuck_yacc.c>
 	util_network.c
 	util_raw.c
 	util_xforms.c
@@ -92,11 +91,11 @@ add_library(chuck_lib
 )
 
 
-target_compile_options(chuck_lib
-	PUBLIC
-	-stdlib=libc++
-	-O3
-)
+# target_compile_options(chuck_lib
+# 	PUBLIC
+# 	-stdlib=libc++
+# 	-O3
+# )
 
 target_compile_definitions(chuck_lib
 	PUBLIC
@@ -112,6 +111,32 @@ target_include_directories(chuck_lib
 	PUBLIC
 	${CMAKE_SOURCE_DIR}
 	${CMAKE_SOURCE_DIR}/lo
+)
+
+target_link_libraries(chuck_lib
+	PUBLIC
+	$<$<PLATFORM_ID:Windows>:kernel32>
+	$<$<PLATFORM_ID:Windows>:user32>
+	$<$<PLATFORM_ID:Windows>:gdi32>
+	$<$<PLATFORM_ID:Windows>:winspool>
+	$<$<PLATFORM_ID:Windows>:comdlg32>
+	$<$<PLATFORM_ID:Windows>:advapi32>
+	$<$<PLATFORM_ID:Windows>:shell32>
+	$<$<PLATFORM_ID:Windows>:ole32>
+	$<$<PLATFORM_ID:Windows>:oleaut32>
+	$<$<PLATFORM_ID:Windows>:uuid>
+	$<$<PLATFORM_ID:Windows>:odbc32>
+	$<$<PLATFORM_ID:Windows>:odbccp32>
+	# $<$<PLATFORM_ID:Windows>:/subsystem:console>
+	# $<$<PLATFORM_ID:Windows>:/machine:I386>
+	$<$<PLATFORM_ID:Windows>:dsound>
+	# $<$<PLATFORM_ID:Windows>:dinput>
+	$<$<PLATFORM_ID:Windows>:dinput8>
+	$<$<PLATFORM_ID:Windows>:dxguid>
+	$<$<PLATFORM_ID:Windows>:wsock32>
+	$<$<PLATFORM_ID:Windows>:ws2_32>
+	$<$<PLATFORM_ID:Windows>:winmm>
+	$<$<PLATFORM_ID:Windows>:iphlpapi>
 )
 
 set_property(TARGET chuck_lib PROPERTY OUTPUT_NAME chuck)

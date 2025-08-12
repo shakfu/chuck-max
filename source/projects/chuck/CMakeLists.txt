@@ -8,5 +8,6 @@ include_directories(
 
 add_subdirectory(core)
 add_subdirectory(host)
-add_subdirectory(host_embed)
-
+if(BUILD_EMBED_HOST)
+    add_subdirectory(host_embed)
+endif()

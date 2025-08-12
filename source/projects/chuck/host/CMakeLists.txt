@@ -43,6 +43,10 @@ target_include_directories(chuck
 	${CHUCK_DIR}/host/RtAudio/include
 )
 
+
+
+
+
 target_link_libraries(chuck
 	PUBLIC
 	"$<$<PLATFORM_ID:Darwin>:-framework CoreAudio>"
@@ -54,7 +58,28 @@ target_link_libraries(chuck
 	"$<$<PLATFORM_ID:Darwin>:-framework Foundation>"
 	"$<$<PLATFORM_ID:Darwin>:-F/System/Library/PrivateFrameworks>"
 	"$<$<PLATFORM_ID:Darwin>:-weak_framework MultitouchSupport>"
-	-lc++
+	$<$<PLATFORM_ID:Windows>:kernel32>
+	$<$<PLATFORM_ID:Windows>:user32>
+	$<$<PLATFORM_ID:Windows>:gdi32>
+	$<$<PLATFORM_ID:Windows>:winspool>
+	$<$<PLATFORM_ID:Windows>:comdlg32>
+	$<$<PLATFORM_ID:Windows>:advapi32>
+	$<$<PLATFORM_ID:Windows>:shell32>
+	$<$<PLATFORM_ID:Windows>:ole32>
+	$<$<PLATFORM_ID:Windows>:oleaut32>
+	$<$<PLATFORM_ID:Windows>:uuid>
+	$<$<PLATFORM_ID:Windows>:odbc32>
+	$<$<PLATFORM_ID:Windows>:odbccp32>
+	$<$<PLATFORM_ID:Windows>:/subsystem:console>
+	$<$<PLATFORM_ID:Windows>:/machine:I386>
+	$<$<PLATFORM_ID:Windows>:dsound>
+	$<$<PLATFORM_ID:Windows>:dinput>
+	$<$<PLATFORM_ID:Windows>:dinput8>
+	$<$<PLATFORM_ID:Windows>:dxguid>
+	$<$<PLATFORM_ID:Windows>:wsock32>
+	$<$<PLATFORM_ID:Windows>:ws2_32>
+	$<$<PLATFORM_ID:Windows>:winmm>
+	$<$<PLATFORM_ID:Windows>:iphlpapi>
 	-lm
 	chuck_lib
 )
