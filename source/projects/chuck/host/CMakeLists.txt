@@ -25,8 +25,8 @@ target_compile_definitions(chuck
 	$<$<PLATFORM_ID:Darwin>:__MACOSX_CORE__>
 	$<$<PLATFORM_ID:Windows>:__PLATFORM_WIN32__>
 	$<$<PLATFORM_ID:Windows>:__WINDOWS_DS__>
-	$<$<PLATFORM_ID:Windows>:__WINDOWS_ASIO__>
-	$<$<PLATFORM_ID:Windows>:__WINDOWS_WASAPI__>
+	# $<$<PLATFORM_ID:Windows>:__WINDOWS_ASIO__>
+	# $<$<PLATFORM_ID:Windows>:__WINDOWS_WASAPI__>
 	$<$<PLATFORM_ID:Windows>:WIN32>
 	$<$<PLATFORM_ID:Windows>:NDEBUG>
 	$<$<PLATFORM_ID:Windows>:_CONSOLE>
@@ -43,8 +43,11 @@ target_include_directories(chuck
 	${CHUCK_DIR}/host/RtAudio/include
 )
 
-
-
+target_link_options(chuck
+	PUBLIC
+	$<$<PLATFORM_ID:Windows>:/subsystem:console>
+	# $<$<PLATFORM_ID:Windows>:/machine:I386>
+)
 
 
 target_link_libraries(chuck
@@ -58,6 +61,7 @@ target_link_libraries(chuck
 	"$<$<PLATFORM_ID:Darwin>:-framework Foundation>"
 	"$<$<PLATFORM_ID:Darwin>:-F/System/Library/PrivateFrameworks>"
 	"$<$<PLATFORM_ID:Darwin>:-weak_framework MultitouchSupport>"
+	$<$<PLATFORM_ID:Darwin>:-lm>
 	$<$<PLATFORM_ID:Windows>:kernel32>
 	$<$<PLATFORM_ID:Windows>:user32>
 	$<$<PLATFORM_ID:Windows>:gdi32>
@@ -70,16 +74,13 @@ target_link_libraries(chuck
 	$<$<PLATFORM_ID:Windows>:uuid>
 	$<$<PLATFORM_ID:Windows>:odbc32>
 	$<$<PLATFORM_ID:Windows>:odbccp32>
-	$<$<PLATFORM_ID:Windows>:/subsystem:console>
-	$<$<PLATFORM_ID:Windows>:/machine:I386>
 	$<$<PLATFORM_ID:Windows>:dsound>
-	$<$<PLATFORM_ID:Windows>:dinput>
+	# $<$<PLATFORM_ID:Windows>:dinput>
 	$<$<PLATFORM_ID:Windows>:dinput8>
 	$<$<PLATFORM_ID:Windows>:dxguid>
 	$<$<PLATFORM_ID:Windows>:wsock32>
 	$<$<PLATFORM_ID:Windows>:ws2_32>
 	$<$<PLATFORM_ID:Windows>:winmm>
-	$<$<PLATFORM_ID:Windows>:iphlpapi>
-	-lm
+	$<$<PLATFORM_ID:Windows>:iphlpapi>	
 	chuck_lib
 )
