@@ -3,6 +3,7 @@
 build
 externals/*
 examples/chugins/*.chug
+examples/lib
 archive/
 *.chug
 scratch.cpp

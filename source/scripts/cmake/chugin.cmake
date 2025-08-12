@@ -42,6 +42,10 @@ target_compile_options(${CHUGIN_NAME}
 target_compile_definitions(${CHUGIN_NAME}
 	PUBLIC
 	$<$<PLATFORM_ID:Darwin>:__MACOSX_CORE__>
+	$<$<PLATFORM_ID:Windows>:_USE_MATH_DEFINES> 	 # for MIAP chugin
+	# $<$<PLATFORM_ID:Windows>:RegEx_EXPORTS> # for Regex chugin
+	# $<$<PLATFORM_ID:Windows>:RegEx_EXPORTS>
+	# $<$<PLATFORM_ID:Windows>:__PLATFORM_WIN32__>
 	HAVE_CONFIG_H
 	$<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:__CK_DLL_STATIC__>
 )
