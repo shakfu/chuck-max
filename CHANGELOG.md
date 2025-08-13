@@ -13,7 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ---
 
-## [0.1.x]
+## [0.2.x]
+
+- Added Windows support
 
 
 ## [0.1.3]

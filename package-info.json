@@ -27,6 +27,6 @@
         "faust"
     ],
     "extensible": 0,
-    "version": "0.1.x",
+    "version": "0.2.x",
     "website": "https://github.com/shakfu/chuck-max"
 }
