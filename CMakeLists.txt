@@ -65,6 +65,8 @@ if(CMAKE_HOST_APPLE) # i.e if is_macos check if homebrew is used aand if so get 
 endif()
 message(STATUS "local_prefix: ${local_prefix}")
 
+include(${CMAKE_SOURCE_DIR}/source/scripts/cmake/fn_add_chugin.cmake)
+
 MACRO(SUBDIRLIST result curdir)
   FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
   SET(dirlist "")

@@ -1,1 +1,1 @@
-include(${CMAKE_SOURCE_DIR}/source/scripts/cmake/chugin.cmake)
+add_chugin()

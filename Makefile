@@ -62,6 +62,19 @@ install_faust:
 install_fs_deps:
 	./source/scripts/install_fluidsynth_deps.sh
 
+brew-lite: 
+	@mkdir -p build && \
+		cd build && \
+		cmake $(GENERATOR) .. \
+			-DENABLE_HOMEBREW=ON \
+			-DENABLE_EXTRA_FORMATS=ON \
+			-DENABLE_MP3=ON \
+			-DENABLE_WARPBUF=ON \
+			-DENABLE_FLUIDSYNTH=ON \
+			&& \
+		cmake --build . --config '$(CONFIG)' && \
+		cmake --install . --config '$(CONFIG)'
+
 brew: install_faust 
 	@mkdir -p build && \
 		cd build && \
