@@ -1,5 +1,7 @@
 // name: polyphony-simple.ck
 // desc: Polyphonic sawtooth synthesizer.
+@import "Faust";
+
 Faust faust => dac;
 
 // First set the number of voices

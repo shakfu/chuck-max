@@ -1,6 +1,8 @@
 // name: polyphony.ck
 // desc: demo of Faust chugin in action!
 
+@import "Faust";
+
 // device to open (see: chuck --probe)
 1 => int device;
 // get from command line

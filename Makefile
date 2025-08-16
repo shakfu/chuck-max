@@ -56,7 +56,7 @@ install_faust:
 	./source/scripts/dep/install_faust.sh
 	./source/scripts/dep/install_libfaust.sh
 
-:
+install_soundfonts:
 	./source/scripts/download_sf2.sh
 
 install_fs_deps:

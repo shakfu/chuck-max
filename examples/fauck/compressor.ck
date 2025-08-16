@@ -1,6 +1,8 @@
 // name: compressor.ck
 // desc: demo of Faust chugin in action!
 
+@import "Faust";
+
 // instantiate and connect faust => ck
 adc => Faust compressor => dac;
 

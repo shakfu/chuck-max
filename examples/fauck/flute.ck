@@ -1,6 +1,8 @@
 // name: flute.ck
 // desc: demo of Faust chugin in action!
 
+@import "Faust";
+
 // instantiate and connect faust => ck
 Faust flute => dac;
 

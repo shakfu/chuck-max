@@ -1,6 +1,8 @@
 // name: test-import.ck
 // desc: Demonstrate that FaucK can import a .lib file
 
+@import "Faust";
+
 // You should hear a stereo sine tone at 440 Hz.
 
 // instantiate and connect faust => ck

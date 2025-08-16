@@ -1,6 +1,8 @@
 // name: fau.ck
 // desc: demo of Faust chugin in action!
 
+@import "Faust";
+
 // instantiate and connect faust => ck
 Faust string => Faust distortion => Faust cryBaby => dac;
 SinOsc LFO => blackhole;

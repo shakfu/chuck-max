@@ -1,6 +1,8 @@
 // name: smcAvancedExample.ck
 // desc: advanced FaucK example! 
 
+@import "Faust";
+
 // a string connected to a "cry baby" effect
 Faust string => Faust cryBaby => dac;
 

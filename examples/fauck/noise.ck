@@ -1,5 +1,7 @@
 // name: noise.ck
 
+@import "Faust";
+
 Faust noise => dac;
 
 noise.eval(`

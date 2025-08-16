@@ -2,7 +2,7 @@
 
 - [ ] Fix `run-before-audio` bug
 
-- [ ] Add Windows Support
+- [x] Add Windows Support
 
 - [ ] Add Doxygen docs
 

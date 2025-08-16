@@ -2,6 +2,8 @@
 // desc: Reduce the volume of the first stereo input
 //       (a sine tone) according to the loudness of
 //       the second (a looping pluck).
+@import "Faust";
+
 Faust faust => dac;
 
 faust.compile("sidechain.dsp");

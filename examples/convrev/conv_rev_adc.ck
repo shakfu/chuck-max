@@ -4,6 +4,9 @@ ConvRev Chugin Examples
 
 ADC => ConvRev
 */
+
+@import "ConvRev";
+
 ConvRev cr; Gain g;
 .05 => g.gain;
 

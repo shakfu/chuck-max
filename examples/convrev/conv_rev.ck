@@ -5,6 +5,8 @@ ConvRev Chugin Examples
 SndBuf => ConvRev
 */
 
+@import "ConvRev";
+
 ConvRev cr; Gain g;
 1 => g.gain;  // change me!
 

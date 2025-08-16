@@ -1,6 +1,8 @@
 // name: file-playback.ck
 // desc: Play a short audio file like a polyphonic "sampler"
 
+@import "Faust";
+
 // instantiate and connect faust => ck
 Faust playback => dac;
 

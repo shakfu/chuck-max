@@ -1,0 +1,329 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1162pt" height="332pt" viewBox="0.00 0.00 1162.28 332.00">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 328)">
+<polygon fill="white" stroke="none" points="-4,4 -4,-328 1158.28,-328 1158.28,4 -4,4"/>
+<!-- autogen -->
+<g id="node1" class="node">
+<title>autogen</title>
+<ellipse fill="none" stroke="black" cx="152" cy="-234" rx="41.61" ry="18"/>
+<text text-anchor="middle" x="152" y="-229.8" font-family="Times,serif" font-size="14.00">autogen</text>
+</g>
+<!-- guile -->
+<g id="node2" class="node">
+<title>guile</title>
+<ellipse fill="none" stroke="black" cx="208" cy="-162" rx="30.35" ry="18"/>
+<text text-anchor="middle" x="208" y="-157.8" font-family="Times,serif" font-size="14.00">guile</text>
+</g>
+<!-- autogen&#45;&gt;guile -->
+<g id="edge1" class="edge">
+<title>autogen-&gt;guile</title>
+<path fill="none" stroke="black" d="M164.99,-216.76C171.94,-208.07 180.65,-197.19 188.41,-187.49"/>
+<polygon fill="black" stroke="black" points="191.01,-189.84 194.52,-179.85 185.54,-185.47 191.01,-189.84"/>
+</g>
+<!-- bdw&#45;gc -->
+<g id="node3" class="node">
+<title>bdw-gc</title>
+<ellipse fill="none" stroke="black" cx="40" cy="-90" rx="40" ry="18"/>
+<text text-anchor="middle" x="40" y="-85.8" font-family="Times,serif" font-size="14.00">bdw-gc</text>
+</g>
+<!-- autogen&#45;&gt;bdw&#45;gc -->
+<g id="edge2" class="edge">
+<title>autogen-&gt;bdw-gc</title>
+<path fill="none" stroke="black" d="M138.93,-216.43C119.46,-191.74 82.67,-145.11 59.86,-116.18"/>
+<polygon fill="black" stroke="black" points="62.86,-114.33 53.92,-108.65 57.36,-118.67 62.86,-114.33"/>
+</g>
+<!-- guile&#45;&gt;bdw&#45;gc -->
+<g id="edge3" class="edge">
+<title>guile-&gt;bdw-gc</title>
+<path fill="none" stroke="black" d="M183.57,-150.82C156.18,-139.41 111.38,-120.74 79.1,-107.29"/>
+<polygon fill="black" stroke="black" points="80.65,-104.15 70.08,-103.53 77.96,-110.61 80.65,-104.15"/>
+</g>
+<!-- gmp -->
+<g id="node4" class="node">
+<title>gmp</title>
+<ellipse fill="none" stroke="black" cx="126" cy="-90" rx="28.2" ry="18"/>
+<text text-anchor="middle" x="126" y="-85.8" font-family="Times,serif" font-size="14.00">gmp</text>
+</g>
+<!-- guile&#45;&gt;gmp -->
+<g id="edge4" class="edge">
+<title>guile-&gt;gmp</title>
+<path fill="none" stroke="black" d="M191.4,-146.83C179.77,-136.9 164.01,-123.45 150.88,-112.24"/>
+<polygon fill="black" stroke="black" points="153.32,-109.72 143.44,-105.89 148.77,-115.04 153.32,-109.72"/>
+</g>
+<!-- libtool -->
+<g id="node5" class="node">
+<title>libtool</title>
+<ellipse fill="none" stroke="black" cx="208" cy="-90" rx="36.25" ry="18"/>
+<text text-anchor="middle" x="208" y="-85.8" font-family="Times,serif" font-size="14.00">libtool</text>
+</g>
+<!-- guile&#45;&gt;libtool -->
+<g id="edge5" class="edge">
+<title>guile-&gt;libtool</title>
+<path fill="none" stroke="black" d="M208,-143.7C208,-136.41 208,-127.73 208,-119.54"/>
+<polygon fill="black" stroke="black" points="211.5,-119.62 208,-109.62 204.5,-119.62 211.5,-119.62"/>
+</g>
+<!-- libunistring -->
+<g id="node6" class="node">
+<title>libunistring</title>
+<ellipse fill="none" stroke="black" cx="421" cy="-90" rx="55.57" ry="18"/>
+<text text-anchor="middle" x="421" y="-85.8" font-family="Times,serif" font-size="14.00">libunistring</text>
+</g>
+<!-- guile&#45;&gt;libunistring -->
+<g id="edge6" class="edge">
+<title>guile-&gt;libunistring</title>
+<path fill="none" stroke="black" d="M234.12,-152.42C268.45,-141.13 329.44,-121.09 372.39,-106.98"/>
+<polygon fill="black" stroke="black" points="373.32,-110.35 381.73,-103.91 371.13,-103.7 373.32,-110.35"/>
+</g>
+<!-- pkgconf -->
+<g id="node7" class="node">
+<title>pkgconf</title>
+<ellipse fill="none" stroke="black" cx="305" cy="-90" rx="42.68" ry="18"/>
+<text text-anchor="middle" x="305" y="-85.8" font-family="Times,serif" font-size="14.00">pkgconf</text>
+</g>
+<!-- guile&#45;&gt;pkgconf -->
+<g id="edge7" class="edge">
+<title>guile-&gt;pkgconf</title>
+<path fill="none" stroke="black" d="M226.7,-147.5C240.29,-137.7 258.97,-124.22 274.67,-112.88"/>
+<polygon fill="black" stroke="black" points="276.71,-115.73 282.77,-107.04 272.61,-110.06 276.71,-115.73"/>
+</g>
+<!-- readline -->
+<g id="node8" class="node">
+<title>readline</title>
+<ellipse fill="none" stroke="black" cx="537" cy="-90" rx="42.13" ry="18"/>
+<text text-anchor="middle" x="537" y="-85.8" font-family="Times,serif" font-size="14.00">readline</text>
+</g>
+<!-- guile&#45;&gt;readline -->
+<g id="edge8" class="edge">
+<title>guile-&gt;readline</title>
+<path fill="none" stroke="black" d="M236.43,-154.94C252.19,-151.62 272.16,-147.49 290,-144 376.92,-127.01 400.22,-130.06 486,-108 488.77,-107.29 491.6,-106.5 494.45,-105.67"/>
+<polygon fill="black" stroke="black" points="495.4,-109.04 503.93,-102.75 493.34,-102.35 495.4,-109.04"/>
+</g>
+<!-- m4 -->
+<g id="node9" class="node">
+<title>m4</title>
+<ellipse fill="none" stroke="black" cx="425" cy="-18" rx="27" ry="18"/>
+<text text-anchor="middle" x="425" y="-13.8" font-family="Times,serif" font-size="14.00">m4</text>
+</g>
+<!-- libtool&#45;&gt;m4 -->
+<g id="edge9" class="edge">
+<title>libtool-&gt;m4</title>
+<path fill="none" stroke="black" d="M235.99,-78.12C241.6,-76.02 247.47,-73.89 253,-72 299.74,-55.99 354.36,-39.53 389.29,-29.3"/>
+<polygon fill="black" stroke="black" points="390.27,-32.66 398.89,-26.49 388.31,-25.94 390.27,-32.66"/>
+</g>
+<!-- automake -->
+<g id="node10" class="node">
+<title>automake</title>
+<ellipse fill="none" stroke="black" cx="629" cy="-162" rx="48.58" ry="18"/>
+<text text-anchor="middle" x="629" y="-157.8" font-family="Times,serif" font-size="14.00">automake</text>
+</g>
+<!-- autoconf -->
+<g id="node11" class="node">
+<title>autoconf</title>
+<ellipse fill="none" stroke="black" cx="642" cy="-90" rx="44.82" ry="18"/>
+<text text-anchor="middle" x="642" y="-85.8" font-family="Times,serif" font-size="14.00">autoconf</text>
+</g>
+<!-- automake&#45;&gt;autoconf -->
+<g id="edge10" class="edge">
+<title>automake-&gt;autoconf</title>
+<path fill="none" stroke="black" d="M632.21,-143.7C633.58,-136.32 635.21,-127.52 636.75,-119.25"/>
+<polygon fill="black" stroke="black" points="640.16,-120.06 638.55,-109.59 633.28,-118.79 640.16,-120.06"/>
+</g>
+<!-- autoconf&#45;&gt;m4 -->
+<g id="edge11" class="edge">
+<title>autoconf-&gt;m4</title>
+<path fill="none" stroke="black" d="M608.09,-78.06C567.67,-65.02 500.47,-43.35 459.7,-30.19"/>
+<polygon fill="black" stroke="black" points="460.98,-26.93 450.39,-27.19 458.83,-33.59 460.98,-26.93"/>
+</g>
+<!-- fluid&#45;synth -->
+<g id="node12" class="node">
+<title>fluid-synth</title>
+<ellipse fill="none" stroke="black" cx="500" cy="-306" rx="53.42" ry="18"/>
+<text text-anchor="middle" x="500" y="-301.8" font-family="Times,serif" font-size="14.00">fluid-synth</text>
+</g>
+<!-- fluid&#45;synth&#45;&gt;readline -->
+<g id="edge15" class="edge">
+<title>fluid-synth-&gt;readline</title>
+<path fill="none" stroke="black" d="M502.96,-287.85C509.31,-251.14 524.26,-164.66 532.06,-119.53"/>
+<polygon fill="black" stroke="black" points="535.51,-120.17 533.76,-109.72 528.61,-118.98 535.51,-120.17"/>
+</g>
+<!-- glib -->
+<g id="node13" class="node">
+<title>glib</title>
+<ellipse fill="none" stroke="black" cx="331" cy="-234" rx="27" ry="18"/>
+<text text-anchor="middle" x="331" y="-229.8" font-family="Times,serif" font-size="14.00">glib</text>
+</g>
+<!-- fluid&#45;synth&#45;&gt;glib -->
+<g id="edge12" class="edge">
+<title>fluid-synth-&gt;glib</title>
+<path fill="none" stroke="black" d="M465.31,-291.85C438.33,-281.47 400.05,-266.37 367,-252 365.49,-251.35 363.96,-250.67 362.41,-249.97"/>
+<polygon fill="black" stroke="black" points="364.14,-246.92 353.59,-245.92 361.22,-253.28 364.14,-246.92"/>
+</g>
+<!-- libsndfile -->
+<g id="node14" class="node">
+<title>libsndfile</title>
+<ellipse fill="none" stroke="black" cx="856" cy="-234" rx="47.51" ry="18"/>
+<text text-anchor="middle" x="856" y="-229.8" font-family="Times,serif" font-size="14.00">libsndfile</text>
+</g>
+<!-- fluid&#45;synth&#45;&gt;libsndfile -->
+<g id="edge13" class="edge">
+<title>fluid-synth-&gt;libsndfile</title>
+<path fill="none" stroke="black" d="M545.45,-296.06C611.41,-283.09 733.41,-259.11 803.25,-245.37"/>
+<polygon fill="black" stroke="black" points="803.79,-248.83 812.92,-243.47 802.44,-241.97 803.79,-248.83"/>
+</g>
+<!-- portaudio -->
+<g id="node15" class="node">
+<title>portaudio</title>
+<ellipse fill="none" stroke="black" cx="424" cy="-234" rx="48.05" ry="18"/>
+<text text-anchor="middle" x="424" y="-229.8" font-family="Times,serif" font-size="14.00">portaudio</text>
+</g>
+<!-- fluid&#45;synth&#45;&gt;portaudio -->
+<g id="edge14" class="edge">
+<title>fluid-synth-&gt;portaudio</title>
+<path fill="none" stroke="black" d="M482.37,-288.76C472.68,-279.84 460.49,-268.61 449.75,-258.72"/>
+<polygon fill="black" stroke="black" points="452.37,-256.37 442.64,-252.17 447.63,-261.52 452.37,-256.37"/>
+</g>
+<!-- gettext -->
+<g id="node16" class="node">
+<title>gettext</title>
+<ellipse fill="none" stroke="black" cx="421" cy="-162" rx="37.31" ry="18"/>
+<text text-anchor="middle" x="421" y="-157.8" font-family="Times,serif" font-size="14.00">gettext</text>
+</g>
+<!-- fluid&#45;synth&#45;&gt;gettext -->
+<g id="edge16" class="edge">
+<title>fluid-synth-&gt;gettext</title>
+<path fill="none" stroke="black" d="M499.49,-287.79C498.24,-268.97 494.15,-238.51 481,-216 473.71,-203.53 462.46,-192.45 451.65,-183.69"/>
+<polygon fill="black" stroke="black" points="454.05,-181.12 443.98,-177.82 449.79,-186.67 454.05,-181.12"/>
+</g>
+<!-- glib&#45;&gt;gettext -->
+<g id="edge18" class="edge">
+<title>glib-&gt;gettext</title>
+<path fill="none" stroke="black" d="M347.93,-219.83C360.66,-209.93 378.39,-196.14 393.19,-184.62"/>
+<polygon fill="black" stroke="black" points="395.03,-187.64 400.77,-178.73 390.73,-182.11 395.03,-187.64"/>
+</g>
+<!-- pcre2 -->
+<g id="node17" class="node">
+<title>pcre2</title>
+<ellipse fill="none" stroke="black" cx="331" cy="-162" rx="32.48" ry="18"/>
+<text text-anchor="middle" x="331" y="-157.8" font-family="Times,serif" font-size="14.00">pcre2</text>
+</g>
+<!-- glib&#45;&gt;pcre2 -->
+<g id="edge17" class="edge">
+<title>glib-&gt;pcre2</title>
+<path fill="none" stroke="black" d="M331,-215.7C331,-208.41 331,-199.73 331,-191.54"/>
+<polygon fill="black" stroke="black" points="334.5,-191.62 331,-181.62 327.5,-191.62 334.5,-191.62"/>
+</g>
+<!-- flac -->
+<g id="node18" class="node">
+<title>flac</title>
+<ellipse fill="none" stroke="black" cx="723" cy="-162" rx="27" ry="18"/>
+<text text-anchor="middle" x="723" y="-157.8" font-family="Times,serif" font-size="14.00">flac</text>
+</g>
+<!-- libsndfile&#45;&gt;flac -->
+<g id="edge20" class="edge">
+<title>libsndfile-&gt;flac</title>
+<path fill="none" stroke="black" d="M829.08,-218.83C807.33,-207.38 776.69,-191.26 753.93,-179.28"/>
+<polygon fill="black" stroke="black" points="755.59,-176.2 745.11,-174.64 752.33,-182.39 755.59,-176.2"/>
+</g>
+<!-- lame -->
+<g id="node19" class="node">
+<title>lame</title>
+<ellipse fill="none" stroke="black" cx="798" cy="-162" rx="29.8" ry="18"/>
+<text text-anchor="middle" x="798" y="-157.8" font-family="Times,serif" font-size="14.00">lame</text>
+</g>
+<!-- libsndfile&#45;&gt;lame -->
+<g id="edge21" class="edge">
+<title>libsndfile-&gt;lame</title>
+<path fill="none" stroke="black" d="M842.25,-216.41C835.04,-207.71 826.08,-196.89 818.1,-187.26"/>
+<polygon fill="black" stroke="black" points="820.89,-185.14 811.82,-179.68 815.5,-189.61 820.89,-185.14"/>
+</g>
+<!-- libogg -->
+<g id="node20" class="node">
+<title>libogg</title>
+<ellipse fill="none" stroke="black" cx="856" cy="-90" rx="35.72" ry="18"/>
+<text text-anchor="middle" x="856" y="-85.8" font-family="Times,serif" font-size="14.00">libogg</text>
+</g>
+<!-- libsndfile&#45;&gt;libogg -->
+<g id="edge22" class="edge">
+<title>libsndfile-&gt;libogg</title>
+<path fill="none" stroke="black" d="M856,-215.59C856,-191.61 856,-148.14 856,-119.42"/>
+<polygon fill="black" stroke="black" points="859.5,-119.62 856,-109.62 852.5,-119.62 859.5,-119.62"/>
+</g>
+<!-- libvorbis -->
+<g id="node21" class="node">
+<title>libvorbis</title>
+<ellipse fill="none" stroke="black" cx="929" cy="-162" rx="45.37" ry="18"/>
+<text text-anchor="middle" x="929" y="-157.8" font-family="Times,serif" font-size="14.00">libvorbis</text>
+</g>
+<!-- libsndfile&#45;&gt;libvorbis -->
+<g id="edge23" class="edge">
+<title>libsndfile-&gt;libvorbis</title>
+<path fill="none" stroke="black" d="M872.93,-216.76C882.14,-207.93 893.72,-196.83 903.96,-187.01"/>
+<polygon fill="black" stroke="black" points="906.27,-189.64 911.07,-180.19 901.43,-184.59 906.27,-189.64"/>
+</g>
+<!-- mpg123 -->
+<g id="node22" class="node">
+<title>mpg123</title>
+<ellipse fill="none" stroke="black" cx="1035" cy="-162" rx="42.69" ry="18"/>
+<text text-anchor="middle" x="1035" y="-157.8" font-family="Times,serif" font-size="14.00">mpg123</text>
+</g>
+<!-- libsndfile&#45;&gt;mpg123 -->
+<g id="edge24" class="edge">
+<title>libsndfile-&gt;mpg123</title>
+<path fill="none" stroke="black" d="M888,-220.49C917.63,-208.9 961.85,-191.6 994.05,-179.01"/>
+<polygon fill="black" stroke="black" points="995.02,-182.39 1003.06,-175.49 992.47,-175.87 995.02,-182.39"/>
+</g>
+<!-- opus -->
+<g id="node23" class="node">
+<title>opus</title>
+<ellipse fill="none" stroke="black" cx="1125" cy="-162" rx="29.28" ry="18"/>
+<text text-anchor="middle" x="1125" y="-157.8" font-family="Times,serif" font-size="14.00">opus</text>
+</g>
+<!-- libsndfile&#45;&gt;opus -->
+<g id="edge25" class="edge">
+<title>libsndfile-&gt;opus</title>
+<path fill="none" stroke="black" d="M891.75,-221.83C898.76,-219.78 906.09,-217.74 913,-216 989.57,-196.7 1011.85,-204.27 1087,-180 1088.79,-179.42 1090.62,-178.78 1092.45,-178.1"/>
+<polygon fill="black" stroke="black" points="1093.46,-181.47 1101.41,-174.46 1090.83,-174.98 1093.46,-181.47"/>
+</g>
+<!-- gettext&#45;&gt;libunistring -->
+<g id="edge19" class="edge">
+<title>gettext-&gt;libunistring</title>
+<path fill="none" stroke="black" d="M421,-143.7C421,-136.41 421,-127.73 421,-119.54"/>
+<polygon fill="black" stroke="black" points="424.5,-119.62 421,-109.62 417.5,-119.62 424.5,-119.62"/>
+</g>
+<!-- flac&#45;&gt;libogg -->
+<g id="edge26" class="edge">
+<title>flac-&gt;libogg</title>
+<path fill="none" stroke="black" d="M743.78,-150.06C764.75,-139.03 797.47,-121.8 822.18,-108.8"/>
+<polygon fill="black" stroke="black" points="823.66,-111.97 830.88,-104.22 820.4,-105.78 823.66,-111.97"/>
+</g>
+<!-- libvorbis&#45;&gt;libogg -->
+<g id="edge27" class="edge">
+<title>libvorbis-&gt;libogg</title>
+<path fill="none" stroke="black" d="M912.43,-145.12C902.87,-135.95 890.68,-124.26 880.08,-114.09"/>
+<polygon fill="black" stroke="black" points="882.73,-111.78 873.09,-107.39 877.88,-116.84 882.73,-111.78"/>
+</g>
+<!-- rubberband -->
+<g id="node24" class="node">
+<title>rubberband</title>
+<ellipse fill="none" stroke="black" cx="920" cy="-306" rx="55.01" ry="18"/>
+<text text-anchor="middle" x="920" y="-301.8" font-family="Times,serif" font-size="14.00">rubberband</text>
+</g>
+<!-- rubberband&#45;&gt;libsndfile -->
+<g id="edge29" class="edge">
+<title>rubberband-&gt;libsndfile</title>
+<path fill="none" stroke="black" d="M904.83,-288.41C897.02,-279.87 887.34,-269.28 878.66,-259.79"/>
+<polygon fill="black" stroke="black" points="881.41,-257.61 872.08,-252.59 876.24,-262.33 881.41,-257.61"/>
+</g>
+<!-- libsamplerate -->
+<g id="node25" class="node">
+<title>libsamplerate</title>
+<ellipse fill="none" stroke="black" cx="985" cy="-234" rx="63.06" ry="18"/>
+<text text-anchor="middle" x="985" y="-229.8" font-family="Times,serif" font-size="14.00">libsamplerate</text>
+</g>
+<!-- rubberband&#45;&gt;libsamplerate -->
+<g id="edge28" class="edge">
+<title>rubberband-&gt;libsamplerate</title>
+<path fill="none" stroke="black" d="M935.4,-288.41C943.34,-279.87 953.17,-269.28 961.98,-259.79"/>
+<polygon fill="black" stroke="black" points="964.43,-262.29 968.67,-252.58 959.31,-257.53 964.43,-262.29"/>
+</g>
+</g>
+</svg>

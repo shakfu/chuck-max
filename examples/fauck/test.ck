@@ -1,4 +1,5 @@
 // name: test.ck
+@import "Faust";
 
 Faust sine => dac;
 
