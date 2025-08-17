@@ -1,4 +1,4 @@
-# chuck-max
+# Alternative MacOS Build Guide for chuck-max
 
 ## Build Requirements and Options
 

@@ -16,11 +16,12 @@ option(ENABLE_WARPBUF "Build WarpBuf chugin")
 option(ENABLE_FAUCK "Build Fauck chugin")
 option(ENABLE_MP3 "Enable MP3 support for libsndfile")
 option(ENABLE_EXTRA_FORMATS "Enable extra file format for libsndfile")
-option(BUILD_EMBED_HOST "Build embedded host example")
 
 # macos options
 option(ENABLE_HOMEBREW "Build using Homebrew dependencies")
 option(BUILD_UNIVERSAL "Build Universal Externals")
+option(BUILD_EMBED_HOST "Build embedded host example")
+option(BUILD_CHUMP "Build experimental chump executable and chugin")
 
 
 # use ccache if available
@@ -51,7 +52,7 @@ if (APPLE)
 endif()
 
 set(local_prefix "/usr/local")
-if(CMAKE_HOST_APPLE) # i.e if is_macos check if homebrew is used aand if so get prefix
+if(CMAKE_HOST_APPLE) # i.e if is_macos and have_homebrew then get homebrew_prefix
     execute_process(
         COMMAND brew --prefix
         OUTPUT_VARIABLE homebrew_prefix

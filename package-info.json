@@ -10,7 +10,13 @@
                 "aarch64",
                 "x64"
             ],
-            "min_version": "none"
+            "min_version": "10.11.6"
+        },
+        "windows": {
+            "platform": [
+                "x64"
+            ],
+            "min_version": "8"
         }
     },
     "package_extra": {

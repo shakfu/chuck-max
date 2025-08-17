@@ -103,13 +103,16 @@ This is actually an abbreviated way to install all the dependencies and sub-depe
 
 ![macos-adv-deps](https://github.com/shakfu/chuck-max/blob/main/media/macos-adv-deps.svg)
 
-After these are installed, type the following for a full `chuck-max` build:
+After these are installed, type the following for a full `chuck-max` build[^2]:
 
 ```sh
 make brew
 ```
 
 [^1]: It is also possible to build `chuck-max` and some of the advanced chugins on MacOS using alternative methods. These are outlined in the [alternative-build-guide](https://github.com/shakfu/chuck-max/blob/main/source/docs/alternative-build-guide.md)).
+
+[^2]: There is experimental support for building [chump](https://github.com/ccrma/chump) via `make chump`. See the [chump-build-guide](https://github.com/shakfu/chuck-max/blob/main/source/docs/chump-build-guide.md) for further details about install requirements.
+
 
 ## User Guide
 

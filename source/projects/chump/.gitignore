@@ -1,0 +1,62 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+/src/build/
+*~
+*.cpp#
+/build/
+/Testing/
+
+# VS-specifics
+*.sln
+*.vcxproj
+*.vcxproj.filters
+
+# Cmake stuff
+build*/
+*.cmake
+
+# Externals
+third-party/*
+subprojects/CLI11-*/*
+subprojects/Catch2-3.6.0/
+subprojects/Catch2-3.7.1/
+subprojects/curl-8.8.0/*
+subprojects/nlohmann_json-3.11.2/*
+subprojects/openssl-*/*
+subprojects/minizip-ng-*/*
+subprojects/packagecache/*
+.vscode/
+
+
+# binaries
+*.zip

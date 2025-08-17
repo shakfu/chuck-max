@@ -19,14 +19,13 @@ GENERATOR ?= "-GXcode"
 endif
 
 .PHONY: all native universal full light brew brew2 nomp3 dev setup \
-		clean reset  test test-fauck test-warpbuf test-fluidsynth \
+		clean reset test test-fauck test-warpbuf test-fluidsynth \
 		install_deps install_deps_light install_deps_nomp3 \
-		full2 install_fs_deps \
+		full2 install_fs_deps chump \
 		sign package dmg sign-dmg notarize staple sign-dist \
 		release dist-release
 
 all: native
-
 
 native: 
 	@mkdir -p build && \
@@ -133,6 +132,14 @@ light: install_deps_light
 			-DENABLE_MP3=OFF \
 			-DENABLE_WARPBUF=ON \
 			-DENABLE_FAUCK=ON && \
+		cmake --build . --config '$(CONFIG)' && \
+		cmake --install . --config '$(CONFIG)'
+
+chump:
+	@mkdir -p build && cd build && \
+		cmake $(GENERATOR) .. \
+			-DENABLE_HOMEBREW=ON \
+			-DBUILD_CHUMP=ON && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 

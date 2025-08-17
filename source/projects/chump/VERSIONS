@@ -1,0 +1,18 @@
+------------------
+ChuMP VERSIONS log
+------------------
+0.0.3
+=====
+20,000 chumps under the sea
+
+0.0.2
+=====
+A chump in time
+
+(fixed) fixed minizip-ng issues
+    * on some build environments, minizip-ng build against the system headers, causing errors
+    * on windows fixed an issue that would cause some installations to fail on unzip
+
+0.0.1
+=====
+A chump is born!
