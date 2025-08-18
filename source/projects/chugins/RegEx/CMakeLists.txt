@@ -1,22 +1,21 @@
 
 add_chugin(
     OTHER_SOURCES
-        regex/regcomp.c
-        regex/tre-ast.c
-        regex/tre-match-approx.c
-        regex/tre-mem.c
-        regex/xmalloc.c
-        regex/regerror.c
-        regex/tre-compile.c
-        regex/tre-match-backtrack.c
-        regex/tre-parse.c
-        regex/regexec.c
-        regex/tre-filter.c
-        regex/tre-match-parallel.c
-        regex/tre-stack.c
-
+        $<$<PLATFORM_ID:Windows>:regex/regcomp.c>
+        $<$<PLATFORM_ID:Windows>:regex/regerror.c>
+        $<$<PLATFORM_ID:Windows>:regex/regexec.c>
+        $<$<PLATFORM_ID:Windows>:regex/tre-ast.c>
+        $<$<PLATFORM_ID:Windows>:regex/tre-compile.c>
+        $<$<PLATFORM_ID:Windows>:regex/tre-filter.c>
+        $<$<PLATFORM_ID:Windows>:regex/tre-match-approx.c>
+        $<$<PLATFORM_ID:Windows>:regex/tre-match-backtrack.c>
+        $<$<PLATFORM_ID:Windows>:regex/tre-match-parallel.c>
+        $<$<PLATFORM_ID:Windows>:regex/tre-mem.c>
+        $<$<PLATFORM_ID:Windows>:regex/tre-parse.c>
+        $<$<PLATFORM_ID:Windows>:regex/tre-stack.c>
+        $<$<PLATFORM_ID:Windows>:regex/xmalloc.c>
     INCLUDE_DIRS
-        regex
+        $<$<PLATFORM_ID:Windows>:regex>
     COMPILE_DEFINITIONS
         RegEx_EXPORTS
         __WINDOWS_MODERN__

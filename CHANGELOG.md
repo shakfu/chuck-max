@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.2.x]
 
+- Fixed `Regex.chug` for windows.
+
 - Added Chump as a cmake-compilable subproject.
 
 - Added Windows support
