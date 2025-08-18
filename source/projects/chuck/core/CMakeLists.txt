@@ -90,7 +90,7 @@ add_library(chuck_lib
 	${LO_C_CORE}
 )
 
-if (SKIP_WARNING_SHORTEN_64_TO_32)
+if (CMAKE_HOST_APPLE AND SKIP_WARNING_SHORTEN_64_TO_32)
 	set_source_files_properties(
 		util_sndfile.c
 		util_hid.cpp

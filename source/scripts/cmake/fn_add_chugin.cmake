@@ -73,7 +73,7 @@ function(add_chugin)
         ${CHUGIN_OTHER_SOURCES}
     )
 
-    if(SKIP_WARNING_SHORTEN_64_TO_32)
+    if(CMAKE_HOST_APPLE AND SKIP_WARNING_SHORTEN_64_TO_32)
         set_source_files_properties(
             ${CHUGIN_SOURCES}
             ${CHUGIN_OTHER_SOURCES}
