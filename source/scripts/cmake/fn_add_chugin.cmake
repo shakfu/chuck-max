@@ -1,9 +1,9 @@
+
 function(add_chugin)
     unset(CMAKE_OSX_DEPLOYMENT_TARGET)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "requires >= 10.15" FORCE)
 
     set(CMAKE_EXPORT_COMPILE_COMMANDS True)
-
 
     set(options
         DEBUG
@@ -73,11 +73,20 @@ function(add_chugin)
         ${CHUGIN_OTHER_SOURCES}
     )
 
+    if(SKIP_WARNING_SHORTEN_64_TO_32)
+        set_source_files_properties(
+            ${CHUGIN_SOURCES}
+            ${CHUGIN_OTHER_SOURCES}
+            PROPERTIES
+            COMPILE_OPTIONS "-Wno-shorten-64-to-32"
+        )
+    endif()
+
     set_target_properties(${CHUGIN_NAME}
         PROPERTIES
-            PREFIX ""
-            SUFFIX ".chug"
-            POSITION_INDEPENDENT_CODE ON
+        PREFIX ""
+        SUFFIX ".chug"
+        POSITION_INDEPENDENT_CODE ON
     )
 
     target_include_directories(
@@ -95,7 +104,6 @@ function(add_chugin)
         HAVE_CONFIG_H
         $<$<CONFIG:Release>:NDEBUG>
         $<$<PLATFORM_ID:Darwin>:__MACOSX_CORE__>
-        $<$<PLATFORM_ID:Windows>:_USE_MATH_DEFINES>      # for MIAP chugin
         $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:__CK_DLL_STATIC__>
     )
 
@@ -104,8 +112,6 @@ function(add_chugin)
         PRIVATE
         ${CHUGIN_COMPILE_OPTIONS}
         $<$<PLATFORM_ID:Darwin>:-fPIC>
-        $<IF:$<CONFIG:Debug>,-g,-O3>
-        $<$<PLATFORM_ID:Windows>:/O2>
     )
 
     target_link_directories(

@@ -90,6 +90,19 @@ add_library(chuck_lib
 	${LO_C_CORE}
 )
 
+if (SKIP_WARNING_SHORTEN_64_TO_32)
+	set_source_files_properties(
+		util_sndfile.c
+		util_hid.cpp
+		ulib_opsc.cpp
+		ulib_doc.cpp
+		ugen_stk.cpp
+		chuck.yy.c
+		PROPERTIES
+		COMPILE_OPTIONS "-Wno-shorten-64-to-32"
+	)
+endif()
+
 
 # target_compile_options(chuck_lib
 # 	PUBLIC

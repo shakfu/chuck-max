@@ -1,1 +1,4 @@
-add_chugin()
+add_chugin(	
+	COMPILE_DEFINITIONS
+		$<$<PLATFORM_ID:Windows>:_USE_MATH_DEFINES>
+)
