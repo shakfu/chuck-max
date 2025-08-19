@@ -380,6 +380,8 @@ endif (EMSCRIPTEN)
 
 string(TOLOWER ${CMAKE_HOST_SYSTEM_PROCESSOR} ARCH)
 
+set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR}/examples)
+
 if(CMAKE_HOST_APPLE)
     set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins/darwin-${ARCH})
 else()
@@ -389,7 +391,9 @@ endif()
 if(CMAKE_HOST_APPLE)
     install(
         TARGETS ${PROJECT_NAME}
-        LIBRARY DESTINATION chugins/darwin-${ARCH}
+        DESTINATION chugins/darwin-${ARCH}
+        CONFIGURATIONS Release
+        LIBRARY
     )
 
     if(CHUGIN_CODESIGN)
@@ -400,6 +404,8 @@ if(CMAKE_HOST_APPLE)
 else()
     install(
         TARGETS ${PROJECT_NAME}
-        LIBRARY DESTINATION chugins/windows-${ARCH}
+        DESTINATION chugins/windows-${ARCH}
+        CONFIGURATIONS Release
+        LIBRARY
     )
 endif()

@@ -9,6 +9,8 @@
 //      -- design principle from artful design chapter 3
 //--------------------------------------------------------------------
 
+//@import "ChuGL";
+
 // window title
 GG.windowTitle( "circles in ChuGL" );
 // fullscreen
