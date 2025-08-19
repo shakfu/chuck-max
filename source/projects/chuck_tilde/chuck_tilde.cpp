@@ -336,7 +336,13 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 #if defined(__APPLE__) && defined(CK_EMBEDDED_CHUGINS)
         x->chugins_dir = ck_get_path_from_external(ck_class, (char*)"/Contents/Resources/chugins");
 #else
-        x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins");
+#if defined(__APPLE__) && defined(__aarch64__)
+        x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins/darwin-arm64");
+#elif defined(__APPLE__) && defined(__x86_64__)
+        x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins/darwin-x86_64");
+#else
+        x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins/windows-x86_64");
+#endif
 #endif        
         x->in_chuck_buffer = NULL;
         x->out_chuck_buffer = NULL;
@@ -362,13 +368,12 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // set default chugins dirs
         std::string chugins_dir = std::string(x->chugins_dir->s_name);
         std::list<std::string> chugin_search;
-#if defined(CK_EMBEDDED_CHUGINS)
+        chugin_search.push_back(chugins_dir);
+#if defined(__APPLE__) && defined(CK_EMBEDDED_CHUGINS)
         // add extra package-level chugins directory
         chugin_search.push_back(global_dir + "/chugins");
 #endif
-        chugin_search.push_back(chugins_dir);
         x->chuck->setParam(CHUCK_PARAM_IMPORT_PATH_SYSTEM, chugin_search);
-
         // redirect chuck stdout/stderr to local callbacks
         x->chuck->setStdoutCallback(ck_stdout_print);
         x->chuck->setStderrCallback(ck_stderr_print);

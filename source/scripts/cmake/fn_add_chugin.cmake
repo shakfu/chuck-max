@@ -35,7 +35,11 @@ function(add_chugin)
     set(path "${CMAKE_CURRENT_SOURCE_DIR}")
     cmake_path(GET path STEM PARENT_DIR)
 
-    set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins)
+    if(CMAKE_HOST_APPLE)
+        set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins/darwin-${CMAKE_HOST_SYSTEM_PROCESSOR})
+    else()
+        set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins/windows-${CMAKE_HOST_SYSTEM_PROCESSOR})
+    endif()
 
     if(NOT DEFINED CHUGIN_NAME)
         set(CHUGIN_NAME ${PARENT_DIR})
@@ -133,15 +137,22 @@ function(add_chugin)
         ${CHUGIN_LINK_LIBS}
     )
 
+if(CMAKE_HOST_APPLE)
     install(
         TARGETS ${CHUGIN_NAME}
-        LIBRARY DESTINATION chugins
+        LIBRARY DESTINATION chugins/darwin-${CMAKE_HOST_SYSTEM_PROCESSOR}
     )
 
-    if(CHUGIN_CODESIGN AND CMAKE_HOST_APPLE)
+    if(CHUGIN_CODESIGN)
         install(
             CODE "execute_process (COMMAND codesign -vf -s - ${CHUGINS_DIR}/${CHUGIN_NAME}.chug)" 
         )
     endif()
+else()
+    install(
+        TARGETS ${CHUGIN_NAME}
+        LIBRARY DESTINATION chugins/windows-${CMAKE_HOST_SYSTEM_PROCESSOR}
+    )
+endif()
 
 endfunction()
