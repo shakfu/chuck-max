@@ -1,6 +1,5 @@
 /* 
- * experimental code to integrate
- *
+ * experimental code to integrate chump with chuck-max
  *
  */
 
@@ -111,21 +110,21 @@ int main()
 	// build manager and run command
 	fs::path pkg_path = chumpDir() / "manifest.json";
 
- 	// try {
-    // 	// create manager
-    // 	manager =
-    //     	new Manager(pkg_path.string(), path, cv, av, whichOS(), whichArch(),
-    //                 manifest_url, true);
+ 	try {
+    	// create manager
+    	manager =
+        	new Manager(pkg_path.string(), path, cv, av, whichOS(), whichArch(),
+                    manifest_url, true);
 
-    // 	if (!validate_manifest(pkg_path)) {
-    //   		throw std::invalid_argument("Manifest file (" + pkg_path.string() +
-    //         	                      "/manifest.json) is invalid");
-    // 	}
-  	// } catch (const std::exception &e) {
-    // 	// print error message
-    // 	std::cerr << e.what() << std::endl;
-    // 	// done
-    // 	return 1;
-  	// }
+    	if (!validate_manifest(pkg_path)) {
+      		throw std::invalid_argument("Manifest file (" + pkg_path.string() +
+            	                      "/manifest.json) is invalid");
+    	}
+  	} catch (const std::exception &e) {
+    	// print error message
+    	std::cerr << e.what() << std::endl;
+    	// done
+    	return 1;
+  	}
 }
 

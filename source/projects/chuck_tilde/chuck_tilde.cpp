@@ -333,7 +333,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // chuck-related
         x->chuck = NULL;
-#if CK_EMBEDDED_CHUGINS 
+#if defined(__APPLE__) && defined(CK_EMBEDDED_CHUGINS)
         x->chugins_dir = ck_get_path_from_external(ck_class, (char*)"/Contents/Resources/chugins");
 #else
         x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins");
@@ -362,7 +362,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // set default chugins dirs
         std::string chugins_dir = std::string(x->chugins_dir->s_name);
         std::list<std::string> chugin_search;
-#if CK_EMBEDDED_CHUGINS
+#if defined(CK_EMBEDDED_CHUGINS)
         // add extra package-level chugins directory
         chugin_search.push_back(global_dir + "/chugins");
 #endif

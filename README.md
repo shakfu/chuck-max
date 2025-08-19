@@ -274,7 +274,7 @@ We welcome contributions! Please:
 
 This project thanks the following:
 
-- Professors GE Wang and Perry Cook and all chuck and chuggin contributors for creating the amazing ChucK language and chuggin ecosystem!
+- Professors GE Wang and Perry Cook and all chuck and chuggin contributors for creating the amazing ChucK language and chugin ecosystem!
 
 - Professor Perry Cook for co-authoring Chuck and creating the [Synthesis Toolkit](https://github.com/thestk/stk) which is integrated with chuck.
 
