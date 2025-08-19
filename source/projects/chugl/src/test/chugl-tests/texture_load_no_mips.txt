@@ -1,0 +1,1 @@
+texture has full mip chain?  0 

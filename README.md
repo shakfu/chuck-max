@@ -21,9 +21,10 @@ This cross-platform project combines the power of [ChucK](https://chuck.stanford
 
 - **Complete ChucK Examples**: Includes a full set of current ChucK examples
 - **Rich ChucK plugin (Chugin) Ecosystem**: Includes default [CCRMA chugins](https://github.com/ccrma/chugins) as well as (for macOS):
-  - `WarpBuf` - Time-stretching and pitch-shifting
-  - `Faust` - LLVM-based DSP platform
-  - `FluidSynth` - Software synthesizer with SoundFont support
+  - `WarpBuf` - Time-stretching and pitch-shifting.
+  - `Faust` - LLVM-based DSP platform.
+  - `FluidSynth` - Software synthesizer with SoundFont support.
+  - `ChuGL` - the ChucK Graphics Library.
 - **Max Integration**: Comprehensive Max patchers for testing and demonstration
 - **Community Contributions**: User-contributed patchers and code examples
 
@@ -267,10 +268,22 @@ We welcome contributions! Please:
 
 ## Related Projects
 
-- **Sibling Project**: [pd-chuck](https://github.com/shakfu/pd-chuck) for Pure Data
+Used in `chuck-max`:
+- [ChuGins](https://github.com/ccrma/chugins): Repository for Officially Supported ChuGins
+- [ChuMP](https://chuck.stanford.edu/chump): The ChucK Manager of Packages.
 - [Chai](https://chuck.stanford.edu/chai): ChucK for AI.
-- [ChucKDesigner](https://github.com/DBraun/ChucKDesigner) for ChucK audio integration with TouchDesigner.
+- [FaucK](https://ccrma.stanford.edu/~rmichon/fauck): Hybridizing the Faust and ChucK Audio Programming Languages.
+- [ChuGL](https://github.com/ccrma/chugl): ChucK Graphics Library.
+
+Our sibling project:
+- [pd-chuck](https://github.com/shakfu/pd-chuck): ChucK for Pure Data.
+
+Other ChucK projects:
 - [WebChuck](https://chuck.cs.princeton.edu/webchuck) for Web-based computer music programming with ChucK.
+- [ChucKDesigner](https://github.com/DBraun/ChucKDesigner): ChucK audio integration with TouchDesigner.
+- [SMucK](https://chuck.stanford.edu/smuck): Symbolic Music in ChucK.
+- [Chunity](https://chuck.stanford.edu/chunity): ChucK for Unity.
+- [Chunreal](https://github.com/ccrma/chunreal): ChucK in Unreal Engine.
 
 ## Credits
 

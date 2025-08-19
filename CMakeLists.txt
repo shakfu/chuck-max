@@ -22,6 +22,7 @@ option(ENABLE_HOMEBREW "Build using Homebrew dependencies")
 option(BUILD_UNIVERSAL "Build Universal Externals")
 option(BUILD_EMBED_HOST "Build embedded host example")
 option(BUILD_CHUMP "Build experimental chump executable and chugin")
+option(BUILD_CHUGL "Build ChuGL.chug chugin")
 
 # warnings options
 option(SKIP_WARNING_SHORTEN_64_TO_32 "skip implicit 64bit to 32bit conversion warnings" ON)
