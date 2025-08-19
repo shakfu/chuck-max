@@ -341,7 +341,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 #elif defined(__APPLE__) && defined(__x86_64__)
         x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins/darwin-x86_64");
 #else
-        x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins/windows-x86_64");
+        x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins/windows-amd64");
 #endif
 #endif        
         x->in_chuck_buffer = NULL;

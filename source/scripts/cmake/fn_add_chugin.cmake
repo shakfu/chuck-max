@@ -35,10 +35,12 @@ function(add_chugin)
     set(path "${CMAKE_CURRENT_SOURCE_DIR}")
     cmake_path(GET path STEM PARENT_DIR)
 
+    string(TOLOWER ${CMAKE_HOST_SYSTEM_PROCESSOR} ARCH)
+
     if(CMAKE_HOST_APPLE)
-        set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins/darwin-${CMAKE_HOST_SYSTEM_PROCESSOR})
+        set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins/darwin-${ARCH})
     else()
-        set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins/windows-${CMAKE_HOST_SYSTEM_PROCESSOR})
+        set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins/windows-${ARCH})
     endif()
 
     if(NOT DEFINED CHUGIN_NAME)
@@ -140,7 +142,7 @@ function(add_chugin)
 if(CMAKE_HOST_APPLE)
     install(
         TARGETS ${CHUGIN_NAME}
-        LIBRARY DESTINATION chugins/darwin-${CMAKE_HOST_SYSTEM_PROCESSOR}
+        LIBRARY DESTINATION chugins/darwin-${ARCH}
     )
 
     if(CHUGIN_CODESIGN)
@@ -151,7 +153,7 @@ if(CMAKE_HOST_APPLE)
 else()
     install(
         TARGETS ${CHUGIN_NAME}
-        LIBRARY DESTINATION chugins/windows-${CMAKE_HOST_SYSTEM_PROCESSOR}
+        LIBRARY DESTINATION chugins/windows-${ARCH}
     )
 endif()
 
