@@ -399,7 +399,7 @@ if(CMAKE_HOST_APPLE)
     endif()
 else()
     install(
-        TARGETS ${CHUGIN_NAME}
+        TARGETS ${PROJECT_NAME}
         LIBRARY DESTINATION chugins/windows-${ARCH}
     )
 endif()

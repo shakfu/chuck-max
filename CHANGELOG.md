@@ -15,15 +15,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.2.x]
 
-- Added support for building (in MacOS) `ChuGL.chug`.
+- Added support for building (for both MacOS and Windows) `ChuGL.chug`.
 
 - Added new `icon.png`
 
-- Fixed `Regex.chug` for windows.
+- Added support for `Regex.chug` chugin for windows.
 
 - Added Chump as a cmake-compilable subproject.
 
-- Added Windows support
+- Added Windows support to build `chuck~` and standard chugins (except `Regex`).
 
 - Updated chuck to `chuck 1.5.5.3-dev (chai)`
 
