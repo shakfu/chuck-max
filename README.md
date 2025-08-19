@@ -27,11 +27,6 @@ This cross-platform project combines the power of [ChucK](https://chuck.stanford
 - **Max Integration**: Comprehensive Max patchers for testing and demonstration
 - **Community Contributions**: User-contributed patchers and code examples
 
-### Related Projects
-
-- **Sibling Project**: [pd-chuck](https://github.com/shakfu/pd-chuck) for Pure Data
-- **ChucK Designer**: [ChucKDesigner](https://github.com/DBraun/ChucKDesigner) for Touch Designer
-
 ## Build Guide
 
 The base `chuck-max` system consists of a Max package with the `chuck~` external, the default set of [CCRMA chugins](https://github.com/ccrma/chugins) and extensive examples, tests and Max patchers.
@@ -269,6 +264,13 @@ We welcome contributions! Please:
 2. Create a feature branch
 3. Make your changes
 4. Submit a pull request
+
+## Related Projects
+
+- **Sibling Project**: [pd-chuck](https://github.com/shakfu/pd-chuck) for Pure Data
+- [Chai](https://chuck.stanford.edu/chai): ChucK for AI.
+- [ChucKDesigner](https://github.com/DBraun/ChucKDesigner) for ChucK audio integration with TouchDesigner.
+- [WebChuck](https://chuck.cs.princeton.edu/webchuck) for Web-based computer music programming with ChucK.
 
 ## Credits
 
