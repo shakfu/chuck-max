@@ -1,4 +1,0 @@
-[ChuGL]: [33mWARN [0mCould not load texture file ''
-[ChuGL]: [33mWARN [0m |- Reason: Unable to open file
-[ChuGL]: [33mWARN [0m |- Defaulting to magenta texture
-[chuck]: (VM) removing all (0) shreds...

@@ -1,1 +1,0 @@
-[ChuGL]: [33mWARN [0mScenePass.scene(GScene, GCamera) failed: camera does not belong to scene. Suggestion: connect with `camera --> scene;`

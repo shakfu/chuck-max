@@ -41,13 +41,6 @@ universal:
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
-chugl:
-	@mkdir -p build && \
-		cd build && \
-		cmake $(GENERATOR) .. -DBUILD_CHUGL=ON && \
-		cmake --build . --config '$(CONFIG)' && \
-		cmake --install . --config '$(CONFIG)'
-
 install_deps:
 	./source/scripts/install_deps.sh
 

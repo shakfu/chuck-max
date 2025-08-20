@@ -24,7 +24,6 @@ This cross-platform project combines the power of [ChucK](https://chuck.stanford
   - `WarpBuf` - Time-stretching and pitch-shifting.
   - `Faust` - LLVM-based DSP platform.
   - `FluidSynth` - Software synthesizer with SoundFont support.
-  - `ChuGL` - the ChucK Graphics Library.
 - **Max Integration**: Comprehensive Max patchers for testing and demonstration
 - **Community Contributions**: User-contributed patchers and code examples
 
@@ -273,12 +272,12 @@ Used in `chuck-max`:
 - [ChuMP](https://chuck.stanford.edu/chump): The ChucK Manager of Packages.
 - [Chai](https://chuck.stanford.edu/chai): ChucK for AI.
 - [FaucK](https://ccrma.stanford.edu/~rmichon/fauck): Hybridizing the Faust and ChucK Audio Programming Languages.
-- [ChuGL](https://github.com/ccrma/chugl): ChucK Graphics Library.
 
 Our sibling project:
 - [pd-chuck](https://github.com/shakfu/pd-chuck): ChucK for Pure Data.
 
 Other ChucK projects:
+- [ChuGL](https://github.com/ccrma/chugl): ChucK Graphics Library.
 - [WebChuck](https://chuck.cs.princeton.edu/webchuck) for Web-based computer music programming with ChucK.
 - [ChucKDesigner](https://github.com/DBraun/ChucKDesigner): ChucK audio integration with TouchDesigner.
 - [SMucK](https://chuck.stanford.edu/smuck): Symbolic Music in ChucK.
