@@ -1,0 +1,46 @@
+name: build-windows
+on: 
+  workflow_dispatch:
+    inputs:
+      os:
+        type: choice
+        description: Select a MacOS version
+        default: macos-15
+        required: true
+        options:
+          - macos-latest
+          - macos-15
+          - macos-14
+          - macos-13
+
+jobs:
+  build:
+    runs-on: ${{ inputs.os }}
+
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        fetch-depth: '0'
+
+    - name: install dependencies
+      run: |
+        brew update
+        brew install bison flex autogen automake fluidsynth rubberband libsamplerate
+
+    - name: build chuck
+      run: make brew
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: chuck-max-macos-arm64-0.2.0
+        path: |
+          examples
+          externals
+          help
+          media
+          patchers
+          LICENSE
+          README.md
+          package-info.json

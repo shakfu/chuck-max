@@ -1,0 +1,114 @@
+name: build-package
+on:
+  workflow_dispatch:
+    inputs:
+      macos_version:
+        type: choice
+        description: Select MacOS version
+        default: macos-14
+        required: true
+        options:
+          - macos-latest
+          - macos-15
+          - macos-14
+          - macos-13
+
+      windows_version:
+        type: choice
+        description: Select Windows version
+        default: windows-2019
+        required: true
+        options:
+          - windows-latest
+          - windows-2025
+          - windows-2022
+          - windows-2019
+
+jobs:
+  build-windows:
+    runs-on: ${{ github.event.inputs.windows_version }}
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        fetch-depth: '0'
+
+    - name: build chuck
+      run: make
+
+    - name: upload win64 externals and chugins
+      uses: actions/upload-artifact@v4
+      with:
+        name: win64-externals
+        path: |
+          examples/windows-amd64
+          externals/*.mxe64
+        retention-days: 1
+
+  build-macos:
+    runs-on: ${{ github.event.inputs.macos_version }}
+    needs: [build-windows]
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        fetch-depth: '0'
+
+    - name: install dependencies
+      run: |
+        brew update
+        brew install bison flex autogen automake fluidsynth rubberband libsamplerate
+
+    - name: build chuck
+      run: make brew
+
+    - name: upload macos externals and chugins
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-externals
+        path: |
+          examples/darwin-arm64
+          externals/*.mxo
+        retention-days: 1
+
+  build-package:
+    runs-on: ubuntu-latest
+    needs: [build-macos]
+    steps:
+
+    - uses: actions/checkout@v4
+
+    - name: Download Windows externals
+      uses: actions/download-artifact@v4
+      with:
+        name: win64-externals
+        path: |
+          examples
+          externals
+        merge-multiple: true
+
+    - name: Download MacOS externals
+      uses: actions/download-artifact@v4
+      with:
+        name: macos-externals
+        path: |
+          examples
+          externals
+        merge-multiple: true
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: chuck-max-0.2.0
+        path: |
+          examples
+          externals
+          help
+          media
+          patchers
+          LICENSE
+          README.md
+          package-info.json
+
+

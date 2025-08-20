@@ -18,7 +18,7 @@ ifeq ($(PLATFORM), Darwin)
 GENERATOR ?= "-GXcode"
 endif
 
-.PHONY: all native universal chugl full light brew brew2 nomp3 dev setup \
+.PHONY: all native universal full light brew brew2 nomp3 dev setup \
 		clean reset test test-fauck test-warpbuf test-fluidsynth \
 		install_deps install_deps_light install_deps_nomp3 \
 		full2 install_fs_deps chump \
