@@ -16,13 +16,13 @@ on:
       windows_version:
         type: choice
         description: Select Windows version
-        default: windows-2019
+        default: windows-2022
         required: true
         options:
           - windows-latest
           - windows-2025
           - windows-2022
-          - windows-2019
+
 
 jobs:
   build-windows:
