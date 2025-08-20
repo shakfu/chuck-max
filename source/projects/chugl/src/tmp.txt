@@ -1,0 +1,86 @@
+duty 245 
+note length: 5 vol:  15 -81 1816 
+1280 5 
+3675 :(int)
+freq (hz): 564.965517 period (samps): 78.057861 
+duty: 3 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+note length: 16 vol:  14 -97 1944 
+4096 16 
+11760 :(int)
+freq (hz): 1260.307692 period (samps): 34.991455 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+note length: 9 vol:  9 -65 1880 
+2304 9 
+6615 :(int)
+freq (hz): 780.190476 period (samps): 56.524658 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+duty: 3 
+duty 245 
+note length: 5 vol:  15 -81 1816 
+1280 5 
+3675 :(int)
+freq (hz): 564.965517 period (samps): 78.057861 
+duty: 3 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+note length: 16 vol:  14 -97 1944 
+4096 16 
+11760 :(int)
+freq (hz): 1260.307692 period (samps): 34.991455 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+note length: 9 vol:  9 -65 1880 
+2304 9 
+6615 :(int)
+freq (hz): 780.190476 period (samps): 56.524658 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+duty: 3 
+duty: 1 
+duty: 1 
+duty: 3 
+duty: 3 

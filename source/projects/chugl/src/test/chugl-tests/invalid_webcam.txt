@@ -1,0 +1,5 @@
+[ChuGL]: [33mWARN [0mCould not open webcam device -1. Defaulting to magenta texture
+[ChuGL]: [33mWARN [0mOnly webcam device ids 0-7 are supported. Defaulting to magenta texture
+"webcam_negative and webcam_out_of_bounds have the same texture" :(string)
+1 1 
+[chuck]: (VM) removing all (0) shreds...

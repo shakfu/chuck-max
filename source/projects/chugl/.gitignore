@@ -1,0 +1,64 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# cmake
+build/
+build-*/
+
+# vscode
+.vscode/
+
+# DS_Store
+.DS_Store
+
+# chuck executable
+chuck*.exe
+
+# imgui
+imgui.ini
+
+# assets
+assets/
+
+# chugins
+*.chug
+
+# audio files
+*.wav
+
+# media files
+*.jpg
+*.mpg
+
+# auto-generated html
+*.html
+*.css

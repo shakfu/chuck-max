@@ -1,0 +1,30 @@
+"copying null textures" :(string)
+[ChuGL]: [33mWARN [0mCould not copy texture to texture
+[ChuGL]: [33mWARN [0m |- Reason: null texture objects
+[ChuGL]: [33mWARN [0mCould not copy texture to texture
+[ChuGL]: [33mWARN [0m |- Reason: null texture objects
+"copy larger to smaller ok" :(string)
+"copy smaller to larger ok" :(string)
+"cannot copy if copy_dst usage is not set" :(string)
+[ChuGL]: [33mWARN [0mCould not copy texture[29]  to texture[31] 
+[ChuGL]: [33mWARN [0m |- Reason: destination texture[31] does not have the Texture.Usage_CopyDst permission
+"cannot copy if copy_src usage is not set" :(string)
+[ChuGL]: [33mWARN [0mCould not copy texture[31]  to texture[29] 
+[ChuGL]: [33mWARN [0m |- Reason: source texture[31] does not have the Texture.Usage_CopySrc permission
+"cannot copy if formats are different" :(string)
+[ChuGL]: [33mWARN [0mCould not copy texture[29]  to texture[32] 
+[ChuGL]: [33mWARN [0m |- Reason: mismatched texture formats RGBA32Float != RGBA8Unorm
+"cannot copy if formats are different 2" :(string)
+[ChuGL]: [33mWARN [0mCould not copy texture[32]  to texture[29] 
+[ChuGL]: [33mWARN [0m |- Reason: mismatched texture formats RGBA8Unorm != RGBA32Float
+"copying with invalid locations" :(string)
+[ChuGL]: [33mWARN [0mCould not copy texture[30]  to texture[29] 
+[ChuGL]: [33mWARN [0m |- Reason: destination location [9999, 0, 0] mip 0 is out of bounds of texture with dimensions [10, 10, 1] and 4 mips
+"copying with invalid range" :(string)
+[ChuGL]: [33mWARN [0mCould not copy texture[30]  to texture[29] 
+[ChuGL]: [33mWARN [0m |- Reason: destination texture is too small copy size [1000, 1000, 1000] > destination size [10, 10, 1]
+"getting texture.data() before reading should throw warning" :(string)
+[ChuGL]: [33mWARN [0mTexture[id=29, name=] data empty
+[ChuGL]: [33mWARN [0m |- Did you mean to read the texture data from GPU first?
+[ChuGL]: [33mWARN [0m |- e.g. `tex.read() => now;`
+[chuck]: (VM) removing all (0) shreds...

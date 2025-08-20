@@ -1,0 +1,206 @@
+TODO
+- Shadow
+  - add shadowNearPlane to SpotLight
+
+- add file drag drop into GWindow (see Raylib model viewer example)
+
+- finish split screen example
+- test shadertoy example in release mode, make sure we still get shader compilation errors
+  - is there a way to detect a compile error and switch to default magenta? otherwise just crash
+- re-impl shader freeing gc
+- impl screenPass properly and make a little chugl-shaderToy playground example
+  - make actual chugl example.
+  - use UI.text() as text editor field lol, or GText
+- add pipeline/bindgroup gc for R_Shader
+  - want to prevent memory leak from say CHydra building new shaders every frame
+- check if imgui has multi-window support now for webgpu backend
+- add anti aliasing back
+- port geometry builders to use par_shapes
+- GLTF loader!!!! (after adding GC?)
+  - how does raylib do it? reference their pbr material system 
+
+UI
+- add nearest-neighbor filtering
+
+- look into other blendmodes besides alpha blending
+  - see acerola blend modes video
+  - impl additive blending particle system example, see https://www.youtube.com/watch?v=ahOfNgvQ93Q&ab_channel=NeverEngineStudios
+    - also acerola particle system / compute shader video
+
+- default GScene with a main camera?
+- add inverse normal matrix to PER_DRAW instanced draw uniforms
+- group all the commands of the frame together, submit all at once at end of RenderGraph 
+
+- add back MSAA to rendergraph API, see if that fixes the appearance of audio_donut.ck
+
+- ==optimize== for G_DrawCall sortkey, use the material AND shader index into arrays,
+store 16 bits each (assumes we won't ever have more than 16k live materials and shaders),
+lets us sort by shaders as well to minimize pipeline switches 
+  - also add checks so we don't reset a pipeline/bindgroup that was already set
+
+
+- there is a slow leak somewhere (500kb / min)
+  - first: update to newer version of wgpu that fixes texture view leak
+    - https://github.com/gfx-rs/wgpu/releases/tag/wgpu-v23.0.1
+    - hopefully this fixes
+    - what's the point of Rust if it still leaks...
+  - check if this happens with just chuck (no chugl gg.nextFrame())
+  - check if happens with just empty gameloop
+  - check if happens with just an event being fired every frame, but no chugl
+  - if it happens on empty gameloop and NOT any of the chuck-only tests
+    - add logging to arena reallocation, check if I'm forgetting to clear any of the arenas
+      - not picked up by xcode leakcheck, suggests its coming from an arena resize
+      - but the linear growth of the leak suggests its *not* an arena, because arenas double every time in size
+        - but maybe the memory is only picked up by tracker when writing/reading??? (i believe this ithe case on windows, so you can init an arena to several gigs no problem, see ryan fleury post)
+        - 
+  -  ==Address all of this as part of the great chugl garbage collection refactor==
+     - to prevent cycles, remove the GGen.getChild() method. Children GGens only point to their parent, to prevent refcount cycles
+        - this way, disconnecting a subgraph will actually free the entire subgraph, because the leaf nodes of
+        that subgraph will have refcounts of 0
+     -  other resources to look at:
+        -  how does box2c track memory? look at their API for requesting memory usage
+           -  ideally ChuGL can do the same
+        -  Ryan fleury arena talk
+        -  eskil steenberg how I program C leak checker
+        -  stb leak check
+
+### Long-Term
+- C-port of webgpu-utils shader pipeline layout generator
+- study Raylib opengl batcher, can chugl make use of a batcher?
+- skeletal animation
+  - see obsidian note
+  - study raylib gltf importer and animator
+    - added in last release v5.5 (see raylib release notes)
+      - GenoView and BVHView (developing two amazing tools to visualize and test animations)
+  - watch j.blow devlog implementing animation!
+- study jdh retro games from scratch (minecraft, doom), impl as chugl examples?
+- Implement C preprocessor as separate project, add to chugl shader processor
+  - simple: determine in @group(0) frame uniforms which @groups(x) are used, so that when binding frame uniforms we can ignore unused;
+    - this is a simpler than generaeting a WGPUPipelineLayout, it's just checking to see if a binding variable string name appears in
+    the body of a vertex or frag shader
+- for PBR, IBL
+  - see webgpu-typescript-starter notes.txt
+  - anything we can use from https://github.com/google/filament
+- add more builtin-shapes
+  - see raylib 3d mesh generator
+  - https://prideout.net/shapes
+- Swapping out for simpler libraries
+  - swap out glm for handmade math
+  - swap GLFW for https://github.com/ColleagueRiley/RGFW
+
+
+
+2d immediate mode vector graphics libraries to base g2d off of
+- raylib 
+- freya shapes
+- paperjs
+- processing/p5
+- love.graphics
+
+== Examples ====================
+- Mirrors
+- Portals
+- GUI overlay
+- additive blending particle system
+  - https://www.youtube.com/watch?v=ahOfNgvQ93Q&ab_channel=NeverEngineStudios
+- shadertoy in chugl
+- pokemon cries!
+- fluid sim
+  - https://github.com/kishimisu/WebGPU-Fluid-Simulation?tab=readme-ov-file
+    - also impl as webgpu-native example
+    - CPU implementation, 2003
+  - https://www.dgp.toronto.edu/public_user/stam/reality/Research/pdf/GDC03.pdf
+  - https://www.shadertoy.com/view/4tGfDW
+    - based on https://inria.hal.science/inria-00596050/document published 2011
+- computed gotos on command queue flush switch statement
+  - https://wren.io/performance.html
+    - says saves 5-10% on wren bytecode switch
+  - https://eli.thegreenplace.net/2012/07/12/computed-goto-for-efficient-dispatch-tables/
+- jellyfish
+
+
+=== Srgb format madness ===
+Insightful blog post: https://medium.com/@tomforsyth/the-srgb-learning-curve-773b7f68cf7a
+Leaving this as is for now because there are more important issues.
+
+Problem:
+- 3D pipelines need to be gamma aware, do lighting calculations in linear space, and then map back to srgb
+  - in this case, scenepass outputs a linear space rgba16 color target
+- 2D pipelines w/o lighting however are all in gamma-space, and if you enter a color like @(.3, .4, .5) you want it to show up as that exactly
+  - colors are entered in srgb, and stay in that space, never going to linear.
+  - in this case, scenepass should outputs srgb into an rgba8 buffer 
+- FlatMaterial can be used in both 3D and 2D context, so how do we know whether to convert to linear space or not?
+  - Depends on format of backbuffer textureview, on whether or not bloom/tonemapping is being applied...
+
+Options
+- force backbuffer to be linear / non-srgb, and add gamma correction to OutputPass (which should really be called Tonemap)
+- add srgb/non-srgb option to texture.loadimage()
+  - if it's loaded as srgb, we *dont* need to do the srgb-linear conversion upon sampling in shader
+  - but then this complicates things because users need to manually and correctly load the right type of texture
+    - but if AssLoader is good enough, maybe they won't ever need to do this...
+- add option to create an srgb/linear texture view of the backbuffer
+
+I think the move for now is to manually apply gamma curve in post-process, and default to a non-srgb backbuffer.
+- the rendergraph for a 3D game with a 2D menu would look something like
+  - root --> 3dScene --> bloom --> tonemap --> backbuffer
+  - root --> 2dscene --> backbuffer
+  - in both graphs, the backbuffer is non-srgb, and the tonemap pass applies its own gamma correction
+- can revisit the texture loading format stuff when I implement the gltf loader
+  - if it's simple 2D no lighting, we stay in gamma space and load the texture as RGBA8unorm
+  - if we have lighting / tonemap / gamma correction, either
+    - load texture as RGBA8Unorm-SRGB. the hardware will convert to linear when we sample in shader
+    - OR
+    - load as RGBA8Unorm, but convert manually in our shader code from srgb -> linear, so that when we apply the tonemap pass it goes back to srgb
+  
+=== Lighting and Shadows ========================
+
+- remember to add and test inv normal matrix for correct shading on meshes with non-uniform or negative scale
+  - see: https://www.scratchapixel.com/lessons/3d-basic-rendering/transforming-objects-using-matrices/using-4x4-matrices-transform-objects-3D.html
+- add spotlight and new pointlight attenuation factor to PBRMaterial shader
+
+
+Ideas for multiple shadow casters
+- 2darray and cubearray *winner winner*
+- bindless XXXXX Not possible currently in webgpu (there is a proposal with deadline Dec 2026)
+- screenspace shadows (these only augment directional lights, involve raymarching a z pre-pass. Cannot substitute shadow mapping)
+
+Resources
+- webgpu samples shadows
+- tojidev webgpu cascaded shadow maps
+
+Note: depthBias cannot be set for point or line topologies. Do the shadow bias in the shader instead?
+
+SpotLight shadows
+- fov = 2 * theta_max
+- aspect = 1
+- use comparison sampler
+
+remember: need to be able to specify a shadowCaster *independent* of a light source
+  - maybe add light.disable?
+  - for now can just set intensity to 0
+
+babylon and THREE allow setting the shadowmap update frequency (so can decide to only render once for static geo)
+
+BabylonJS
+- need to create a shadow generator per light
+- have to explicitly mark which meshes are to cast shadows from 
+- have to explicitly mark when a mesh can receive shadows
+```javscript
+const shadowGenerator = new BABYLON.ShadowGenerator(1024, light);
+shadowGenerator.getShadowMap().renderList.push(torus);
+ground.receiveShadows = true;
+```
+
+Both Babylon and ThreeJS have on MESH
+- bool receiveShadow
+
+Things to test
+- transparent casts shadow correctly
+- alpha-cutout casts shadow correctly
+  - how do other game engines do this???????? do i really need to run the entire fragment shader, seems like a waste
+- changing scale on GLight doesn't mess up the shadow map
+- backfaces/billboards cast and receive shadow correctly (e.g. backside of a GPlane)
+- if mesh is out of light range, not affected by shadows
+
+be okay with sloppy first version!!!
+

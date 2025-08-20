@@ -34,6 +34,13 @@ native:
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
+chugl:
+	@mkdir -p build && \
+		cd build && \
+		cmake $(GENERATOR) .. -DBUILD_CHUGL=ON && \
+		cmake --build . --config '$(CONFIG)' && \
+		cmake --install . --config '$(CONFIG)'
+
 universal: 
 	@mkdir -p build && \
 		cd build && \
