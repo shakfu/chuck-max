@@ -42,7 +42,7 @@ jobs:
       with:
         name: win64-externals-and-chugins
         path: |
-          examples/windows-amd64
+          examples/chugins/windows-amd64
           externals/*.mxe64
         retention-days: 1
 
@@ -70,7 +70,7 @@ jobs:
       with:
         name: win64-externals-and-chugins
         path: |
-          examples/windows-amd64
+          examples/chugins/windows-amd64
           externals
         merge-multiple: true
 

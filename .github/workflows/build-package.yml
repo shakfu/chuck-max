@@ -42,7 +42,7 @@ jobs:
       with:
         name: win64-externals-and-chugins
         path: |
-          examples/windows-amd64/*.chug
+          examples/chugins/windows-amd64
           externals/*.mxe64
         retention-days: 1
 
@@ -69,7 +69,7 @@ jobs:
       with:
         name: macos-externals-and-chugins
         path: |
-          examples/darwin-arm64/*.chug
+          examples/chugins/darwin-arm64
           externals/*.mxo
         retention-days: 1
 
@@ -85,7 +85,7 @@ jobs:
       with:
         name: win64-externals-and-chugins
         path: |
-          examples/windows-amd64
+          examples/chugins/windows-amd64
           externals
         merge-multiple: true
 
@@ -94,7 +94,7 @@ jobs:
       with:
         name: macos-externals-and-chugins
         path: |
-          examples/darwin-arm64
+          examples/chugins/darwin-arm64
           externals
         merge-multiple: true
 
