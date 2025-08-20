@@ -42,8 +42,8 @@ jobs:
       with:
         name: win64-externals-and-chugins
         path: |
-          examples/chugins/windows-amd64/*.chug
-          externals/*.mxe64
+          ./examples/chugins/windows-amd64/*.chug
+          ./externals/*.mxe64
         retention-days: 1
 
 
@@ -70,8 +70,8 @@ jobs:
       with:
         name: win64-externals-and-chugins
         path: |
-          examples/chugins/windows-amd64
-          externals
+          ./examples/chugins/windows-amd64
+          ./externals
         merge-multiple: true
 
     - uses: actions/upload-artifact@v4
