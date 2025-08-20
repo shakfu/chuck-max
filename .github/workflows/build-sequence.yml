@@ -37,15 +37,19 @@ jobs:
     - name: build chuck
       run: make
 
-    - name: upload win64 externals and chugins
+    - name: upload win64 externals
       uses: actions/upload-artifact@v4
       with:
-        name: win64-externals-and-chugins
-        path: |
-          ./examples/chugins/windows-amd64/*.chug
-          ./externals/*.mxe64
+        name: win64-externals
+        path: externals/*.mxe64
         retention-days: 1
 
+    - name: upload win64 chugins
+      uses: actions/upload-artifact@v4
+      with:
+        name: win64-chugins
+        path: examples/chugins/windows-amd64/*.chug
+        retention-days: 1
 
   build-macos:
     runs-on: ${{ github.event.inputs.macos_version }}
@@ -68,10 +72,15 @@ jobs:
     - name: Download Windows externals
       uses: actions/download-artifact@v4
       with:
-        name: win64-externals-and-chugins
-        path: |
-          ./examples/chugins/windows-amd64
-          ./externals
+        name: win64-externals
+        path: externals
+        merge-multiple: true
+
+    - name: Download Windows chugins
+      uses: actions/download-artifact@v4
+      with:
+        name: win64-chugins
+        path: examples/chugins/windows-amd64
         merge-multiple: true
 
     - uses: actions/upload-artifact@v4
