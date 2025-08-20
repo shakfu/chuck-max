@@ -40,7 +40,7 @@ jobs:
     - name: upload win64 externals and chugins
       uses: actions/upload-artifact@v4
       with:
-        name: win64-externals
+        name: win64-externals-and-chugins
         path: |
           examples/windows-amd64
           externals/*.mxe64
@@ -67,7 +67,7 @@ jobs:
     - name: upload macos externals and chugins
       uses: actions/upload-artifact@v4
       with:
-        name: macos-externals
+        name: macos-externals-and-chugins
         path: |
           examples/darwin-arm64
           externals/*.mxo
@@ -83,18 +83,18 @@ jobs:
     - name: Download Windows externals
       uses: actions/download-artifact@v4
       with:
-        name: win64-externals
+        name: win64-externals-and-chugins
         path: |
-          examples
+          examples/windows-amd64
           externals
         merge-multiple: true
 
     - name: Download MacOS externals
       uses: actions/download-artifact@v4
       with:
-        name: macos-externals
+        name: macos-externals-and-chugins
         path: |
-          examples
+          examples/darwin-arm64
           externals
         merge-multiple: true
 
