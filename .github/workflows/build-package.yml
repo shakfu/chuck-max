@@ -42,8 +42,8 @@ jobs:
       with:
         name: win64-externals-and-chugins
         path: |
-          examples/chugins/windows-amd64/*.chug
-          externals/*.mxe64
+          ${{ github.workspace }}/examples/chugins/windows-amd64/*.chug
+          ${{ github.workspace }}/externals/*.mxe64
         retention-days: 1
 
   build-macos:
@@ -69,8 +69,8 @@ jobs:
       with:
         name: macos-externals-and-chugins
         path: |
-          examples/chugins/darwin-arm64/*.chug
-          externals/*.mxo
+          ${{ github.workspace }}/examples/chugins/darwin-arm64/*.chug
+          ${{ github.workspace }}/externals/*.mxo
         retention-days: 1
 
   build-package:
@@ -85,8 +85,8 @@ jobs:
       with:
         name: win64-externals-and-chugins
         path: |
-          examples/chugins/windows-amd64
-          externals
+          ${{ github.workspace }}/examples/chugins/windows-amd64
+          ${{ github.workspace }}/externals
         merge-multiple: true
 
     - name: Download MacOS externals
@@ -94,8 +94,8 @@ jobs:
       with:
         name: macos-externals-and-chugins
         path: |
-          examples/chugins/darwin-arm64
-          externals
+          ${{ github.workspace }}/examples/chugins/darwin-arm64
+          ${{ github.workspace }}/externals
         merge-multiple: true
 
     - uses: actions/upload-artifact@v4
