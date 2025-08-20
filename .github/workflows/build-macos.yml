@@ -1,4 +1,4 @@
-name: build-windows
+name: build-macos
 on: 
   workflow_dispatch:
     inputs:
