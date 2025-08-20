@@ -37,13 +37,18 @@ jobs:
     - name: build chuck
       run: make
 
-    - name: upload win64 externals and chugins
+    - name: upload win64 externals
       uses: actions/upload-artifact@v4
       with:
-        name: win64-externals-and-chugins
-        path: |
-          ${{ github.workspace }}/examples/chugins/windows-amd64/*.chug
-          ${{ github.workspace }}/externals/*.mxe64
+        name: win64-externals
+        path: externals/*.mxe64
+        retention-days: 1
+
+    - name: upload win64 chugins
+      uses: actions/upload-artifact@v4
+      with:
+        name: win64-chugins
+        path: examples/chugins/windows-amd64/*.chug
         retention-days: 1
 
   build-macos:
@@ -64,13 +69,18 @@ jobs:
     - name: build chuck
       run: make brew
 
-    - name: upload macos externals and chugins
+    - name: upload macos externals
       uses: actions/upload-artifact@v4
       with:
-        name: macos-externals-and-chugins
-        path: |
-          ${{ github.workspace }}/examples/chugins/darwin-arm64/*.chug
-          ${{ github.workspace }}/externals/*.mxo
+        name: macos-externals
+        path: externals/*.mxo
+        retention-days: 1
+
+    - name: upload macos chugins
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-chugins
+        path: examples/chugins/darwin-arm64/*.chug
         retention-days: 1
 
   build-package:
@@ -83,19 +93,29 @@ jobs:
     - name: Download Windows externals
       uses: actions/download-artifact@v4
       with:
-        name: win64-externals-and-chugins
-        path: |
-          ${{ github.workspace }}/examples/chugins/windows-amd64
-          ${{ github.workspace }}/externals
+        name: win64-externals
+        path: externals
+        merge-multiple: true
+
+    - name: Download Windows chugins
+      uses: actions/download-artifact@v4
+      with:
+        name: win64-chugins
+        path: examples/chugins/windows-amd64
         merge-multiple: true
 
     - name: Download MacOS externals
       uses: actions/download-artifact@v4
       with:
-        name: macos-externals-and-chugins
-        path: |
-          ${{ github.workspace }}/examples/chugins/darwin-arm64
-          ${{ github.workspace }}/externals
+        name: macos-externals
+        path: externals
+        merge-multiple: true
+
+    - name: Download MacOS chugins
+      uses: actions/download-artifact@v4
+      with:
+        name: macos-chugins
+        path: examples/chugins/darwin-arm64
         merge-multiple: true
 
     - uses: actions/upload-artifact@v4

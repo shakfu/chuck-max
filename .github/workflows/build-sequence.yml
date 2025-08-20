@@ -23,7 +23,6 @@ on:
           - windows-2025
           - windows-2022
 
-
 jobs:
   build-windows:
     runs-on: ${{ github.event.inputs.windows_version }}
