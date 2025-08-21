@@ -5,6 +5,8 @@ jobs:
   one:
     runs-on: ubuntu-latest
     steps:
+      - name: Demo
+        run: echo "github.actor: ${{ github.actor }}"
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
