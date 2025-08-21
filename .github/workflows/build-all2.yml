@@ -1,0 +1,58 @@
+name: build-all2
+on: [workflow_dispatch]
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        fetch-depth: '0'
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ github.runner_os }}-${{ github.runner_arch }}
+        path: |
+          examples
+          externals
+          help
+          media
+          patchers
+          LICENSE
+          README.md
+          package-info.json
+          icon.png
+
+  build-macos:
+    runs-on: macos-14
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        fetch-depth: '0'
+
+    - name: install dependencies
+      run: |
+        brew update
+        brew install bison flex autogen automake fluidsynth rubberband libsamplerate
+
+    - name: build chuck
+      run: make brew
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ github.runner_os }}-${{ github.runner_arch }}
+        path: |
+          examples
+          externals
+          help
+          media
+          patchers
+          LICENSE
+          README.md
+          package-info.json
+          icon.png
+
