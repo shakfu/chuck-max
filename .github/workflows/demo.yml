@@ -7,7 +7,4 @@ jobs:
     steps:
 
     - name: echo variables
-      run: |
-      	echo "GITHUB_ACTION: $GITHUB_ACTION"
-      	echo "GITHUB_ACTION_PATH: $GITHUB_ACTION_PATH"
-      	echo "GITHUB_ACTOR: $GITHUB_ACTOR"
+      run: echo hello
