@@ -5,8 +5,13 @@ jobs:
   one:
     runs-on: ubuntu-latest
     steps:
-      - name: Demo
-        run: echo 'github.actor -> ${{ github.actor }}'
+      - name: Show default environment variables
+        run: |
+          echo "The job_id is: $GITHUB_JOB"
+          echo "The id of this action is: $GITHUB_ACTION"
+          echo "The GitHub Actor's username is: $GITHUB_ACTOR"
+          echo "GitHub SHA: $GITHUB_SHA"
+
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
