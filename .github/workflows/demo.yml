@@ -17,7 +17,3 @@ jobs:
         echo "GITHUB_REPOSITORY: ${{ github.repository }}"
         echo "GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}"
         echo "GITHUB_SHA: ${{ github.sha }}"
-        echo "GITHUB_SHA: ${{ github.sha }}"
-        echo "RUNNER_ARCH: ${{ github.runner_arch }}"
-        echo "RUNNER_ARCH: ${{ github.runner.arch }}"
-        echo "RUNNER_ARCH: ${{ runner.arch }}"
