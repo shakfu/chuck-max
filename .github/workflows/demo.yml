@@ -2,7 +2,7 @@ name: demo
 on: [workflow_dispatch]
 
 jobs:
-  job1:
+  demo_windows:
     runs-on: windows-2022
     steps:
 
