@@ -334,7 +334,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->chuck = NULL;
 #if defined(__APPLE__) && defined(CM_MACOS_BUNDLED_CHUGINS)
         x->chugins_dir = ck_get_path_from_external(ck_class, (char*)"/Contents/Resources/chugins");
-#elif defined(CM_MULTIOS_CHUGINS)
+#elif defined(CM_MULTIPLATFORM_CHUGINS)
 
 #if defined(__APPLE__) && defined(__aarch64__)
         x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins/darwin-arm64");

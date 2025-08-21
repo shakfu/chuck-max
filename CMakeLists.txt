@@ -18,7 +18,7 @@ option(CM_MACOS_UNIVERSAL "On MacOS, build universal architecture externals")
 option(CM_HOST_EMBED_EXAMPLE "Build embedded host example")
 
 # general chugin options
-option(CM_MULTIOS_CHUGINS "Create os-specific subfolders in chugins folder")
+option(CM_MULTIPLATFORM_CHUGINS "Create os-specific subfolders in chugins folder")
 
 # macos chugin options
 option(CM_MACOS_BUNDLED_CHUGINS "On MacOS, Embed chugins in external bundle")
@@ -66,6 +66,11 @@ if(CMAKE_HOST_APPLE) # i.e if is_macos and have_homebrew then get homebrew_prefi
         set(local_prefix ${homebrew_prefix})
     else()
         set(local_prefix ${CMAKE_SOURCE_DIR}/build/thirdparty/install)
+    endif()
+
+    if(CM_MACOS_BUNDLED_CHUGINS)
+        set(EXTERNAL_DIR "${CMAKE_SOURCE_DIR}/externals/chuck~.mxo")
+        set(EXTERNAL_RESOURCES_DIR "${EXTERNAL_DIR}/Contents/Resources")
     endif()
 endif()
 message(STATUS "local_prefix: ${local_prefix}")

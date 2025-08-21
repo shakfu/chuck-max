@@ -12,17 +12,34 @@ DIST = $(BUILD)/dist/chuck-max
 ARCH=$(shell uname -m)
 DMG=chuck-max-$(VERSION)-$(ARCH).dmg
 ENTITLEMENTS = source/scripts/entitlements.plist
-VERSION=0.1.2
+CHUGINS_DIR = examples/chugins
+VERSION=0.2.0
+# variants
+BUNDLED=0
+MULTI=0
+UNIVERSAL=0
 
 ifeq ($(PLATFORM), Darwin)
 GENERATOR ?= "-GXcode"
+ifeq ($(UNIVERSAL), 1)
+EXTRA_OPTIONS += -DCM_MACOS_UNIVERSAL=ON
+endif
+ifeq ($(BUNDLED), 1)
+EXTRA_OPTIONS += -DCM_MACOS_BUNDLED_CHUGINS=ON
+CHUGINS_DIR = externals/chuck\~.mxo/Contents/Resources/chugins
+endif
 endif
 
-.PHONY: all native universal full light brew brew-lite nomp3 dev setup \
+ifeq ($(MULTI), 1)
+EXTRA_OPTIONS += -DCM_MULTIPLATFORM_CHUGINS=ON
+endif
+
+
+.PHONY: all native multi universal full light brew brew-lite nomp3 dev setup \
 		clean reset test test-fauck test-warpbuf test-fluidsynth \
 		install_deps install_deps_light install_deps_nomp3 \
 		full2 install_fs_deps chump \
-		sign package dmg sign-dmg notarize staple sign-dist \
+		sign package dmg sign-dmg notarize staple sign-dist sign-bundle \
 		release dist-release
 
 all: native
@@ -30,16 +47,12 @@ all: native
 native: 
 	@mkdir -p build && \
 		cd build && \
-		cmake $(GENERATOR) .. && \
+		cmake $(GENERATOR) .. $(EXTRA_OPTIONS) && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
-universal: 
-	@mkdir -p build && \
-		cd build && \
-		cmake $(GENERATOR) -DBUILD_UNIVERSAL=ON .. && \
-		cmake --build . --config '$(CONFIG)' && \
-		cmake --install . --config '$(CONFIG)'
+dump:
+	@echo $(EXTRA_OPTIONS)
 
 install_deps:
 	./source/scripts/install_deps.sh
@@ -63,7 +76,7 @@ install_fs_deps:
 brew-lite: 
 	@mkdir -p build && \
 		cd build && \
-		cmake $(GENERATOR) .. \
+		cmake $(GENERATOR) .. $(EXTRA_OPTIONS) \
 			-DCM_MACOS_HOMEBREW=ON \
 			-DCM_EXTRA_FORMATS=ON \
 			-DCM_MP3=ON \
@@ -76,7 +89,7 @@ brew-lite:
 brew: install_faust 
 	@mkdir -p build && \
 		cd build && \
-		cmake $(GENERATOR) .. \
+		cmake $(GENERATOR) .. $(EXTRA_OPTIONS) \
 			-DCM_MACOS_HOMEBREW=ON \
 			-DCM_EXTRA_FORMATS=ON \
 			-DCM_MP3=ON \
@@ -90,7 +103,7 @@ brew: install_faust
 full: install_deps
 	@mkdir -p build && \
 		cd build && \
-		cmake $(GENERATOR) .. \
+		cmake $(GENERATOR) .. $(EXTRA_OPTIONS) \
 			-DCM_EXTRA_FORMATS=ON \
 			-DCM_MP3=ON \
 			-DCM_WARPBUF=ON \
@@ -102,7 +115,7 @@ full: install_deps
 full2: install_deps install_fs_deps 
 	@mkdir -p build && \
 		cd build && \
-		cmake $(GENERATOR) .. \
+		cmake $(GENERATOR) .. $(EXTRA_OPTIONS) \
 			-DCM_EXTRA_FORMATS=ON \
 			-DCM_MP3=ON \
 			-DCM_WARPBUF=ON \
@@ -144,20 +157,19 @@ chump:
 
 strip:
 	@strip -u -r externals/chuck\~.mxo/Contents/MacOS/chuck\~
-	@strip -x examples/chugins/*.chug
-
+	@strip -x $(CHUGINS_DIR)/*.chug
 
 sign:
 	@codesign --sign 'Developer ID Application: $(DEV_ID)' \
-		--timestamp --deep --force externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
+			--timestamp --deep --force $(CHUGINS_DIR)/*.chug && \
+		codesign --verify $(CHUGINS_DIR)/*.chug && \
 		codesign --sign 'Developer ID Application: $(DEV_ID)' \
-			--timestamp --deep --force --options runtime \
-			--entitlements $(ENTITLEMENTS) externals/chuck\~.mxo && \
+				--timestamp --deep --force externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
+				codesign --sign 'Developer ID Application: $(DEV_ID)' \
+					--timestamp --deep --force --options runtime \
+					--entitlements $(ENTITLEMENTS) externals/chuck\~.mxo && \
 		codesign --verify externals/chuck\~.mxo && \
-		codesign --verify externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
-		codesign --sign 'Developer ID Application: $(DEV_ID)' \
-			--timestamp --deep --force examples/chugins/*.chug && \
-		codesign --verify examples/chugins/*.chug
+		codesign --verify externals/chuck\~.mxo/Contents/MacOS/chuck\~
 
 package:
 	@rm -rf $(DIST) && \
@@ -183,8 +195,8 @@ sign-dist:
 		codesign --verify $(DIST)/externals/chuck\~.mxo && \
 		codesign --verify $(DIST)/externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
 		codesign --sign 'Developer ID Application: $(DEV_ID)' \
-			--timestamp --deep --force $(DIST)/examples/chugins/*.chug && \
-		codesign --verify $(DIST)/examples/chugins/*.chug
+			--timestamp --deep --force $(DIST)/$(CHUGINS_DIR)/*.chug && \
+		codesign --verify $(DIST)/$(CHUGINS_DIR)/*.chug
 
 dmg:
 	@hdiutil create -volname CHUCK-MAX -srcfolder $(BUILD)/dist -ov -format UDBZ $(DMG)
@@ -226,7 +238,7 @@ clean:
 		externals
 
 reset:
-	@rm -rf externals examples/chugins/*.chug
+	@rm -rf externals $(CHUGINS_DIR)/**/*.chug
 	@rm -rf build/CMakeCache.txt build/CMakeFiles build/CMakeScripts build/Release build/build build/sine.ck
 	@rm -rf build/chuck-max.xcodeproj build/cmake_install.cmake build/install_manifest.txt build/source build/build
 	@rm -rf build/thirdparty/faust build/thirdparty/install build/thirdparty/libfaust build/dist

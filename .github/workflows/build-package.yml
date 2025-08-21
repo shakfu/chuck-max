@@ -23,7 +23,6 @@ on:
           - windows-2025
           - windows-2022
 
-
 jobs:
   build-windows:
     runs-on: ${{ github.event.inputs.windows_version }}
@@ -35,7 +34,7 @@ jobs:
         fetch-depth: '0'
 
     - name: build chuck
-      run: make
+      run: make multi
 
     - name: upload win64 externals
       uses: actions/upload-artifact@v4
@@ -67,7 +66,7 @@ jobs:
         brew install bison flex autogen automake fluidsynth rubberband libsamplerate
 
     - name: build chuck
-      run: make brew
+      run: make brew-multi
 
     - name: upload macos externals
       uses: actions/upload-artifact@v4
@@ -118,9 +117,11 @@ jobs:
         path: examples/chugins/darwin-arm64
         merge-multiple: true
 
+    - uses: benjlevesque/short-sha@v3.0
+
     - uses: actions/upload-artifact@v4
       with:
-        name: chuck-max-0.2.0
+        name: chuck-max-${{ env.SHA }}
         path: |
           examples
           externals

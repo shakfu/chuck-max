@@ -24,7 +24,6 @@ jobs:
         fetch-depth: '0'
 
     - uses: benjlevesque/short-sha@v3.0
-      # id: short-sha
 
     - name: build chuck
       run: make

@@ -4,16 +4,12 @@ set (CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_BUILD_TYPE Release)
 set(BUILD_SHARED_LIBS ON)
-# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/examples/chugins)
-# set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/chugins)
 
-if(APPLE)
-	# set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/externals/chuck~.mxo/Contents/Resources" CACHE PATH "..." FORCE)
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/examples" CACHE PATH "..." FORCE)
+if(CM_MACOS_BUNDLED_CHUGINS AND CMAKE_HOST_APPLE)
+    set(CMAKE_INSTALL_PREFIX "${EXTERNAL_RESOURCES_DIR}" CACHE PATH "..." FORCE)
 else()
     set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/examples" CACHE PATH "..." FORCE)
 endif()
-
 
 add_subdirectory(ABSaturator)
 add_subdirectory(AmbPan)
