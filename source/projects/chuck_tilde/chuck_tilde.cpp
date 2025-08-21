@@ -26,7 +26,6 @@
 
 // globals defs
 #define CK_CHANNELS 1
-#define CK_EMBEDDED_CHUGINS 0
 
 namespace fs = std::filesystem;
 
@@ -333,9 +332,10 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // chuck-related
         x->chuck = NULL;
-#if defined(__APPLE__) && defined(CK_EMBEDDED_CHUGINS)
+#if defined(__APPLE__) && defined(CM_MACOS_BUNDLED_CHUGINS)
         x->chugins_dir = ck_get_path_from_external(ck_class, (char*)"/Contents/Resources/chugins");
-#else
+#elif defined(CM_MULTIOS_CHUGINS)
+
 #if defined(__APPLE__) && defined(__aarch64__)
         x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins/darwin-arm64");
 #elif defined(__APPLE__) && defined(__x86_64__)
@@ -343,6 +343,9 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 #else
         x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins/windows-amd64");
 #endif
+
+#else
+        x->chugins_dir = ck_get_path_from_package(ck_class, (char*)"/examples/chugins");
 #endif        
         x->in_chuck_buffer = NULL;
         x->out_chuck_buffer = NULL;

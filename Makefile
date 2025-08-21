@@ -18,7 +18,7 @@ ifeq ($(PLATFORM), Darwin)
 GENERATOR ?= "-GXcode"
 endif
 
-.PHONY: all native universal full light brew brew2 nomp3 dev setup \
+.PHONY: all native universal full light brew brew-lite nomp3 dev setup \
 		clean reset test test-fauck test-warpbuf test-fluidsynth \
 		install_deps install_deps_light install_deps_nomp3 \
 		full2 install_fs_deps chump \
@@ -64,11 +64,11 @@ brew-lite:
 	@mkdir -p build && \
 		cd build && \
 		cmake $(GENERATOR) .. \
-			-DENABLE_HOMEBREW=ON \
-			-DENABLE_EXTRA_FORMATS=ON \
-			-DENABLE_MP3=ON \
-			-DENABLE_WARPBUF=ON \
-			-DENABLE_FLUIDSYNTH=ON \
+			-DCM_MACOS_HOMEBREW=ON \
+			-DCM_EXTRA_FORMATS=ON \
+			-DCM_MP3=ON \
+			-DCM_WARPBUF=ON \
+			-DCM_FLUIDSYNTH=ON \
 			&& \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
@@ -77,12 +77,12 @@ brew: install_faust
 	@mkdir -p build && \
 		cd build && \
 		cmake $(GENERATOR) .. \
-			-DENABLE_HOMEBREW=ON \
-			-DENABLE_EXTRA_FORMATS=ON \
-			-DENABLE_MP3=ON \
-			-DENABLE_WARPBUF=ON \
-			-DENABLE_FAUCK=ON \
-			-DENABLE_FLUIDSYNTH=ON \
+			-DCM_MACOS_HOMEBREW=ON \
+			-DCM_EXTRA_FORMATS=ON \
+			-DCM_MP3=ON \
+			-DCM_WARPBUF=ON \
+			-DCM_FAUST=ON \
+			-DCM_FLUIDSYNTH=ON \
 			&& \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
@@ -91,10 +91,10 @@ full: install_deps
 	@mkdir -p build && \
 		cd build && \
 		cmake $(GENERATOR) .. \
-			-DENABLE_EXTRA_FORMATS=ON \
-			-DENABLE_MP3=ON \
-			-DENABLE_WARPBUF=ON \
-			-DENABLE_FAUCK=ON
+			-DCM_EXTRA_FORMATS=ON \
+			-DCM_MP3=ON \
+			-DCM_WARPBUF=ON \
+			-DCM_FAUST=ON
 			&& \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
@@ -103,11 +103,11 @@ full2: install_deps install_fs_deps
 	@mkdir -p build && \
 		cd build && \
 		cmake $(GENERATOR) .. \
-			-DENABLE_EXTRA_FORMATS=ON \
-			-DENABLE_MP3=ON \
-			-DENABLE_WARPBUF=ON \
-			-DENABLE_FAUCK=ON \
-			-DENABLE_FLUIDSYNTH=ON \
+			-DCM_EXTRA_FORMATS=ON \
+			-DCM_MP3=ON \
+			-DCM_WARPBUF=ON \
+			-DCM_FAUST=ON \
+			-DCM_FLUIDSYNTH=ON \
 			&& \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
@@ -116,10 +116,10 @@ nomp3: install_deps_nomp3
 	@mkdir -p build && \
 		cd build && \
 		cmake $(GENERATOR) .. \
-			-DENABLE_EXTRA_FORMATS=ON \
-			-DENABLE_MP3=OFF \
-			-DENABLE_WARPBUF=ON \
-			-DENABLE_FAUCK=ON && \
+			-DCM_EXTRA_FORMATS=ON \
+			-DCM_MP3=OFF \
+			-DCM_WARPBUF=ON \
+			-DCM_FAUST=ON && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
@@ -127,18 +127,18 @@ light: install_deps_light
 	@mkdir -p build && \
 		cd build && \
 		cmake $(GENERATOR) .. \
-			-DENABLE_EXTRA_FORMATS=OFF \
-			-DENABLE_MP3=OFF \
-			-DENABLE_WARPBUF=ON \
-			-DENABLE_FAUCK=ON && \
+			-DCM_EXTRA_FORMATS=OFF \
+			-DCM_MP3=OFF \
+			-DCM_WARPBUF=ON \
+			-DCM_FAUST=ON && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
 chump:
 	@mkdir -p build && cd build && \
 		cmake $(GENERATOR) .. \
-			-DENABLE_HOMEBREW=ON \
-			-DBUILD_CHUMP=ON && \
+			-DCM_MACOS_HOMEBREW=ON \
+			-DCM_CHUMP=ON && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 

@@ -12,20 +12,24 @@ endif()
 
 project(${THIS_FOLDER_NAME})
 
-option(ENABLE_WARPBUF "Build WarpBuf chugin")
-option(ENABLE_FAUCK "Build Fauck chugin")
-option(ENABLE_MP3 "Enable MP3 support for libsndfile")
-option(ENABLE_EXTRA_FORMATS "Enable extra file format for libsndfile")
+# general macos options
+option(CM_MACOS_HOMEBREW "On MacOS, build using Homebrew dependencies")
+option(CM_MACOS_UNIVERSAL "On MacOS, build universal architecture externals")
+option(CM_HOST_EMBED_EXAMPLE "Build embedded host example")
 
-# macos options
-option(ENABLE_HOMEBREW "Build using Homebrew dependencies")
-option(BUILD_UNIVERSAL "Build Universal Externals")
-option(BUILD_EMBED_HOST "Build embedded host example")
-option(BUILD_CHUMP "Build experimental chump executable and chugin")
-option(BUILD_CHUGL "Build ChuGL.chug chugin")
+# general chugin options
+option(CM_MULTIOS_CHUGINS "Create os-specific subfolders in chugins folder")
+
+# macos chugin options
+option(CM_MACOS_BUNDLED_CHUGINS "On MacOS, Embed chugins in external bundle")
+option(CM_WARPBUF "Build WarpBuf chugin")
+option(CM_FAUST "Build Faust chugin")
+option(CM_MP3 "Enable MP3 support for chugins using libsndfile")
+option(CM_EXTRA_FORMATS "Enable flac, vorbis, ogg and opus support for chugins using libsndfile")
+option(CM_CHUMP "Build experimental chump executable and chugin")
 
 # warnings options
-option(SKIP_WARNING_SHORTEN_64_TO_32 "skip implicit 64bit to 32bit conversion warnings" ON)
+option(CM_SKIP_WARNINGS "skip a set of warnings" ON)
 
 # use ccache if available
 find_program(CCACHE_PROGRAM ccache)
@@ -39,13 +43,11 @@ if (APPLE)
             if (${XCODE_VERSION} VERSION_LESS 10)
                 message(STATUS "Xcode 10 or higher is required. Please install from the Mac App Store.")
                 return ()
-            # elseif(${XCODE_VERSION} VERSION_GREATER_EQUAL 12)
-            #     set(BUILD_UNIVERSAL YES)
             endif ()
     endif ()
 
     if (NOT CMAKE_OSX_ARCHITECTURES)
-        if(BUILD_UNIVERSAL)
+        if(CM_MACOS_UNIVERSAL)
             set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64" CACHE STRING "macOS architecture" FORCE)
         else()
             set(CMAKE_OSX_ARCHITECTURES ${CMAKE_SYSTEM_PROCESSOR} CACHE STRING "macOS architecture" FORCE)
@@ -60,7 +62,7 @@ if(CMAKE_HOST_APPLE) # i.e if is_macos and have_homebrew then get homebrew_prefi
         OUTPUT_VARIABLE homebrew_prefix
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    if(DEFINED homebrew_prefix AND ENABLE_HOMEBREW)
+    if(DEFINED homebrew_prefix AND CM_MACOS_HOMEBREW)
         set(local_prefix ${homebrew_prefix})
     else()
         set(local_prefix ${CMAKE_SOURCE_DIR}/build/thirdparty/install)

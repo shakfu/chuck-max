@@ -35,20 +35,33 @@ function(add_chugin)
     set(path "${CMAKE_CURRENT_SOURCE_DIR}")
     cmake_path(GET path STEM PARENT_DIR)
 
-    string(TOLOWER ${CMAKE_HOST_SYSTEM_PROCESSOR} ARCH)
-
-    if(CMAKE_HOST_APPLE)
-        set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins/darwin-${ARCH})
-    else()
-        set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins/windows-${ARCH})
-    endif()
-
     if(NOT DEFINED CHUGIN_NAME)
         set(CHUGIN_NAME ${PARENT_DIR})
     endif()
 
     if(NOT DEFINED CHUGIN_CHUCK_HEADER_PATH)
         set(CHUGIN_CHUCK_HEADER_PATH ${CMAKE_SOURCE_DIR}/source/projects/chugins/chuck/include)
+    endif()
+
+    if(CM_MULTIOS_CHUGINS)
+        string(TOLOWER ${CMAKE_HOST_SYSTEM_PROCESSOR} ARCH)
+        if(CMAKE_HOST_APPLE)
+            set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins/darwin-${ARCH})
+        else()
+            set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins/windows-${ARCH})
+        endif()
+    else()
+        set(CHUGINS_DIR ${CMAKE_SOURCE_DIR}/examples/chugins)
+    endif()
+
+    if(CM_MULTIOS_CHUGINS)
+        if(CMAKE_HOST_APPLE)
+            set(CHUGINS_PREFIX chugins/darwin-${ARCH})
+        else()
+            set(CHUGINS_PREFIX chugins/windows-${ARCH})
+        endif()
+    else()
+        set(CHUGINS_PREFIX chugins)
     endif()
 
     message(STATUS "CHUGIN_NAME: ${CHUGIN_NAME}")
@@ -79,7 +92,7 @@ function(add_chugin)
         ${CHUGIN_OTHER_SOURCES}
     )
 
-    if(CMAKE_HOST_APPLE AND SKIP_WARNING_SHORTEN_64_TO_32)
+    if(CMAKE_HOST_APPLE AND CM_SKIP_WARNINGS)
         set_source_files_properties(
             ${CHUGIN_SOURCES}
             ${CHUGIN_OTHER_SOURCES}
@@ -139,21 +152,14 @@ function(add_chugin)
         ${CHUGIN_LINK_LIBS}
     )
 
-if(CMAKE_HOST_APPLE)
-    install(
-        TARGETS ${CHUGIN_NAME}
-        LIBRARY DESTINATION chugins/darwin-${ARCH}
-    )
+install(
+    TARGETS ${CHUGIN_NAME}
+    LIBRARY DESTINATION ${CHUGINS_PREFIX}
+)
 
-    if(CHUGIN_CODESIGN)
-        install(
-            CODE "execute_process (COMMAND codesign -vf -s - ${CHUGINS_DIR}/${CHUGIN_NAME}.chug)" 
-        )
-    endif()
-else()
+if(CMAKE_HOST_APPLE AND CHUGIN_CODESIGN)
     install(
-        TARGETS ${CHUGIN_NAME}
-        LIBRARY DESTINATION chugins/windows-${ARCH}
+        CODE "execute_process (COMMAND codesign -vf -s - ${CHUGINS_DIR}/${CHUGIN_NAME}.chug)" 
     )
 endif()
 

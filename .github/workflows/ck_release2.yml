@@ -1,0 +1,75 @@
+name: ck-release2
+
+on:
+  release:
+    types: [created] # also published
+
+env:
+  MACOS_VERSION: macos-14
+  WINDOWS_VERSION: windows-2022
+
+jobs:
+  build-windows:
+    runs-on: ${{ env.WINDOWS_VERSION }}
+    steps:
+
+    - name: get package name
+      run: |
+        PKG="${{ github.event.repository.name }}-${{ github.ref_name }}-${{ github.runner_os }}-${{ github.runner_arch }}"
+        echo "PKG_NAME=${PKG,,}" >>${GITHUB_ENV}
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        fetch-depth: '0'
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.PKG_NAME }}
+        path: |
+          examples
+          externals
+          help
+          media
+          patchers
+          LICENSE
+          README.md
+          package-info.json
+          icon.png
+
+  build-macos:
+    runs-on: ${{ env.MACOS_VERSION }}
+    steps:
+
+    - name: get package name
+      run: |
+        PKG="${{ github.event.repository.name }}-${{ github.ref_name }}-${{ github.runner_os }}-${{ github.runner_arch }}"
+        echo "PKG_NAME=${PKG,,}" >>${GITHUB_ENV}
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
+        fetch-depth: '0'
+
+    - name: install dependencies
+      run: |
+        brew update
+        brew install bison flex autogen automake fluidsynth rubberband libsamplerate
+
+    - name: build chuck
+      run: make brew
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.PKG_NAME }}
+        path: |
+          examples
+          externals
+          help
+          media
+          patchers
+          LICENSE
+          README.md
+          package-info.json
+          icon.png
+

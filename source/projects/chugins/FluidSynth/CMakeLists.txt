@@ -21,15 +21,15 @@ add_chugin(
         $<$<PLATFORM_ID:Darwin>:${local_prefix}/lib/libgthread-2.0.a>
         $<$<PLATFORM_ID:Darwin>:${local_prefix}/lib/libintl.a>
 
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libFLAC.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libogg.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbis.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbisenc.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbisfile.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libopus.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libmpg123.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libFLAC.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libogg.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbis.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbisenc.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbisfile.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libopus.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libmpg123.a>>
 
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_MP3}>:${local_prefix}/lib/libmp3lame.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_MP3}>:${local_prefix}/lib/libmp3lame.a>>
         $<$<PLATFORM_ID:Darwin>:${local_prefix}/lib/libsndfile.a>
         $<$<PLATFORM_ID:Darwin>:${local_prefix}/lib/librubberband.a>
         $<$<PLATFORM_ID:Darwin>:${local_prefix}/lib/libsamplerate.a>

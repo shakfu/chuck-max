@@ -284,6 +284,12 @@ Other ChucK projects:
 - [Chunity](https://chuck.stanford.edu/chunity): ChucK for Unity.
 - [Chunreal](https://github.com/ccrma/chunreal): ChucK in Unreal Engine.
 
+## Future Integrations
+
+- With [chump](https://chuck.stanford.edu/chump), the chuck package manager: most likely this will take the form of a separate external included in the `chuck-max` package.
+
+- With [chugl](https://github.com/ccrma/chugl), the chuck graphics library if possible. A [chugl branch](https://github.com/shakfu/chuck-max/tree/chugl) which successfully builds chugl on both macos and windows, but chugl is still reliant on being run from the executable so does not yet work on Max (but does not crash it either).
+
 ## Credits
 
 This project thanks the following:

@@ -1,12 +1,6 @@
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../max-sdk-base/script/max-pretarget.cmake)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-#############################################################
-# MAX EXTERNAL
-#############################################################
-# set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment version" FORCE)
-
-
 set(CHUCK_INCLUDE ${CMAKE_SOURCE_DIR}/source/projects/chuck/core)
 
 include_directories( 
@@ -34,12 +28,9 @@ target_include_directories(${PROJECT_NAME}
     ${CHUCK_INCLUDE}
 )
 
-
 if(MSVC)
     set_property(TARGET ${PROJECT_NAME} PROPERTY
-    # Link dynamically to the multi-threaded DLL runtime (default)
-    # MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
-    # OR, to link statically to the multi-threaded runtime
+    # link statically to the multi-threaded runtime
     MSVC_RUNTIME_LIBRARY "MultiThreaded")
 endif()
 
@@ -54,15 +45,13 @@ target_link_libraries(${PROJECT_NAME}
     "$<$<PLATFORM_ID:Darwin>:-framework Foundation>"
     "$<$<PLATFORM_ID:Darwin>:-F/System/Library/PrivateFrameworks>"
     "$<$<PLATFORM_ID:Darwin>:-weak_framework MultitouchSupport>"
-    # "$<$<PLATFORM_ID:Windows>:dsound>"
-    # "$<$<PLATFORM_ID:Windows>:dinput8>"
-    # "$<$<PLATFORM_ID:Windows>:dxguid>"
-    # "$<$<PLATFORM_ID:Windows>:wsock32>"
-    # "$<$<PLATFORM_ID:Windows>:ws2_32>"
-    # "$<$<PLATFORM_ID:Windows>:winmm>"
-    # -lc++
-    # -lm
     chuck_lib
+)
+
+target_compile_definitions(${PROJECT_NAME}
+    PUBLIC
+    "$<$<BOOL:${CM_MULTIOS_CHUGINS}>:CM_MULTIOS_CHUGINS>"
+    "$<$<BOOL:${CM_MACOS_BUNDLED_CHUGINS}>:CM_MACOS_BUNDLED_CHUGINS>"
 )
 
 

@@ -25,14 +25,14 @@ add_chugin(
         ${LIBFAUST_DIR}/lib
     LINK_LIBS
         $<$<PLATFORM_ID:Darwin>:${LIBFAUST_DIR}/lib/libfaustwithllvm.a>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libFLAC.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libogg.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbis.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbisenc.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbisfile.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libopus.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_EXTRA_FORMATS}>:${local_prefix}/lib/libmpg123.a>>
-        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${ENABLE_MP3}>:${local_prefix}/lib/libmp3lame.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libFLAC.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libogg.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbis.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbisenc.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libvorbisfile.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libopus.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_EXTRA_FORMATS}>:${local_prefix}/lib/libmpg123.a>>
+        $<$<PLATFORM_ID:Darwin>:$<$<BOOL:${CM_MP3}>:${local_prefix}/lib/libmp3lame.a>>
         $<$<PLATFORM_ID:Darwin>:${local_prefix}/lib/libsndfile.a>
         "$<$<PLATFORM_ID:Darwin>:-framework CoreFoundation>"
         "$<$<PLATFORM_ID:Darwin>:-framework CoreMIDI>"
