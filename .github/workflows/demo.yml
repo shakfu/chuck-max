@@ -1,0 +1,15 @@
+name: demo
+on: [workflow_dispatch]
+
+jobs:
+  one:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: get pkg name
+        id: strings
+        shell: bash
+        run: echo "pkg_name=${{ github.event.repository.name }}-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}" >> "$GITHUB_OUTPUT"
+
+      - name: dump pkg name
+        run: echo "${{ steps.strings.outputs.pkg_name }}"
