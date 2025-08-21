@@ -16,7 +16,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ github.runner_os }}-${{ github.runner_arch }}
+        name: ${{ github.event.repository.name }}-0.2.0-windows-${{ github.runner_arch }}
         path: |
           examples
           externals
@@ -47,7 +47,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ github.runner_os }}-${{ github.runner_arch }}
+        name: ${{ github.event.repository.name }}-0.2.0-darwin-${{ github.runner_arch }}
         path: |
           examples
           externals
