@@ -1,28 +1,22 @@
 name: build-all
 on: [workflow_dispatch]
 
-env:
-  MACOS_VERSION: macos-14
-  WINDOWS_VERSION: windows-2022
-
 jobs:
   build-windows:
-    runs-on: ${{ env.WINDOWS_VERSION }}
+    runs-on: windows-2022
     steps:
-
-    - name: get package name
-      run: |
-        PKG="${{ github.event.repository.name }}-${{ github.ref_name }}-${{ github.runner_os }}-${{ github.runner_arch }}"
-        echo "PKG_NAME=${PKG,,}" >>${GITHUB_ENV}
 
     - uses: actions/checkout@v4
       with:
         submodules: 'recursive'
         fetch-depth: '0'
 
+    - name: build chuck
+      run: make
+
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.PKG_NAME }}
+        name: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ github.runner_os }}-${{ github.runner_arch }}
         path: |
           examples
           externals
@@ -35,13 +29,8 @@ jobs:
           icon.png
 
   build-macos:
-    runs-on: ${{ env.MACOS_VERSION }}
+    runs-on: macos-14
     steps:
-
-    - name: get package name
-      run: |
-        PKG="${{ github.event.repository.name }}-${{ github.ref_name }}-${{ github.runner_os }}-${{ github.runner_arch }}"
-        echo "PKG_NAME=${PKG,,}" >>${GITHUB_ENV}
 
     - uses: actions/checkout@v4
       with:
@@ -58,7 +47,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.PKG_NAME }}
+        name: ${{ github.event.repository.name }}-${{ github.ref_name }}-${{ github.runner_os }}-${{ github.runner_arch }}
         path: |
           examples
           externals
