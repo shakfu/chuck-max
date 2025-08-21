@@ -23,12 +23,15 @@ jobs:
         submodules: 'recursive'
         fetch-depth: '0'
 
+    - uses: benjlevesque/short-sha@v3.0
+      # id: short-sha
+
     - name: build chuck
       run: make
 
     - uses: actions/upload-artifact@v4
       with:
-        name: chuck-max-windows-amd64-0.2.x
+        name: chuck-max-windows-amd64-${{ env.SHA }}
         path: |
             externals
             help

@@ -11,14 +11,23 @@ jobs:
       #   shell: bash
       #   run: echo "pkg_name=${{ github.event.repository.name }}-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}" >> "$GITHUB_OUTPUT"
 
+      # - name: get pkg name in python
+      #   id: strings
+      #   shell: python
+      #   run: |
+      #     import os
+      #     with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+      #       name="${{ github.event.repository.name }}-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}"
+      #       f.write(f"pkg_name={name.lower()}\n")
+
       - name: get pkg name in python
         id: strings
         shell: python
         run: |
           import os
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
             name="${{ github.event.repository.name }}-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}"
-            f.write(f"pkg_name={name.lower()}\n")
+            print(f"pkg_name={name.lower()}", file=fh)
 
       - name: dump pkg name
         run: echo "${{ steps.strings.outputs.pkg_name }}"
