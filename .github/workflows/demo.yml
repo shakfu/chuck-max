@@ -8,12 +8,6 @@ jobs:
 
     - name: echo variables
       run: |
-      	echo "GITHUB_ACTION: ${{ github.action }}"
-      	echo "GITHUB_ACTION_PATH: ${{ github.action_path }}"
-      	echo "GITHUB_ACTOR: ${{ github.actor }}"
-      	echo "GITHUB_JOB: ${{ github.job }}"
-      	echo "GITHUB_REF: ${{ github.ref }}"
-        echo "GITHUB_REF_NAME: ${{ github.ref_name }}"
-        echo "GITHUB_REPOSITORY: ${{ github.repository }}"
-        echo "GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}"
-        echo "GITHUB_SHA: ${{ github.sha }}"
+      	echo "GITHUB_ACTION: $GITHUB_ACTION"
+      	echo "GITHUB_ACTION_PATH: $GITHUB_ACTION_PATH"
+      	echo "GITHUB_ACTOR: $GITHUB_ACTOR"
