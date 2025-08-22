@@ -8,9 +8,7 @@ add_chugin(
     SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/Faust.cpp
     COMPILE_DEFINITIONS
-        # "_USRDLL"
         "NOBUNDLE"
-        # "FAUCK_EXPORTS"
         $<$<PLATFORM_ID:Darwin>:__MACOSX_CORE__>
         $<$<PLATFORM_ID:Darwin>:__PLATFORM_APPLE__>
     INCLUDE_DIRS
@@ -46,10 +44,5 @@ if(CM_MACOS_BUNDLED_CHUGINS AND CMAKE_HOST_APPLE)
         DIRECTORY ${CMAKE_SOURCE_DIR}/examples/faust
         DESTINATION ${EXTERNAL_RESOURCES_DIR}
     )
-# add_custom_command(
-#     TARGET ${CHUGIN_NAME}
-#     POST_BUILD
-#     COMMAND cmake -E copy_directory ${CMAKE_SOURCE_DIR}/examples/faust ${EXTERNAL_RESOURCES_DIR}
-# )
 endif()
 

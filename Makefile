@@ -51,9 +51,6 @@ native:
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
 
-dump:
-	@echo $(EXTRA_OPTIONS)
-
 install_deps:
 	./source/scripts/install_deps.sh
 

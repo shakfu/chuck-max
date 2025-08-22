@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.2.x]
 
+- Added support for bundling chugins in the external's bundle via `CM_MACOS_BUNDLED_CHUGINS` option
+
 - Added support for building (for both MacOS and Windows) `ChuGL.chug`.
 
 - Added new `icon.png`
