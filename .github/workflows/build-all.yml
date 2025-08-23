@@ -11,12 +11,14 @@ jobs:
         submodules: 'recursive'
         fetch-depth: '0'
 
+    - uses: benjlevesque/short-sha@v3.0
+
     - name: build chuck
       run: make
 
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.repository.name }}-0.2.0-windows-${{ github.runner_arch }}
+        name: chuck-max-windows-amd64-${{ env.SHA }}
         path: |
           examples
           externals
@@ -37,6 +39,8 @@ jobs:
         submodules: 'recursive'
         fetch-depth: '0'
 
+    - uses: benjlevesque/short-sha@v3.0
+
     - name: install dependencies
       run: |
         brew update
@@ -47,7 +51,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.repository.name }}-0.2.0-darwin-${{ runner.arch }}
+        name: chuck-max-darwin-arm64-${{ env.SHA }}
         path: |
           examples
           externals

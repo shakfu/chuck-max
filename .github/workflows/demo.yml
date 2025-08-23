@@ -11,6 +11,12 @@ jobs:
       #   shell: bash
       #   run: echo "pkg_name=${{ github.event.repository.name }}-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}" >> "$GITHUB_OUTPUT"
 
+      - name: pass key-value to env
+      - run: |
+          mkdir testing
+          echo "This is a file to upload" > testing/file.txt
+          echo "file_path=testing/file.txt" >> $GITHUB_ENV
+
       - name: get pkg name in python
         id: strings
         shell: python
@@ -28,4 +34,6 @@ jobs:
               print(v, file=fh)
 
       - name: dump pkg name
-        run: echo "${{ steps.strings.outputs.pkg_name }}"
+        run: |
+          echo "${{ steps.strings.outputs.pkg_name }}"
+          echo "${{ env.file_path }}"

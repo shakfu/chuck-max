@@ -6,16 +6,11 @@
     "name": "chuck-max",
     "os": {
         "macintosh": {
-            "platform": [
-                "aarch64",
-                "x64"
-            ],
-            "min_version": "10.11.6"
+            "platform": [ "arm64", "x64"],
+            "min_version": "10.11"
         },
         "windows": {
-            "platform": [
-                "x64"
-            ],
+            "platform": ["x64"],
             "min_version": "8"
         }
     },
@@ -26,6 +21,7 @@
     },
     "tags": [
         "chuck",
+        "max",
         "dsp",
         "livecoding",
         "midi",

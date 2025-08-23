@@ -1,28 +1,100 @@
 # uses task, a multi-platform make replacement (https://taskfile.dev)
+# on macos: `brew install go-task`
+# on windows: `choco install -y go-task`
 
 version: '3'
 
-vars:
-  CHUCK_EXTERNAL: externals/chuck~.mxo
-  CHUCK_PACKAGE: "{{.HOME}}/Documents/Max\ 8/Packages/chuck-max"
-  SCRIPTS: source/scripts
-  BUILD: build
-
-
 env:
   CONFIG: Release # or Debug
+  EXTRA_OPTIONS:
+  BUNDLED: 0
+  MULTI: 0
+  UNIVERSAL: 0
 
+vars:
+  VERSION: 0.2.0
+  PLATFORM:
+    sh: uname -s
+  ARCH:
+    sh: uname -m
+  MIN_MAX_VERSION: 8
+  MAX_MAX_VERSION: 9
+  CHUCK_PACKAGE: "{{.HOME}}/Documents/Max\ 9/Packages/chuck-max"
+  SCRIPTS: source/scripts
+  BUILD: build
+  THIRDPARTY: '{{.BUILD}}/thirdparty'
+  LIB: '{{.THIRDPARTY}}/install/lib'
+  CHUCK: '{{.THIRDPARTY}}/install/bin/chuck'
+  DIST: '{{.BUILD}}//dist/chuck-max'
+  ZIP: 'chuck-max-{{.VERSION}}-{{.ARCH}}.zip'
+  DMG: 'chuck-max-{{.VERSION}}-{{.ARCH}}.dmg'
+  ENTITLEMENTS: source/scripts/entitlements.plist
+  CHUGINS_DIR: examples/chugins
+  GENERATOR: '{{ if eq .PLATFORM "Darwin" }}-GXcode{{else}}{{end}}'
 
 tasks:
+  demo:
+    cmds: 
+      - echo $MULTI
+      - echo '{{ .LIB }}'
+      - echo '{{ .GENERATOR }}'
+
   build:
-    platforms: [darwin]
+    platforms: [darwin,windows]
     deps: [clean-externals]
     cmds:
       - |
         mkdir -p build
         cd build
-        cmake -GXcode ..
-        cmake --build . --config '$CONFIG'
+        cmake {{.GENERATOR}} .. $EXTRA_OPTIONS
+        cmake --build . --config $CONFIG
+        cmake --install . --config $CONFIG
+
+  install-faust:
+    platform: [darwin]
+    cmds:
+      - sh ./source/scripts/dep/install_faust.sh
+      - sh ./source/scripts/dep/install_libfaust.sh
+
+  install-deps:
+    platform: [darwin]
+    cmd: ./source/scripts/install_deps.sh
+
+  build-from-source:
+    platform: [darwin]
+    deps:
+      - clean
+      - install-faust    
+    cmds:
+      - |
+        mkdir -p build
+        cd build
+        cmake {{.GENERATOR}} .. $EXTRA_OPTIONS \
+          -DCM_EXTRA_FORMATS=ON \
+          -DCM_MP3=ON \
+          -DCM_WARPBUF=ON \
+          -DCM_FAUST=ON
+        cmake --build . --config $CONFIG
+        cmake --install . --config $CONFIG
+
+  build-all:
+    platform: [darwin]
+    deps:
+      - clean
+      - install-faust
+    cmds:
+      - |
+        mkdir -p build
+        cd build
+        cmake {{.GENERATOR}} .. $EXTRA_OPTIONS \
+          -DCM_MACOS_HOMEBREW=ON \
+          -DCM_EXTRA_FORMATS=ON \
+          -DCM_MP3=ON \
+          -DCM_WARPBUF=ON \
+          -DCM_FAUST=ON \
+          -DCM_FLUIDSYNTH=ON
+        cmake --build . --config $CONFIG
+        cmake --install . --config $CONFIG
 
   clean:
     cmds:
@@ -32,15 +104,3 @@ tasks:
   clean-externals:
     cmds:
       - rm -rf externals
-
-  build-windows:
-    platforms: [windows]
-    deps:
-      - clean-externals
-    cmds:
-      - |
-        mkdir -p build
-        cd build
-        cmake -GNinja ..
-        cmake --build . --config '$CONFIG'
-

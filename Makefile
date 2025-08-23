@@ -1,4 +1,4 @@
-# os of current system
+VERSION=0.2.0
 PLATFORM = $(shell uname)
 MAX_VERSION := 9
 CHUCK_PACKAGE := "$(HOME)/Documents/Max\ $(MAX_VERSION)/Packages/chuck-max"
@@ -10,10 +10,11 @@ LIB = $(THIRDPARTY)/install/lib
 CHUCK = $(THIRDPARTY)/install/bin/chuck
 DIST = $(BUILD)/dist/chuck-max
 ARCH=$(shell uname -m)
+ZIP=chuck-max-$(VERSION)-$(ARCH).zip
 DMG=chuck-max-$(VERSION)-$(ARCH).dmg
 ENTITLEMENTS = source/scripts/entitlements.plist
 CHUGINS_DIR = examples/chugins
-VERSION=0.2.0
+
 # variants
 BUNDLED=0
 MULTI=0
