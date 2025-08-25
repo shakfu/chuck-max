@@ -30,14 +30,107 @@ vars:
   DMG: 'chuck-max-{{.VERSION}}-{{.ARCH}}.dmg'
   ENTITLEMENTS: source/scripts/entitlements.plist
   CHUGINS_DIR: examples/chugins
+  DEPS: ./source/scripts/dep
   GENERATOR: '{{ if eq .PLATFORM "Darwin" }}-GXcode{{else}}{{end}}'
 
 tasks:
   demo:
     cmds: 
       - echo $MULTI
+      - echo '{{ OS }}'
+      - echo '{{ .TASK }}'
       - echo '{{ .LIB }}'
       - echo '{{ .GENERATOR }}'
+
+
+  install-libflac:
+    platform: [darwin]
+    cmds:
+      - sh '{{ .DEPS }}/install_libflac.sh'
+
+  install-libmp3lame:
+    platform: [darwin]
+    cmds:
+      - sh '{{ .DEPS }}/install_libmp3lame.sh'
+
+  install-libmpg123:
+    platform: [darwin]
+    cmds:
+      - sh '{{ .DEPS }}/install_libmpg123.sh'
+
+  install-libogg:
+    platform: [darwin]
+    cmds:
+      - sh '{{ .DEPS }}/install_libogg.sh'
+
+  install-libopus:
+    platform: [darwin]
+    cmds:
+      - sh '{{ .DEPS }}/install_libopus.sh'
+
+  install-libvorbis:
+    platform: [darwin]
+    cmds:
+      - sh '{{ .DEPS }}/install_libvorbis.sh'
+
+  install-libsamplerate:
+    platform: [darwin]
+    cmds:
+      - sh '{{ .DEPS }}/install_libsamplerate.sh'
+
+  install-fluidsynth:
+    platform: [darwin]
+    deps: [install-libsndfile]
+    cmds:
+      - sh '{{ .DEPS }}/install_fluidsynth.sh'
+
+  install-faust:
+    platform: [darwin]
+    cmds:
+      - sh '{{ .DEPS }}/install_faust.sh'
+      - sh '{{ .DEPS }}/install_libfaust.sh'
+
+  install-libsndfile:
+    platform: [darwin]
+    deps: 
+      - install-libmpg123
+      - install-libmp3lame
+      - install-libopus
+      - install-libvorbis
+      - install-libflac
+      - install-libogg
+    cmds:
+      - sh ./source/scripts/dep/install_libsndfile.sh
+
+  install-deps-all:
+    platform: [darwin]
+    deps:
+      - install-libsndfile
+      - install-rubberband
+      - install-libsamplerate
+      # - install-faust
+      # - install-fluidsynth
+
+  install-rubberband:
+    platform: [darwin]
+    cmds:
+      - sh ./source/scripts/dep/install_rubberband.sh
+
+  install-deps:
+    platform: [darwin]
+    cmd: sh ./source/scripts/install_deps.sh
+
+  install-deps-nomp3:
+    platform: [darwin]
+    cmd: sh ./source/scripts/install_deps_nomp3.sh
+
+  install-deps-light:
+    platform: [darwin]
+    cmd: sh ./source/scripts/install_deps_light.sh
+
+  install-deps-fluidsynth:
+    platform: [darwin]
+    cmd: sh ./source/scripts/install_deps_fluidsynth.sh
 
   build:
     platforms: [darwin,windows]
@@ -47,33 +140,6 @@ tasks:
         mkdir -p build
         cd build
         cmake {{.GENERATOR}} .. $EXTRA_OPTIONS
-        cmake --build . --config $CONFIG
-        cmake --install . --config $CONFIG
-
-  install-faust:
-    platform: [darwin]
-    cmds:
-      - sh ./source/scripts/dep/install_faust.sh
-      - sh ./source/scripts/dep/install_libfaust.sh
-
-  install-deps:
-    platform: [darwin]
-    cmd: ./source/scripts/install_deps.sh
-
-  build-from-source:
-    platform: [darwin]
-    deps:
-      - clean
-      - install-faust    
-    cmds:
-      - |
-        mkdir -p build
-        cd build
-        cmake {{.GENERATOR}} .. $EXTRA_OPTIONS \
-          -DCM_EXTRA_FORMATS=ON \
-          -DCM_MP3=ON \
-          -DCM_WARPBUF=ON \
-          -DCM_FAUST=ON
         cmake --build . --config $CONFIG
         cmake --install . --config $CONFIG
 
@@ -93,6 +159,24 @@ tasks:
           -DCM_WARPBUF=ON \
           -DCM_FAUST=ON \
           -DCM_FLUIDSYNTH=ON
+        cmake --build . --config $CONFIG
+        cmake --install . --config $CONFIG
+
+  build-all-from-source:
+    platform: [darwin]
+    deps:
+      - clean
+      - install-faust    
+    cmds:
+      - |
+        mkdir -p build
+        cd build
+        cmake {{.GENERATOR}} .. $EXTRA_OPTIONS \
+          -DCM_EXTRA_FORMATS=ON \
+          -DCM_MP3=ON \
+          -DCM_WARPBUF=ON \
+          -DCM_FAUST=ON \
+          -DCM_FLUIDSYNTH=ON \
         cmake --build . --config $CONFIG
         cmake --install . --config $CONFIG
 

@@ -1,10 +1,7 @@
-# install full stack dependencies to build the WarpBuf and Fauck chugins
-
 CWD=`pwd`
 THIRDPARTY=${CWD}/build/thirdparty
 PREFIX=${THIRDPARTY}/install
-#FAUST_VERSION=2.69.3
-FAUST_VERSION=2.72.14
+
 
 function setup() {
 	mkdir -p ${PREFIX}/include && \
