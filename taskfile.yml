@@ -47,7 +47,7 @@ tasks:
       vars: [FOO]
 
   install-libflac:
-    desc: download, build, install libFLAC dep
+    desc: download, build libFLAC dep
     platforms: [darwin]
     internal: false
     cmds:
@@ -57,7 +57,7 @@ tasks:
       - '{{.LIB}}/libFLAC++.a'
 
   install-libmp3lame:
-    desc: download, build, install libmp3lame dep
+    desc: download, build libmp3lame dep
     platforms: [darwin]
     internal: false
     cmds:
@@ -66,7 +66,7 @@ tasks:
       - '{{.LIB}}/libmp3lame.a'
 
   install-libmpg123:
-    desc: download, build, install libmpg123 dep
+    desc: download, build libmpg123 dep
     platforms: [darwin]
     internal: false
     cmds:
@@ -75,7 +75,7 @@ tasks:
       - '{{.LIB}}/libmpg123.a'
 
   install-libogg:
-    desc: download, build, install libogg dep
+    desc: download, build libogg dep
     platforms: [darwin]
     internal: false
     cmds:
@@ -84,7 +84,7 @@ tasks:
       - '{{.LIB}}/libogg.a'
 
   install-libopus:
-    desc: download, build, install libopus dep
+    desc: download, build libopus dep
     platforms: [darwin]
     internal: false
     cmds:
@@ -93,7 +93,7 @@ tasks:
       - '{{.LIB}}/libopus.a'
 
   install-libvorbis:
-    desc: download, build, install libvorbis dep
+    desc: download, build libvorbis dep
     platforms: [darwin]
     internal: false
     cmds:
@@ -104,7 +104,7 @@ tasks:
       - '{{.LIB}}/libvorbisfile.a'
 
   install-libsamplerate:
-    desc: download, build, install libsamplerate dep
+    desc: download, build libsamplerate dep
     platforms: [darwin]
     internal: false
     cmds:
@@ -113,21 +113,21 @@ tasks:
       - '{{.LIB}}/libsamplerate.a'
 
   install-fluidsynth:
-    desc: download, build, install fluidsynth dep
+    desc: download, build fluidsynth dep
     platforms: [darwin]
     deps: [install-libsndfile]
     cmds:
       - sh '{{.DEPS}}/install_fluidsynth.sh'
 
   install-faust:
-    desc: download, build, install faust deps
+    desc: download, build faust deps
     platforms: [darwin]
     cmds:
       - sh '{{.DEPS}}/install_faust.sh'
       - sh '{{.DEPS}}/install_libfaust.sh'
 
   install-libsndfile:
-    desc: download, build, install libsndfile and deps
+    desc: download, build libsndfile and deps
     platforms: [darwin]
     deps: 
       - install-libmpg123
@@ -142,17 +142,17 @@ tasks:
       - '{{.LIB}}/libsndfile.a'
 
   install-deps-all:
-    desc: download, build, install all deps
+    desc: download, build all deps
     platforms: [darwin]
-    deps:
-      - install-libsndfile
-      - install-faust
-      - install-rubberband
-      - install-libsamplerate
-      - install-fluidsynth
+    cmds:
+      - task: install-libsndfile
+      - task: install-faust
+      - task: install-rubberband
+      - task: install-libsamplerate
+      - task: install-fluidsynth
 
   install-rubberband:
-    desc: download, build, install rubberband
+    desc: download, build rubberband
     platforms: [darwin]
     cmds:
       - sh '{{.DEPS}}/install_rubberband.sh'
@@ -160,27 +160,27 @@ tasks:
       - '{{.LIB}}/librubberband.a'
 
   install-deps:
-    desc: download, build, install deps from a script
+    desc: download, build deps from a script
     platforms: [darwin]
     cmd: sh '{{.SCRIPTS}}/install_deps.sh'
 
   install-deps-nomp3:
-    desc: download, build, install deps w/o mp3 support
+    desc: download, build deps no mp3 support
     platforms: [darwin]
     cmd: sh '{{.SCRIPTS}}/install_deps_nomp3.sh'
 
   install-deps-light:
-    desc: download, build, install minimal deps
+    desc: download, build minimal deps
     platforms: [darwin]
     cmd: sh '{{.SCRIPTS}}/install_deps_light.sh'
 
   install-deps-fluidsynth:
-    desc: download, build, install fluidsynth deps
+    desc: download, build fluidsynth deps
     platforms: [darwin]
     cmd: sh '{{.SCRIPTS}}/install_deps_fluidsynth.sh'
 
   build:
-    desc: build chuck~ external and default chugins
+    desc: build external and default chugins
     platforms: [darwin,windows]
     deps: [clean-externals]
     # aliases: [compile, make]
@@ -193,7 +193,7 @@ tasks:
         cmake --install . --config $CONFIG
 
   build-all:
-    desc: build chuck~ external with all chugins
+    desc: build external with all chugins
     platforms: [darwin]
     deps:
       - clean-externals
@@ -213,11 +213,29 @@ tasks:
         cmake --install . --config $CONFIG
 
   build-all-src:
-    desc: build chuck~ external, chugins, deps from src
+    desc: build external, chugins, deps from src
     platforms: [darwin]
     deps:
       - clean-externals
       - install-deps-all
+    cmds:
+      - |
+        mkdir -p build
+        cd build
+        cmake {{.GENERATOR}} .. $EXTRA_OPTIONS \
+          -DCM_EXTRA_FORMATS=ON \
+          -DCM_MP3=ON \
+          -DCM_WARPBUF=ON \
+          -DCM_FAUST=ON \
+          -DCM_FLUIDSYNTH=OFF
+        cmake --build . --config $CONFIG
+        cmake --install . --config $CONFIG
+
+  build-all-src-nodeps:
+    desc: build external, chugins from src
+    platforms: [darwin]
+    deps:
+      - clean-externals
     cmds:
       - |
         mkdir -p build
