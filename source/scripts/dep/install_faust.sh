@@ -1,9 +1,8 @@
 CWD=`pwd`
 THIRDPARTY=${CWD}/build/thirdparty
 PREFIX=${THIRDPARTY}/install
-#FAUST_VERSION=2.69.3
 FAUST_VERSION=2.72.14
-# FAUST_VERSION=2.81.2 	# (latest)
+
 
 function setup() {
 	mkdir -p ${PREFIX}/include && \

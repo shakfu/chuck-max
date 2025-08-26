@@ -13,6 +13,7 @@ function install_libmpg123() {
 	if [ ! -f ${THIRDPARTY}/install/lib/libmpg123.a ]; then
 		rm -rf ${THIRDPARTY}/libmpg123 && \
 		mkdir -p build/thirdparty && \
+		cd build/thirdparty && \
 		wget https://www.mpg123.de/download/mpg123-1.32.6.tar.bz2 && \
 		tar xvf mpg123-1.32.6.tar.bz2 && \
 		mv mpg123-1.32.6 ${THIRDPARTY}/libmpg123 && \

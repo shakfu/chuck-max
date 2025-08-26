@@ -14,6 +14,7 @@ function install_libmp3lame() {
 	if [ ! -f ${THIRDPARTY}/install/lib/libmp3lame.a ]; then
 		rm -rf ${THIRDPARTY}/libmp3lame && \
 		mkdir -p build/thirdparty && \
+		cd build/thirdparty && \
 		wget https://downloads.sourceforge.net/project/lame/lame/3.100/lame-3.100.tar.gz && \
 		tar xvf lame-3.100.tar.gz && \
 		mv lame-3.100 ${THIRDPARTY}/libmp3lame && \

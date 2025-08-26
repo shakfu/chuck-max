@@ -30,68 +30,105 @@ vars:
   DMG: 'chuck-max-{{.VERSION}}-{{.ARCH}}.dmg'
   ENTITLEMENTS: source/scripts/entitlements.plist
   CHUGINS_DIR: examples/chugins
-  DEPS: ./source/scripts/dep
+  DEPS: '{{.SCRIPTS}}/dep'
   GENERATOR: '{{ if eq .PLATFORM "Darwin" }}-GXcode{{else}}{{end}}'
 
 tasks:
   demo:
+    desc: demonstration task
     cmds: 
       - echo $MULTI
       - echo '{{ OS }}'
       - echo '{{ .TASK }}'
       - echo '{{ .LIB }}'
       - echo '{{ .GENERATOR }}'
-
+      - echo '{{ .FOO }}'
+    requires:
+      vars: [FOO]
 
   install-libflac:
-    platform: [darwin]
+    desc: download, build, install libFLAC dep
+    platforms: [darwin]
+    internal: false
     cmds:
-      - sh '{{ .DEPS }}/install_libflac.sh'
+      - sh '{{.DEPS}}/install_libflac.sh'
+    generates:
+      - '{{.LIB}}/libFLAC.a'
+      - '{{.LIB}}/libFLAC++.a'
 
   install-libmp3lame:
-    platform: [darwin]
+    desc: download, build, install libmp3lame dep
+    platforms: [darwin]
+    internal: false
     cmds:
-      - sh '{{ .DEPS }}/install_libmp3lame.sh'
+      - sh '{{.DEPS}}/install_libmp3lame.sh'
+    generates:
+      - '{{.LIB}}/libmp3lame.a'
 
   install-libmpg123:
-    platform: [darwin]
+    desc: download, build, install libmpg123 dep
+    platforms: [darwin]
+    internal: false
     cmds:
-      - sh '{{ .DEPS }}/install_libmpg123.sh'
+      - sh '{{.DEPS}}/install_libmpg123.sh'
+    generates:
+      - '{{.LIB}}/libmpg123.a'
 
   install-libogg:
-    platform: [darwin]
+    desc: download, build, install libogg dep
+    platforms: [darwin]
+    internal: false
     cmds:
-      - sh '{{ .DEPS }}/install_libogg.sh'
+      - sh '{{.DEPS}}/install_libogg.sh'
+    generates:
+      - '{{.LIB}}/libogg.a'
 
   install-libopus:
-    platform: [darwin]
+    desc: download, build, install libopus dep
+    platforms: [darwin]
+    internal: false
     cmds:
-      - sh '{{ .DEPS }}/install_libopus.sh'
+      - sh '{{.DEPS}}/install_libopus.sh'
+    generates:
+      - '{{.LIB}}/libopus.a'
 
   install-libvorbis:
-    platform: [darwin]
+    desc: download, build, install libvorbis dep
+    platforms: [darwin]
+    internal: false
     cmds:
-      - sh '{{ .DEPS }}/install_libvorbis.sh'
+      - sh '{{.DEPS}}/install_libvorbis.sh'
+    generates:
+      - '{{.LIB}}/libvorbis.a'
+      - '{{.LIB}}/libvorbisenc.a'
+      - '{{.LIB}}/libvorbisfile.a'
 
   install-libsamplerate:
-    platform: [darwin]
+    desc: download, build, install libsamplerate dep
+    platforms: [darwin]
+    internal: false
     cmds:
-      - sh '{{ .DEPS }}/install_libsamplerate.sh'
+      - sh '{{.DEPS}}/install_libsamplerate.sh'
+    generates:
+      - '{{.LIB}}/libsamplerate.a'
 
   install-fluidsynth:
-    platform: [darwin]
+    desc: download, build, install fluidsynth dep
+    platforms: [darwin]
     deps: [install-libsndfile]
     cmds:
-      - sh '{{ .DEPS }}/install_fluidsynth.sh'
+      - sh '{{.DEPS}}/install_fluidsynth.sh'
 
   install-faust:
-    platform: [darwin]
+    desc: download, build, install faust deps
+    platforms: [darwin]
     cmds:
-      - sh '{{ .DEPS }}/install_faust.sh'
-      - sh '{{ .DEPS }}/install_libfaust.sh'
+      - sh '{{.DEPS}}/install_faust.sh'
+      - sh '{{.DEPS}}/install_libfaust.sh'
 
   install-libsndfile:
-    platform: [darwin]
+    desc: download, build, install libsndfile and deps
+    platforms: [darwin]
     deps: 
       - install-libmpg123
       - install-libmp3lame
@@ -100,41 +137,53 @@ tasks:
       - install-libflac
       - install-libogg
     cmds:
-      - sh ./source/scripts/dep/install_libsndfile.sh
+      - sh '{{.DEPS}}/install_libsndfile.sh'
+    generates:
+      - '{{.LIB}}/libsndfile.a'
 
   install-deps-all:
-    platform: [darwin]
+    desc: download, build, install all deps
+    platforms: [darwin]
     deps:
       - install-libsndfile
+      - install-faust
       - install-rubberband
       - install-libsamplerate
-      # - install-faust
-      # - install-fluidsynth
+      - install-fluidsynth
 
   install-rubberband:
-    platform: [darwin]
+    desc: download, build, install rubberband
+    platforms: [darwin]
     cmds:
-      - sh ./source/scripts/dep/install_rubberband.sh
+      - sh '{{.DEPS}}/install_rubberband.sh'
+    generates:
+      - '{{.LIB}}/librubberband.a'
 
   install-deps:
-    platform: [darwin]
-    cmd: sh ./source/scripts/install_deps.sh
+    desc: download, build, install deps from a script
+    platforms: [darwin]
+    cmd: sh '{{.SCRIPTS}}/install_deps.sh'
 
   install-deps-nomp3:
-    platform: [darwin]
-    cmd: sh ./source/scripts/install_deps_nomp3.sh
+    desc: download, build, install deps w/o mp3 support
+    platforms: [darwin]
+    cmd: sh '{{.SCRIPTS}}/install_deps_nomp3.sh'
 
   install-deps-light:
-    platform: [darwin]
-    cmd: sh ./source/scripts/install_deps_light.sh
+    desc: download, build, install minimal deps
+    platforms: [darwin]
+    cmd: sh '{{.SCRIPTS}}/install_deps_light.sh'
 
   install-deps-fluidsynth:
-    platform: [darwin]
-    cmd: sh ./source/scripts/install_deps_fluidsynth.sh
+    desc: download, build, install fluidsynth deps
+    platforms: [darwin]
+    cmd: sh '{{.SCRIPTS}}/install_deps_fluidsynth.sh'
 
   build:
+    desc: build chuck~ external and default chugins
     platforms: [darwin,windows]
     deps: [clean-externals]
+    # aliases: [compile, make]
     cmds:
       - |
         mkdir -p build
@@ -144,9 +193,10 @@ tasks:
         cmake --install . --config $CONFIG
 
   build-all:
-    platform: [darwin]
+    desc: build chuck~ external with all chugins
+    platforms: [darwin]
     deps:
-      - clean
+      - clean-externals
       - install-faust
     cmds:
       - |
@@ -162,11 +212,12 @@ tasks:
         cmake --build . --config $CONFIG
         cmake --install . --config $CONFIG
 
-  build-all-from-source:
-    platform: [darwin]
+  build-all-src:
+    desc: build chuck~ external, chugins, deps from src
+    platforms: [darwin]
     deps:
-      - clean
-      - install-faust    
+      - clean-externals
+      - install-deps-all
     cmds:
       - |
         mkdir -p build
@@ -176,15 +227,32 @@ tasks:
           -DCM_MP3=ON \
           -DCM_WARPBUF=ON \
           -DCM_FAUST=ON \
-          -DCM_FLUIDSYNTH=ON \
+          -DCM_FLUIDSYNTH=OFF
+        cmake --build . --config $CONFIG
+        cmake --install . --config $CONFIG
+
+  build-chump:
+    desc: build chump chuck package manager
+    platforms: [darwin]
+    deps:
+      - clean-externals
+    cmds:
+      - |
+        mkdir -p build
+        cd build
+        cmake {{.GENERATOR}} .. \
+            -DCM_MACOS_HOMEBREW=ON \
+            -DCM_CHUMP=ON
         cmake --build . --config $CONFIG
         cmake --install . --config $CONFIG
 
   clean:
+    desc: clean project
     cmds:
       - task: clean-externals
       - rm -rf build
 
   clean-externals:
+    desc: clean externals
     cmds:
       - rm -rf externals
