@@ -17,23 +17,24 @@ jobs:
         echo "This is a file to upload" > testing/file.txt
         echo "file_path=testing/file.txt" >> $GITHUB_ENV
 
-    # - name: get pkg name in python
-    #   id: strings
-    #   shell: python
-    #   run: |
-    #     import os
+    - name: get pkg name in python
+      id: penv
+      shell: python
+      run: |
+        import os
 
-    #     name="${{ github.event.repository.name }}-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}"
-    #     sha="${{ github.sha }}"
-    #     vs=[
-    #       f"short_sha={sha[:7]}",
-    #       f"pkg_name={name.lower()}",
-    #     ]
-    #     with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-    #       for v in vs:
-    #         print(v, file=fh)
+        name="${{ github.event.repository.name }}-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}"
+        sha="${{ github.sha }}"
+        vs=[
+          f"short_sha={sha[:7]}",
+          f"pkg_name={name.lower()}",
+        ]
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+          for v in vs:
+            print(v, file=fh)
 
     - name: dump pkg name
       run: |
         echo "${{ steps.strings.outputs.pkg_name }}"
+        echo "${{ steps.penv.outputs.pkg_name }}"
         echo "${{ env.file_path }}"
