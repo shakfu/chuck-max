@@ -33,8 +33,9 @@ jobs:
           for v in vs:
             print(v, file=fh)
 
-    - name: dump pkg name
+    - name: dump programmatically created vars
       run: |
-        echo "${{ steps.strings.outputs.pkg_name }}"
-        echo "${{ steps.penv.outputs.pkg_name }}"
-        echo "${{ env.file_path }}"
+        echo "pkg_name from bash gh-output: ${{ steps.strings.outputs.pkg_name }}"
+        echo "pkg_name from python gh-output: ${{ steps.penv.outputs.pkg_name }}"
+        echo "short_sha from python gh-output: ${{ steps.penv.outputs.short_sha }}"
+        echo "file_apth from bash gh-env: ${{ env.file_path }}"
