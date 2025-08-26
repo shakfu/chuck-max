@@ -6,35 +6,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: get pkg name
-      id: strings
-      shell: bash
-      run: echo "pkg_name=${{ github.event.repository.name }}-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}" >> "$GITHUB_OUTPUT"
+      - name: get pkg name
+        id: strings
+        shell: bash
+        run: echo "pkg_name=${{ github.event.repository.name }}-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}" >> "$GITHUB_OUTPUT"
 
-    - name: pass key-value to env
-      run: |
-        mkdir testing
-        echo "This is a file to upload" > testing/file.txt
-        echo "file_path=testing/file.txt" >> $GITHUB_ENV
+      - name: pass key-value to env
+        run: |
+          mkdir testing
+          echo "This is a file to upload" > testing/file.txt
+          echo "file_path=testing/file.txt" >> $GITHUB_ENV
 
-    - name: get pkg name in python
-      id: strings
-      shell: python
-      run: |
-        import os
+      - name: get pkg name in python
+        id: strings
+        shell: python
+        run: |
+          import os
 
-        name="${{ github.event.repository.name }}-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}"
-        sha="${{ github.sha }}"
-        vs=[
-          f"short_sha={sha[:7]}",
-          f"pkg_name={name.lower()}",
-        ]
-        with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
-          for v in vs:
-            print(v, file=fh)
+          name="${{ github.event.repository.name }}-${{ github.ref_name }}-${{ runner.os }}-${{ runner.arch }}"
+          sha="${{ github.sha }}"
+          vs=[
+            f"short_sha={sha[:7]}",
+            f"pkg_name={name.lower()}",
+          ]
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+            for v in vs:
+              print(v, file=fh)
 
-    - name: dump pkg name
-      run: |
-        echo "${{ steps.strings.outputs.pkg_name }}"
-        echo "${{ env.file_path }}"
-
+      - name: dump pkg name
+        run: |
+          echo "${{ steps.strings.outputs.pkg_name }}"
+          echo "${{ env.file_path }}"
