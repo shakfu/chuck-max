@@ -38,4 +38,4 @@ jobs:
         echo "pkg_name from bash gh-output: ${{ steps.strings.outputs.pkg_name }}"
         echo "pkg_name from python gh-output: ${{ steps.penv.outputs.pkg_name }}"
         echo "short_sha from python gh-output: ${{ steps.penv.outputs.short_sha }}"
-        echo "file_apth from bash gh-env: ${{ env.file_path }}"
+        echo "file_path from bash gh-env: ${{ env.file_path }}"

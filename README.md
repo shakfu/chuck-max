@@ -108,7 +108,6 @@ make brew
 
 [^2]: There is experimental support for building [chump](https://github.com/ccrma/chump) via `make chump`. See the [chump-build-guide](https://github.com/shakfu/chuck-max/blob/main/source/docs/chump-build-guide.md) for further details about install requirements.
 
-
 ## User Guide
 
 - The `chuck~` object can take the following arguments:
@@ -268,15 +267,18 @@ We welcome contributions! Please:
 ## Related Projects
 
 Used in `chuck-max`:
+
 - [ChuGins](https://github.com/ccrma/chugins): Repository for Officially Supported ChuGins
 - [ChuMP](https://chuck.stanford.edu/chump): The ChucK Manager of Packages.
 - [Chai](https://chuck.stanford.edu/chai): ChucK for AI.
 - [FaucK](https://ccrma.stanford.edu/~rmichon/fauck): Hybridizing the Faust and ChucK Audio Programming Languages.
 
 Our sibling project:
+
 - [pd-chuck](https://github.com/shakfu/pd-chuck): ChucK for Pure Data.
 
 Other ChucK projects:
+
 - [ChuGL](https://github.com/ccrma/chugl): ChucK Graphics Library.
 - [WebChuck](https://chuck.cs.princeton.edu/webchuck) for Web-based computer music programming with ChucK.
 - [ChucKDesigner](https://github.com/DBraun/ChucKDesigner): ChucK audio integration with TouchDesigner.
@@ -301,4 +303,3 @@ This project thanks the following:
 - Professor [Brad Garton](http://sites.music.columbia.edu/brad) for creating the original [chuck~](http://sites.music.columbia.edu/brad/chuck~) external for Max 5. My failure to build it and run it on Max 8 motivated me to start this project.
 
 - David Braun, the author of the very cool and excellent [DawDreamer](https://github.com/DBraun/DawDreamer) project, for creating the excellent [ChucKDesigner](https://github.com/DBraun/ChucKDesigner) project which embeds chuck in a Touch Designer plugin. His project provided a super-clear blueprint on how to embed `libchuck` in another host or plugin system and was essential to this project.
-

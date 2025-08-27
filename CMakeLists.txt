@@ -101,5 +101,3 @@ foreach (cat_dir ${CATEGORY_DIRS})
     endif ()
   endforeach ()
 endforeach ()
-
-

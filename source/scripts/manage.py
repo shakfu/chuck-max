@@ -742,7 +742,7 @@ class Application(ShellCmd, metaclass=MetaCommander):
     def do_setup(self, args):
         """setup prerequisites"""
         # for Builder in [LlamaCppBuilder, WhisperCppBuilder, StableDiffusionCppBuilder]:
-        for Builder in [LlamaCppBuilder]:
+        for Builder in []:
             builder = Builder()
             builder.setup()
 
@@ -755,16 +755,6 @@ class Application(ShellCmd, metaclass=MetaCommander):
     def do_build(self, args):
         """build packages"""
         _builders = []
-
-        if args.all:
-            _builders = [LlamaCppBuilder, WhisperCppBuilder, StableDiffusionCppBuilder]
-        else:
-            if args.llama_cpp:
-                _builders.append(LlamaCppBuilder)
-            if args.whisper_cpp:
-                _builders.append(WhisperCppBuilder)
-            if args.stable_diffusion:
-                _builders.append(StableDiffusionCppBuilder)
 
         for Builder in _builders:
             builder = Builder()
