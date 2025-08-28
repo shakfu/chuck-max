@@ -12,24 +12,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Security: in case of vulnerabilities.
 
 ---
-
 ## [0.2.x]
+
+
+
+## [0.2.0]
+
+- Added cross-platform package with prefix `-multi` which includes macos arm64 and windows amd64 support.
 
 - Added additional support to building via the alternative `go-task` method.
 
-- Added support for bundling chugins in the external's bundle via `CM_MACOS_BUNDLED_CHUGINS` option
+- Added support for bundling chugins in the external's bundle via `BUNDLED=1` option
 
 - Added support for building (for both MacOS and Windows) `ChuGL.chug`.
 
 - Added new `icon.png`
 
-- Added support for `Regex.chug` chugin for windows.
+- Added support for `Regex.chug` chugin for windows build.
 
 - Added Chump as a cmake-compilable subproject.
 
 - Added Windows support to build `chuck~` and standard chugins (except `Regex`).
 
-- Updated chuck to `chuck 1.5.5.3-dev (chai)`
+- Updated ChucK and ChucK examples to `ChucK 1.5.5.3-dev (chai)`
 
 ## [0.1.3]
 

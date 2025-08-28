@@ -1,4 +1,4 @@
-# chuck-max
+# chuck-max - the ChucK engine embedded in a Max/MSP external
 
 ![chuck~ help](https://github.com/shakfu/chuck-max/blob/main/media/screenshot-min.png)
 
@@ -6,7 +6,7 @@ This cross-platform project combines the power of [ChucK](https://chuck.stanford
 
 ## Quick Start
 
-**For the impatient**: Download the pre-compiled `chuck-max` package from [Releases](https://github.com/shakfu/chuck-max/releases) and check out the [cheatsheet](https://github.com/shakfu/chuck-max/blob/main/media/chuck-max-cheatsheat.pdf).
+**For the impatient**: Download the pre-compiled `chuck-max` packages from [Releases](https://github.com/shakfu/chuck-max/releases) and check out the [cheatsheet](https://github.com/shakfu/chuck-max/blob/main/media/chuck-max-cheatsheat.pdf).
 
 ## Overview
 

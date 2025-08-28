@@ -15,7 +15,7 @@ CHUCK = $(THIRDPARTY)/install/bin/chuck
 DIST = $(BUILD)/dist/$(PROJECT_NAME)
 ARCH=$(shell uname -m)
 ENTITLEMENTS = $(SCRIPTS)/entitlements.plist
-CHUGINS_DIR = $(ROOT)/examples/chugins
+CHUGINS_DIR = examples/chugins
 
 # variants
 BUNDLED=0
@@ -31,7 +31,7 @@ EXTRA_OPTIONS += -DCM_MACOS_UNIVERSAL=ON
 endif
 ifeq ($(BUNDLED), 1)
 EXTRA_OPTIONS += -DCM_MACOS_BUNDLED_CHUGINS=ON
-CHUGINS_DIR = $(ROOT)/externals/$(EXTERNAL_NAME).mxo/Contents/Resources/chugins
+CHUGINS_DIR = externals/$(EXTERNAL_NAME).mxo/Contents/Resources/chugins
 endif
 else
 OS = "windows"
@@ -55,7 +55,7 @@ ZIP = $(DIST_NAME).zip
 		install_deps install_deps_light install_deps_nomp3 \
 		full2 install_fs_deps chump \
 		sign package dmg zip-dist sign-dmg notarize staple sign-dist sign-bundle \
-		release dist-release
+		release release-zip
 
 all: native
 
@@ -198,30 +198,6 @@ package:
 		find $(DIST) -name ".DS_Store" -delete && \
 		echo "DONE"
 
-sign-dist:
-	@codesign --sign 'Developer ID Application: $(DEV_ID)' \
-		--timestamp --deep --force $(DIST)/externals/$(EXTERNAL_NAME).mxo/Contents/MacOS/$(EXTERNAL_NAME) && \
-		codesign --sign 'Developer ID Application: $(DEV_ID)' \
-			--timestamp --deep --force --options runtime \
-			--entitlements $(ENTITLEMENTS) $(DIST)/externals/$(EXTERNAL_NAME).mxo && \
-		codesign --verify $(DIST)/externals/$(EXTERNAL_NAME).mxo && \
-		codesign --verify $(DIST)/externals/$(EXTERNAL_NAME).mxo/Contents/MacOS/$(EXTERNAL_NAME) && \
-		codesign --sign 'Developer ID Application: $(DEV_ID)' \
-			--timestamp --deep --force $(DIST)/$(CHUGINS_DIR)/$(CHUGIN_GLOB) && \
-		codesign --verify $(DIST)/$(CHUGINS_DIR)/$(CHUGIN_GLOB)
-
-zip-dist-pre:
-	@ditto -c -k --keepParent $(DIST) $(PROJECT_NAME)-to-notarize.zip
-
-notarize-zip:
-	@xcrun notarytool submit "$(PROJECT_NAME)-to-notarize.zip" --keychain-profile "$(KEYCHAIN_PROFILE)" --wait
-
-staple-dist:
-	@xcrun stapler staple $(DIST)/externals/$(EXTERNAL_NAME).mxo
-
-zip-dist:
-	@ditto -c -k --keepParent $(DIST) $(ZIP)
-
 dmg:
 	@hdiutil create -volname CHUCK-MAX -srcfolder $(BUILD)/dist -ov -format UDBZ $(DMG)
 
@@ -238,9 +214,32 @@ staple:
 release: strip sign package dmg sign-dmg notarize staple
 	@echo "DONE"
 
-dist-release: sign-dist dmg sign-dmg notarize staple
-	@echo "DONE"
+sign-dist:
+	@codesign --sign 'Developer ID Application: $(DEV_ID)' \
+		--timestamp --deep --force $(DIST)/externals/$(EXTERNAL_NAME).mxo/Contents/MacOS/$(EXTERNAL_NAME) && \
+		codesign --sign 'Developer ID Application: $(DEV_ID)' \
+			--timestamp --deep --force --options runtime \
+			--entitlements $(ENTITLEMENTS) $(DIST)/externals/$(EXTERNAL_NAME).mxo && \
+		codesign --verify $(DIST)/externals/$(EXTERNAL_NAME).mxo && \
+		codesign --verify $(DIST)/externals/$(EXTERNAL_NAME).mxo/Contents/MacOS/$(EXTERNAL_NAME) && \
+		codesign --sign 'Developer ID Application: $(DEV_ID)' \
+			--timestamp --deep --force $(DIST)/$(CHUGINS_DIR)/$(CHUGIN_GLOB) && \
+		codesign --verify $(DIST)/$(CHUGINS_DIR)/$(CHUGIN_GLOB)
 
+zip-dist-pre:
+	@ditto -c -k --keepParent $(DIST) $(BUILD)/$(PROJECT_NAME)-to-notarize.zip
+
+notarize-zip:
+	@xcrun notarytool submit "$(BUILD)/$(PROJECT_NAME)-to-notarize.zip" --keychain-profile "$(KEYCHAIN_PROFILE)" --wait
+
+staple-dist:
+	@xcrun stapler staple $(DIST)/externals/$(EXTERNAL_NAME).mxo
+
+zip-dist:
+	@ditto -c -k --keepParent $(DIST) $(ZIP)
+
+release-zip: sign-dist zip-dist-pre notarize-zip staple-dist zip-dist
+	@echo done
 
 link:
 	@cd examples && rm -f chuck && ln -s ../build/$(CONFIG)/chuck .
