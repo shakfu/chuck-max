@@ -1,8 +1,10 @@
 VERSION=0.2.0
+
 PLATFORM = $(shell uname)
 MAX_VERSION := 9
 CHUCK_PACKAGE := "$(HOME)/Documents/Max\ $(MAX_VERSION)/Packages/chuck-max"
 SCRIPTS := source/scripts
+ROOT := $(PWD)
 BUILD := build
 CONFIG = Release
 THIRDPARTY = $(BUILD)/thirdparty
@@ -40,7 +42,7 @@ endif
 		clean reset test test-fauck test-warpbuf test-fluidsynth \
 		install_deps install_deps_light install_deps_nomp3 \
 		full2 install_fs_deps chump \
-		sign package dmg sign-dmg notarize staple sign-dist sign-bundle \
+		sign package dmg zip-dist sign-dmg notarize staple sign-dist sign-bundle \
 		release dist-release
 
 all: native
@@ -195,6 +197,20 @@ sign-dist:
 		codesign --sign 'Developer ID Application: $(DEV_ID)' \
 			--timestamp --deep --force $(DIST)/$(CHUGINS_DIR)/**/*.chug && \
 		codesign --verify $(DIST)/$(CHUGINS_DIR)/**/*.chug
+
+zip-dist-pre:
+	@zip -r chuck-max-to-notarize.zip $(DIST)
+
+notarize-zip:
+	@xcrun notarytool submit "chuck-max-to-notarize.zip" --keychain-profile "$(KEYCHAIN_PROFILE)" --wait
+
+staple-dist:
+	@xcrun stapler staple $(DIST)/externals/chuck\~.mxo
+
+zip-dist:
+	@cd build/dist && \
+		zip -r chuck-max-$(VERSION).zip chuck-max && \
+		mv chuck-max-$(VERSION).zip $(ROOT)
 
 dmg:
 	@hdiutil create -volname CHUCK-MAX -srcfolder $(BUILD)/dist -ov -format UDBZ $(DMG)
