@@ -193,8 +193,8 @@ sign-dist:
 		codesign --verify $(DIST)/externals/chuck\~.mxo && \
 		codesign --verify $(DIST)/externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
 		codesign --sign 'Developer ID Application: $(DEV_ID)' \
-			--timestamp --deep --force $(DIST)/$(CHUGINS_DIR)/*.chug && \
-		codesign --verify $(DIST)/$(CHUGINS_DIR)/*.chug
+			--timestamp --deep --force $(DIST)/$(CHUGINS_DIR)/**/*.chug && \
+		codesign --verify $(DIST)/$(CHUGINS_DIR)/**/*.chug
 
 dmg:
 	@hdiutil create -volname CHUCK-MAX -srcfolder $(BUILD)/dist -ov -format UDBZ $(DMG)

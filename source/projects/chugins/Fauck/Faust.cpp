@@ -170,7 +170,11 @@ std::string getPathToFaustLibraries() {
 #elif __APPLE__
 #ifdef NOBUNDLE
     const char* myDLLPath = getMyDLLPath();
+#ifdef CM_MULTIPLATFORM_CHUGINS
+    std::filesystem::path p = std::filesystem::path(myDLLPath).parent_path().parent_path().parent_path() / "faust" ;
+#else
     std::filesystem::path p = std::filesystem::path(myDLLPath).parent_path().parent_path() / "faust" ;
+#endif
     std::cout << "faust library path: " << p << std::endl;
     return p.string();
 #else

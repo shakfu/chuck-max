@@ -8,9 +8,10 @@ add_chugin(
     SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/Faust.cpp
     COMPILE_DEFINITIONS
-        "NOBUNDLE"
+        $<$<PLATFORM_ID:Darwin>:NOBUNDLE>
         $<$<PLATFORM_ID:Darwin>:__MACOSX_CORE__>
         $<$<PLATFORM_ID:Darwin>:__PLATFORM_APPLE__>
+        "$<$<BOOL:${CM_MULTIPLATFORM_CHUGINS}>:CM_MULTIPLATFORM_CHUGINS>"
     INCLUDE_DIRS
         ${local_prefix}/include
         ${FAUST_DIR}/architecture
