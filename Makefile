@@ -1,21 +1,22 @@
-VERSION=0.2.0
+PROJECT_NAME = chuck-max
+EXTERNAL_NAME = chuck\~
+VERSION = 0.2.0
 
 PLATFORM = $(shell uname)
 MAX_VERSION := 9
-CHUCK_PACKAGE := "$(HOME)/Documents/Max\ $(MAX_VERSION)/Packages/chuck-max"
-SCRIPTS := source/scripts
-ROOT := $(PWD)
-BUILD := build
+CHUCK_PACKAGE := "$(HOME)/Documents/Max\ $(MAX_VERSION)/Packages/$(PROJECT_NAME)"
 CONFIG = Release
+ROOT := $(PWD)
+BUILD := $(ROOT)/build
+SCRIPTS := $(ROOT)/source/scripts
 THIRDPARTY = $(BUILD)/thirdparty
 LIB = $(THIRDPARTY)/install/lib
 CHUCK = $(THIRDPARTY)/install/bin/chuck
-DIST = $(BUILD)/dist/chuck-max
+DIST = $(BUILD)/dist/$(PROJECT_NAME)
 ARCH=$(shell uname -m)
-ZIP=chuck-max-$(VERSION)-$(ARCH).zip
-DMG=chuck-max-$(VERSION)-$(ARCH).dmg
-ENTITLEMENTS = source/scripts/entitlements.plist
-CHUGINS_DIR = examples/chugins
+DIST_NAME = $(PROJECT_NAME)-$(VERSION)-$(PLATFORM)-$(ARCH)
+ENTITLEMENTS = $(SCRIPTS)/entitlements.plist
+CHUGINS_DIR = $(ROOT)/examples/chugins
 
 # variants
 BUNDLED=0
@@ -25,17 +26,25 @@ UNIVERSAL=0
 ifeq ($(PLATFORM), Darwin)
 GENERATOR ?= "-GXcode"
 ifeq ($(UNIVERSAL), 1)
+DIST_NAME = $(PROJECT_NAME)-$(VERSION)-$(PLATFORM)-universal
 EXTRA_OPTIONS += -DCM_MACOS_UNIVERSAL=ON
 endif
 ifeq ($(BUNDLED), 1)
 EXTRA_OPTIONS += -DCM_MACOS_BUNDLED_CHUGINS=ON
-CHUGINS_DIR = externals/chuck\~.mxo/Contents/Resources/chugins
+CHUGINS_DIR = $(ROOT)/externals/$(EXTERNAL_NAME).mxo/Contents/Resources/chugins
 endif
 endif
 
 ifeq ($(MULTI), 1)
 EXTRA_OPTIONS += -DCM_MULTIPLATFORM_CHUGINS=ON
+DIST_NAME = $(PROJECT_NAME)-$(VERSION)
+CHUGIN_GLOB = **/*.chug
+else
+CHUGIN_GLOB = *.chug
 endif
+
+DMG = $(DIST_NAME).dmg
+ZIP = $(DIST_NAME).zip
 
 
 .PHONY: all native multi universal full light brew brew-lite nomp3 dev setup \
@@ -156,20 +165,20 @@ chump:
 		cmake --install . --config '$(CONFIG)'
 
 strip:
-	@strip -u -r externals/chuck\~.mxo/Contents/MacOS/chuck\~
-	@strip -x $(CHUGINS_DIR)/*.chug
+	@strip -u -r externals/$(EXTERNAL_NAME).mxo/Contents/MacOS/$(EXTERNAL_NAME)
+	@strip -x $(CHUGINS_DIR)/$(CHUGIN_GLOB)
 
 sign:
 	@codesign --sign 'Developer ID Application: $(DEV_ID)' \
-			--timestamp --deep --force $(CHUGINS_DIR)/*.chug && \
-		codesign --verify $(CHUGINS_DIR)/*.chug && \
+			--timestamp --deep --force $(CHUGINS_DIR)/$(CHUGIN_GLOB) && \
+		codesign --verify $(CHUGINS_DIR)/$(CHUGIN_GLOB) && \
 		codesign --sign 'Developer ID Application: $(DEV_ID)' \
-				--timestamp --deep --force externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
+				--timestamp --deep --force externals/$(EXTERNAL_NAME).mxo/Contents/MacOS/$(EXTERNAL_NAME) && \
 				codesign --sign 'Developer ID Application: $(DEV_ID)' \
 					--timestamp --deep --force --options runtime \
-					--entitlements $(ENTITLEMENTS) externals/chuck\~.mxo && \
-		codesign --verify externals/chuck\~.mxo && \
-		codesign --verify externals/chuck\~.mxo/Contents/MacOS/chuck\~
+					--entitlements $(ENTITLEMENTS) externals/$(EXTERNAL_NAME).mxo && \
+		codesign --verify externals/$(EXTERNAL_NAME).mxo && \
+		codesign --verify externals/$(EXTERNAL_NAME).mxo/Contents/MacOS/$(EXTERNAL_NAME)
 
 package:
 	@rm -rf $(DIST) && \
@@ -188,29 +197,27 @@ package:
 
 sign-dist:
 	@codesign --sign 'Developer ID Application: $(DEV_ID)' \
-		--timestamp --deep --force $(DIST)/externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
+		--timestamp --deep --force $(DIST)/externals/$(EXTERNAL_NAME).mxo/Contents/MacOS/$(EXTERNAL_NAME) && \
 		codesign --sign 'Developer ID Application: $(DEV_ID)' \
 			--timestamp --deep --force --options runtime \
-			--entitlements $(ENTITLEMENTS) $(DIST)/externals/chuck\~.mxo && \
-		codesign --verify $(DIST)/externals/chuck\~.mxo && \
-		codesign --verify $(DIST)/externals/chuck\~.mxo/Contents/MacOS/chuck\~ && \
+			--entitlements $(ENTITLEMENTS) $(DIST)/externals/$(EXTERNAL_NAME).mxo && \
+		codesign --verify $(DIST)/externals/$(EXTERNAL_NAME).mxo && \
+		codesign --verify $(DIST)/externals/$(EXTERNAL_NAME).mxo/Contents/MacOS/$(EXTERNAL_NAME) && \
 		codesign --sign 'Developer ID Application: $(DEV_ID)' \
-			--timestamp --deep --force $(DIST)/$(CHUGINS_DIR)/**/*.chug && \
-		codesign --verify $(DIST)/$(CHUGINS_DIR)/**/*.chug
+			--timestamp --deep --force $(DIST)/$(CHUGINS_DIR)/$(CHUGIN_GLOB) && \
+		codesign --verify $(DIST)/$(CHUGINS_DIR)/$(CHUGIN_GLOB)
 
 zip-dist-pre:
-	@zip -r chuck-max-to-notarize.zip $(DIST)
+	@ditto -c -k --keepParent $(DIST) $(PROJECT_NAME)-to-notarize.zip
 
 notarize-zip:
-	@xcrun notarytool submit "chuck-max-to-notarize.zip" --keychain-profile "$(KEYCHAIN_PROFILE)" --wait
+	@xcrun notarytool submit "$(PROJECT_NAME)-to-notarize.zip" --keychain-profile "$(KEYCHAIN_PROFILE)" --wait
 
 staple-dist:
-	@xcrun stapler staple $(DIST)/externals/chuck\~.mxo
+	@xcrun stapler staple $(DIST)/externals/$(EXTERNAL_NAME).mxo
 
 zip-dist:
-	@cd build/dist && \
-		zip -r chuck-max-$(VERSION).zip chuck-max && \
-		mv chuck-max-$(VERSION).zip $(ROOT)
+	@ditto -c -k --keepParent $(DIST) $(ZIP)
 
 dmg:
 	@hdiutil create -volname CHUCK-MAX -srcfolder $(BUILD)/dist -ov -format UDBZ $(DMG)
@@ -252,10 +259,8 @@ clean:
 		externals
 
 reset:
-	@rm -rf externals $(CHUGINS_DIR)/**/*.chug
-	@rm -rf build/CMakeCache.txt build/CMakeFiles build/CMakeScripts build/Release build/build build/sine.ck
-	@rm -rf build/chuck-max.xcodeproj build/cmake_install.cmake build/install_manifest.txt build/source build/build
-	@rm -rf build/thirdparty/faust build/thirdparty/install build/thirdparty/libfaust build/dist
+	@rm -rf externals $(CHUGINS_DIR)/$(CHUGIN_GLOB) $(CHUGINS_DIR)/macos-* $(CHUGINS_DIR)/windows-*
+	@rm -rf build
 
 setup:
 	@git submodule init
