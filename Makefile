@@ -14,7 +14,6 @@ LIB = $(THIRDPARTY)/install/lib
 CHUCK = $(THIRDPARTY)/install/bin/chuck
 DIST = $(BUILD)/dist/$(PROJECT_NAME)
 ARCH=$(shell uname -m)
-DIST_NAME = $(PROJECT_NAME)-$(VERSION)-$(PLATFORM)-$(ARCH)
 ENTITLEMENTS = $(SCRIPTS)/entitlements.plist
 CHUGINS_DIR = $(ROOT)/examples/chugins
 
@@ -24,15 +23,18 @@ MULTI=0
 UNIVERSAL=0
 
 ifeq ($(PLATFORM), Darwin)
+OS = "macos"
 GENERATOR ?= "-GXcode"
 ifeq ($(UNIVERSAL), 1)
-DIST_NAME = $(PROJECT_NAME)-$(VERSION)-$(PLATFORM)-universal
+DIST_NAME = $(PROJECT_NAME)-$(VERSION)-macos-universal
 EXTRA_OPTIONS += -DCM_MACOS_UNIVERSAL=ON
 endif
 ifeq ($(BUNDLED), 1)
 EXTRA_OPTIONS += -DCM_MACOS_BUNDLED_CHUGINS=ON
 CHUGINS_DIR = $(ROOT)/externals/$(EXTERNAL_NAME).mxo/Contents/Resources/chugins
 endif
+else
+OS = "windows"
 endif
 
 ifeq ($(MULTI), 1)
@@ -43,6 +45,7 @@ else
 CHUGIN_GLOB = *.chug
 endif
 
+DIST_NAME = $(PROJECT_NAME)-$(VERSION)-$(OS)-$(ARCH)
 DMG = $(DIST_NAME).dmg
 ZIP = $(DIST_NAME).zip
 
