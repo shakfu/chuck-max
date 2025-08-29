@@ -236,7 +236,10 @@ staple-dist:
 	@xcrun stapler staple $(DIST)/externals/$(EXTERNAL_NAME).mxo
 
 zip-dist:
-	@ditto -c -k --keepParent $(DIST) $(ZIP)
+	@dot_clean -m $(DIST)
+	@cd build/dist && zip -r $(PROJECT_NAME)-$(VERSION)-multi.zip chuck-max
+	@mv build/dist/$(PROJECT_NAME)-$(VERSION)-multi.zip $(ROOT)
+# 	@ditto -c -k --keepParent $(DIST) $(ZIP)
 
 release-zip: sign-dist zip-dist-pre notarize-zip staple-dist zip-dist
 	@echo done

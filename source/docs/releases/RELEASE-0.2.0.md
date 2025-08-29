@@ -1,14 +1,8 @@
-# chuck-max v0.2.0 (Windows Finally version)
-
-![chuck-max](https://github.com/shakfu/chuck-max/blob/main/logo.png)
-
 ## Overview
 
-*chuck-max v0.2.0 represents a significant milestone in making ChucK accessible to the Windows Max/MSP community while maintaining and enhancing the existing macOS experience.*
+chuck-max `v0.2.0` is a major milestone release which makes ChucK accessible to the Windows Max/MSP community while maintaining and enhancing the existing macOS experience. This release represents a significant step forward in cross-platform compatibility and includes an update to `ChucK v1.5.5.3`,  numerous enhancements to the build system, chugin support, overall functionality as well as a new package logo.
 
-chuck-max `v0.2.0` is a major milestone release that brings Windows support `chuck-max`. This release represents a significant step forward in cross-platform compatibility and includes numerous enhancements to the build system, chugin support, overall functionality and a new logo to boot.
-
-## 🎉 What's New in v0.2.0
+## What's New in v0.2.0
 
 ### Windows Support
 
@@ -22,14 +16,13 @@ chuck-max `v0.2.0` is a major milestone release that brings Windows support `chu
 - **Alternative Build Method**: Added support for building via [go-task](https://taskfile.dev), a fast, cross-platform build tool inspired by Make.
 - **Improved Github Actions**: Added support for building both windows and macOs packages as well as cross-platform packages using Github actions.
 - **Bundled Chugins**: New `BUNDLED=1` macOS-only option for bundling chugins directly in the external's bundle
-- **ChuGL Support**: Added support for building `ChuGL.chug` on both macOS and Windows
 - **Chump Integration**: Chump is now available as a cmake-compilable subproject as a first step to further integration.
 
 ### Chugin Enhancements
 
 - **Chugin Windows Support**: Added Windows support for the complete CCRMA chugin collection
 
-## 🔧 Technical Improvements
+## Technical Improvements
 
 ### Core Engine Updates
 
@@ -43,16 +36,16 @@ chuck-max `v0.2.0` is a major milestone release that brings Windows support `chu
 - **Windows**: Full build pipeline from source to distribution
 - **Cross-Platform**: Unified build system that works across all supported platforms
 
-## 🐛 Known Issues
+## Known Issues
 
 - Advanced chugins (`Faust.chug`, `WarpBuf.chug`, `FluidSynth.chug`) are not yet implemented on Windows
 - Some platform-specific optimizations may vary between macOS and Windows builds
 
-## 📚 Additional Resources
+## Additional Resources
 
 - **Documentation**: See `help/chuck~.maxhelp` for detailed usage information
 - **Examples**: Explore the `examples/` directory for practical demonstrations
-- **Community**: Join discussions on the ChucK discord and project's GitHub repository
+- **Community**: Join discussions on chuck-max channel of the ChucK discord and also the project's GitHub repository
 - **Cheatsheet**: Download the PDF cheatsheet from the `media/` folder
 
 ## Information about the Release Build Variants
@@ -61,18 +54,18 @@ Note that all MacOS externals and binaries are fully codesigned and notarized an
 
 ### MacOS Releases
 
-- [chuck-max-0.2.0-macos-arm64.dmg] - Full Max Package Release for Apple Silicon Macs, includes `chuck~` external, ChucK examples and all CCRMA chugines and also `Faust.chug`, `Warpbuf.chug` and `Fluidsynth.chug`, in the `examples/chugins` folder.
+- [chuck-max-0.2.0-macos-arm64.dmg](https://github.com/shakfu/chuck-max/releases/download/0.2.0/chuck-max-0.2.0-macos-arm64.dmg) - Full Max Package Release for Apple Silicon Macs, includes `chuck~` external, ChucK examples and all CCRMA chugines and also `Faust.chug`, `Warpbuf.chug` and `Fluidsynth.chug`, in the `examples/chugins` folder.
 
-- [chuck-max-0.2.0-macos-arm64-bundled.dmg] - The `BUNDLED=1` build variant is essentially the same as above but the chugins are embedded in the external's `Resource` folder.
+- [chuck-max-0.2.0-macos-arm64-bundled.dmg](https://github.com/shakfu/chuck-max/releases/download/0.2.0/chuck-max-0.2.0-macos-arm64-bundled.dmg) - The `BUNDLED=1` build variant is essentially the same as above but the chugins are embedded in the external's `Resource` folder.
 
-- [chuck-max-0.2.0-macos-universal.dmg] - The `UNIVERSAL=1` build includes universal binaries for both arm64 and x86_64 architectures.
+- [chuck-max-0.2.0-macos-universal.dmg](https://github.com/shakfu/chuck-max/releases/download/0.2.0/chuck-max-0.2.0-macos-universal.dmg) - The `UNIVERSAL=1` build includes universal binaries for both arm64 and x86_64 architectures.
 
-- [chuck-max-0.2.0-macos-x86_64.dmg] - A build specifically for intel Macs.
+- [chuck-max-0.2.0-macos-x86_64.dmg](https://github.com/shakfu/chuck-max/releases/download/0.2.0/chuck-max-0.2.0-macos-x86_64.dmg) - A build specifically for intel Macs.
 
-### Windows
+### Windows Releases
 
-- [chuck-max-0.2.0-windows-amd64.zip] - Base Max Package Release for Windows machines, essentially similar same as the more mature MacOS release but without support for `Faust.chug`, `Warpbuf.chug` and `Fluidsynth.chug` chugins.
+- [chuck-max-0.2.0-windows-amd64.zip](https://github.com/shakfu/chuck-max/releases/download/0.2.0/chuck-max-0.2.0-windows-amd64.zip) - Base Max Package Release for Windows machines, essentially similar same as the more mature MacOS release but without support for `Faust.chug`, `Warpbuf.chug` and `Fluidsynth.chug` chugins.
 
-### Cross-Platform
+### Cross-Platform Releases
 
-- [chuck-max-0.2.0-multi.zip] - The `MULTI-1` build is a cross-platform Max Package which includes both arm64 MacOS and Windows externals, ChucK examples and both MacOs and Windows versions of CCRMA Chugins, as well as `Faust.chug`, `Warpbuf.chug` and `Fluidsynth.chug` support for the MacOS external.
+- [chuck-max-0.2.0-multi.zip](https://github.com/shakfu/chuck-max/releases/download/0.2.0/chuck-max-0.2.0-multi.zip) - The `MULTI-1` build is a cross-platform Max Package which includes both arm64 MacOS and Windows externals, ChucK examples and both MacOs and Windows versions of CCRMA Chugins, as well as `Faust.chug`, `Warpbuf.chug` and `Fluidsynth.chug` support for the MacOS external.
