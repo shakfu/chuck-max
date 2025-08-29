@@ -20,6 +20,7 @@ chuck-max `v0.2.0` is a major milestone release that brings Windows support `chu
 ### Enhanced Build System
 
 - **Alternative Build Method**: Added support for building via [go-task](https://taskfile.dev), a fast, cross-platform build tool inspired by Make.
+- **Improved Github Actions**: Added support for building both windows and macOs packages as well as cross-platform packages using Github actions.
 - **Bundled Chugins**: New `BUNDLED=1` macOS-only option for bundling chugins directly in the external's bundle
 - **ChuGL Support**: Added support for building `ChuGL.chug` on both macOS and Windows
 - **Chump Integration**: Chump is now available as a cmake-compilable subproject as a first step to further integration.
