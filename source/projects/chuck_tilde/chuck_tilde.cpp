@@ -766,6 +766,7 @@ t_symbol* ck_check_file(t_ck* x, t_symbol* name)
     // 2. check if exists with an `examples` folder prefix
     char eg_file[MAX_PATH_CHARS];
     snprintf_zero(eg_file, MAX_PATH_CHARS, "%s/%s", x->working_dir->s_name, filepath);
+    ck_debug(x, "example file: %s", eg_file);
     if (path_exists(eg_file)) {
         return gensym(eg_file);
     }
@@ -902,9 +903,11 @@ t_max_err ck_edit(t_ck* x, t_symbol* s)
         x->edit_file = ck_check_file(x, s);
         if (x->edit_file != gensym("")) {
             std::string cmd;
+            fs::path _file = std::string(x->edit_file->s_name);
+            fs::path canonical_path = std::filesystem::canonical(_file);
             ck_debug(x, (char*)"edit: %s", x->edit_file->s_name);
-
-            cmd = std::string(x->editor->s_name) + " " + std::string(x->edit_file->s_name);
+            cmd = std::string(x->editor->s_name) + " \"" + canonical_path.make_preferred().string() + "\"";
+            ck_debug(x, (char*)"edit cmd: %s", cmd.c_str());
             std::system(cmd.c_str());
             return MAX_ERR_NONE;
         }

@@ -15,8 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [0.2.x]
 
 
+## [0.2.1]
 
-## [0.2.0]
+- Fixed a bug in `ck_edit` function in `chuck_tilde.cpp` which caused the editor to fail to open a chuck file if the package was installed in Max packages directory (because that path has a space). Properly quoting the file path did the trick!
+
+- Changed C++ standard used in this project from 14 to 17 to make available `std::filesystem::path`
+
+## [0.2.0] (Release)
 
 - Added cross-platform package with prefix `-multi` which includes macos arm64 and windows amd64 support.
 
