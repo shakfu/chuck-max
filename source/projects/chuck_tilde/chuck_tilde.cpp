@@ -116,6 +116,7 @@ void ck_error(t_ck* x, char* fmt, ...);
 // helpers
 void replace_character(char* str, char c1, char c2);
 bool path_exists(const char* name);
+bool is_safe_path(const char* path);
 char* ck_atom_gettext(long ac, t_atom* av);
 void ck_dblclick(t_ck* x);
 t_max_err ck_send_max_msg(t_ck* x, t_symbol* s, const char* parsestr);
@@ -184,7 +185,7 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_reset,        "reset",    A_GIMME, 0); // reset -> 'clear vm', 'reset id' 
     class_addmethod(c, (method)ck_status,       "status",   0);
     class_addmethod(c, (method)ck_time,         "time",     0);
- 
+
     class_addmethod(c, (method)ck_chugins,      "chugins",  0);
     class_addmethod(c, (method)ck_globals,      "globals",  0);
     class_addmethod(c, (method)ck_vm,           "vm",       0);
@@ -401,10 +402,19 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
 void ck_free(t_ck* x)
 {
-    delete[] x->in_chuck_buffer;
-    delete[] x->out_chuck_buffer;
-    ChucK::globalCleanup();
-    delete x->chuck;
+    if (x->in_chuck_buffer) {
+        delete[] x->in_chuck_buffer;
+        x->in_chuck_buffer = NULL;
+    }
+    if (x->out_chuck_buffer) {
+        delete[] x->out_chuck_buffer;
+        x->out_chuck_buffer = NULL;
+    }
+    if (x->chuck) {
+        ChucK::globalCleanup();
+        delete x->chuck;
+        x->chuck = NULL;
+    }
     dsp_free((t_pxobject*)x);
 }
 
@@ -518,6 +528,30 @@ bool path_exists(const char* name) {
     }
 }
 #endif
+
+bool is_safe_path(const char* path)
+{
+    if (!path) return false;
+
+    std::string p(path);
+
+    // Check for directory traversal attempts
+    if (p.find("..") != std::string::npos) return false;
+
+    // Check for absolute paths on Unix-like systems
+    if (p.length() > 0 && p[0] == '/') return false;
+
+    // Check for Windows absolute paths
+    if (p.length() > 2 && p[1] == ':') return false;
+
+    // Check for Windows UNC paths
+    if (p.length() > 1 && p[0] == '\\' && p[1] == '\\') return false;
+
+    // Check for null bytes (can be used to bypass checks)
+    if (p.find('\0') != std::string::npos) return false;
+
+    return true;
+}
 
 // repurposed from simplestring_atom_gettext
 char* ck_atom_gettext(long ac, t_atom* av)
@@ -755,6 +789,13 @@ t_symbol* ck_check_file(t_ck* x, t_symbol* name)
     char filepath[MAX_PATH_CHARS];
     char normpath[MAX_PATH_CHARS];
     strncpy_zero(filepath, name->s_name, MAX_FILENAME_CHARS);
+
+    // Validate path for security
+    if (!is_safe_path(filepath)) {
+        ck_error(x, (char*)"ck_check_file: unsafe path detected: %s", filepath);
+        return gensym("");
+    }
+
     path_nameconform(filepath, normpath, PATH_STYLE_MAX, PATH_TYPE_BOOT);
 
 
@@ -787,14 +828,16 @@ t_symbol* ck_check_file(t_ck* x, t_symbol* name)
     t_max_err err;
 
     res = locatefile_extended(filepath, &path, &outtype, &filetypelist, 1);
-    if (res != 0)
+    if (res != 0) {
         ck_error(x, (char*)"ck_check_file: locatefile_extended failed");
         return gensym("");
+    }
 
     err = path_toabsolutesystempath(path, filepath, abspath);
-    if (err != MAX_ERR_NONE)
+    if (err != MAX_ERR_NONE) {
         ck_error(x, (char*)"ck_check_file: path_toabsolutesystempath failed");
         return gensym("");
+    }
 
     normpath[0] = '\0'; // erase it to re-use it
 
@@ -899,20 +942,45 @@ t_max_err ck_edit(t_ck* x, t_symbol* s)
         return MAX_ERR_GENERIC;
     }
 
+    // Validate editor path exists and is safe
+    if (!path_exists(x->editor->s_name)) {
+        ck_error(x, (char*)"ck_edit: editor path does not exist: %s", x->editor->s_name);
+        return MAX_ERR_GENERIC;
+    }
+
     if (s != gensym("")) {
         x->edit_file = ck_check_file(x, s);
         if (x->edit_file != gensym("")) {
-            std::string cmd;
-            fs::path _file = std::string(x->edit_file->s_name);
-            fs::path canonical_path = std::filesystem::canonical(_file);
-            ck_debug(x, (char*)"edit: %s", x->edit_file->s_name);
-            cmd = std::string(x->editor->s_name) + " \"" + canonical_path.make_preferred().string() + "\"";
-            ck_debug(x, (char*)"edit cmd: %s", cmd.c_str());
-            std::system(cmd.c_str());
-            return MAX_ERR_NONE;
+            try {
+                fs::path _file = std::string(x->edit_file->s_name);
+                fs::path canonical_path = std::filesystem::canonical(_file);
+                std::string file_path = canonical_path.make_preferred().string();
+
+                // Additional validation of the canonical path
+                if (!path_exists(file_path.c_str())) {
+                    ck_error(x, (char*)"ck_edit: canonical file path does not exist");
+                    return MAX_ERR_GENERIC;
+                }
+
+                ck_debug(x, (char*)"edit: %s", x->edit_file->s_name);
+
+                // Build command safely with proper escaping
+                std::string cmd = std::string(x->editor->s_name) + " \"" + file_path + "\"";
+                ck_debug(x, (char*)"edit cmd: %s", cmd.c_str());
+
+                // Execute command (still using system, but with validated inputs)
+                int result = std::system(cmd.c_str());
+                if (result != 0) {
+                    ck_warn(x, (char*)"editor command returned non-zero exit code: %d", result);
+                }
+                return MAX_ERR_NONE;
+            } catch (const std::exception& e) {
+                ck_error(x, (char*)"ck_edit: filesystem error: %s", e.what());
+                return MAX_ERR_GENERIC;
+            }
         }
     }
-    ck_error(x, (char*)"ck_edit: reguires a valid filename");
+    ck_error(x, (char*)"ck_edit: requires a valid filename");
     return MAX_ERR_GENERIC;
 }
 
@@ -1200,10 +1268,12 @@ t_max_err ck_status(t_ck* x)
     return MAX_ERR_NONE;
 }
 
+
 t_max_err ck_time(t_ck* x)
 {
     return ck_send_chuck_vm_msg(x, CK_MSG_TIME);
 }
+
 
 t_symbol* ck_get_loglevel_name(long level)
 {

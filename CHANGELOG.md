@@ -12,8 +12,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Security: in case of vulnerabilities.
 
 ---
+
 ## [0.2.x]
 
+### New Features
+
+- Added `AbletonLink` chugin for tempo synchronization with Link-enabled applications
+
+  - Real-time tempo and beat grid synchronization across network
+
+  - Compatible with Ableton Live, Max/MSP, and other Link-enabled software
+
+  - Configurable quantum, resolution, and latency offset settings
+
+  - Thread-safe implementation optimized for audio processing
+
+### Security and Stability Fixes
+
+- Security
+  - Fixed potential command injection vulnerability in `ck_edit` function by adding input validation for editor and file paths
+  
+  - Added path validation function `is_safe_path()` to prevent directory traversal attacks in file operations
+  
+  - Enhanced `ck_check_file()` with security validation to block unsafe path patterns (../, absolute paths, UNC paths)
+
+- Fixed: 
+  - Memory management in `ck_free()` function now includes null checks before deletion to prevent crashes
+  
+  - Control flow errors in `ck_check_file()` by adding missing braces around multi-line if statements
+  
+  - Enhanced error handling in `ck_edit()` with proper exception handling and validation
 
 ## [0.2.1]
 

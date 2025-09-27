@@ -11,6 +11,7 @@ else()
     set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/examples" CACHE PATH "..." FORCE)
 endif()
 
+add_subdirectory(AbletonLink)
 add_subdirectory(ABSaturator)
 add_subdirectory(AmbPan)
 add_subdirectory(Binaural)
