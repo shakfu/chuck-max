@@ -51,11 +51,11 @@ ZIP = $(DIST_NAME).zip
 
 
 .PHONY: all native multi universal full light brew brew-lite nomp3 dev setup \
-		clean reset test test-fauck test-warpbuf test-fluidsynth \
+		clean reset test test-fauck test-warpbuf test-fluidsynth test-audiounit \
 		install_deps install_deps_light install_deps_nomp3 \
 		full2 install_fs_deps chump \
 		sign package dmg zip-dist sign-dmg notarize staple sign-dist sign-bundle \
-		release release-zip
+		release release-zip 
 
 all: native
 
@@ -289,3 +289,8 @@ test-warpbuf:
 test-fluidsynth:
 	@cd examples && ./chuck --chugin-path:chugins fluidsynth/FluidSynth-test.ck -v3
 
+test-audiounit:
+	@cd examples && ./chuck --chugin-path:chugins audiounit/00-list-audiounit.ck -v3
+
+test-audiounit1:
+	@cd examples && ./chuck --chugin-path:chugins audiounit/07-midi.ck -v3
