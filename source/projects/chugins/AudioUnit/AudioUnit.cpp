@@ -28,6 +28,8 @@
 #include <map>
 #include <string>
 
+#include "ext.h"
+
 #ifdef __APPLE__
 #include <AudioToolbox/AudioToolbox.h>
 #include <CoreFoundation/CoreFoundation.h>
@@ -117,14 +119,14 @@ public:
         AudioComponent component = AudioComponentFindNext(NULL, &desc);
         if(!component)
         {
-            fprintf(stderr, "[AudioUnit]: Could not find AudioUnit component\n");
+            error("[AudioUnit]: Could not find AudioUnit component");
             return false;
         }
 
         OSStatus status = AudioComponentInstanceNew(component, &m_audioUnit);
         if(status != noErr)
         {
-            fprintf(stderr, "[AudioUnit]: Could not instantiate AudioUnit (error %d)\n", (int)status);
+            error("[AudioUnit]: Could not instantiate AudioUnit (error %d)", (int)status);
             return false;
         }
 
@@ -173,7 +175,7 @@ public:
         status = AudioUnitInitialize(m_audioUnit);
         if(status != noErr)
         {
-            fprintf(stderr, "[AudioUnit]: Could not initialize AudioUnit (error %d)\n", (int)status);
+            error("[AudioUnit]: Could not initialize AudioUnit (error %d)", (int)status);
             AudioComponentInstanceDispose(m_audioUnit);
             m_audioUnit = NULL;
             return false;
@@ -299,8 +301,8 @@ public:
         AudioComponent component = NULL;
         int count = 0;
 
-        fprintf(stderr, "\n[AudioUnit]: Available AudioUnits:\n");
-        fprintf(stderr, "----------------------------------------\n");
+        post("[AudioUnit]: Available AudioUnits:");
+        post("----------------------------------------");
 
         while((component = AudioComponentFindNext(component, &desc)))
         {
@@ -333,24 +335,24 @@ public:
             else if(foundDesc.componentType == kAudioUnitType_Mixer)
                 typeStr = "Mixer";
 
-            fprintf(stderr, "%3d. [%s] %s\n", ++count, typeStr, nameBuffer);
-            fprintf(stderr, "     Type: '%c%c%c%c' SubType: '%c%c%c%c' Mfr: '%c%c%c%c'\n",
-                   (char)(foundDesc.componentType >> 24),
-                   (char)(foundDesc.componentType >> 16),
-                   (char)(foundDesc.componentType >> 8),
-                   (char)foundDesc.componentType,
-                   (char)(foundDesc.componentSubType >> 24),
-                   (char)(foundDesc.componentSubType >> 16),
-                   (char)(foundDesc.componentSubType >> 8),
-                   (char)foundDesc.componentSubType,
-                   (char)(foundDesc.componentManufacturer >> 24),
-                   (char)(foundDesc.componentManufacturer >> 16),
-                   (char)(foundDesc.componentManufacturer >> 8),
-                   (char)foundDesc.componentManufacturer);
+            post("%3d. [%s] %s\n", ++count, typeStr, nameBuffer);
+            // post("     Type: '%c%c%c%c' SubType: '%c%c%c%c' Mfr: '%c%c%c%c'\n",
+            //        (char)(foundDesc.componentType >> 24),
+            //        (char)(foundDesc.componentType >> 16),
+            //        (char)(foundDesc.componentType >> 8),
+            //        (char)foundDesc.componentType,
+            //        (char)(foundDesc.componentSubType >> 24),
+            //        (char)(foundDesc.componentSubType >> 16),
+            //        (char)(foundDesc.componentSubType >> 8),
+            //        (char)foundDesc.componentSubType,
+            //        (char)(foundDesc.componentManufacturer >> 24),
+            //        (char)(foundDesc.componentManufacturer >> 16),
+            //        (char)(foundDesc.componentManufacturer >> 8),
+            //        (char)foundDesc.componentManufacturer);
         }
 
-        fprintf(stderr, "----------------------------------------\n");
-        fprintf(stderr, "Total: %d AudioUnits\n\n", count);
+        post("----------------------------------------");
+        post("Total: %d AudioUnits", count);
     }
 
 private:
@@ -410,7 +412,7 @@ private:
             }
         }
 
-        fprintf(stderr, "[AudioUnit]: Could not find AudioUnit named '%s'\n", name);
+        error("[AudioUnit]: Could not find AudioUnit named '%s'", name);
         return false;
     }
 
@@ -522,7 +524,7 @@ public:
     t_CKINT getParameterCount() { return 0; }
     void setBypass(bool bypass) {}
     static void listAudioUnits() {
-        fprintf(stderr, "[AudioUnit]: AudioUnits are only available on macOS\n");
+        error("[AudioUnit]: AudioUnits are only available on macOS");
     }
 };
 
@@ -593,7 +595,6 @@ CK_DLL_QUERY(AudioUnit)
 CK_DLL_CTOR(audiounit_ctor)
 {
     OBJ_MEMBER_INT(SELF, audiounit_data_offset) = 0;
-
     AudioUnitWrapper* wrapper = new AudioUnitWrapper(API->vm->srate(VM));
 
     OBJ_MEMBER_INT(SELF, audiounit_data_offset) = (t_CKINT)wrapper;
