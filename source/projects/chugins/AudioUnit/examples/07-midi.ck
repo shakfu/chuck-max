@@ -1,69 +1,110 @@
-// AudioUnit with MIDI Control
-// Demonstrates using MIDI to control an AudioUnit instrument
+// AudioUnit MIDI - Option A: Direct Programmatic Control
+// Demonstrates sending MIDI messages directly to an AudioUnit instrument
 
 @import "AudioUnit";
 
-// Note: This is a conceptual example showing how MIDI would be used
-// with AudioUnit instruments. The actual implementation depends on
-// the AudioUnit's MIDI handling capabilities.
+<<< "=== AudioUnit Direct MIDI Control (Option A) ===" >>>;
+<<< "" >>>;
 
-<<< "=== AudioUnit MIDI Control Example ===" >>>;
-
-<<< "Note: This is a conceptual example." >>>;
-
-<<< "AudioUnit instruments typically accept MIDI messages through:" >>>;
-<<< "  1. Direct MIDI input (requires MIDI interface)" >>>;
-<<< "  2. Programmatic MIDI events" >>>;
-
-<<< "Currently, the AudioUnit chugin processes audio only." >>>;
-<<< "MIDI functionality would require:" >>>;
-<<< "  - Extension to send MIDI events to the AudioUnit" >>>;
-<<< "  - Methods like: au.noteOn(pitch, velocity)" >>>;
-<<< "  - Methods like: au.noteOff(pitch)" >>>;
-<<< "  - Methods like: au.controlChange(cc, value)" >>>;
-
-
-// Conceptual usage (not yet implemented):
-/*
+// Create AudioUnit and connect to audio output
 AudioUnit synth => dac;
 
-if (synth.load("DLSMusicDevice")) {
-    // Future MIDI methods (not yet implemented):
-    // synth.noteOn(60, 100);    // Middle C, velocity 100
-    // 1::second => now;
-    // synth.noteOff(60);
+// IMPORTANT: Set gain to hear output
+0.5 => synth.gain;
 
-    synth.close();
-}
-*/
-
-<<< "=== Workaround: Use ChucK's native MIDI ===" >>>;
-
-<<< "For now, to use MIDI with audio effects:" >>>;
-<<< "  1. Use ChucK's built-in instruments/oscillators" >>>;
-<<< "  2. Control them with MidiIn" >>>;
-<<< "  3. Process through AudioUnit effects" >>>;
-
-
-// Practical workaround example:
-SinOsc osc => AudioUnit au => dac;
-0.3 => osc.gain;
-
-if (au.load("AUDistortion")) {
-    <<< "Example: MIDI-controlled oscillator through AudioUnit effect" >>>;
-
-
-    // Simulate MIDI note events
-    [60, 64, 67, 72] @=> int notes[];
-
-    for (0 => int i; i < notes.size(); i++) {
-        Std.mtof(notes[i]) => osc.freq;
-        <<< "Note:", notes[i], "Freq:", osc.freq() >>>;
-        500::ms => now;
-    }
-
-    au.close();
+// Load a MusicDevice (instrument) AudioUnit
+if (!synth.load("DLSMusicDevice")) {
+    <<< "Failed to load DLSMusicDevice" >>>;
+    me.exit();
 }
 
+// Check if it's a MusicDevice
+if (!synth.isMusicDevice()) {
+    <<< "Not a MusicDevice, MIDI methods won't work" >>>;
+    me.exit();
+}
 
+<<< "Loaded MusicDevice:", synth.getMIDIDeviceName() >>>;
+<<< "" >>>;
+<<< "This example demonstrates direct programmatic MIDI control." >>>;
+<<< "MIDI messages are sent from ChucK code directly to the AudioUnit." >>>;
+<<< "" >>>;
+
+// Method 1: High-level convenience methods
+<<< "=== Method 1: Using noteOn/noteOff ===" >>>;
+<<< "" >>>;
+
+// Play a simple melody using direct MIDI control
+[60, 64, 67, 72] @=> int melody[];
+[100, 90, 95, 110] @=> int velocities[];
+
+for (0 => int i; i < melody.size(); i++) {
+    // Send note on
+    synth.noteOn(melody[i], velocities[i]);
+    <<< "noteOn:", melody[i], "velocity:", velocities[i] >>>;
+
+    // Let it play
+    400::ms => now;
+
+    // Send note off
+    synth.noteOff(melody[i]);
+    <<< "noteOff:", melody[i] >>>;
+
+    // Gap between notes
+    100::ms => now;
+}
+
+<<< "" >>>;
+<<< "=== Method 2: Using Control Change ===" >>>;
+<<< "" >>>;
+
+// Play a note and modulate it with CC
+synth.noteOn(60, 100);
+<<< "Playing note 60..." >>>;
+
+for (0 => int i; i < 128; i++) {
+    synth.controlChange(1, i);  // Modulation wheel
+    10::ms => now;
+}
+
+synth.noteOff(60);
+<<< "CC modulation complete" >>>;
+<<< "" >>>;
+
+// Method 3: Using raw MIDI for full control
+<<< "=== Method 3: Using sendMIDI (raw MIDI) ===" >>>;
+<<< "" >>>;
+
+// Note on: 0x90 (channel 0), pitch 67, velocity 120
+synth.sendMIDI(0x90, 67, 120);
+<<< "sendMIDI: Note ON (0x90, 67, 120)" >>>;
+500::ms => now;
+
+// Note off: 0x80 (channel 0), pitch 67
+synth.sendMIDI(0x80, 67, 0);
+<<< "sendMIDI: Note OFF (0x80, 67, 0)" >>>;
+500::ms => now;
+
+<<< "" >>>;
+<<< "=== Method 4: Program Change ===" >>>;
+<<< "" >>>;
+
+// Try different instrument programs
+for (0 => int i; i < 3; i++) {
+    synth.programChange(i);
+    <<< "Program:", i >>>;
+
+    synth.noteOn(60, 100);
+    300::ms => now;
+    synth.noteOff(60);
+    200::ms => now;
+}
+
+<<< "" >>>;
+<<< "=== Cleaning up ===" >>>;
+synth.close();
+<<< "AudioUnit closed" >>>;
+<<< "" >>>;
+<<< "See 07-midi-routing.ck for virtual MIDI destination example (Option C)" >>>;
+<<< "" >>>;
 <<< "=== Example complete ===" >>>;

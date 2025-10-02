@@ -11,5 +11,6 @@ add_chugin(
         ${MAX_SDK_INCLUDES}
     LINK_LIBS
         "$<$<PLATFORM_ID:Darwin>:-framework CoreFoundation>"
-        "$<$<PLATFORM_ID:Darwin>:-framework AudioToolbox>"        
+        "$<$<PLATFORM_ID:Darwin>:-framework CoreMIDI>"
+        "$<$<PLATFORM_ID:Darwin>:-framework AudioToolbox>" 
 )

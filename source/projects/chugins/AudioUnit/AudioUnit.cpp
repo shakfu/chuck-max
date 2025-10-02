@@ -28,11 +28,10 @@
 #include <map>
 #include <string>
 
-#include "ext.h"
-
 #ifdef __APPLE__
 #include <AudioToolbox/AudioToolbox.h>
 #include <CoreFoundation/CoreFoundation.h>
+#include <CoreMIDI/CoreMIDI.h>
 #endif
 
 // Forward declarations
@@ -52,6 +51,13 @@ CK_DLL_MFUN(audiounit_set_preset);
 CK_DLL_MFUN(audiounit_get_preset);
 CK_DLL_MFUN(audiounit_get_preset_count);
 CK_DLL_MFUN(audiounit_bypass);
+CK_DLL_MFUN(audiounit_send_midi);
+CK_DLL_MFUN(audiounit_note_on);
+CK_DLL_MFUN(audiounit_note_off);
+CK_DLL_MFUN(audiounit_control_change);
+CK_DLL_MFUN(audiounit_program_change);
+CK_DLL_MFUN(audiounit_is_music_device);
+CK_DLL_MFUN(audiounit_get_midi_device);
 
 t_CKINT audiounit_data_offset = 0;
 
@@ -66,25 +72,34 @@ public:
         , m_numInputs(1)
         , m_numOutputs(1)
         , m_bypass(false)
+        , m_midiClient(0)
+        , m_midiDestination(0)
+        , m_sampleTime(0)
+        , m_bufferList(NULL)
     {
-        // Allocate input/output buffers
-        m_inputBuffer.mNumberChannels = 2;
-        m_inputBuffer.mDataByteSize = sizeof(float) * 2;
-        m_inputBuffer.mData = calloc(2, sizeof(float));
+        // Allocate buffers for non-interleaved stereo
+        // Non-interleaved means separate buffers for left and right channels
+        m_outputBufferData[0] = (float*)calloc(1, sizeof(float));
+        m_outputBufferData[1] = (float*)calloc(1, sizeof(float));
 
-        m_outputBuffer.mNumberChannels = 2;
-        m_outputBuffer.mDataByteSize = sizeof(float) * 2;
-        m_outputBuffer.mData = calloc(2, sizeof(float));
+        // Allocate AudioBufferList with space for 2 buffers
+        m_bufferList = (AudioBufferList*)malloc(offsetof(AudioBufferList, mBuffers) + 2 * sizeof(AudioBuffer));
+        m_bufferList->mNumberBuffers = 2;  // 2 buffers for stereo non-interleaved
+        m_bufferList->mBuffers[0].mNumberChannels = 1;
+        m_bufferList->mBuffers[0].mDataByteSize = sizeof(float);
+        m_bufferList->mBuffers[0].mData = m_outputBufferData[0];
 
-        m_bufferList.mNumberBuffers = 1;
-        m_bufferList.mBuffers[0] = m_outputBuffer;
+        m_bufferList->mBuffers[1].mNumberChannels = 1;
+        m_bufferList->mBuffers[1].mDataByteSize = sizeof(float);
+        m_bufferList->mBuffers[1].mData = m_outputBufferData[1];
     }
 
     ~AudioUnitWrapper()
     {
         close();
-        if(m_inputBuffer.mData) free(m_inputBuffer.mData);
-        if(m_outputBuffer.mData) free(m_outputBuffer.mData);
+        if(m_outputBufferData[0]) free(m_outputBufferData[0]);
+        if(m_outputBufferData[1]) free(m_outputBufferData[1]);
+        if(m_bufferList) free(m_bufferList);
     }
 
     bool load(const char* name)
@@ -119,14 +134,14 @@ public:
         AudioComponent component = AudioComponentFindNext(NULL, &desc);
         if(!component)
         {
-            error("[AudioUnit]: Could not find AudioUnit component");
+            fprintf(stderr, "[AudioUnit]: Could not find AudioUnit component\n");
             return false;
         }
 
         OSStatus status = AudioComponentInstanceNew(component, &m_audioUnit);
         if(status != noErr)
         {
-            error("[AudioUnit]: Could not instantiate AudioUnit (error %d)", (int)status);
+            fprintf(stderr, "[AudioUnit]: Could not instantiate AudioUnit (error %d)\n", (int)status);
             return false;
         }
 
@@ -154,13 +169,17 @@ public:
                                      &streamFormat,
                                      sizeof(streamFormat));
 
-        // Set format for input (for effects)
-        AudioUnitSetProperty(m_audioUnit,
-                           kAudioUnitProperty_StreamFormat,
-                           kAudioUnitScope_Input,
-                           0,
-                           &streamFormat,
-                           sizeof(streamFormat));
+        // Set format for input (for effects only, not for MusicDevice)
+        if(m_componentType != kAudioUnitType_MusicDevice &&
+           m_componentType != kAudioUnitType_Generator)
+        {
+            AudioUnitSetProperty(m_audioUnit,
+                               kAudioUnitProperty_StreamFormat,
+                               kAudioUnitScope_Input,
+                               0,
+                               &streamFormat,
+                               sizeof(streamFormat));
+        }
 
         // Set maximum frames per slice
         UInt32 maxFrames = 1;
@@ -175,7 +194,7 @@ public:
         status = AudioUnitInitialize(m_audioUnit);
         if(status != noErr)
         {
-            error("[AudioUnit]: Could not initialize AudioUnit (error %d)", (int)status);
+            fprintf(stderr, "[AudioUnit]: Could not initialize AudioUnit (error %d)\n", (int)status);
             AudioComponentInstanceDispose(m_audioUnit);
             m_audioUnit = NULL;
             return false;
@@ -184,11 +203,29 @@ public:
         // Cache parameter info
         cacheParameters();
 
+        // Create virtual MIDI destination if this is a MusicDevice
+        if(m_componentType == kAudioUnitType_MusicDevice)
+        {
+            // Get the component name
+            CFStringRef name = NULL;
+            AudioComponentCopyName(component, &name);
+            char nameBuffer[256] = "Unknown";
+            if(name)
+            {
+                CFStringGetCString(name, nameBuffer, sizeof(nameBuffer), kCFStringEncodingUTF8);
+                CFRelease(name);
+            }
+
+            createVirtualMIDIDestination(nameBuffer);
+        }
+
         return true;
     }
 
     void close()
     {
+        destroyVirtualMIDIDestination();
+
         if(m_audioUnit)
         {
             AudioUnitUninitialize(m_audioUnit);
@@ -203,16 +240,11 @@ public:
         if(!m_audioUnit || m_bypass)
             return input;
 
-        // Set up input
-        float* inputData = (float*)m_inputBuffer.mData;
-        inputData[0] = input;
-        inputData[1] = input;
-
         // Render
         AudioTimeStamp timeStamp;
         memset(&timeStamp, 0, sizeof(AudioTimeStamp));
         timeStamp.mFlags = kAudioTimeStampSampleTimeValid;
-        timeStamp.mSampleTime = 0;
+        timeStamp.mSampleTime = m_sampleTime++;
 
         UInt32 frameCount = 1;
         AudioUnitRenderActionFlags flags = 0;
@@ -220,16 +252,30 @@ public:
         OSStatus status = AudioUnitRender(m_audioUnit,
                                         &flags,
                                         &timeStamp,
-                                        0,
+                                        0,  // output bus
                                         frameCount,
-                                        &m_bufferList);
+                                        m_bufferList);
 
         if(status != noErr)
+        {
+            static bool errorLogged = false;
+            if(!errorLogged) {
+                fprintf(stderr, "[AudioUnit]: Render error %d (type=%c%c%c%c)\n",
+                       (int)status,
+                       (char)(m_componentType >> 24),
+                       (char)(m_componentType >> 16),
+                       (char)(m_componentType >> 8),
+                       (char)m_componentType);
+                errorLogged = true;
+            }
+            // For MusicDevice, even on error, return silence rather than input
+            if(m_componentType == kAudioUnitType_MusicDevice)
+                return 0.0;
             return input;
+        }
 
         // Get output (mono from left channel)
-        float* outputData = (float*)m_outputBuffer.mData;
-        return outputData[0];
+        return m_outputBufferData[0][0];
     }
 
     bool setParameter(t_CKINT index, t_CKFLOAT value)
@@ -289,6 +335,54 @@ public:
         }
     }
 
+    // MIDI methods
+    bool sendMIDI(t_CKINT status, t_CKINT data1, t_CKINT data2)
+    {
+        if(!m_audioUnit || !isMusicDevice())
+            return false;
+
+        OSStatus result = MusicDeviceMIDIEvent(m_audioUnit,
+                                              (UInt32)status,
+                                              (UInt32)data1,
+                                              (UInt32)data2,
+                                              0);  // offsetSampleFrame = 0 for immediate
+        return (result == noErr);
+    }
+
+    bool noteOn(t_CKINT pitch, t_CKINT velocity)
+    {
+        // MIDI note on: 0x90 (note on, channel 0)
+        return sendMIDI(0x90, pitch, velocity);
+    }
+
+    bool noteOff(t_CKINT pitch)
+    {
+        // MIDI note off: 0x80 (note off, channel 0)
+        return sendMIDI(0x80, pitch, 0);
+    }
+
+    bool controlChange(t_CKINT cc, t_CKINT value)
+    {
+        // MIDI control change: 0xB0 (CC, channel 0)
+        return sendMIDI(0xB0, cc, value);
+    }
+
+    bool programChange(t_CKINT program)
+    {
+        // MIDI program change: 0xC0 (program change, channel 0)
+        return sendMIDI(0xC0, program, 0);
+    }
+
+    bool isMusicDevice() const
+    {
+        return m_audioUnit && m_componentType == kAudioUnitType_MusicDevice;
+    }
+
+    const char* getMIDIDeviceName() const
+    {
+        return m_midiDestinationName.c_str();
+    }
+
     static void listAudioUnits()
     {
         AudioComponentDescription desc;
@@ -301,8 +395,8 @@ public:
         AudioComponent component = NULL;
         int count = 0;
 
-        post("[AudioUnit]: Available AudioUnits:");
-        post("----------------------------------------");
+        fprintf(stderr, "\n[AudioUnit]: Available AudioUnits:\n");
+        fprintf(stderr, "----------------------------------------\n");
 
         while((component = AudioComponentFindNext(component, &desc)))
         {
@@ -335,24 +429,24 @@ public:
             else if(foundDesc.componentType == kAudioUnitType_Mixer)
                 typeStr = "Mixer";
 
-            post("%3d. [%s] %s\n", ++count, typeStr, nameBuffer);
-            // post("     Type: '%c%c%c%c' SubType: '%c%c%c%c' Mfr: '%c%c%c%c'\n",
-            //        (char)(foundDesc.componentType >> 24),
-            //        (char)(foundDesc.componentType >> 16),
-            //        (char)(foundDesc.componentType >> 8),
-            //        (char)foundDesc.componentType,
-            //        (char)(foundDesc.componentSubType >> 24),
-            //        (char)(foundDesc.componentSubType >> 16),
-            //        (char)(foundDesc.componentSubType >> 8),
-            //        (char)foundDesc.componentSubType,
-            //        (char)(foundDesc.componentManufacturer >> 24),
-            //        (char)(foundDesc.componentManufacturer >> 16),
-            //        (char)(foundDesc.componentManufacturer >> 8),
-            //        (char)foundDesc.componentManufacturer);
+            fprintf(stderr, "%3d. [%s] %s\n", ++count, typeStr, nameBuffer);
+            fprintf(stderr, "     Type: '%c%c%c%c' SubType: '%c%c%c%c' Mfr: '%c%c%c%c'\n",
+                   (char)(foundDesc.componentType >> 24),
+                   (char)(foundDesc.componentType >> 16),
+                   (char)(foundDesc.componentType >> 8),
+                   (char)foundDesc.componentType,
+                   (char)(foundDesc.componentSubType >> 24),
+                   (char)(foundDesc.componentSubType >> 16),
+                   (char)(foundDesc.componentSubType >> 8),
+                   (char)foundDesc.componentSubType,
+                   (char)(foundDesc.componentManufacturer >> 24),
+                   (char)(foundDesc.componentManufacturer >> 16),
+                   (char)(foundDesc.componentManufacturer >> 8),
+                   (char)foundDesc.componentManufacturer);
         }
 
-        post("----------------------------------------");
-        post("Total: %d AudioUnits", count);
+        fprintf(stderr, "----------------------------------------\n");
+        fprintf(stderr, "Total: %d AudioUnits\n\n", count);
     }
 
 private:
@@ -412,7 +506,7 @@ private:
             }
         }
 
-        error("[AudioUnit]: Could not find AudioUnit named '%s'", name);
+        fprintf(stderr, "[AudioUnit]: Could not find AudioUnit named '%s'\n", name);
         return false;
     }
 
@@ -492,6 +586,92 @@ private:
         free(paramList);
     }
 
+    // MIDI callback - called when MIDI data is received
+    static void midiReadCallback(const MIDIPacketList *pktlist,
+                                void *refCon,
+                                void *connRefCon)
+    {
+        AudioUnitWrapper* wrapper = (AudioUnitWrapper*)refCon;
+        if(!wrapper || !wrapper->m_audioUnit)
+            return;
+
+        const MIDIPacket *packet = &pktlist->packet[0];
+        for(UInt32 i = 0; i < pktlist->numPackets; i++)
+        {
+            // Parse MIDI message
+            if(packet->length >= 1)
+            {
+                UInt8 status = packet->data[0];
+                UInt8 data1 = packet->length >= 2 ? packet->data[1] : 0;
+                UInt8 data2 = packet->length >= 3 ? packet->data[2] : 0;
+
+                // Forward to AudioUnit
+                wrapper->sendMIDI(status, data1, data2);
+            }
+
+            packet = MIDIPacketNext(packet);
+        }
+    }
+
+    void createVirtualMIDIDestination(const char* auName)
+    {
+        destroyVirtualMIDIDestination();
+
+        // Create MIDI client
+        CFStringRef clientName = CFStringCreateWithFormat(NULL, NULL,
+            CFSTR("ChucK AudioUnit MIDI Client"));
+        OSStatus status = MIDIClientCreate(clientName, NULL, NULL, &m_midiClient);
+        CFRelease(clientName);
+
+        if(status != noErr)
+        {
+            fprintf(stderr, "[AudioUnit]: Failed to create MIDI client (error %d)\n", (int)status);
+            return;
+        }
+
+        // Create virtual destination
+        CFStringRef destName = CFStringCreateWithFormat(NULL, NULL,
+            CFSTR("ChucK AudioUnit: %s"), auName);
+        status = MIDIDestinationCreate(m_midiClient,
+                                       destName,
+                                       midiReadCallback,
+                                       this,
+                                       &m_midiDestination);
+
+        if(status == noErr)
+        {
+            char nameBuf[256];
+            CFStringGetCString(destName, nameBuf, sizeof(nameBuf), kCFStringEncodingUTF8);
+            m_midiDestinationName = nameBuf;
+            fprintf(stderr, "[AudioUnit]: Created virtual MIDI destination: %s\n", nameBuf);
+        }
+        else
+        {
+            fprintf(stderr, "[AudioUnit]: Failed to create MIDI destination (error %d)\n", (int)status);
+            MIDIClientDispose(m_midiClient);
+            m_midiClient = 0;
+        }
+
+        CFRelease(destName);
+    }
+
+    void destroyVirtualMIDIDestination()
+    {
+        if(m_midiDestination)
+        {
+            MIDIEndpointDispose(m_midiDestination);
+            m_midiDestination = 0;
+        }
+
+        if(m_midiClient)
+        {
+            MIDIClientDispose(m_midiClient);
+            m_midiClient = 0;
+        }
+
+        m_midiDestinationName.clear();
+    }
+
     AudioUnit m_audioUnit;
     t_CKFLOAT m_sampleRate;
     UInt32 m_componentType;
@@ -499,11 +679,18 @@ private:
     int m_numOutputs;
     bool m_bypass;
 
-    AudioBuffer m_inputBuffer;
-    AudioBuffer m_outputBuffer;
-    AudioBufferList m_bufferList;
+    AudioBufferList* m_bufferList;  // Dynamically allocated for multiple buffers
+    float* m_outputBufferData[2];  // Separate buffers for non-interleaved stereo
 
     std::vector<ParameterInfo> m_parameters;
+
+    // MIDI support
+    MIDIClientRef m_midiClient;
+    MIDIEndpointRef m_midiDestination;
+    std::string m_midiDestinationName;
+
+    // Sample time counter for rendering
+    UInt64 m_sampleTime;
 };
 
 #else // !__APPLE__
@@ -523,8 +710,15 @@ public:
     const char* getParameterName(t_CKINT index) { return ""; }
     t_CKINT getParameterCount() { return 0; }
     void setBypass(bool bypass) {}
+    bool sendMIDI(t_CKINT status, t_CKINT data1, t_CKINT data2) { return false; }
+    bool noteOn(t_CKINT pitch, t_CKINT velocity) { return false; }
+    bool noteOff(t_CKINT pitch) { return false; }
+    bool controlChange(t_CKINT cc, t_CKINT value) { return false; }
+    bool programChange(t_CKINT program) { return false; }
+    bool isMusicDevice() const { return false; }
+    const char* getMIDIDeviceName() const { return ""; }
     static void listAudioUnits() {
-        error("[AudioUnit]: AudioUnits are only available on macOS");
+        fprintf(stderr, "[AudioUnit]: AudioUnits are only available on macOS\n");
     }
 };
 
@@ -584,6 +778,37 @@ CK_DLL_QUERY(AudioUnit)
     QUERY->add_arg(QUERY, "int", "bypass");
     QUERY->doc_func(QUERY, "Bypass the AudioUnit (1 = bypass, 0 = active).");
 
+    // MIDI methods
+    QUERY->add_mfun(QUERY, audiounit_send_midi, "int", "sendMIDI");
+    QUERY->add_arg(QUERY, "int", "status");
+    QUERY->add_arg(QUERY, "int", "data1");
+    QUERY->add_arg(QUERY, "int", "data2");
+    QUERY->doc_func(QUERY, "Send raw MIDI message to AudioUnit (for MusicDevice types). Returns 1 on success.");
+
+    QUERY->add_mfun(QUERY, audiounit_note_on, "int", "noteOn");
+    QUERY->add_arg(QUERY, "int", "pitch");
+    QUERY->add_arg(QUERY, "int", "velocity");
+    QUERY->doc_func(QUERY, "Send MIDI note-on message (channel 0). Returns 1 on success.");
+
+    QUERY->add_mfun(QUERY, audiounit_note_off, "int", "noteOff");
+    QUERY->add_arg(QUERY, "int", "pitch");
+    QUERY->doc_func(QUERY, "Send MIDI note-off message (channel 0). Returns 1 on success.");
+
+    QUERY->add_mfun(QUERY, audiounit_control_change, "int", "controlChange");
+    QUERY->add_arg(QUERY, "int", "cc");
+    QUERY->add_arg(QUERY, "int", "value");
+    QUERY->doc_func(QUERY, "Send MIDI control change message (channel 0). Returns 1 on success.");
+
+    QUERY->add_mfun(QUERY, audiounit_program_change, "int", "programChange");
+    QUERY->add_arg(QUERY, "int", "program");
+    QUERY->doc_func(QUERY, "Send MIDI program change message (channel 0). Returns 1 on success.");
+
+    QUERY->add_mfun(QUERY, audiounit_is_music_device, "int", "isMusicDevice");
+    QUERY->doc_func(QUERY, "Check if loaded AudioUnit is a MusicDevice (instrument). Returns 1 if true.");
+
+    QUERY->add_mfun(QUERY, audiounit_get_midi_device, "string", "getMIDIDeviceName");
+    QUERY->doc_func(QUERY, "Get the name of the virtual MIDI destination (if MusicDevice).");
+
     audiounit_data_offset = QUERY->add_mvar(QUERY, "int", "@au_data", false);
 
     QUERY->end_class(QUERY);
@@ -595,6 +820,7 @@ CK_DLL_QUERY(AudioUnit)
 CK_DLL_CTOR(audiounit_ctor)
 {
     OBJ_MEMBER_INT(SELF, audiounit_data_offset) = 0;
+
     AudioUnitWrapper* wrapper = new AudioUnitWrapper(API->vm->srate(VM));
 
     OBJ_MEMBER_INT(SELF, audiounit_data_offset) = (t_CKINT)wrapper;
@@ -705,4 +931,61 @@ CK_DLL_MFUN(audiounit_bypass)
 
     if(wrapper)
         wrapper->setBypass(bypass != 0);
+}
+
+CK_DLL_MFUN(audiounit_send_midi)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    t_CKINT status = GET_NEXT_INT(ARGS);
+    t_CKINT data1 = GET_NEXT_INT(ARGS);
+    t_CKINT data2 = GET_NEXT_INT(ARGS);
+
+    RETURN->v_int = (wrapper && wrapper->sendMIDI(status, data1, data2)) ? 1 : 0;
+}
+
+CK_DLL_MFUN(audiounit_note_on)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    t_CKINT pitch = GET_NEXT_INT(ARGS);
+    t_CKINT velocity = GET_NEXT_INT(ARGS);
+
+    RETURN->v_int = (wrapper && wrapper->noteOn(pitch, velocity)) ? 1 : 0;
+}
+
+CK_DLL_MFUN(audiounit_note_off)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    t_CKINT pitch = GET_NEXT_INT(ARGS);
+
+    RETURN->v_int = (wrapper && wrapper->noteOff(pitch)) ? 1 : 0;
+}
+
+CK_DLL_MFUN(audiounit_control_change)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    t_CKINT cc = GET_NEXT_INT(ARGS);
+    t_CKINT value = GET_NEXT_INT(ARGS);
+
+    RETURN->v_int = (wrapper && wrapper->controlChange(cc, value)) ? 1 : 0;
+}
+
+CK_DLL_MFUN(audiounit_program_change)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    t_CKINT program = GET_NEXT_INT(ARGS);
+
+    RETURN->v_int = (wrapper && wrapper->programChange(program)) ? 1 : 0;
+}
+
+CK_DLL_MFUN(audiounit_is_music_device)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    RETURN->v_int = (wrapper && wrapper->isMusicDevice()) ? 1 : 0;
+}
+
+CK_DLL_MFUN(audiounit_get_midi_device)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    const char* name = wrapper ? wrapper->getMIDIDeviceName() : "";
+    RETURN->v_string = API->object->create_string(VM, name, false);
 }
