@@ -190,6 +190,22 @@ public:
                            &maxFrames,
                            sizeof(maxFrames));
 
+        // For MusicDevice, set up render callback to provide input
+        if(m_componentType == kAudioUnitType_MusicDevice ||
+           m_componentType == kAudioUnitType_Generator)
+        {
+            AURenderCallbackStruct callbackStruct;
+            callbackStruct.inputProc = renderCallback;
+            callbackStruct.inputProcRefCon = this;
+
+            AudioUnitSetProperty(m_audioUnit,
+                               kAudioUnitProperty_SetRenderCallback,
+                               kAudioUnitScope_Input,
+                               0,
+                               &callbackStruct,
+                               sizeof(callbackStruct));
+        }
+
         // Initialize
         status = AudioUnitInitialize(m_audioUnit);
         if(status != noErr)
@@ -584,6 +600,25 @@ private:
         }
 
         free(paramList);
+    }
+
+    // Render callback - provides silent input for MusicDevice rendering
+    static OSStatus renderCallback(void *inRefCon,
+                                   AudioUnitRenderActionFlags *ioActionFlags,
+                                   const AudioTimeStamp *inTimeStamp,
+                                   UInt32 inBusNumber,
+                                   UInt32 inNumberFrames,
+                                   AudioBufferList *ioData)
+    {
+        // Provide silent input buffers for MusicDevice rendering
+        if(ioData)
+        {
+            for(UInt32 i = 0; i < ioData->mNumberBuffers; i++)
+            {
+                memset(ioData->mBuffers[i].mData, 0, ioData->mBuffers[i].mDataByteSize);
+            }
+        }
+        return noErr;
     }
 
     // MIDI callback - called when MIDI data is received
