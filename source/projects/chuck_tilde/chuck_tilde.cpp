@@ -252,7 +252,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->box = NULL;
         x->patcher_dir = gensym("");
         x->code = gensym("");
-        x->run_needs_audio = 0;
+        x->run_needs_audio = 1; // Default to 1 to prevent issue #11 (loading files before audio)
 
         // get external editor
         if (const char* editor = std::getenv("EDITOR")) {

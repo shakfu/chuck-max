@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [0.2.x]
 
+### Changed
+
+- Made `run_needs_audio` default to 1 to prevent issue #11 (loading files before audio) 
+
 ### New Features
 
 - Added `AudioUnit` chugin (MacOS only)
