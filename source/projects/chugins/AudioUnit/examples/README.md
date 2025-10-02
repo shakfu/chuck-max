@@ -27,6 +27,7 @@ chuck --chugin:/path/to/AudioUnit.chug examples/01-basic-effect.ck
 - **03-parameters.ck** - Discover and control AudioUnit parameters
 - **04-dynamic-control.ck** - Real-time parameter modulation with sine wave
 - **11-parameter-sweep.ck** - Various parameter modulation techniques (linear, sine, triangle, random)
+- **12-parameter-by-name.ck** - Control parameters by name instead of index (more readable)
 
 ### Advanced Features
 
@@ -97,6 +98,7 @@ Most examples use these Apple AudioUnits which are available on all macOS system
 - Different AudioUnits have different parameter ranges
 - Use `03-parameters.ck` to discover parameter names and current values
 - Some parameters may be read-only
+- Use `setParamByName()` and `getParamByName()` for more readable code (see `12-parameter-by-name.ck`)
 
 ## Tips
 

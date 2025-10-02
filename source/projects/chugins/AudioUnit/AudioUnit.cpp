@@ -44,7 +44,9 @@ CK_DLL_MFUN(audiounit_open);
 CK_DLL_MFUN(audiounit_close);
 CK_DLL_MFUN(audiounit_list);
 CK_DLL_MFUN(audiounit_set_param);
+CK_DLL_MFUN(audiounit_set_param_by_name);
 CK_DLL_MFUN(audiounit_get_param);
+CK_DLL_MFUN(audiounit_get_param_by_name);
 CK_DLL_MFUN(audiounit_get_param_name);
 CK_DLL_MFUN(audiounit_get_param_count);
 CK_DLL_MFUN(audiounit_set_preset);
@@ -309,6 +311,27 @@ public:
         return true;
     }
 
+    bool setParameterByName(const char* name, t_CKFLOAT value)
+    {
+        if(!m_audioUnit)
+            return false;
+
+        for(size_t i = 0; i < m_parameters.size(); i++)
+        {
+            if(m_parameters[i].name == name)
+            {
+                AudioUnitSetParameter(m_audioUnit,
+                                    m_parameters[i].paramID,
+                                    kAudioUnitScope_Global,
+                                    0,
+                                    value,
+                                    0);
+                return true;
+            }
+        }
+        return false;
+    }
+
     t_CKFLOAT getParameter(t_CKINT index)
     {
         if(!m_audioUnit || index < 0 || index >= m_parameters.size())
@@ -322,6 +345,32 @@ public:
                             0,
                             &value);
         return value;
+    }
+
+    t_CKFLOAT getParameterByName(const char* name, bool* found = nullptr)
+    {
+        if(!m_audioUnit)
+        {
+            if(found) *found = false;
+            return 0.0;
+        }
+
+        for(size_t i = 0; i < m_parameters.size(); i++)
+        {
+            if(m_parameters[i].name == name)
+            {
+                AudioUnitParameterValue value;
+                AudioUnitGetParameter(m_audioUnit,
+                                    m_parameters[i].paramID,
+                                    kAudioUnitScope_Global,
+                                    0,
+                                    &value);
+                if(found) *found = true;
+                return value;
+            }
+        }
+        if(found) *found = false;
+        return 0.0;
     }
 
     const char* getParameterName(t_CKINT index)
@@ -755,7 +804,9 @@ public:
     void close() {}
     SAMPLE tick(SAMPLE input) { return input; }
     bool setParameter(t_CKINT index, t_CKFLOAT value) { return false; }
+    bool setParameterByName(const char* name, t_CKFLOAT value) { return false; }
     t_CKFLOAT getParameter(t_CKINT index) { return 0.0; }
+    t_CKFLOAT getParameterByName(const char* name, bool* found = nullptr) { if(found) *found = false; return 0.0; }
     const char* getParameterName(t_CKINT index) { return ""; }
     t_CKINT getParameterCount() { return 0; }
     void setBypass(bool bypass) {}
@@ -812,9 +863,18 @@ CK_DLL_QUERY(AudioUnit)
     QUERY->add_arg(QUERY, "float", "value");
     QUERY->doc_func(QUERY, "Set a parameter value by index.");
 
+    QUERY->add_mfun(QUERY, audiounit_set_param_by_name, "int", "setParamByName");
+    QUERY->add_arg(QUERY, "string", "name");
+    QUERY->add_arg(QUERY, "float", "value");
+    QUERY->doc_func(QUERY, "Set a parameter value by name. Returns 1 on success, 0 if parameter not found.");
+
     QUERY->add_mfun(QUERY, audiounit_get_param, "float", "getParam");
     QUERY->add_arg(QUERY, "int", "index");
     QUERY->doc_func(QUERY, "Get a parameter value by index.");
+
+    QUERY->add_mfun(QUERY, audiounit_get_param_by_name, "float", "getParamByName");
+    QUERY->add_arg(QUERY, "string", "name");
+    QUERY->doc_func(QUERY, "Get a parameter value by name. Returns 0.0 if parameter not found.");
 
     QUERY->add_mfun(QUERY, audiounit_get_param_name, "string", "paramName");
     QUERY->add_arg(QUERY, "int", "index");
@@ -950,12 +1010,29 @@ CK_DLL_MFUN(audiounit_set_param)
         wrapper->setParameter(index, value);
 }
 
+CK_DLL_MFUN(audiounit_set_param_by_name)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    std::string name = GET_NEXT_STRING_SAFE(ARGS);
+    t_CKFLOAT value = GET_NEXT_FLOAT(ARGS);
+
+    RETURN->v_int = (wrapper && wrapper->setParameterByName(name.c_str(), value)) ? 1 : 0;
+}
+
 CK_DLL_MFUN(audiounit_get_param)
 {
     AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
     t_CKINT index = GET_NEXT_INT(ARGS);
 
     RETURN->v_float = wrapper ? wrapper->getParameter(index) : 0.0;
+}
+
+CK_DLL_MFUN(audiounit_get_param_by_name)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    std::string name = GET_NEXT_STRING_SAFE(ARGS);
+
+    RETURN->v_float = wrapper ? wrapper->getParameterByName(name.c_str()) : 0.0;
 }
 
 CK_DLL_MFUN(audiounit_get_param_name)
