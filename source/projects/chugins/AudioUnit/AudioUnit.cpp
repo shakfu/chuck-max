@@ -76,6 +76,7 @@ public:
         , m_midiDestination(0)
         , m_sampleTime(0)
         , m_bufferList(NULL)
+        , m_currentInput(0.0)
     {
         // Allocate buffers for non-interleaved stereo
         // Non-interleaved means separate buffers for left and right channels
@@ -190,21 +191,17 @@ public:
                            &maxFrames,
                            sizeof(maxFrames));
 
-        // For MusicDevice, set up render callback to provide input
-        if(m_componentType == kAudioUnitType_MusicDevice ||
-           m_componentType == kAudioUnitType_Generator)
-        {
-            AURenderCallbackStruct callbackStruct;
-            callbackStruct.inputProc = renderCallback;
-            callbackStruct.inputProcRefCon = this;
+        // Set up render callback to provide input for all AudioUnit types
+        AURenderCallbackStruct callbackStruct;
+        callbackStruct.inputProc = renderCallback;
+        callbackStruct.inputProcRefCon = this;
 
-            AudioUnitSetProperty(m_audioUnit,
-                               kAudioUnitProperty_SetRenderCallback,
-                               kAudioUnitScope_Input,
-                               0,
-                               &callbackStruct,
-                               sizeof(callbackStruct));
-        }
+        AudioUnitSetProperty(m_audioUnit,
+                           kAudioUnitProperty_SetRenderCallback,
+                           kAudioUnitScope_Input,
+                           0,
+                           &callbackStruct,
+                           sizeof(callbackStruct));
 
         // Initialize
         status = AudioUnitInitialize(m_audioUnit);
@@ -255,6 +252,9 @@ public:
     {
         if(!m_audioUnit || m_bypass)
             return input;
+
+        // Store input for the render callback
+        m_currentInput = input;
 
         // Render
         AudioTimeStamp timeStamp;
@@ -602,7 +602,7 @@ private:
         free(paramList);
     }
 
-    // Render callback - provides silent input for MusicDevice rendering
+    // Render callback - provides input for AudioUnit rendering
     static OSStatus renderCallback(void *inRefCon,
                                    AudioUnitRenderActionFlags *ioActionFlags,
                                    const AudioTimeStamp *inTimeStamp,
@@ -610,12 +610,23 @@ private:
                                    UInt32 inNumberFrames,
                                    AudioBufferList *ioData)
     {
-        // Provide silent input buffers for MusicDevice rendering
-        if(ioData)
+        AudioUnitWrapper* wrapper = (AudioUnitWrapper*)inRefCon;
+
+        if(ioData && wrapper)
         {
+            // For effects, provide the current input sample
+            // For MusicDevice, provide silent input
+            SAMPLE inputValue = (wrapper->m_componentType == kAudioUnitType_MusicDevice ||
+                                wrapper->m_componentType == kAudioUnitType_Generator)
+                                ? 0.0 : wrapper->m_currentInput;
+
             for(UInt32 i = 0; i < ioData->mNumberBuffers; i++)
             {
-                memset(ioData->mBuffers[i].mData, 0, ioData->mBuffers[i].mDataByteSize);
+                float* buffer = (float*)ioData->mBuffers[i].mData;
+                for(UInt32 j = 0; j < inNumberFrames; j++)
+                {
+                    buffer[j] = inputValue;
+                }
             }
         }
         return noErr;
@@ -726,6 +737,9 @@ private:
 
     // Sample time counter for rendering
     UInt64 m_sampleTime;
+
+    // Current input sample for effects processing
+    SAMPLE m_currentInput;
 };
 
 #else // !__APPLE__

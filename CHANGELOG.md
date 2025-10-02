@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### New Features
 
+- Added `AudioUnit` chugin (MacOS only)
+
 - Added `AbletonLink` chugin for tempo synchronization with Link-enabled applications
 
   - Real-time tempo and beat grid synchronization across network
@@ -36,12 +38,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   
   - Enhanced `ck_check_file()` with security validation to block unsafe path patterns (../, absolute paths, UNC paths)
 
-- Fixed: 
+- Fixed:
   - Memory management in `ck_free()` function now includes null checks before deletion to prevent crashes
-  
+
   - Control flow errors in `ck_check_file()` by adding missing braces around multi-line if statements
-  
+
   - Enhanced error handling in `ck_edit()` with proper exception handling and validation
+
+  - AudioUnit chugin audio effects now properly process input audio instead of passing through unmodified
+    - Added input sample storage and render callback for all AudioUnit types
+    - Effects now receive actual audio input while instruments continue to receive silent input
+    - Fixes issue where AudioUnit effects like AUDelay were not processing audio in Max/MSP context
 
 ## [0.2.1]
 
