@@ -29,6 +29,11 @@ chuck --chugin:/path/to/AudioUnit.chug examples/01-basic-effect.ck
 - **11-parameter-sweep.ck** - Various parameter modulation techniques (linear, sine, triangle, random)
 - **12-parameter-by-name.ck** - Control parameters by name instead of index (more readable)
 
+### Preset Control
+
+- **13-presets.ck** - Discover and select AudioUnit factory presets by index (uses AUReverb with 13 presets)
+- **14-preset-by-name.ck** - Select presets by name instead of index (uses AUDistortion with 22 presets)
+
 ### Advanced Features
 
 - **05-bypass.ck** - Toggle AudioUnit bypass to compare processed vs unprocessed audio
@@ -73,8 +78,8 @@ Most examples use these Apple AudioUnits which are available on all macOS system
 - `AULowpass` - Low-pass filter
 - `AUHighpass` - High-pass filter
 - `AUBandpass` - Band-pass filter
-- `AUReverb` - Reverb effect
-- `AUDistortion` - Distortion effect
+- `AUReverb` - Reverb effect (13 factory presets)
+- `AUDistortion` - Distortion effect (22 factory presets)
 - `AUDynamicsProcessor` - Compressor/limiter/expander/gate
 - `AUPeakLimiter` - Peak limiter
 - `AUNBandEQ` - Multi-band parametric EQ
@@ -100,14 +105,22 @@ Most examples use these Apple AudioUnits which are available on all macOS system
 - Some parameters may be read-only
 - Use `setParamByName()` and `getParamByName()` for more readable code (see `12-parameter-by-name.ck`)
 
+**Presets not available:**
+- Many AudioUnits (including Apple's built-in effects) don't define factory presets
+- This is normal behavior - not all AudioUnits provide presets
+- Third-party synthesizers and effects are more likely to have factory presets
+- Use `13-presets.ck` or call `listPresets()` to see what's available for any AudioUnit
+
 ## Tips
 
 1. **Discover before using**: Run `00-list-audiounit.ck` first to see what's available
-2. **Check parameters**: Use `03-parameters.ck` as a template to explore any AudioUnit
-3. **Start simple**: Begin with `01-basic-effect.ck` before moving to complex chains
-4. **MIDI instruments**: When using MusicDevice AudioUnits, always set gain (e.g., `0.5 => synth.gain`) to hear output
-5. **Test MIDI first**: Use `07-midi-simple.ck` to verify MIDI is working before trying complex examples
-6. **Experiment**: Try different AudioUnits and parameter values to find interesting sounds
+2. **Check parameters**: Use `03-parameters.ck` as a template to explore any AudioUnit's parameters
+3. **Check presets**: Use `13-presets.ck` or `listPresets()` to discover factory presets (if available)
+4. **Start simple**: Begin with `01-basic-effect.ck` before moving to complex chains
+5. **MIDI instruments**: When using MusicDevice AudioUnits, always set gain (e.g., `0.5 => synth.gain`) to hear output
+6. **Test MIDI first**: Use `07-midi-simple.ck` to verify MIDI is working before trying complex examples
+7. **Prefer names over indices**: Use `setParamByName()` and `setPresetByName()` for more maintainable code
+8. **Experiment**: Try different AudioUnits, parameter values, and presets to find interesting sounds
 
 ## Further Reading
 

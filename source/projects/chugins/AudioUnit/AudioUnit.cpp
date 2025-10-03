@@ -50,8 +50,11 @@ CK_DLL_MFUN(audiounit_get_param_by_name);
 CK_DLL_MFUN(audiounit_get_param_name);
 CK_DLL_MFUN(audiounit_get_param_count);
 CK_DLL_MFUN(audiounit_set_preset);
+CK_DLL_MFUN(audiounit_set_preset_by_name);
 CK_DLL_MFUN(audiounit_get_preset);
 CK_DLL_MFUN(audiounit_get_preset_count);
+CK_DLL_MFUN(audiounit_get_preset_name);
+CK_DLL_MFUN(audiounit_list_presets);
 CK_DLL_MFUN(audiounit_bypass);
 CK_DLL_MFUN(audiounit_send_midi);
 CK_DLL_MFUN(audiounit_note_on);
@@ -218,6 +221,9 @@ public:
         // Cache parameter info
         cacheParameters();
 
+        // Cache preset info
+        cachePresets();
+
         // Create virtual MIDI destination if this is a MusicDevice
         if(m_componentType == kAudioUnitType_MusicDevice)
         {
@@ -248,6 +254,7 @@ public:
             m_audioUnit = NULL;
         }
         m_parameters.clear();
+        m_presets.clear();
     }
 
     SAMPLE tick(SAMPLE input)
@@ -400,6 +407,115 @@ public:
         }
     }
 
+    // Preset methods
+    t_CKINT getPresetCount() const
+    {
+        return m_presets.size();
+    }
+
+    const char* getPresetName(t_CKINT index) const
+    {
+        if(index < 0 || index >= m_presets.size())
+            return "";
+        return m_presets[index].name.c_str();
+    }
+
+    bool setPreset(t_CKINT index)
+    {
+        if(!m_audioUnit || index < 0 || index >= m_presets.size())
+            return false;
+
+#ifdef __APPLE__
+        AUPreset preset;
+        preset.presetNumber = m_presets[index].presetNumber;
+        preset.presetName = CFStringCreateWithCString(NULL,
+                                                      m_presets[index].name.c_str(),
+                                                      kCFStringEncodingUTF8);
+
+        OSStatus status = AudioUnitSetProperty(m_audioUnit,
+                                              kAudioUnitProperty_PresentPreset,
+                                              kAudioUnitScope_Global,
+                                              0,
+                                              &preset,
+                                              sizeof(preset));
+
+        if(preset.presetName)
+            CFRelease(preset.presetName);
+
+        return (status == noErr);
+#else
+        return false;
+#endif
+    }
+
+    bool setPresetByName(const char* name)
+    {
+        if(!m_audioUnit)
+            return false;
+
+        for(size_t i = 0; i < m_presets.size(); i++)
+        {
+            if(m_presets[i].name == name)
+            {
+                return setPreset(i);
+            }
+        }
+        return false;
+    }
+
+    t_CKINT getPreset() const
+    {
+        if(!m_audioUnit)
+            return -1;
+
+#ifdef __APPLE__
+        AUPreset preset;
+        UInt32 presetSize = sizeof(preset);
+
+        OSStatus status = AudioUnitGetProperty(m_audioUnit,
+                                              kAudioUnitProperty_PresentPreset,
+                                              kAudioUnitScope_Global,
+                                              0,
+                                              &preset,
+                                              &presetSize);
+
+        if(status == noErr)
+        {
+            // Find the index of this preset in our cached list
+            for(size_t i = 0; i < m_presets.size(); i++)
+            {
+                if(m_presets[i].presetNumber == preset.presetNumber)
+                {
+                    if(preset.presetName)
+                        CFRelease(preset.presetName);
+                    return i;
+                }
+            }
+            if(preset.presetName)
+                CFRelease(preset.presetName);
+        }
+#endif
+        return -1;
+    }
+
+    void listPresets() const
+    {
+        if(m_presets.empty())
+        {
+            fprintf(stderr, "[AudioUnit]: No presets available\n");
+            return;
+        }
+
+        fprintf(stderr, "\n[AudioUnit]: Available Presets:\n");
+        fprintf(stderr, "----------------------------------------\n");
+        for(size_t i = 0; i < m_presets.size(); i++)
+        {
+            fprintf(stderr, "  [%zu] %s\n", i, m_presets[i].name.c_str());
+        }
+        fprintf(stderr, "----------------------------------------\n");
+        fprintf(stderr, "Total: %zu presets\n\n", m_presets.size());
+    }
+
     // MIDI methods
     bool sendMIDI(t_CKINT status, t_CKINT data1, t_CKINT data2)
     {
@@ -518,6 +634,12 @@ private:
     struct ParameterInfo
     {
         AudioUnitParameterID paramID;
+        std::string name;
+    };
+
+    struct PresetInfo
+    {
+        SInt32 presetNumber;
         std::string name;
     };
 
@@ -651,6 +773,70 @@ private:
         free(paramList);
     }
 
+    void cachePresets()
+    {
+        m_presets.clear();
+
+        if(!m_audioUnit)
+            return;
+
+#ifdef __APPLE__
+        CFArrayRef factoryPresets = NULL;
+        UInt32 propertySize = sizeof(factoryPresets);
+
+        OSStatus status = AudioUnitGetProperty(m_audioUnit,
+                                              kAudioUnitProperty_FactoryPresets,
+                                              kAudioUnitScope_Global,
+                                              0,
+                                              &factoryPresets,
+                                              &propertySize);
+
+        if(status != noErr)
+        {
+            // Not an error - many AudioUnits don't have factory presets
+            return;
+        }
+
+        if(factoryPresets == NULL)
+        {
+            fprintf(stderr, "[AudioUnit]: FactoryPresets property returned NULL\n");
+            return;
+        }
+
+        CFIndex numPresets = CFArrayGetCount(factoryPresets);
+
+        for(CFIndex i = 0; i < numPresets; i++)
+        {
+            const AUPreset* preset = (const AUPreset*)CFArrayGetValueAtIndex(factoryPresets, i);
+            if(preset)
+            {
+                PresetInfo info;
+                info.presetNumber = preset->presetNumber;
+
+                if(preset->presetName)
+                {
+                    char nameBuffer[256];
+                    CFStringGetCString(preset->presetName,
+                                     nameBuffer,
+                                     sizeof(nameBuffer),
+                                     kCFStringEncodingUTF8);
+                    info.name = nameBuffer;
+                }
+                else
+                {
+                    char buf[32];
+                    snprintf(buf, sizeof(buf), "Preset %d", (int)preset->presetNumber);
+                    info.name = buf;
+                }
+
+                m_presets.push_back(info);
+            }
+        }
+
+        CFRelease(factoryPresets);
+#endif
+    }
+
     // Render callback - provides input for AudioUnit rendering
     static OSStatus renderCallback(void *inRefCon,
                                    AudioUnitRenderActionFlags *ioActionFlags,
@@ -778,6 +964,7 @@ private:
     float* m_outputBufferData[2];  // Separate buffers for non-interleaved stereo
 
     std::vector<ParameterInfo> m_parameters;
+    std::vector<PresetInfo> m_presets;
 
     // MIDI support
     MIDIClientRef m_midiClient;
@@ -810,6 +997,12 @@ public:
     const char* getParameterName(t_CKINT index) { return ""; }
     t_CKINT getParameterCount() { return 0; }
     void setBypass(bool bypass) {}
+    t_CKINT getPresetCount() const { return 0; }
+    const char* getPresetName(t_CKINT index) const { return ""; }
+    bool setPreset(t_CKINT index) { return false; }
+    bool setPresetByName(const char* name) { return false; }
+    t_CKINT getPreset() const { return -1; }
+    void listPresets() const { fprintf(stderr, "[AudioUnit]: AudioUnits are only available on macOS\n"); }
     bool sendMIDI(t_CKINT status, t_CKINT data1, t_CKINT data2) { return false; }
     bool noteOn(t_CKINT pitch, t_CKINT velocity) { return false; }
     bool noteOff(t_CKINT pitch) { return false; }
@@ -882,6 +1075,27 @@ CK_DLL_QUERY(AudioUnit)
 
     QUERY->add_mfun(QUERY, audiounit_get_param_count, "int", "paramCount");
     QUERY->doc_func(QUERY, "Get the number of parameters available.");
+
+    QUERY->add_mfun(QUERY, audiounit_set_preset, "int", "setPreset");
+    QUERY->add_arg(QUERY, "int", "index");
+    QUERY->doc_func(QUERY, "Set the current preset by index. Returns 1 on success, 0 on failure.");
+
+    QUERY->add_mfun(QUERY, audiounit_set_preset_by_name, "int", "setPresetByName");
+    QUERY->add_arg(QUERY, "string", "name");
+    QUERY->doc_func(QUERY, "Set the current preset by name. Returns 1 on success, 0 if preset not found.");
+
+    QUERY->add_mfun(QUERY, audiounit_get_preset, "int", "getPreset");
+    QUERY->doc_func(QUERY, "Get the current preset index. Returns -1 if no preset is active.");
+
+    QUERY->add_mfun(QUERY, audiounit_get_preset_count, "int", "presetCount");
+    QUERY->doc_func(QUERY, "Get the number of presets available.");
+
+    QUERY->add_mfun(QUERY, audiounit_get_preset_name, "string", "presetName");
+    QUERY->add_arg(QUERY, "int", "index");
+    QUERY->doc_func(QUERY, "Get a preset name by index.");
+
+    QUERY->add_mfun(QUERY, audiounit_list_presets, "void", "listPresets");
+    QUERY->doc_func(QUERY, "List all available presets to the console.");
 
     QUERY->add_mfun(QUERY, audiounit_bypass, "void", "bypass");
     QUERY->add_arg(QUERY, "int", "bypass");
@@ -1048,6 +1262,50 @@ CK_DLL_MFUN(audiounit_get_param_count)
 {
     AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
     RETURN->v_int = wrapper ? wrapper->getParameterCount() : 0;
+}
+
+CK_DLL_MFUN(audiounit_set_preset)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    t_CKINT index = GET_NEXT_INT(ARGS);
+
+    RETURN->v_int = (wrapper && wrapper->setPreset(index)) ? 1 : 0;
+}
+
+CK_DLL_MFUN(audiounit_set_preset_by_name)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    std::string name = GET_NEXT_STRING_SAFE(ARGS);
+
+    RETURN->v_int = (wrapper && wrapper->setPresetByName(name.c_str())) ? 1 : 0;
+}
+
+CK_DLL_MFUN(audiounit_get_preset)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    RETURN->v_int = wrapper ? wrapper->getPreset() : -1;
+}
+
+CK_DLL_MFUN(audiounit_get_preset_count)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    RETURN->v_int = wrapper ? wrapper->getPresetCount() : 0;
+}
+
+CK_DLL_MFUN(audiounit_get_preset_name)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    t_CKINT index = GET_NEXT_INT(ARGS);
+
+    const char* name = wrapper ? wrapper->getPresetName(index) : "";
+    RETURN->v_string = API->object->create_string(VM, name, false);
+}
+
+CK_DLL_MFUN(audiounit_list_presets)
+{
+    AudioUnitWrapper* wrapper = (AudioUnitWrapper*)OBJ_MEMBER_INT(SELF, audiounit_data_offset);
+    if(wrapper)
+        wrapper->listPresets();
 }
 
 CK_DLL_MFUN(audiounit_bypass)

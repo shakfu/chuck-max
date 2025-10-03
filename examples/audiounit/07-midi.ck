@@ -4,7 +4,6 @@
 @import "AudioUnit";
 
 <<< "=== AudioUnit Direct MIDI Control (Option A) ===" >>>;
-<<< "" >>>;
 
 // Create AudioUnit and connect to audio output
 AudioUnit synth => dac;
@@ -25,14 +24,11 @@ if (!synth.isMusicDevice()) {
 }
 
 <<< "Loaded MusicDevice:", synth.getMIDIDeviceName() >>>;
-<<< "" >>>;
 <<< "This example demonstrates direct programmatic MIDI control." >>>;
 <<< "MIDI messages are sent from ChucK code directly to the AudioUnit." >>>;
-<<< "" >>>;
 
 // Method 1: High-level convenience methods
 <<< "=== Method 1: Using noteOn/noteOff ===" >>>;
-<<< "" >>>;
 
 // Play a simple melody using direct MIDI control
 [60, 64, 67, 72] @=> int melody[];
@@ -54,9 +50,7 @@ for (0 => int i; i < melody.size(); i++) {
     100::ms => now;
 }
 
-<<< "" >>>;
 <<< "=== Method 2: Using Control Change ===" >>>;
-<<< "" >>>;
 
 // Play a note and modulate it with CC
 synth.noteOn(60, 100);
@@ -69,11 +63,9 @@ for (0 => int i; i < 128; i++) {
 
 synth.noteOff(60);
 <<< "CC modulation complete" >>>;
-<<< "" >>>;
 
 // Method 3: Using raw MIDI for full control
 <<< "=== Method 3: Using sendMIDI (raw MIDI) ===" >>>;
-<<< "" >>>;
 
 // Note on: 0x90 (channel 0), pitch 67, velocity 120
 synth.sendMIDI(0x90, 67, 120);
@@ -85,9 +77,7 @@ synth.sendMIDI(0x80, 67, 0);
 <<< "sendMIDI: Note OFF (0x80, 67, 0)" >>>;
 500::ms => now;
 
-<<< "" >>>;
 <<< "=== Method 4: Program Change ===" >>>;
-<<< "" >>>;
 
 // Try different instrument programs
 for (0 => int i; i < 3; i++) {
@@ -100,11 +90,8 @@ for (0 => int i; i < 3; i++) {
     200::ms => now;
 }
 
-<<< "" >>>;
 <<< "=== Cleaning up ===" >>>;
 synth.close();
 <<< "AudioUnit closed" >>>;
-<<< "" >>>;
 <<< "See 07-midi-routing.ck for virtual MIDI destination example (Option C)" >>>;
-<<< "" >>>;
 <<< "=== Example complete ===" >>>;

@@ -22,6 +22,10 @@ On Linux and Windows, the chugin will build but AudioUnit functionality will not
   - Integration with ChucK's native MIDI system
 - Access and control AudioUnit parameters dynamically
 - Query available parameters and their names
+- **Factory preset support**
+  - Discover and list available factory presets
+  - Select presets by index or name
+  - Query current preset
 - Bypass AudioUnit processing
 - List all available AudioUnits on the system
 
@@ -96,11 +100,46 @@ au.getParam(0) => float value;
 // Set parameter value (0.0 to 1.0 typically, but depends on plugin)
 au.setParam(0, 0.5);
 
+// Set parameter by name (more readable)
+au.setParamByName("Delay Time", 0.5);
+
+// Get parameter by name
+au.getParamByName("Delay Time") => float delayTime;
+
 // Iterate through all parameters
 for (0 => int i; i < au.paramCount(); i++) {
     <<< "Param", i, ":", au.paramName(i), "=", au.getParam(i) >>>;
 }
 ```
+
+### Controlling Presets
+
+```chuck
+// Get number of factory presets
+au.presetCount() => int numPresets;
+
+// List all presets to console
+au.listPresets();
+
+// Get current preset index (-1 if no preset active)
+au.getPreset() => int currentPreset;
+
+// Get preset name
+au.presetName(0) => string presetName;
+
+// Set preset by index
+au.setPreset(0);  // Returns 1 on success, 0 on failure
+
+// Set preset by name (more readable)
+au.setPresetByName("Vocal Hall");  // Returns 1 on success, 0 if not found
+
+// Iterate through all presets
+for (0 => int i; i < au.presetCount(); i++) {
+    <<< "Preset", i, ":", au.presetName(i) >>>;
+}
+```
+
+**Note:** Many AudioUnits (including most Apple built-in effects like AUDelay, AUSampler) don't define factory presets. For testing preset functionality, use `AUReverb` (13 presets) or `AUDistortion` (22 presets). Third-party synthesizers and effects are also more likely to have presets. Use `listPresets()` or check `presetCount()` to see what's available for any AudioUnit.
 
 ### Bypass
 
@@ -257,6 +296,11 @@ Comprehensive examples are provided in the `examples/` directory:
 - `03-parameters.ck` - Discover and control parameters
 - `04-dynamic-control.ck` - Real-time parameter modulation
 - `11-parameter-sweep.ck` - Various modulation techniques
+- `12-parameter-by-name.ck` - Control parameters by name
+
+### Preset Control
+- `13-presets.ck` - Discover and select factory presets by index (uses AUReverb with 13 presets)
+- `14-preset-by-name.ck` - Select presets by name (uses AUDistortion with 22 presets)
 
 ### Advanced Features
 - `05-bypass.ck` - Toggle bypass mode
@@ -281,10 +325,13 @@ Some AudioUnits included with macOS:
 - `AULowpass` - Low-pass filter
 - `AUHighpass` - High-pass filter
 - `AUBandpass` - Band-pass filter
-- `AUReverb` - Reverb effect
-- `AUDistortion` - Distortion effect
+- `AUReverb` - Reverb effect (13 factory presets)
+- `AUDistortion` - Distortion effect (22 factory presets)
 - `AUPeakLimiter` - Peak limiter
 - `AUDynamicsProcessor` - Compressor/limiter/expander/gate
+
+**Instruments:**
+- `DLSMusicDevice` - Apple's DLS-based synthesizer
 
 **Additional AudioUnits:**
 - Third-party AudioUnit plugins installed on your system will also be available
@@ -312,14 +359,43 @@ Print all available AudioUnits to the console (static method).
 #### `void setParam(int index, float value)`
 Set a parameter value by index.
 
+#### `int setParamByName(string name, float value)`
+Set a parameter value by name.
+- **Returns:** 1 on success, 0 if parameter not found
+
 #### `float getParam(int index)`
 Get a parameter value by index.
+
+#### `float getParamByName(string name)`
+Get a parameter value by name.
+- **Returns:** Parameter value, or 0.0 if parameter not found
 
 #### `string paramName(int index)`
 Get the name of a parameter by index.
 
 #### `int paramCount()`
 Get the total number of parameters.
+
+#### `int setPreset(int index)`
+Set the current preset by index.
+- **Returns:** 1 on success, 0 on failure
+
+#### `int setPresetByName(string name)`
+Set the current preset by name.
+- **Returns:** 1 on success, 0 if preset not found
+
+#### `int getPreset()`
+Get the current preset index.
+- **Returns:** Current preset index, or -1 if no preset is active
+
+#### `int presetCount()`
+Get the total number of factory presets.
+
+#### `string presetName(int index)`
+Get the name of a preset by index.
+
+#### `void listPresets()`
+Print all available factory presets to the console.
 
 #### `void bypass(int bypass)`
 Bypass the AudioUnit (1 = bypass, 0 = active).
@@ -404,6 +480,12 @@ Send raw MIDI message for full control.
 - Different AudioUnits use different parameter ranges
 - Use `paramName()` to identify which parameter controls what
 - Some parameters may be read-only
+
+**Presets not available:**
+- Many AudioUnits (including Apple's built-in effects) don't define factory presets
+- This is normal behavior - not all AudioUnits provide presets
+- Third-party synthesizers and effects are more likely to have factory presets
+- Use `listPresets()` or check `presetCount()` to see what's available for any AudioUnit
 
 ## License
 
