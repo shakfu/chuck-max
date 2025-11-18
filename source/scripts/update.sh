@@ -7,14 +7,17 @@
 CHUCK_REPO=https://github.com/ccrma/chuck.git
 CHUGINS_REPO=https://github.com/ccrma/chugins.git
 PROJECTS_DIR=source/projects
-
+CHUCK_SRC=build/chuck-src
+CHUCK_SRC_EXAMPLES=${CHUCK_SRC}/examples
+PROJECT_SRC_EXAMPLES=source/projects/examples
+PROJECT_EXAMPLES=examples
 
 function update_chuck() {
-	git clone ${CHUCK_REPO} chuck-src && \
+	mkdir -p build &&
+	git clone --depth=1 ${CHUCK_REPO} ${CHUCK_SRC} && \
 	mkdir -p ${PROJECTS_DIR}/chuck-new && \
-	mv chuck-src/src/core ${PROJECTS_DIR}/chuck-new/ && \
-	mv chuck-src/src/host ${PROJECTS_DIR}/chuck-new/ && \
-	rm -rf chuck-src && \
+	mv ${CHUCK_SRC}/src/core ${PROJECTS_DIR}/chuck-new/ && \
+	mv ${CHUCK_SRC}/src/host ${PROJECTS_DIR}/chuck-new/ && \
 	cp ${PROJECTS_DIR}/chuck/CMakeLists.txt ${PROJECTS_DIR}/chuck-new/ && \
 	cp ${PROJECTS_DIR}/chuck/core/CMakeLists.txt ${PROJECTS_DIR}/chuck-new/core/ && \
 	cp ${PROJECTS_DIR}/chuck/host/CMakeLists.txt ${PROJECTS_DIR}/chuck-new/host/ && \
@@ -101,12 +104,68 @@ function update_chugins() {
 }
 
 
+
+function rm_bld() {
+	rm -rf ${CHUCK_SRC_EXAMPLES}/$1
+}
+
+function cp_src_dst() {
+	cp -rf ${PROJECT_SRC_EXAMPLES}/$1 ${PROJECT_EXAMPLES}
+}
+
+function update_examples() {
+	rm_bld README
+	rm_bld book
+	rm_bld hanoi++.ck
+	rm_bld hanoi.ck
+	rm_bld hanoi2.ck
+	rm_bld hanoi3.ck
+	rm_bld help.ck
+	rm_bld otf_01.ck
+	rm_bld otf_02.ck
+	rm_bld otf_03.ck
+	rm_bld otf_04.ck
+	rm_bld otf_05.ck
+	rm_bld otf_06.ck
+	rm_bld otf_07.ck
+	rm_bld status.ck
+
+	echo "replace current examples dir with new"
+	rm -rf ${PROJECT_EXAMPLES}
+	cp -rf ${CHUCK_SRC_EXAMPLES} ${PROJECT_EXAMPLES}
+
+	cp_src_dst README.md
+	cp_src_dst audiounit
+	cp_src_dst chugins
+	cp_src_dst convrev
+	cp_src_dst fauck
+	cp_src_dst faust
+	cp_src_dst fluidsynth
+	cp_src_dst hanoi
+	cp_src_dst line
+	cp_src_dst link
+	cp_src_dst max
+	cp_src_dst otf
+	cp_src_dst test
+	cp_src_dst util
+	cp_src_dst warpbuf
+
+	cp -f ${PROJECT_SRC_EXAMPLES}/data/amen.wav ${PROJECT_EXAMPLES}/data/amen.wav
+	cp -f ${PROJECT_SRC_EXAMPLES}/data/nylon2.mp3 ${PROJECT_EXAMPLES}/data/nylon2.mp3
+	cp -f ${PROJECT_SRC_EXAMPLES}/data/honkeytonk-algo3.ck ${PROJECT_EXAMPLES}/stk/honkeytonk-algo3.ck
+	cp -rf ${PROJECT_SRC_EXAMPLES}/data/midi ${PROJECT_EXAMPLES}/midi/data
+}
+
 function update() {
 	update_chuck
+	update_examples
 	update_chugins
+	rm -rf ${CHUCK_SRC}
 	rm -rf ${PROJECTS_DIR}/chuck-old
 	rm -rf ${PROJECTS_DIR}/chugins-old
 }
+
+
 
 update
 

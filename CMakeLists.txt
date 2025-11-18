@@ -27,6 +27,7 @@ option(CM_FAUST "Build Faust chugin")
 option(CM_MP3 "Enable MP3 support for chugins using libsndfile")
 option(CM_EXTRA_FORMATS "Enable flac, vorbis, ogg and opus support for chugins using libsndfile")
 option(CM_CHUMP "Build experimental chump executable and chugin")
+option(CM_VST3 "Build VST3 chugin")
 
 # warnings options
 option(CM_SKIP_WARNINGS "skip a set of warnings" ON)

@@ -1,0 +1,8 @@
+
+# Build artifacts
+*.o
+*.chug
+*.schug
+*.wasm
+Release/
+Debug/

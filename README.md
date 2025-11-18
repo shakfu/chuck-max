@@ -24,6 +24,11 @@ This cross-platform project combines the power of [ChucK](https://chuck.stanford
   - `WarpBuf` - Time-stretching and pitch-shifting.
   - `Faust` - LLVM-based DSP platform.
   - `FluidSynth` - Software synthesizer with SoundFont support.
+- **Extra chugins**: include experimental plugins:
+  - `AbletonLink` - syncronization using ableton link
+  - `AudioUnit` - audio unit plugin support (macOS only)
+  - `CLAP` - clap plugin support
+  - `VST3` - vst3 plugin support
 - **Max Integration**: Comprehensive Max patchers for testing and demonstration
 - **Community Contributions**: User-contributed patchers and code examples
 

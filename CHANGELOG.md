@@ -21,6 +21,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### New Features
 
+- Added improved auto-update script to make it easier to update examples.
+
+- Updated `chuck` and examples to version `1.5.5.7-dev (chai)`
+
+- Added `VST3` chugin
+
+- Added `CLAP` chugin
+
 - Added `AudioUnit` chugin (MacOS only)
 
 - Added `AbletonLink` chugin for tempo synchronization with Link-enabled applications
