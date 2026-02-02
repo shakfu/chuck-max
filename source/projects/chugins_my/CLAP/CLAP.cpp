@@ -27,9 +27,43 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <sys/stat.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#include <shlobj.h>  // For SHGetFolderPath
+
+// Windows dynamic library loading wrappers
+#define dlopen(path, flags) ((void*)LoadLibraryA(path))
+#define dlsym(handle, symbol) ((void*)GetProcAddress((HMODULE)(handle), symbol))
+#define dlclose(handle) FreeLibrary((HMODULE)(handle))
+
+static const char* dlerror_msg = nullptr;
+static char dlerror_buf[512];
+
+static const char* dlerror()
+{
+    DWORD err = GetLastError();
+    if(err == 0) return nullptr;
+    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                   NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                   dlerror_buf, sizeof(dlerror_buf), NULL);
+    return dlerror_buf;
+}
+
+// RTLD flags (not used on Windows but needed for compatibility)
+// chugin.h may already define these, so guard against redefinition
+#ifndef RTLD_NOW
+#define RTLD_NOW 0
+#endif
+#ifndef RTLD_LOCAL
+#define RTLD_LOCAL 0
+#endif
+
+#else  // POSIX (macOS, Linux)
 #include <dlfcn.h>
 #include <dirent.h>
-#include <sys/stat.h>
+#endif
 
 #ifdef __APPLE__
 #include <CoreFoundation/CoreFoundation.h>
@@ -815,14 +849,18 @@ public:
 
 #ifdef __APPLE__
         searchPaths.push_back("/Library/Audio/Plug-Ins/CLAP");
-        searchPaths.push_back(getenv("HOME") + std::string("/Library/Audio/Plug-Ins/CLAP"));
+        const char* home = getenv("HOME");
+        if(home) searchPaths.push_back(std::string(home) + "/Library/Audio/Plug-Ins/CLAP");
 #elif defined(_WIN32)
-        searchPaths.push_back(getenv("COMMONPROGRAMFILES") + std::string("\\CLAP"));
-        searchPaths.push_back(getenv("LOCALAPPDATA") + std::string("\\Programs\\Common\\CLAP"));
+        const char* commonFiles = getenv("COMMONPROGRAMFILES");
+        const char* localAppData = getenv("LOCALAPPDATA");
+        if(commonFiles) searchPaths.push_back(std::string(commonFiles) + "\\CLAP");
+        if(localAppData) searchPaths.push_back(std::string(localAppData) + "\\Programs\\Common\\CLAP");
 #else // Linux
         searchPaths.push_back("/usr/lib/clap");
         searchPaths.push_back("/usr/local/lib/clap");
-        searchPaths.push_back(getenv("HOME") + std::string("/.clap"));
+        const char* home = getenv("HOME");
+        if(home) searchPaths.push_back(std::string(home) + "/.clap");
 #endif
 
         // Check CLAP_PATH environment variable
@@ -838,6 +876,26 @@ public:
         int count = 0;
         for(const auto& path : searchPaths)
         {
+#ifdef _WIN32
+            // Windows directory enumeration using FindFirstFile/FindNextFile
+            std::string searchPattern = path + "\\*.clap";
+            WIN32_FIND_DATAA findData;
+            HANDLE hFind = FindFirstFileA(searchPattern.c_str(), &findData);
+            if(hFind == INVALID_HANDLE_VALUE) continue;
+
+            do
+            {
+                std::string filename = findData.cFileName;
+                if(filename.length() > 5 && filename.substr(filename.length() - 5) == ".clap")
+                {
+                    fprintf(stderr, "%3d. %s\n", ++count, filename.c_str());
+                    fprintf(stderr, "     Path: %s\\%s\n", path.c_str(), filename.c_str());
+                }
+            } while(FindNextFileA(hFind, &findData));
+
+            FindClose(hFind);
+#else
+            // POSIX directory enumeration using opendir/readdir
             DIR* dir = opendir(path.c_str());
             if(!dir) continue;
 
@@ -845,7 +903,7 @@ public:
             while((entry = readdir(dir)) != nullptr)
             {
                 // On macOS, CLAP plugins are bundles (directories)
-                // On Linux/Windows, they may be files
+                // On Linux, they may be files
                 if(entry->d_type == DT_REG || entry->d_type == DT_LNK || entry->d_type == DT_DIR)
                 {
                     std::string filename = entry->d_name;
@@ -865,6 +923,7 @@ public:
                 }
             }
             closedir(dir);
+#endif
         }
 
         fprintf(stderr, "----------------------------------------\n");

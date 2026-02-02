@@ -146,7 +146,7 @@ As of the current version, `chuck~` implements the core Chuck vm messages as Max
 | Eval code as shred                | `eval <code>`                |                              |
 | Remove shred                      | `remove <shredID>`           | `- <shredID>`                |
 | Remove last shred                 | `remove last`                |                              |
-| Remove all shreds                 | `remove all`                 |                              |
+| Remove all shreds                 | `remove all`                 | `removeall`                  |
 | Replace shred                     | `replace <shredID> <file>`   | `= <shredID> <file>`         |
 | List running shreds               | `status`                     |                              |
 | Clear vm                          | `clear vm`                   | `reset`                      |
@@ -175,6 +175,15 @@ The core set of chuck vm messesages is also extended in `chuck-max` with the fol
 | Clear Max console                       | `clear console`              |
 | Set global UGen to tap                  | `tap <ugen_name>`            |
 | Clear tap (output silence)              | `tap`                        |
+| List all VM parameters                  | `param`                      |
+| Get VM parameter value                  | `param <name>`               |
+| Set VM parameter value                  | `param <name> <value>`       |
+| List all shreds                         | `shreds`                     |
+| List ready/blocked shreds               | `shreds ready/blocked`       |
+| Get shred info                          | `shreds <id>`                |
+| Query shred IDs                         | `shreds highest/last/next`   |
+| Get adaptive mode status                | `adaptive`                   |
+| Set adaptive block size                 | `adaptive <size>`            |
 
 ### Parameter Messages
 
@@ -264,6 +273,103 @@ tap gTap
 The tap outlets will now output the audio from the `gTap` UGen. To stop tapping (output silence), send `tap` with no arguments.
 
 *Note*: The number of tap channels must match the UGen's channel count. For stereo UGens, use `@tap 2`. The tap outlets appear after the main audio outlets.
+
+### VM Parameter Querying
+
+The `param` message allows you to query and set ChucK VM parameters at runtime.
+
+**List all parameters:**
+```
+param
+```
+
+This displays all available parameters grouped by type (integer, string, string list) with their current values.
+
+**Get a specific parameter:**
+```
+param SAMPLE_RATE
+param WORKING_DIRECTORY
+```
+
+**Set a parameter:**
+```
+param VM_ADAPTIVE 256
+param WORKING_DIRECTORY /path/to/files
+```
+
+**Available parameters:**
+
+| Parameter                  | Type        | Description                              |
+| :------------------------- | :---------- | :--------------------------------------- |
+| SAMPLE_RATE                | int         | Audio sample rate                        |
+| INPUT_CHANNELS             | int         | Number of input channels                 |
+| OUTPUT_CHANNELS            | int         | Number of output channels                |
+| VM_ADAPTIVE                | int         | Adaptive block size (0 = disabled)       |
+| VM_HALT                    | int         | Halt VM on no shreds                     |
+| CHUGIN_ENABLE              | int         | Enable chugin loading                    |
+| DUMP_INSTRUCTIONS          | int         | Dump VM instructions                     |
+| DEPRECATE_LEVEL            | int         | Deprecation warning level                |
+| VERSION                    | string      | ChucK version (read-only)                |
+| WORKING_DIRECTORY          | string      | Default working directory                |
+| IMPORT_PATH_SYSTEM         | string list | System chugin search paths               |
+| IMPORT_PATH_USER           | string list | User chugin search paths                 |
+
+### Shred Introspection
+
+The `shreds` message provides detailed information about running shreds (ChucK's concurrent processes).
+
+**List all shreds:**
+```
+shreds
+```
+
+This displays all shreds with their ID, name, and current state (running, ready, or blocked).
+
+**Filter by state:**
+```
+shreds ready      <- list shreds ready to run
+shreds blocked    <- list shreds waiting on events
+```
+
+**Get detailed info about a specific shred:**
+```
+shreds 1
+```
+
+This shows the shred's name, state flags, wake time, start time, and any arguments.
+
+**Query shred IDs:**
+```
+shreds highest    <- highest shred ID ever assigned
+shreds last       <- last shred ID assigned
+shreds next       <- next shred ID to be assigned
+shreds count      <- total number of running shreds
+```
+
+### Adaptive Block Processing
+
+The `adaptive` message controls ChucK's adaptive block processing mode, which can improve CPU performance for certain workloads.
+
+**Query current status:**
+```
+adaptive
+```
+
+**Enable adaptive mode:**
+```
+adaptive 64       <- enable with max block size of 64 samples
+adaptive 128      <- enable with max block size of 128 samples
+```
+
+**Disable adaptive mode:**
+```
+adaptive 0        <- disable adaptive mode
+adaptive 1        <- also disables (size must be > 1 to enable)
+```
+
+When adaptive mode is enabled, the shreduler can process multiple samples at once when no shreds need to wake up, reducing per-sample overhead. The max block size limits how many samples can be processed in one batch.
+
+*Note*: The optimal block size depends on your workload. Larger values may improve performance but can affect timing precision for time-sensitive operations. Start with values like 64 or 128 and adjust based on your needs.
 
 ### Package Structure
 

@@ -94,6 +94,7 @@ t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // remove s
 t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv); // replace shreds 
 t_max_err ck_clear(t_ck* x, t_symbol* s, long argc, t_atom* argv);   // clear_vm, clear_globals
 t_max_err ck_reset(t_ck* x, t_symbol* s, long argc, t_atom* argv);   // clear_vm, reset_id
+t_max_err ck_removeall(t_ck* x);                // remove all shreds (keeps VM state)
 t_max_err ck_status(t_ck* x);                   // metadata about running shreds in the chuck vm
 t_max_err ck_time(t_ck* x);                     // current time
 
@@ -112,6 +113,15 @@ t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // get an
 
 // tap message handler (for reading global UGen samples)
 t_max_err ck_tap(t_ck* x, t_symbol* s);         // set global UGen to tap
+
+// param message handler (for querying/setting VM parameters)
+t_max_err ck_param(t_ck* x, t_symbol* s, long argc, t_atom* argv);
+
+// shreds message handler (for shred introspection)
+t_max_err ck_shreds(t_ck* x, t_symbol* s, long argc, t_atom* argv);
+
+// adaptive message handler (for adaptive block processing control)
+t_max_err ck_adaptive(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 
 // error-reporting / logging helpers
 void ck_stdout_print(const char* msg);
@@ -190,7 +200,8 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_remove,       "remove",   A_GIMME, 0);
     class_addmethod(c, (method)ck_replace,      "replace",  A_GIMME, 0);
     class_addmethod(c, (method)ck_clear,        "clear",    A_GIMME, 0);
-    class_addmethod(c, (method)ck_reset,        "reset",    A_GIMME, 0); // reset -> 'clear vm', 'reset id' 
+    class_addmethod(c, (method)ck_reset,        "reset",    A_GIMME, 0); // reset -> 'clear vm', 'reset id'
+    class_addmethod(c, (method)ck_removeall,    "removeall", 0);
     class_addmethod(c, (method)ck_status,       "status",   0);
     class_addmethod(c, (method)ck_time,         "time",     0);
 
@@ -210,6 +221,9 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_unlisten,     "unlisten", A_SYM, 0);
 
     class_addmethod(c, (method)ck_tap,          "tap",      A_SYM, 0);
+    class_addmethod(c, (method)ck_param,        "param",    A_GIMME, 0);
+    class_addmethod(c, (method)ck_shreds,       "shreds",   A_GIMME, 0);
+    class_addmethod(c, (method)ck_adaptive,     "adaptive", A_GIMME, 0);
 
     class_addmethod(c, (method)ck_bang,         "bang",     0);
     class_addmethod(c, (method)ck_anything,     "anything", A_GIMME, 0);
@@ -1186,6 +1200,16 @@ t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     return MAX_ERR_NONE;
 }
 
+t_max_err ck_removeall(t_ck* x)
+{
+    Chuck_Msg* msg = new Chuck_Msg;
+    msg->type = CK_MSG_REMOVEALL;
+    msg->reply_cb = (ck_msg_func)0;
+    x->chuck->vm()->queue_msg(msg, 1);
+    ck_info(x, (char*)"removeall: removed all shreds");
+    return MAX_ERR_NONE;
+}
+
 t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
     long shred_id;
@@ -1610,6 +1634,310 @@ t_max_err ck_tap(t_ck* x, t_symbol* s)
         ck_info(x, (char*)"tap: set to global UGen '%s'", s->s_name);
     }
     return MAX_ERR_NONE;
+}
+
+t_max_err ck_param(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+{
+    // list of known int params
+    const char* int_params[] = {
+        CHUCK_PARAM_SAMPLE_RATE,
+        CHUCK_PARAM_INPUT_CHANNELS,
+        CHUCK_PARAM_OUTPUT_CHANNELS,
+        CHUCK_PARAM_VM_ADAPTIVE,
+        CHUCK_PARAM_VM_HALT,
+        CHUCK_PARAM_OTF_ENABLE,
+        CHUCK_PARAM_OTF_PORT,
+        CHUCK_PARAM_DUMP_INSTRUCTIONS,
+        CHUCK_PARAM_AUTO_DEPEND,
+        CHUCK_PARAM_DEPRECATE_LEVEL,
+        CHUCK_PARAM_CHUGIN_ENABLE,
+        CHUCK_PARAM_IS_REALTIME_AUDIO_HINT,
+        CHUCK_PARAM_COMPILER_HIGHLIGHT_ON_ERROR,
+        CHUCK_PARAM_TTY_COLOR,
+        CHUCK_PARAM_TTY_WIDTH_HINT,
+        NULL
+    };
+
+    // list of known string params
+    const char* string_params[] = {
+        CHUCK_PARAM_VERSION,
+        CHUCK_PARAM_WORKING_DIRECTORY,
+        NULL
+    };
+
+    // list of known string list params
+    const char* string_list_params[] = {
+        CHUCK_PARAM_USER_CHUGINS,
+        CHUCK_PARAM_IMPORT_PATH_SYSTEM,
+        CHUCK_PARAM_IMPORT_PATH_PACKAGES,
+        CHUCK_PARAM_IMPORT_PATH_USER,
+        NULL
+    };
+
+    // no args: list all available params
+    if (argc == 0) {
+        post("ChucK VM Parameters:");
+        post("  Integer parameters:");
+        for (int i = 0; int_params[i] != NULL; i++) {
+            t_CKINT val = x->chuck->getParamInt(int_params[i]);
+            post("    %s = %lld", int_params[i], (long long)val);
+        }
+        post("  String parameters:");
+        for (int i = 0; string_params[i] != NULL; i++) {
+            std::string val = x->chuck->getParamString(string_params[i]);
+            post("    %s = %s", string_params[i], val.c_str());
+        }
+        post("  String list parameters:");
+        for (int i = 0; string_list_params[i] != NULL; i++) {
+            std::list<std::string> val = x->chuck->getParamStringList(string_list_params[i]);
+            post("    %s (%d items):", string_list_params[i], (int)val.size());
+            for (const auto& item : val) {
+                post("      - %s", item.c_str());
+            }
+        }
+        return MAX_ERR_NONE;
+    }
+
+    // get param name
+    if (argv->a_type != A_SYM) {
+        ck_error(x, (char*)"param: first argument must be parameter name");
+        return MAX_ERR_GENERIC;
+    }
+    t_symbol* param_name = atom_getsym(argv);
+    std::string name = std::string(param_name->s_name);
+
+    // helper lambdas to check param type
+    auto is_int_param = [&]() {
+        for (int i = 0; int_params[i] != NULL; i++) {
+            if (name == int_params[i]) return true;
+        }
+        return false;
+    };
+    auto is_string_param = [&]() {
+        for (int i = 0; string_params[i] != NULL; i++) {
+            if (name == string_params[i]) return true;
+        }
+        return false;
+    };
+    auto is_string_list_param = [&]() {
+        for (int i = 0; string_list_params[i] != NULL; i++) {
+            if (name == string_list_params[i]) return true;
+        }
+        return false;
+    };
+
+    // one arg: get param value
+    if (argc == 1) {
+        if (is_int_param()) {
+            t_CKINT val = x->chuck->getParamInt(name);
+            post("param %s = %lld", name.c_str(), (long long)val);
+        } else if (is_string_param()) {
+            std::string val = x->chuck->getParamString(name);
+            post("param %s = %s", name.c_str(), val.c_str());
+        } else if (is_string_list_param()) {
+            std::list<std::string> val = x->chuck->getParamStringList(name);
+            post("param %s (%d items):", name.c_str(), (int)val.size());
+            for (const auto& item : val) {
+                post("  - %s", item.c_str());
+            }
+        } else {
+            ck_error(x, (char*)"param: unknown parameter '%s'", name.c_str());
+            return MAX_ERR_GENERIC;
+        }
+        return MAX_ERR_NONE;
+    }
+
+    // two+ args: set param value
+    if (argc >= 2) {
+        if (is_int_param()) {
+            if ((argv + 1)->a_type != A_LONG) {
+                ck_error(x, (char*)"param: %s requires an integer value", name.c_str());
+                return MAX_ERR_GENERIC;
+            }
+            t_CKINT val = (t_CKINT)atom_getlong(argv + 1);
+            x->chuck->setParam(name, val);
+            post("param %s set to %lld", name.c_str(), (long long)val);
+        } else if (is_string_param()) {
+            if ((argv + 1)->a_type != A_SYM) {
+                ck_error(x, (char*)"param: %s requires a string value", name.c_str());
+                return MAX_ERR_GENERIC;
+            }
+            std::string val = std::string(atom_getsym(argv + 1)->s_name);
+            x->chuck->setParam(name, val);
+            post("param %s set to %s", name.c_str(), val.c_str());
+        } else if (is_string_list_param()) {
+            // build list from remaining args
+            std::list<std::string> val;
+            for (int i = 1; i < argc; i++) {
+                if ((argv + i)->a_type == A_SYM) {
+                    val.push_back(std::string(atom_getsym(argv + i)->s_name));
+                }
+            }
+            x->chuck->setParam(name, val);
+            post("param %s set to %d items", name.c_str(), (int)val.size());
+        } else {
+            ck_error(x, (char*)"param: unknown parameter '%s'", name.c_str());
+            return MAX_ERR_GENERIC;
+        }
+        return MAX_ERR_NONE;
+    }
+
+    return MAX_ERR_GENERIC;
+}
+
+t_max_err ck_shreds(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+{
+    Chuck_VM_Shreduler* shreduler = x->chuck->vm()->shreduler();
+
+    // no args: list all shreds
+    if (argc == 0) {
+        std::vector<Chuck_VM_Shred*> shreds;
+        shreduler->get_all_shreds(shreds);
+
+        if (shreds.empty()) {
+            post("shreds: no shreds running");
+        } else {
+            post("shreds: %d running", (int)shreds.size());
+            for (const Chuck_VM_Shred* shred : shreds) {
+                const char* state = shred->is_running ? "running" :
+                                   (shred->event ? "blocked" : "ready");
+                post("  [%d] %s (%s)", shred->xid, shred->name.c_str(), state);
+            }
+        }
+        return MAX_ERR_NONE;
+    }
+
+    // handle subcommands
+    if (argv->a_type == A_SYM) {
+        t_symbol* cmd = atom_getsym(argv);
+
+        if (cmd == gensym("all")) {
+            std::vector<t_CKUINT> ids = ck_get_all_shred_ids(x);
+            post("shreds all: %d shreds", (int)ids.size());
+            for (t_CKUINT id : ids) {
+                Chuck_VM_Shred* shred = shreduler->lookup(id);
+                if (shred) {
+                    post("  [%d] %s", shred->xid, shred->name.c_str());
+                }
+            }
+            return MAX_ERR_NONE;
+        }
+
+        if (cmd == gensym("ready")) {
+            std::vector<t_CKUINT> ids = ck_get_ready_shred_ids(x);
+            post("shreds ready: %d shreds", (int)ids.size());
+            for (t_CKUINT id : ids) {
+                Chuck_VM_Shred* shred = shreduler->lookup(id);
+                if (shred) {
+                    post("  [%d] %s", shred->xid, shred->name.c_str());
+                }
+            }
+            return MAX_ERR_NONE;
+        }
+
+        if (cmd == gensym("blocked")) {
+            std::vector<t_CKUINT> ids = ck_get_blocked_shred_ids(x);
+            post("shreds blocked: %d shreds", (int)ids.size());
+            for (t_CKUINT id : ids) {
+                Chuck_VM_Shred* shred = shreduler->lookup(id);
+                if (shred) {
+                    post("  [%d] %s", shred->xid, shred->name.c_str());
+                }
+            }
+            return MAX_ERR_NONE;
+        }
+
+        if (cmd == gensym("highest")) {
+            long id = ck_spork_highest_id(x);
+            post("shreds highest: %d", id);
+            return MAX_ERR_NONE;
+        }
+
+        if (cmd == gensym("last")) {
+            long id = x->chuck->vm()->last_id();
+            post("shreds last: %d", id);
+            return MAX_ERR_NONE;
+        }
+
+        if (cmd == gensym("next")) {
+            long id = x->chuck->vm()->next_id();
+            post("shreds next: %d", id);
+            return MAX_ERR_NONE;
+        }
+
+        if (cmd == gensym("count")) {
+            std::vector<t_CKUINT> ids = ck_get_all_shred_ids(x);
+            post("shreds count: %d", (int)ids.size());
+            return MAX_ERR_NONE;
+        }
+
+        ck_error(x, (char*)"shreds: unknown subcommand '%s'", cmd->s_name);
+        return MAX_ERR_GENERIC;
+    }
+
+    // numeric arg: get info about specific shred
+    if (argv->a_type == A_LONG) {
+        t_CKUINT id = (t_CKUINT)atom_getlong(argv);
+        Chuck_VM_Shred* shred = shreduler->lookup(id);
+
+        if (!shred) {
+            ck_error(x, (char*)"shreds: shred %d not found", (int)id);
+            return MAX_ERR_GENERIC;
+        }
+
+        post("shred [%d]:", shred->xid);
+        post("  name: %s", shred->name.c_str());
+        post("  running: %s", shred->is_running ? "yes" : "no");
+        post("  done: %s", shred->is_done ? "yes" : "no");
+        post("  blocked: %s", shred->event ? "yes (waiting on event)" : "no");
+        post("  wake_time: %.2f samples", shred->wake_time);
+        post("  start: %.2f samples", shred->start);
+
+        if (!shred->args.empty()) {
+            post("  args:");
+            for (const auto& arg : shred->args) {
+                post("    - %s", arg.c_str());
+            }
+        }
+        return MAX_ERR_NONE;
+    }
+
+    ck_error(x, (char*)"shreds: invalid argument");
+    return MAX_ERR_GENERIC;
+}
+
+t_max_err ck_adaptive(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+{
+    Chuck_VM_Shreduler* shreduler = x->chuck->vm()->shreduler();
+
+    // no args: get current adaptive mode status
+    if (argc == 0) {
+        t_CKBOOL adaptive = shreduler->m_adaptive;
+        t_CKUINT max_block = shreduler->m_max_block_size;
+
+        if (adaptive) {
+            post("adaptive: ON (max block size: %d samples)", (int)max_block);
+        } else {
+            post("adaptive: OFF");
+        }
+        return MAX_ERR_NONE;
+    }
+
+    // one arg: set adaptive mode
+    if (argc == 1 && argv->a_type == A_LONG) {
+        t_CKUINT size = (t_CKUINT)atom_getlong(argv);
+        shreduler->set_adaptive(size);
+
+        if (size > 1) {
+            post("adaptive: enabled with max block size %d samples", (int)size);
+        } else {
+            post("adaptive: disabled");
+        }
+        return MAX_ERR_NONE;
+    }
+
+    ck_error(x, (char*)"adaptive: expected no args (get) or integer (set)");
+    return MAX_ERR_GENERIC;
 }
 
 //-----------------------------------------------------------------------------------------------

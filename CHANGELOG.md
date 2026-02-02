@@ -21,31 +21,55 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### New Features
 
+#### New ChucK API Messages
+
 - Added `@tap` attribute and `tap` message for reading audio samples from global UGens
   - Enables tapping into global UGens declared in ChucK code for signal routing to Max
   - Supports mono and multichannel (up to 16 channels) tap configurations
   - Usage: `[chuck~ 2 @tap 2]` creates 2 audio channels + 2 tap outlets
   - Send `tap <ugen_name>` message to specify which global UGen to read from
 
-- Added improved auto-update script to make it easier to update examples.
+- Added `param` message for querying and setting ChucK VM parameters
+  - `param` (no args): lists all available parameters with their current values
+  - `param <name>`: get specific parameter value
+  - `param <name> <value>`: set parameter value
+  - Supports integer, string, and string list parameter types
+
+- Added `shreds` message for shred introspection
+  - `shreds`: list all shreds with IDs, names, and state
+  - `shreds ready`: list ready (running) shreds
+  - `shreds blocked`: list blocked (waiting) shreds
+  - `shreds <id>`: detailed info about specific shred
+  - `shreds highest/last/next/count`: query shred ID info
+
+- Added `removeall` message as a direct way to remove all shreds
+  - Equivalent to `remove all` but more discoverable
+  - Unlike `clear vm`, preserves VM state (globals, etc.)
+
+- Added `adaptive` message for runtime control of adaptive block processing
+  - `adaptive`: query current adaptive mode status
+  - `adaptive <size>`: set adaptive mode (0 to disable, >1 to enable with max block size)
+  - Can improve CPU performance for certain workloads
+
+#### ChucK and Chugins Updates
 
 - Updated `chuck` and examples to version `1.5.5.7-dev (chai)`
 
 - Added `VST3` chugin
 
-- Added `CLAP` chugin
+- Added `CLAP` chugin (macOS and Windows)
 
-- Added `AudioUnit` chugin (MacOS only)
+- Added `AudioUnit` chugin (macOS only)
 
 - Added `AbletonLink` chugin for tempo synchronization with Link-enabled applications
-
   - Real-time tempo and beat grid synchronization across network
-
   - Compatible with Ableton Live, Max/MSP, and other Link-enabled software
-
   - Configurable quantum, resolution, and latency offset settings
-
   - Thread-safe implementation optimized for audio processing
+
+#### Other
+
+- Added improved auto-update script to make it easier to update examples
 
 ### Security and Stability Fixes
 
@@ -67,6 +91,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
     - Added input sample storage and render callback for all AudioUnit types
     - Effects now receive actual audio input while instruments continue to receive silent input
     - Fixes issue where AudioUnit effects like AUDelay were not processing audio in Max/MSP context
+
+  - CLAP chugin now compiles on Windows
+    - Added cross-platform dynamic library loading (LoadLibrary/GetProcAddress on Windows, dlopen/dlsym on POSIX)
+    - Added cross-platform directory enumeration (FindFirstFile/FindNextFile on Windows, opendir/readdir on POSIX)
+    - Fixed CMakeLists.txt to only apply macOS-specific linker flags on Apple platforms
 
 ## [0.2.1]
 
