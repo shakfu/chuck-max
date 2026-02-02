@@ -59,6 +59,11 @@ typedef struct _ck {
     t_symbol* edit_file;            // path of file to edit by external editor
     long run_needs_audio;           // only run/add shred if dsp is on
     t_symbol* code;                 // chuck code buffer
+
+    // tap-related (for reading global UGen samples)
+    long tap_channels;              // number of tap outlet channels (0 = disabled)
+    t_symbol* tap_ugen;             // name of global UGen to tap
+    float* tap_buffer;              // buffer for tapped samples
 } t_ck;
 
 
@@ -104,6 +109,9 @@ t_max_err ck_globals(t_ck* x);                  // list global variables
 t_max_err ck_docs(t_ck* x);                     // open chuck docs in a browser
 t_max_err ck_vm(t_ck* x);                       // get vm state
 t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // get and set loglevels
+
+// tap message handler (for reading global UGen samples)
+t_max_err ck_tap(t_ck* x, t_symbol* s);         // set global UGen to tap
 
 // error-reporting / logging helpers
 void ck_stdout_print(const char* msg);
@@ -201,6 +209,8 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_listen,       "listen",   A_SYM, A_DEFLONG, 0);
     class_addmethod(c, (method)ck_unlisten,     "unlisten", A_SYM, 0);
 
+    class_addmethod(c, (method)ck_tap,          "tap",      A_SYM, 0);
+
     class_addmethod(c, (method)ck_bang,         "bang",     0);
     class_addmethod(c, (method)ck_anything,     "anything", A_GIMME, 0);
 
@@ -226,6 +236,11 @@ void ext_main(void* r)
     CLASS_ATTR_STYLE(c,     "run_needs_audio", 0, "onoff");
     CLASS_ATTR_BASIC(c,     "run_needs_audio", 0);
     // CLASS_ATTR_SAVE(c,      "run_needs_audio", 0);
+
+    // tap: number of additional outlets for tapping global UGen samples
+    CLASS_ATTR_LONG(c,      "tap", ATTR_FLAGS_NONE, t_ck, tap_channels);
+    CLASS_ATTR_LABEL(c,     "tap", 0, "Tap Outlet Channels");
+    CLASS_ATTR_FILTER_CLIP(c, "tap", 0, 16);  // limit to 0-16 channels
 
     // clang-format on
     //------------------------------------------------------------------------
@@ -253,6 +268,11 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->patcher_dir = gensym("");
         x->code = gensym("");
         x->run_needs_audio = 1; // Default to 1 to prevent issue #11 (loading files before audio)
+
+        // tap defaults
+        x->tap_channels = 0;
+        x->tap_ugen = gensym("");
+        x->tap_buffer = NULL;
 
         // get external editor
         if (const char* editor = std::getenv("EDITOR")) {
@@ -322,13 +342,22 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
             atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);  // is 1st arg of object
             filename = atom_getsymarg(1, argc, argv);    // is 2nd arg of object
             x->run_file = ck_check_file(x, filename);
-        } 
+        }
         // else just use defaults
 
+        // process attributes early to get tap_channels before creating outlets
+        attr_args_process(x, argc, argv);
+
         dsp_setup((t_pxobject*)x, x->channels);   // MSP inlets: 2nd arg is # of inlets
-    
+
+        // create main signal outlets
         for (int i = 0; i < x->channels; i++) {
             outlet_new((t_pxobject*)x, "signal"); // signal outlet
+        }
+
+        // create tap outlets (if @tap attribute is set)
+        for (int i = 0; i < x->tap_channels; i++) {
+            outlet_new((t_pxobject*)x, "signal"); // tap signal outlet
         }
 
         // chuck-related
@@ -388,9 +417,10 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         ChucK::setLogLevel(x->loglevel);
 
         post("ChucK %s", x->chuck->version());
-        post("inputs: %d  outputs: %d ",
+        post("inputs: %d  outputs: %d  tap: %d",
             x->chuck->vm()->m_num_adc_channels,
-            x->chuck->vm()->m_num_dac_channels);
+            x->chuck->vm()->m_num_dac_channels,
+            x->tap_channels);
         post("file: %s", x->run_file->s_name);
         post("working dir: %s", x->working_dir->s_name);
         post("chugins dir: %s", x->chugins_dir->s_name);
@@ -410,6 +440,10 @@ void ck_free(t_ck* x)
         delete[] x->out_chuck_buffer;
         x->out_chuck_buffer = NULL;
     }
+    if (x->tap_buffer) {
+        delete[] x->tap_buffer;
+        x->tap_buffer = NULL;
+    }
     if (x->chuck) {
         ChucK::globalCleanup();
         delete x->chuck;
@@ -422,9 +456,14 @@ void ck_free(t_ck* x)
 void ck_assist(t_ck* x, void* b, long m, long a, char* s)
 {
     if (m == ASSIST_INLET) { // inlet
-        snprintf_zero(s, 512, "I am inlet %ld", a);
+        snprintf_zero(s, 512, "(signal) audio input %ld", a + 1);
     } else {                 // outlet
-        snprintf_zero(s, 512, "I am outlet %ld", a);
+        if (a < x->channels) {
+            snprintf_zero(s, 512, "(signal) audio output %ld", a + 1);
+        } else {
+            long tap_index = a - x->channels;
+            snprintf_zero(s, 512, "(signal) tap output %ld", tap_index + 1);
+        }
     }
 }
 
@@ -1555,6 +1594,24 @@ t_max_err ck_vm(t_ck* x)
     return MAX_ERR_NONE;
 }
 
+t_max_err ck_tap(t_ck* x, t_symbol* s)
+{
+    if (x->tap_channels == 0) {
+        ck_error(x, (char*)"tap: no tap outlets configured (use @tap attribute)");
+        return MAX_ERR_GENERIC;
+    }
+
+    if (s == gensym("")) {
+        // clear tap
+        x->tap_ugen = gensym("");
+        ck_info(x, (char*)"tap: cleared");
+    } else {
+        x->tap_ugen = s;
+        ck_info(x, (char*)"tap: set to global UGen '%s'", s->s_name);
+    }
+    return MAX_ERR_NONE;
+}
+
 //-----------------------------------------------------------------------------------------------
 // global event callback
 
@@ -1820,6 +1877,14 @@ void ck_dsp64(t_ck* x, t_object* dsp64, short* count, double samplerate,
     memset(x->out_chuck_buffer, 0.f,
            sizeof(float) * maxvectorsize * x->channels);
 
+    // allocate tap buffer if tap is enabled
+    if (x->tap_channels > 0) {
+        delete[] x->tap_buffer;
+        x->tap_buffer = new float[maxvectorsize * x->tap_channels];
+        memset(x->tap_buffer, 0.f,
+               sizeof(float) * maxvectorsize * x->tap_channels);
+    }
+
     object_method(dsp64, gensym("dsp_add64"), x, ck_perform64, 0, NULL);
 }
 
@@ -1841,9 +1906,44 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
 
     x->chuck->run(x->in_chuck_buffer, x->out_chuck_buffer, n);
 
+    // output main channels
     for (int i = 0; i < n; i++) {
-        for (int chan = 0; chan < numouts; chan++) {
+        for (int chan = 0; chan < x->channels; chan++) {
             outs[chan][i] = *out_ptr++;
+        }
+    }
+
+    // tap global UGen samples if enabled
+    if (x->tap_channels > 0 && x->tap_ugen != gensym("") && x->tap_buffer) {
+        t_CKBOOL success;
+
+        if (x->tap_channels == 1) {
+            // mono tap
+            success = x->chuck->vm()->globals_manager()->getGlobalUGenSamples(
+                x->tap_ugen->s_name, x->tap_buffer, n);
+        } else {
+            // multichannel tap (non-interleaved)
+            success = x->chuck->vm()->globals_manager()->getGlobalUGenSamplesMulti(
+                x->tap_ugen->s_name, x->tap_buffer, n, x->tap_channels);
+        }
+
+        if (success) {
+            // output tap channels (buffer is non-interleaved for multi)
+            long tap_outlet_start = x->channels;  // tap outlets come after main outlets
+            for (int chan = 0; chan < x->tap_channels; chan++) {
+                float* tap_src = x->tap_buffer + (chan * n);
+                for (int i = 0; i < n; i++) {
+                    outs[tap_outlet_start + chan][i] = tap_src[i];
+                }
+            }
+        } else {
+            // UGen not found or not ready - output silence
+            long tap_outlet_start = x->channels;
+            for (int chan = 0; chan < x->tap_channels; chan++) {
+                for (int i = 0; i < n; i++) {
+                    outs[tap_outlet_start + chan][i] = 0.0;
+                }
+            }
         }
     }
 }

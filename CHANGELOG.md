@@ -17,9 +17,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Changed
 
-- Made `run_needs_audio` default to 1 to prevent issue #11 (loading files before audio) 
+- Made `run_needs_audio` default to 1 to prevent issue #11 (loading files before audio)
 
 ### New Features
+
+- Added `@tap` attribute and `tap` message for reading audio samples from global UGens
+  - Enables tapping into global UGens declared in ChucK code for signal routing to Max
+  - Supports mono and multichannel (up to 16 channels) tap configurations
+  - Usage: `[chuck~ 2 @tap 2]` creates 2 audio channels + 2 tap outlets
+  - Send `tap <ugen_name>` message to specify which global UGen to read from
 
 - Added improved auto-update script to make it easier to update examples.
 

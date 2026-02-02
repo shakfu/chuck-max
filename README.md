@@ -121,6 +121,7 @@ make brew
   - `[chuck~ <N>]` : N channel in/out, no default chuck file
   - `[chuck~ <filename>]` : single channel in/out with default chuck file
   - `[chuck~ <N> <filename>]` : N channels with default chuck file
+  - `[chuck~ <N> @tap <M>]` : N audio channels + M tap outlets for reading global UGens
 
 It's recommended to choose 2 channels for stereo audio.
 
@@ -172,6 +173,8 @@ The core set of chuck vm messesages is also extended in `chuck-max` with the fol
 | Get state of chuck vm                   | `vm`                         |
 | Launch chuck docs in a browser          | `docs`                       |
 | Clear Max console                       | `clear console`              |
+| Set global UGen to tap                  | `tap <ugen_name>`            |
+| Clear tap (output silence)              | `tap`                        |
 
 ### Parameter Messages
 
@@ -219,6 +222,48 @@ In addition to the typical way of changing parameters there is also an extensive
 | Set float array indexed value     | global variable    | `set float[i] <name> <index> <value>`|
 | Set int associative array value   | global variable    | `set int[k] <name> <key> <value>`    |
 | Set float associative array value | global variable    | `set float[k] <name> <key> <value>`  |
+
+### Tapping Global UGens
+
+The `@tap` attribute allows you to read audio samples directly from global UGens declared in your ChucK code. This enables advanced signal routing where ChucK-generated audio can be processed separately in Max.
+
+**Setup:**
+
+Create a `chuck~` object with the `@tap` attribute specifying the number of tap outlet channels:
+
+```
+[chuck~ 2 @tap 2]
+```
+
+This creates an object with 2 audio input/output channels plus 2 additional tap outlets.
+
+**ChucK Code:**
+
+In your ChucK file, declare a global UGen and route audio to it:
+
+```chuck
+// Declare a global UGen for Max to tap
+global Gain gTap => blackhole;
+
+// Route your synthesis to it
+SinOsc osc => gTap;
+osc => dac;  // still hear it through normal output
+
+440 => osc.freq;
+while(true) 1::second => now;
+```
+
+**Max Usage:**
+
+After running the ChucK file, send the `tap` message to specify which global UGen to read:
+
+```
+tap gTap
+```
+
+The tap outlets will now output the audio from the `gTap` UGen. To stop tapping (output silence), send `tap` with no arguments.
+
+*Note*: The number of tap channels must match the UGen's channel count. For stereo UGens, use `@tap 2`. The tap outlets appear after the main audio outlets.
 
 ### Package Structure
 
