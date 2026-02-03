@@ -55,11 +55,11 @@ ZIP = $(DIST_NAME).zip
 
 
 .PHONY: all native multi universal full light brew brew-lite nomp3 dev setup \
-		clean reset test test-fauck test-warpbuf test-fluidsynth test-audiounit \
+		clean reset example example-fauck example-warpbuf example-fluidsynth example-audiounit \
 		install_deps install_deps_light install_deps_nomp3 \
 		full2 install_fs_deps chump \
 		sign package dmg zip-dist sign-dmg notarize staple sign-dist sign-bundle \
-		release release-zip 
+		release release-zip test
 
 all: native
 
@@ -281,20 +281,20 @@ setup:
 		echo "... symlink already exists" ; \
 	fi
 
-test:
-	@cd examples && ./chuck --chugin-path:chugins stk/rhodey-song.ck -v3
+example:
+	@cd examples && timeout 10 ./chuck --chugin-path:chugins stk/rhodey-song.ck -v3 || true
 
-test-fauck:
-	@cd examples && ./chuck --chugin-path:chugins fauck/test.ck -v3
+example-fauck:
+	@cd examples && timeout 10 ./chuck --chugin-path:chugins fauck/test.ck -v3 || true
 
-test-warpbuf:
-	@cd examples && ./chuck --chugin-path:chugins warpbuf/warpbuf_basic.ck -v3
+example-warpbuf:
+	@cd examples && timeout 10 ./chuck --chugin-path:chugins warpbuf/warpbuf_basic.ck -v3 || true
 
-test-fluidsynth:
-	@cd examples && ./chuck --chugin-path:chugins fluidsynth/FluidSynth-test.ck -v3
+example-fluidsynth:
+	@cd examples && timeout 10 ./chuck --chugin-path:chugins fluidsynth/FluidSynth-test.ck -v3 || true
 
-test-audiounit:
-	@cd examples && ./chuck --chugin-path:chugins audiounit/00-list-audiounit.ck -v3
+example-audiounit:
+	@cd examples && timeout 10 ./chuck --chugin-path:chugins audiounit/00-list-audiounit.ck -v3 || true
 
-test-audiounit1:
-	@cd examples && ./chuck --chugin-path:chugins audiounit/07-midi.ck -v3
+example-audiounit1:
+	@cd examples && timeout 10 ./chuck --chugin-path:chugins audiounit/07-midi.ck -v3 || true

@@ -53,7 +53,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 #### ChucK and Chugins Updates
 
-- Updated `chuck` and examples to version `1.5.5.7-dev (chai)`
+- Updated `chuck` and examples to version `1.5.5.8-dev (chai)`
 
 - Added `VST3` chugin
 
