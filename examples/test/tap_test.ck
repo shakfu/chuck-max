@@ -9,6 +9,9 @@ global SinOsc osc;
 440 => osc.freq;
 0.5 => osc.gain;
 
+// Enable buffering so samples can be tapped externally
+1 => osc.buffered;
+
 // Connect to dac for normal audio output
 osc => dac;
 

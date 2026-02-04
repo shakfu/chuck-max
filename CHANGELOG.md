@@ -23,11 +23,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 #### New ChucK API Messages
 
-- Added `@tap` attribute and `tap` message for reading audio samples from global UGens
+- Added `@ntap` attribute and `tap` message for reading audio samples from global UGens
   - Enables tapping into global UGens declared in ChucK code for signal routing to Max
-  - Supports mono and multichannel (up to 16 channels) tap configurations
-  - Usage: `[chuck~ 2 @tap 2]` creates 2 audio channels + 2 tap outlets
-  - Send `tap <ugen_name>` message to specify which global UGen to read from
+  - Supports up to 16 independent tap outlets, each can tap a different global UGen
+  - Usage: `[chuck~ 2 @ntap 2]` creates 2 audio channels + 2 tap outlets
+  - Tap message syntax:
+    - `tap` - clear all tap outlets
+    - `tap <ugen>` - set all outlets to tap the same UGen
+    - `tap <outlet> <ugen>` - set specific outlet to tap a UGen (e.g., `tap 1 osc1`)
+    - `tap <outlet>` - clear specific outlet
+  - Requires `1 => ugen.buffered` in ChucK code to enable sample capture
 
 - Added `param` message for querying and setting ChucK VM parameters
   - `param` (no args): lists all available parameters with their current values

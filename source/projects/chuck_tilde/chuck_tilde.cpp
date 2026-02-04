@@ -62,7 +62,7 @@ typedef struct _ck {
 
     // tap-related (for reading global UGen samples)
     long tap_channels;              // number of tap outlet channels (0 = disabled)
-    t_symbol* tap_ugen;             // name of global UGen to tap
+    t_symbol* tap_ugens[16];        // names of global UGens to tap (one per outlet, max 16)
     float* tap_buffer;              // buffer for tapped samples
 } t_ck;
 
@@ -112,7 +112,7 @@ t_max_err ck_vm(t_ck* x);                       // get vm state
 t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // get and set loglevels
 
 // tap message handler (for reading global UGen samples)
-t_max_err ck_tap(t_ck* x, t_symbol* s);         // set global UGen to tap
+t_max_err ck_tap(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // set global UGen to tap
 
 // param message handler (for querying/setting VM parameters)
 t_max_err ck_param(t_ck* x, t_symbol* s, long argc, t_atom* argv);
@@ -220,7 +220,7 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_listen,       "listen",   A_SYM, A_DEFLONG, 0);
     class_addmethod(c, (method)ck_unlisten,     "unlisten", A_SYM, 0);
 
-    class_addmethod(c, (method)ck_tap,          "tap",      A_SYM, 0);
+    class_addmethod(c, (method)ck_tap,          "tap",      A_GIMME, 0);
     class_addmethod(c, (method)ck_param,        "param",    A_GIMME, 0);
     class_addmethod(c, (method)ck_shreds,       "shreds",   A_GIMME, 0);
     class_addmethod(c, (method)ck_adaptive,     "adaptive", A_GIMME, 0);
@@ -251,10 +251,11 @@ void ext_main(void* r)
     CLASS_ATTR_BASIC(c,     "run_needs_audio", 0);
     // CLASS_ATTR_SAVE(c,      "run_needs_audio", 0);
 
-    // tap: number of additional outlets for tapping global UGen samples
-    CLASS_ATTR_LONG(c,      "tap", ATTR_FLAGS_NONE, t_ck, tap_channels);
-    CLASS_ATTR_LABEL(c,     "tap", 0, "Tap Outlet Channels");
-    CLASS_ATTR_FILTER_CLIP(c, "tap", 0, 16);  // limit to 0-16 channels
+    // ntap: number of additional outlets for tapping global UGen samples
+    CLASS_ATTR_LONG(c,      "ntap", 0, t_ck, tap_channels);
+    CLASS_ATTR_LABEL(c,     "ntap", 0, "Number of Tap Outlet Channels");
+    CLASS_ATTR_BASIC(c,     "ntap", 0);
+    CLASS_ATTR_FILTER_CLIP(c, "ntap", 0, 16);  // limit to 0-16 channels
 
     // clang-format on
     //------------------------------------------------------------------------
@@ -285,7 +286,9 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // tap defaults
         x->tap_channels = 0;
-        x->tap_ugen = gensym("");
+        for (int i = 0; i < 16; i++) {
+            x->tap_ugens[i] = gensym("");
+        }
         x->tap_buffer = NULL;
 
         // get external editor
@@ -339,9 +342,11 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->patcher_dir = gensym(patcher_conform_dir);
 
         // get object instance args
+        // use attr_args_offset to find where positional args end and attributes begin
+        long attr_offset = attr_args_offset(argc, argv);
         t_symbol* filename;
 
-        if (argc == 1) {
+        if (attr_offset == 1) {
             if (argv->a_type == A_LONG) {
                 atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);
             } else if (argv->a_type == A_SYM) {
@@ -352,15 +357,19 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
                 return NULL;
             }
         }
-        else if (argc >= 2) {
+        else if (attr_offset >= 2) {
             atom_arg_getlong((t_atom_long*)&x->channels, 0, argc, argv);  // is 1st arg of object
             filename = atom_getsymarg(1, argc, argv);    // is 2nd arg of object
             x->run_file = ck_check_file(x, filename);
         }
-        // else just use defaults
+        // else just use defaults (attr_offset == 0 means no positional args)
 
-        // process attributes early to get tap_channels before creating outlets
+        // process attributes early to get tap_channels (@ntap) before creating outlets
         attr_args_process(x, argc, argv);
+
+        // DEBUG: print attribute processing results
+        post("chuck~: argc=%ld attr_offset=%ld channels=%ld tap_channels=%ld",
+             argc, attr_offset, x->channels, x->tap_channels);
 
         dsp_setup((t_pxobject*)x, x->channels);   // MSP inlets: 2nd arg is # of inlets
 
@@ -369,7 +378,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
             outlet_new((t_pxobject*)x, "signal"); // signal outlet
         }
 
-        // create tap outlets (if @tap attribute is set)
+        // create tap outlets (if @ntap attribute is set)
         for (int i = 0; i < x->tap_channels; i++) {
             outlet_new((t_pxobject*)x, "signal"); // tap signal outlet
         }
@@ -1618,20 +1627,66 @@ t_max_err ck_vm(t_ck* x)
     return MAX_ERR_NONE;
 }
 
-t_max_err ck_tap(t_ck* x, t_symbol* s)
+t_max_err ck_tap(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
     if (x->tap_channels == 0) {
-        ck_error(x, (char*)"tap: no tap outlets configured (use @tap attribute)");
+        ck_error(x, (char*)"tap: no tap outlets configured (use @ntap attribute)");
         return MAX_ERR_GENERIC;
     }
 
-    if (s == gensym("")) {
-        // clear tap
-        x->tap_ugen = gensym("");
-        ck_info(x, (char*)"tap: cleared");
-    } else {
-        x->tap_ugen = s;
-        ck_info(x, (char*)"tap: set to global UGen '%s'", s->s_name);
+    if (argc == 0) {
+        // tap (no args): clear all taps
+        for (int i = 0; i < x->tap_channels; i++) {
+            x->tap_ugens[i] = gensym("");
+        }
+        ck_info(x, (char*)"tap: cleared all");
+    }
+    else if (argc == 1) {
+        if (argv[0].a_type == A_SYM) {
+            // tap ugen_name: set all outlets to tap the same UGen
+            t_symbol* ugen_name = atom_getsym(&argv[0]);
+            for (int i = 0; i < x->tap_channels; i++) {
+                x->tap_ugens[i] = ugen_name;
+            }
+            ck_info(x, (char*)"tap: all outlets set to '%s'", ugen_name->s_name);
+        }
+        else if (argv[0].a_type == A_LONG) {
+            // tap outlet_index: clear specific outlet
+            long outlet = atom_getlong(&argv[0]);
+            if (outlet < 1 || outlet > x->tap_channels) {
+                ck_error(x, (char*)"tap: outlet %ld out of range (1-%ld)", outlet, x->tap_channels);
+                return MAX_ERR_GENERIC;
+            }
+            x->tap_ugens[outlet - 1] = gensym("");
+            ck_info(x, (char*)"tap: outlet %ld cleared", outlet);
+        }
+        else {
+            ck_error(x, (char*)"tap: invalid argument type");
+            return MAX_ERR_GENERIC;
+        }
+    }
+    else if (argc == 2) {
+        // tap outlet_index ugen_name: set specific outlet
+        if (argv[0].a_type != A_LONG) {
+            ck_error(x, (char*)"tap: first argument must be outlet number (1-%ld)", x->tap_channels);
+            return MAX_ERR_GENERIC;
+        }
+        long outlet = atom_getlong(&argv[0]);
+        if (outlet < 1 || outlet > x->tap_channels) {
+            ck_error(x, (char*)"tap: outlet %ld out of range (1-%ld)", outlet, x->tap_channels);
+            return MAX_ERR_GENERIC;
+        }
+        if (argv[1].a_type != A_SYM) {
+            ck_error(x, (char*)"tap: second argument must be UGen name");
+            return MAX_ERR_GENERIC;
+        }
+        t_symbol* ugen_name = atom_getsym(&argv[1]);
+        x->tap_ugens[outlet - 1] = ugen_name;
+        ck_info(x, (char*)"tap: outlet %ld set to '%s'", outlet, ugen_name->s_name);
+    }
+    else {
+        ck_error(x, (char*)"tap: too many arguments");
+        return MAX_ERR_GENERIC;
     }
     return MAX_ERR_NONE;
 }
@@ -2241,33 +2296,30 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
         }
     }
 
-    // tap global UGen samples if enabled
-    if (x->tap_channels > 0 && x->tap_ugen != gensym("") && x->tap_buffer) {
-        t_CKBOOL success;
+    // tap global UGen samples if enabled (each outlet taps independently)
+    if (x->tap_channels > 0 && x->tap_buffer) {
+        long tap_outlet_start = x->channels;  // tap outlets come after main outlets
 
-        if (x->tap_channels == 1) {
-            // mono tap
-            success = x->chuck->vm()->globals_manager()->getGlobalUGenSamples(
-                x->tap_ugen->s_name, x->tap_buffer, n);
-        } else {
-            // multichannel tap (non-interleaved)
-            success = x->chuck->vm()->globals_manager()->getGlobalUGenSamplesMulti(
-                x->tap_ugen->s_name, x->tap_buffer, n, x->tap_channels);
-        }
+        for (int chan = 0; chan < x->tap_channels; chan++) {
+            t_symbol* ugen_name = x->tap_ugens[chan];
 
-        if (success) {
-            // output tap channels (buffer is non-interleaved for multi)
-            long tap_outlet_start = x->channels;  // tap outlets come after main outlets
-            for (int chan = 0; chan < x->tap_channels; chan++) {
-                float* tap_src = x->tap_buffer + (chan * n);
-                for (int i = 0; i < n; i++) {
-                    outs[tap_outlet_start + chan][i] = tap_src[i];
+            if (ugen_name != gensym("")) {
+                // tap this outlet's UGen (mono)
+                t_CKBOOL success = x->chuck->vm()->globals_manager()->getGlobalUGenSamples(
+                    ugen_name->s_name, x->tap_buffer, n);
+
+                if (success) {
+                    for (int i = 0; i < n; i++) {
+                        outs[tap_outlet_start + chan][i] = x->tap_buffer[i];
+                    }
+                } else {
+                    // UGen not found or not ready - output silence
+                    for (int i = 0; i < n; i++) {
+                        outs[tap_outlet_start + chan][i] = 0.0;
+                    }
                 }
-            }
-        } else {
-            // UGen not found or not ready - output silence
-            long tap_outlet_start = x->channels;
-            for (int chan = 0; chan < x->tap_channels; chan++) {
+            } else {
+                // no UGen assigned to this outlet - output silence
                 for (int i = 0; i < n; i++) {
                     outs[tap_outlet_start + chan][i] = 0.0;
                 }

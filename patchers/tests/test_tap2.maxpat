@@ -9,11 +9,11 @@
             "modernui": 1
         },
         "classnamespace": "box",
-        "rect": [ 100.0, 100.0, 800.0, 650.0 ],
+        "rect": [ 100.0, 100.0, 900.0, 700.0 ],
         "default_fontsize": 10.0,
         "default_fontname": "Verdana",
         "gridsize": [ 5.0, 5.0 ],
-        "description": "Test the tap feature for reading global UGen samples",
+        "description": "Test the tap feature with two tap outlets",
         "boxes": [
             {
                 "box": {
@@ -23,8 +23,8 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 20.0, 20.0, 500.0, 24.0 ],
-                    "text": "Testing chuck~ tap feature (reading global UGen samples)"
+                    "patching_rect": [ 20.0, 20.0, 600.0, 24.0 ],
+                    "text": "Testing chuck~ tap feature with two tap outlets"
                 }
             },
             {
@@ -34,8 +34,8 @@
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 20.0, 48.0, 550.0, 31.0 ],
-                    "text": "The @ntap attribute creates additional signal outlets for tapping into global UGens.\nUse 'tap <name>' to tap all outlets, or 'tap <outlet> <name>' for independent control."
+                    "patching_rect": [ 20.0, 48.0, 600.0, 31.0 ],
+                    "text": "The @ntap 2 attribute creates two independent tap outlets.\nUse 'tap <outlet> <name>' to assign each outlet: tap 1 osc1, tap 2 osc2"
                 }
             },
             {
@@ -45,19 +45,30 @@
                     "numinlets": 2,
                     "numoutlets": 1,
                     "outlettype": [ "" ],
-                    "patching_rect": [ 150.0, 120.0, 130.0, 21.0 ],
-                    "text": "run test/tap_test.ck"
+                    "patching_rect": [ 150.0, 120.0, 140.0, 21.0 ],
+                    "text": "run test/tap_test2.ck"
                 }
             },
             {
                 "box": {
-                    "id": "obj-tap-osc",
+                    "id": "obj-tap-osc1",
                     "maxclass": "message",
                     "numinlets": 2,
                     "numoutlets": 1,
                     "outlettype": [ "" ],
-                    "patching_rect": [ 300.0, 120.0, 65.0, 21.0 ],
-                    "text": "tap osc"
+                    "patching_rect": [ 310.0, 120.0, 65.0, 21.0 ],
+                    "text": "tap 1 osc1"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-tap-osc2",
+                    "maxclass": "message",
+                    "numinlets": 2,
+                    "numoutlets": 1,
+                    "outlettype": [ "" ],
+                    "patching_rect": [ 385.0, 120.0, 65.0, 21.0 ],
+                    "text": "tap 2 osc2"
                 }
             },
             {
@@ -67,7 +78,7 @@
                     "numinlets": 2,
                     "numoutlets": 1,
                     "outlettype": [ "" ],
-                    "patching_rect": [ 380.0, 120.0, 30.0, 21.0 ],
+                    "patching_rect": [ 470.0, 120.0, 30.0, 21.0 ],
                     "text": "tap"
                 }
             },
@@ -78,7 +89,7 @@
                     "numinlets": 2,
                     "numoutlets": 1,
                     "outlettype": [ "" ],
-                    "patching_rect": [ 430.0, 120.0, 39.0, 21.0 ],
+                    "patching_rect": [ 520.0, 120.0, 39.0, 21.0 ],
                     "text": "status"
                 }
             },
@@ -89,7 +100,7 @@
                     "numinlets": 2,
                     "numoutlets": 1,
                     "outlettype": [ "" ],
-                    "patching_rect": [ 490.0, 120.0, 34.0, 21.0 ],
+                    "patching_rect": [ 575.0, 120.0, 34.0, 21.0 ],
                     "text": "reset"
                 }
             },
@@ -121,11 +132,11 @@
                     "id": "obj-chuck",
                     "maxclass": "newobj",
                     "numinlets": 1,
-                    "numoutlets": 2,
-                    "outlettype": [ "signal", "signal" ],
-                    "patching_rect": [ 150.0, 210.0, 185.0, 21.0 ],
-                    "text": "chuck~ 1 @ntap 1 test/tap_test.ck",
-                    "varname": "chuck-1"
+                    "numoutlets": 3,
+                    "outlettype": [ "signal", "signal", "signal" ],
+                    "patching_rect": [ 150.0, 210.0, 220.0, 21.0 ],
+                    "text": "chuck~ 1 @ntap 2 test/tap_test2.ck",
+                    "varname": "chuck-0"
                 }
             },
             {
@@ -149,21 +160,60 @@
             },
             {
                 "box": {
-                    "id": "obj-label-tap",
+                    "id": "obj-label-tap1",
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 334.0, 274.0, 180.0, 19.0 ],
-                    "text": "Tapped UGen output (tap osc):"
+                    "patching_rect": [ 260.0, 280.0, 120.0, 19.0 ],
+                    "text": "Tap outlet 1:"
                 }
             },
             {
                 "box": {
-                    "id": "obj-scope-tap",
+                    "id": "obj-scope-tap1",
                     "maxclass": "scope~",
                     "numinlets": 2,
                     "numoutlets": 0,
-                    "patching_rect": [ 316.0, 300.0, 180.0, 130.0 ]
+                    "patching_rect": [ 260.0, 300.0, 180.0, 130.0 ]
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-label-tap2",
+                    "maxclass": "comment",
+                    "numinlets": 1,
+                    "numoutlets": 0,
+                    "patching_rect": [ 470.0, 280.0, 120.0, 19.0 ],
+                    "text": "Tap outlet 2:"
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-scope-tap2",
+                    "maxclass": "scope~",
+                    "numinlets": 2,
+                    "numoutlets": 0,
+                    "patching_rect": [ 470.0, 300.0, 180.0, 130.0 ]
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-meter-tap1",
+                    "maxclass": "meter~",
+                    "numinlets": 1,
+                    "numoutlets": 1,
+                    "outlettype": [ "float" ],
+                    "patching_rect": [ 680.0, 300.0, 20.0, 130.0 ]
+                }
+            },
+            {
+                "box": {
+                    "id": "obj-meter-tap2",
+                    "maxclass": "meter~",
+                    "numinlets": 1,
+                    "numoutlets": 1,
+                    "outlettype": [ "float" ],
+                    "patching_rect": [ 710.0, 300.0, 20.0, 130.0 ]
                 }
             },
             {
@@ -202,23 +252,13 @@
             },
             {
                 "box": {
-                    "id": "obj-meter-tap",
-                    "maxclass": "meter~",
-                    "numinlets": 1,
-                    "numoutlets": 1,
-                    "outlettype": [ "float" ],
-                    "patching_rect": [ 532.0, 300.0, 80.0, 130.0 ]
-                }
-            },
-            {
-                "box": {
                     "id": "obj-instructions",
-                    "linecount": 5,
+                    "linecount": 6,
                     "maxclass": "comment",
                     "numinlets": 1,
                     "numoutlets": 0,
-                    "patching_rect": [ 316.0, 450.0, 250.0, 67.0 ],
-                    "text": "Instructions:\n1. Turn on audio (click ezdac~)\n2. Click 'run' or message to load ChucK file\n3. Click 'tap osc' to tap the global oscillator\n4. Observe tapped signal in right scope/meter"
+                    "patching_rect": [ 260.0, 450.0, 300.0, 79.0 ],
+                    "text": "Instructions:\n1. Turn on audio (click ezdac~)\n2. Click 'run' or bang to load ChucK file\n3. Click 'tap 1 osc1' and 'tap 2 osc2' to tap independently\n4. Observe: outlet 1=slow sine 2Hz, outlet 2=square 5Hz\n5. 'tap' clears all taps"
                 }
             }
         ],
@@ -238,6 +278,20 @@
             },
             {
                 "patchline": {
+                    "destination": [ "obj-meter-tap1", 0 ],
+                    "order": 0,
+                    "source": [ "obj-chuck", 1 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-meter-tap2", 0 ],
+                    "order": 0,
+                    "source": [ "obj-chuck", 2 ]
+                }
+            },
+            {
+                "patchline": {
                     "destination": [ "obj-scope-main", 0 ],
                     "order": 1,
                     "source": [ "obj-chuck", 0 ]
@@ -245,8 +299,16 @@
             },
             {
                 "patchline": {
-                    "destination": [ "obj-scope-tap", 0 ],
+                    "destination": [ "obj-scope-tap1", 0 ],
+                    "order": 1,
                     "source": [ "obj-chuck", 1 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-scope-tap2", 0 ],
+                    "order": 1,
+                    "source": [ "obj-chuck", 2 ]
                 }
             },
             {
@@ -282,12 +344,26 @@
             {
                 "patchline": {
                     "destination": [ "obj-chuck", 0 ],
-                    "source": [ "obj-tap-osc", 0 ]
+                    "source": [ "obj-tap-osc1", 0 ]
+                }
+            },
+            {
+                "patchline": {
+                    "destination": [ "obj-chuck", 0 ],
+                    "source": [ "obj-tap-osc2", 0 ]
                 }
             }
         ],
         "parameters": {
             "obj-gain": [ "live.gain~", "live.gain~", 0 ],
+            "parameterbanks": {
+                "0": {
+                    "index": 0,
+                    "name": "",
+                    "parameters": [ "-", "-", "-", "-", "-", "-", "-", "-" ],
+                    "buttons": [ "-", "-", "-", "-", "-", "-", "-", "-" ]
+                }
+            },
             "inherited_shortname": 1
         },
         "autosave": 0
