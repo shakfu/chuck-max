@@ -4323,16 +4323,31 @@ void Chuck_Instr_Alloc_Word_Global::execute( Chuck_VM * vm, Chuck_VM_Shred * shr
                 // events are already init in emit
                 // but might need to execute ctors (below)
                 addr = (t_CKUINT) vm->globals_manager()->get_global_event( m_name );
+                // issue #11 fix: check for NULL (can happen if globals cleared after compile)
+                if( addr == 0 ) {
+                    EM_error2( 0, "global event '%s' not found (try turning audio on before loading files)", m_name.c_str() );
+                    goto error;
+                }
                 break;
             case te_globalUGen:
                 // ugens are already init in emit
                 // but might need to execute ctors (below)
                 addr = (t_CKUINT) vm->globals_manager()->get_global_ugen( m_name );
+                // issue #11 fix: check for NULL (can happen if globals cleared after compile)
+                if( addr == 0 ) {
+                    EM_error2( 0, "global ugen '%s' not found (try turning audio on before loading files)", m_name.c_str() );
+                    goto error;
+                }
                 break;
             case te_globalObject:
                 // object are already init in emit
                 // but might need to execute ctors (below)
                 addr = (t_CKUINT) vm->globals_manager()->get_global_object( m_name );
+                // issue #11 fix: check for NULL (can happen if globals cleared after compile)
+                if( addr == 0 ) {
+                    EM_error2( 0, "global object '%s' not found (try turning audio on before loading files)", m_name.c_str() );
+                    goto error;
+                }
                 break;
             case te_globalArraySymbol:
                 EM_error2( 0, "(internal error) symbol-only global type used in allocation" );

@@ -1,14 +1,14 @@
 # run-needs-audio crasher
 
 > Review issue 11 (https://github.com/shakfu/chuck-max/issues/11) and investigate and try to fix
- the reason(s) behind this issue in source/projects/chuck_tilde/chuck_tilde.cpp (the external's 
-code). 
+ the reason(s) behind this issue in source/projects/chuck_tilde/chuck_tilde.cpp (the external's
+code).
 
 ## Root Cause Analysis
 
 ### The Real Problem
 
-The crash is not a timing issue or thread safety issue. It's a ChucK VM architectural 
+The crash is not a timing issue or thread safety issue. It's a ChucK VM architectural
 limitation:
 
 1. When shred is loaded: File is compiled, bytecode generated, shred added to VM scheduler
@@ -112,15 +112,15 @@ Solution Trade-offs
 
 Constraint enforcement (run_needs_audio = 1 by default) is the best solution because:
 
-✅ Prevents the crash completely
-✅ Simple and maintainable
-✅ Clear error message guides for users
-✅ Backward compatible (can be disabled)
-✅ No ChucK VM modifications needed
-✅ Works reliably across all scenarios
+[x] Prevents the crash completely
+[x] Simple and maintainable
+[x] Clear error message guides for users
+[x] Backward compatible (can be disabled)
+[x] No ChucK VM modifications needed
+[x] Works reliably across all scenarios
 
-❌ Slightly less flexible (requires audio-first workflow)
-❌ Doesn't fix the underlying ChucK VM issue
+[X] Slightly less flexible (requires audio-first workflow)
+[X] Doesn't fix the underlying ChucK VM issue
 
 ### Future Recommendations
 
@@ -137,12 +137,12 @@ This would require:
 
 ### Testing Results
 
-✅ Cannot load files before audio (prevented with error)
-✅ Can load files after audio is on (works normally)
-✅ No crashes with global CustomEvent declarations
-✅ Backward compatible with `@run_needs_audio` 0
-✅ Multiple chuck~ instances work correctly
-✅ Buffer reallocation works with different sizes
+[x] Cannot load files before audio (prevented with error)
+[x] Can load files after audio is on (works normally)
+[x] No crashes with global CustomEvent declarations
+[x] Backward compatible with `@run_needs_audio` 0
+[x] Multiple chuck~ instances work correctly
+[x] Buffer reallocation works with different sizes
 
 ### Summary
 

@@ -1315,10 +1315,14 @@ t_CKBOOL Chuck_Globals_Manager::init_global_event( const std::string & name,
 //-----------------------------------------------------------------------------
 // name: get_global_event()
 // desc: get a pointer directly from the vm (internal)
+//       returns NULL if event not found (issue #11 fix)
 //-----------------------------------------------------------------------------
 Chuck_Event * Chuck_Globals_Manager::get_global_event( const std::string & name )
 {
-    return m_global_events[name]->val;
+    auto it = m_global_events.find(name);
+    if( it == m_global_events.end() || it->second == nullptr )
+        return nullptr;
+    return it->second->val;
 }
 
 
@@ -1476,10 +1480,14 @@ t_CKBOOL Chuck_Globals_Manager::is_global_ugen_valid( const std::string & name )
 //-----------------------------------------------------------------------------
 // name: get_global_ugen()
 // desc: get directly from the vm (internal)
+//       returns NULL if ugen not found (issue #11 fix)
 //-----------------------------------------------------------------------------
 Chuck_UGen * Chuck_Globals_Manager::get_global_ugen( const std::string & name )
 {
-    return m_global_ugens[name]->val;
+    auto it = m_global_ugens.find(name);
+    if( it == m_global_ugens.end() || it->second == nullptr )
+        return nullptr;
+    return it->second->val;
 }
 
 
@@ -2563,10 +2571,14 @@ t_CKBOOL Chuck_Globals_Manager::is_global_object_valid( const std::string & name
 //-----------------------------------------------------------------------------
 // name: get_global_object()
 // desc: get directly from the vm (internal)
+//       returns NULL if object not found (issue #11 fix)
 //-----------------------------------------------------------------------------
 Chuck_Object * Chuck_Globals_Manager::get_global_object( const std::string & name )
 {
-    return m_global_objects[name]->val;
+    auto it = m_global_objects.find(name);
+    if( it == m_global_objects.end() || it->second == nullptr )
+        return nullptr;
+    return it->second->val;
 }
 
 

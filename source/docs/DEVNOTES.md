@@ -73,7 +73,7 @@ if [ "$(uname)" = "Darwin" ]; then
         cp -R /Volumes/Faust-$VERSION/Faust-$VERSION/* darwin-arm64/Release/
         hdiutil detach /Volumes/Faust-$VERSION/
     fi
-    
+
     if [ ! -f Faust-$VERSION-x64.dmg ]; then
         curl -L https://github.com/grame-cncm/faust/releases/download/$VERSION/Faust-$VERSION-x64.dmg -o Faust-$VERSION-x64.dmg
         hdiutil attach Faust-$VERSION-x64.dmg
@@ -275,7 +275,7 @@ Possible to use alternative (active transport) notion?
 
 
 umenu:
-1nd, 1n, 1nt, 2nd, 2n, 2nt, 4nd, 4n, 4nt, 8nd, 8n, 8nt, 16nd, 16n, 16nt, 32nd, 32n, 32nt, 64nd, 64n, 128n 
+1nd, 1n, 1nt, 2nd, 2n, 2nt, 4nd, 4n, 4nt, 8nd, 8n, 8nt, 16nd, 16n, 16nt, 32nd, 32n, 32nt, 64nd, 64n, 128n
 ```
 
 ## Sending Messages to Maxobject
@@ -552,7 +552,7 @@ public class EventResponder : MonoBehaviour {
  void Start() {
   myChuck = GetComponent<ChuckSubInstance>();
      // broadcast "notifier" every 250 ms
-    
+
      myChuck.RunCode( @"
        global Event notifier; // <- Here (A)
        while( true ) {
@@ -563,7 +563,7 @@ public class EventResponder : MonoBehaviour {
      // create a ChuckEventListener
      ChuckEventListener listener = gameObject
        .AddComponent<ChuckEventListener>();
-     
+
      // call MyCallback() during Update()
      //   after every broadcast from "notifier"
      listener.ListenForEvent( myChuck, "notifier", // <- Here (B)
