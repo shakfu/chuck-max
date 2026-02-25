@@ -17,7 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Changed
 
-- Made `run_needs_audio` default to 1 to prevent issue #11 (loading files before audio)
+- Made `run_needs_audio` default to 1 as an additional safeguard for issue #11
 
 ### New Features
 
@@ -86,6 +86,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - Enhanced `ck_check_file()` with security validation to block unsafe path patterns (../, absolute paths, UNC paths)
 
 - Fixed:
+  - Crash when running ChucK files with custom events after VM clear ([issue #11](https://github.com/shakfu/chuck-max/issues/11), [chuck #537](https://github.com/ccrma/chuck/issues/537))
+    - Root cause: NULL pointer dereference in ChucK core when `get_global_event()` accessed a non-existent global via `std::map::operator[]`
+    - Added null checks in `chuck_globals.cpp` for `get_global_event()`, `get_global_ugen()`, and `get_global_object()`
+    - Added null guard in `chuck_instr.cpp` (`Chuck_Instr_Alloc_Word_Global::execute()`) to convert crashes into recoverable errors
+
   - Memory management in `ck_free()` function now includes null checks before deletion to prevent crashes
 
   - Control flow errors in `ck_check_file()` by adding missing braces around multi-line if statements

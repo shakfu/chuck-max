@@ -407,10 +407,6 @@ The `examples` directory contains all chuck examples from the chuck repo, and so
 
 In the `patchers` section, there are quite a few patchers demonstrating one feature or other in the `tests` folder, and the `contrib` folder contains excellents advanced examples of uses by `chuck-max` contributors.
 
-## Known Unresolved Bugs
-
-- If a chuck file contains a custom event and the Max patch sends a `clear vm` or `reset` before running the chuck file while Max audio is turned off, it may cause Max to crash. The case is demonstrated in the `patchers/tests/crash` section. See [github issue #11](https://github.com/shakfu/chuck-max/issues/11) for updates on this. The interim solution is to only run chuck files with Max audio on, and there's an attribute `run_needs_audio` to force this and prevent the crash. Thanks to @HighHarmonics2 for discovering this one.
-
 ## Contributing
 
 We welcome contributions! Please:
