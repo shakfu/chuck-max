@@ -13,7 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ---
 
-## [0.2.x]
+## [Unreleased]
+
+## [0.2.2]
 
 ### Changed
 
@@ -58,7 +60,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 #### ChucK and Chugins Updates
 
-- Updated `chuck` and examples to version `1.5.5.8-dev (chai)`
+- Updated `chuck` source and examples to latest `1.5.5.8-dev (chai)`
+  - Refreshed `source/projects/chuck/core` from upstream (compile, emit, globals, instr, lang, type, ugen_xxx, ulib_math, util_math, util_network, util_platforms, util_thread)
+  - Refreshed `examples/` from upstream, including new `examples/math/spherical-harmonics.ck` and `examples/spatial/ambisonic-encoding.ck`
+  - Relocated `tap_test.ck` / `tap_test2.ck` into `source/projects/examples/test/` so they survive future `update.sh` runs
+  - Patched `source/scripts/update.sh` to recreate the `examples/chuck` symlink (wiped by the examples-dir replacement)
 
 - Added `VST3` chugin
 

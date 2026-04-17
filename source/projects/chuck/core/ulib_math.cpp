@@ -581,6 +581,13 @@ DLL_QUERY libmath_query( Chuck_DL_Query * QUERY )
     QUERY->add_svar( QUERY, "complex", "j", TRUE, &g_i );
     QUERY->doc_var( QUERY, "The complex number sqrt(-1)." );
 
+    // spherical harmonics | (added) 1.5.5.8 by everett 2026
+    QUERY->add_sfun( QUERY, sh_impl, "float[]", "sh" );
+    QUERY->add_arg( QUERY, "int", "order" );
+    QUERY->add_arg( QUERY, "float", "azimuth" );
+    QUERY->add_arg( QUERY, "float", "zenith" );
+    QUERY->doc_func(QUERY, "Returns an array of size (N+1)^2, containing ACN ordered spherical harmonics.");
+
     // add examples
     // QUERY->add_ex( QUERY, "map.ck" );
     // QUERY->add_ex( QUERY, "math-help.ck" );
@@ -1435,5 +1442,38 @@ CK_DLL_SFUN( map2_impl )
 
     // std::cerr << v << " " << x1 << " " << y1 << " " << x2 << " " << y2 << std::endl;
     // remap
-    RETURN->v_float = x2 + (v-x1)/(y1-x1)*(y2-x2);
+    RETURN->v_float = x2 + (v - x1) / (y1 - x1) * (y2 - x2);
+}
+
+// spherical harmonics implementation | (added) 1.5.5.8 by everett 2026
+CK_DLL_SFUN( sh_impl )
+{
+    t_CKINT order = GET_NEXT_INT(ARGS);
+    t_CKFLOAT direction = GET_NEXT_FLOAT(ARGS);
+    t_CKFLOAT elevation = GET_NEXT_FLOAT(ARGS);
+    t_CKFLOAT * coord = new t_CKFLOAT[(order + 1) * (order + 1) + 1];
+    if( order <= 5 )
+    {
+        t_CKUINT size = (order + 1) * (order + 1);
+        // moved memory ownership to ck_SH emc 2/26 (memory was previously allocated by ck_SH() and deleted by sh_impl)
+        ck_SH( coord,order, direction, elevation, 0 );
+        // Create a float[] array
+        Chuck_DL_Api::Object returnarray = API->object->create( SHRED, API->type->lookup(VM, "float[]"), false );
+        Chuck_ArrayFloat * coordinatearray = (Chuck_ArrayFloat *)returnarray;
+        for( t_CKINT i = 0; i < size; i++ )
+        {
+            API->object->array_float_push_back(coordinatearray, coord[i]);
+        }
+        // set return value
+        RETURN->v_object = coordinatearray;
+    }
+    else 
+    {
+        // throw exception
+        API->vm->throw_exception("Math.sh() : InvalidSHOrder", "only up to 5th order currently supported", nullptr);
+        RETURN->v_int = 0;
+    }
+
+    // clean up
+    CK_SAFE_DELETE_ARRAY( coord );
 }

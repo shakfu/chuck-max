@@ -273,6 +273,20 @@ t_CKBOOL Chuck_Compiler::importChugin( const string & path,
                                        const string & name,
                                        string & errorStr )
 {
+    // check if chugin of same name (regardless of path)
+    // has already been loaded | 1.5.5.8 (ge) added
+    if( m_importRegistry.isChuginLoaded( path ) )
+    {
+        // print `[chugin] X.chug`
+        logChuginLoad( name, CK_LOG_HERALD );
+        // print `[SKIP]`
+        EM_log_opts( CK_LOG_HERALD, EM_LOG_NO_PREFIX, "[%s]", TC::orange("SKIP",true).c_str() );
+        // print reason
+        EM_log( CK_LOG_HERALD, " |- (chugin of same name already imported)" );
+        // done
+        return FALSE;
+    }
+
     // check if this import should be in its namespace | 1.5.4.0 (ge) added
     if( createNamespace )
     {
@@ -1197,6 +1211,9 @@ t_CKBOOL Chuck_Compiler::bind( f_ck_query query_func, const string & name,
 
     // commit what is in the type checker at this point
     env->global()->commit();
+
+    // preserve all operator overloads currently in registry | added 1.5.5.8 (ben)
+    env->op_registry.preserve();
 
     // pop indent level
     EM_poplog();
@@ -2388,6 +2405,34 @@ void Chuck_ImportRegistry::clearAllUserImports()
         // erase each entry by key
         m_importedTargets.erase( itersToErase[i] );
     }
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: isChuginLoaded()
+// desc: check if a same-name chugin is already imported, ignoring path
+//-----------------------------------------------------------------------------
+t_CKBOOL Chuck_ImportRegistry::isChuginLoaded( const std::string & path )
+{
+    // remove path before chugin name and lower case
+    std::string name = tolower( extract_filepath_file( path ) );
+
+    // iterate
+    map<std::string, Chuck_DLL *>::iterator iterC;
+    for( iterC = m_importedChugins.begin(); iterC != m_importedChugins.end(); iterC++ )
+    {
+        // get the chugin
+        Chuck_DLL * chugin = iterC->second;
+        // remove path portion and lower case
+        std::string chugin_name = tolower( extract_filepath_file( chugin->filepath() ) );
+        // compare name
+        if( name == chugin_name ) return TRUE;
+    }
+
+    // no match found
+    return FALSE;
 }
 
 

@@ -154,6 +154,9 @@ function update_examples() {
 	cp -f ${PROJECT_SRC_EXAMPLES}/data/nylon2.mp3 ${PROJECT_EXAMPLES}/data/nylon2.mp3
 	cp -f ${PROJECT_SRC_EXAMPLES}/data/honkeytonk-algo3.ck ${PROJECT_EXAMPLES}/stk/honkeytonk-algo3.ck
 	cp -rf ${PROJECT_SRC_EXAMPLES}/data/midi ${PROJECT_EXAMPLES}/midi/data
+
+	# recreate chuck executable symlink (wiped by the examples-dir replacement above)
+	ln -sf ../build/Release/chuck ${PROJECT_EXAMPLES}/chuck
 }
 
 function update() {

@@ -6305,7 +6305,7 @@ CK_DLL_CTRL( LiSaMulti_ctrl_read )
 #ifdef __ANDROID__
         if( is_jar_url )
         {
-            d->fd = sf_open_fd( jar_fd, SFM_READ, &info, 0 );
+            fd = sf_open_fd( jar_fd, SFM_READ, &info, 0 );
         }
         else
 #endif

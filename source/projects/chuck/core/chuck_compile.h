@@ -217,6 +217,8 @@ public:
     void commit( Chuck_CompileTarget * target );
     // add a chugin
     Chuck_CompileTarget * commit( Chuck_DLL * chugin );
+    // check if a same-name chugin is already imported, ignoring path
+    t_CKBOOL isChuginLoaded( const std::string & path );
 
 protected:
     // clear everything (system and user)
