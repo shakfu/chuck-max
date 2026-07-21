@@ -368,6 +368,18 @@ a_Stmt new_stmt_from_doc( a_Doc list, uint32_t line, uint32_t where ) // 1.5.4.4
     return a;
 }
 
+a_Stmt new_stmt_from_example( a_Example list, uint32_t line, uint32_t where ) // 1.5.5.8 (ge,nick,alex) added
+{
+    a_Stmt a = (a_Stmt)checked_malloc( sizeof(struct a_Stmt_) );
+    a->s_type = ae_stmt_example;
+    a->stmt_example.list = list;
+    a->line = line; a->where = where;
+    a->stmt_example.line = line; a->stmt_example.where = where;
+    a->stmt_example.self = a;
+
+    return a;
+}
+
 a_Import new_import( c_str str, a_Id_List list, uint32_t line, uint32_t where ) // 1.5.4.0 (ge) added
 {
     a_Import a = (a_Import)checked_malloc( sizeof(struct a_Import_) );
@@ -419,6 +431,25 @@ a_Import prepend_import( a_Import target, a_Import list, uint32_t lineNum, uint3
 a_Doc new_doc( c_str str, uint32_t line, uint32_t where ) // 1.5.4.4 (ge) added
 {
     a_Doc a = (a_Doc)checked_malloc( sizeof(struct a_Doc_) );
+
+    // copy allocated string pointer
+    a->desc = str; // no strdup( str ); <-- str should have been allocated in alloc_str()
+
+    // set line info
+    a->line = line; a->where = where;
+
+    return a;
+}
+
+a_Example prepend_example( a_Example target, a_Example list, uint32_t lineNum, uint32_t posNum )
+{
+    target->next = list;
+    return target;
+}
+
+a_Example new_example( c_str str, uint32_t line, uint32_t where ) // 1.5.4.4 (ge) added
+{
+    a_Example a = (a_Example)checked_malloc( sizeof(struct a_Example_) );
 
     // copy allocated string pointer
     a->desc = str; // no strdup( str ); <-- str should have been allocated in alloc_str()
@@ -1407,6 +1438,9 @@ void delete_stmt( a_Stmt stmt )
     case ae_stmt_doc: // 1.5.4.4 (ge) added
         delete_stmt_from_doc( stmt );
         break;
+    case ae_stmt_example: // 1.5.5.8 (ge,nick,alex) added
+        delete_stmt_from_example( stmt );
+        break;
     }
 
     CK_SAFE_FREE( stmt );
@@ -1516,6 +1550,27 @@ void delete_stmt_from_doc( a_Stmt stmt )
 
     // pointer
     a_Doc next = NULL, i = stmt->stmt_doc.list;
+
+    // iterate instead of recurse to avoid stack overflow
+    while( i )
+    {
+        // delete the content
+        CK_SAFE_FREE( i->desc );
+        // get next before we delete this one
+        next = i->next;
+        // delete the import target
+        CK_SAFE_FREE( i );
+        // move to the next one
+        i = next;
+    }
+}
+
+void delete_stmt_from_example( a_Stmt stmt )
+{
+    EM_log( CK_LOG_FINEST, "deleting stmt %p (example)...", (void *)stmt );
+
+    // pointer
+    a_Example next = NULL, i = stmt->stmt_example.list;
 
     // iterate instead of recurse to avoid stack overflow
     while( i )

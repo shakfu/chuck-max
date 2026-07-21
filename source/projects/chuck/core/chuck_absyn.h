@@ -141,6 +141,7 @@ typedef struct a_Stmt_Case_ * a_Stmt_Case;
 typedef struct a_Stmt_GotoLabel_ * a_Stmt_GotoLabel;
 typedef struct a_Stmt_Import_ * a_Stmt_Import;
 typedef struct a_Stmt_Doc_ * a_Stmt_Doc;
+typedef struct a_Stmt_Example_ * a_Stmt_Example;
 typedef struct a_Decl_ * a_Decl;
 typedef struct a_Var_Decl_ * a_Var_Decl;
 typedef struct a_Var_Decl_List_ * a_Var_Decl_List;
@@ -156,7 +157,7 @@ typedef struct a_Polar_ * a_Polar;
 typedef struct a_Vec_ * a_Vec; // ge: added 1.3.5.3
 typedef struct a_Import_ * a_Import; // 1.5.4.0 (ge) added
 typedef struct a_Doc_ * a_Doc; // 1.5.4.4 (ge) added
-
+typedef struct a_Example_ * a_Example; // 1.5.4.4 (ge,nick,alex) added
 
 // forward reference for type
 typedef struct Chuck_Type * t_CKTYPE;
@@ -196,6 +197,7 @@ a_Stmt new_stmt_from_label( c_str xid, uint32_t line, uint32_t where );
 a_Stmt new_stmt_from_case( a_Exp exp, uint32_t line, uint32_t where );
 a_Stmt new_stmt_from_import( a_Import target, uint32_t line, uint32_t where );
 a_Stmt new_stmt_from_doc( a_Doc target, uint32_t line, uint32_t where );
+a_Stmt new_stmt_from_example( a_Example target, uint32_t line, uint32_t where );
 a_Exp append_expression( a_Exp list, a_Exp exp, uint32_t line, uint32_t where );
 a_Exp new_exp_from_binary( a_Exp lhs, ae_Operator oper, a_Exp rhs, uint32_t line, uint32_t where );
 a_Exp new_exp_from_unary( ae_Operator oper, a_Exp exp, uint32_t line, uint32_t where );
@@ -238,6 +240,8 @@ a_Import new_import( c_str str, a_Id_List id_list, uint32_t line, uint32_t where
 a_Import prepend_import( a_Import target, a_Import list, uint32_t line, uint32_t where ); // 1.5.4.0 (ge) added
 a_Doc new_doc( c_str str, uint32_t line, uint32_t where ); // 1.5.4.4 (ge) added
 a_Doc prepend_doc( a_Doc target, a_Doc list, uint32_t line, uint32_t where ); // 1.5.4.4 (ge) added
+a_Example new_example( c_str str, uint32_t line, uint32_t where ); // 1.5.5.8 (ge,nick,alex) added
+a_Example prepend_example( a_Example target, a_Example list, uint32_t line, uint32_t where ); // 1.5.5.8 (ge,nick,alex) added
 
 a_Class_Def new_class_def( ae_Keyword class_decl, a_Id_List xid, a_Class_Ext ext, a_Class_Body body, uint32_t line, uint32_t where );
 a_Class_Body new_class_body( a_Section section, uint32_t line, uint32_t where );
@@ -292,6 +296,7 @@ void delete_stmt_from_return( a_Stmt stmt );
 void delete_stmt_from_label( a_Stmt stmt );
 void delete_stmt_from_import( a_Stmt stmt );
 void delete_stmt_from_doc( a_Stmt stmt );
+void delete_stmt_from_example( a_Stmt stmt );
 
 // delete an exp
 void delete_exp( a_Exp exp );
@@ -363,7 +368,8 @@ struct a_Complex_ { a_Exp re; a_Exp im; uint32_t line; uint32_t where; a_Exp sel
 struct a_Polar_ { a_Exp mod; a_Exp phase; uint32_t line; uint32_t where; a_Exp self; };
 struct a_Vec_ { a_Exp args; int numdims; uint32_t line; uint32_t where; a_Exp self; }; // ge: added 1.3.5.3
 struct a_Import_ { c_str what; a_Import next; uint32_t line; uint32_t where; }; // 1.5.4.0 (ge) added
-struct a_Doc_ { c_str desc; a_Doc next; uint32_t line; uint32_t where; }; // 1.5.4.4(ge) added
+struct a_Doc_ { c_str desc; a_Doc next; uint32_t line; uint32_t where; }; // 1.5.4.4 (ge) added
+struct a_Example_ { c_str desc; a_Example next; uint32_t line; uint32_t where; }; // 1.5.5.8 (ge,nick,alex) added
 
 // enum primary exp type
 typedef enum { ae_primary_var, ae_primary_num, ae_primary_float,
@@ -454,6 +460,7 @@ struct a_Stmt_Case_ { a_Exp exp; uint32_t line; uint32_t where; a_Stmt self; };
 struct a_Stmt_GotoLabel_ { S_Symbol name; uint32_t line; uint32_t where; a_Stmt self; };
 struct a_Stmt_Import_ { a_Import list; uint32_t line; uint32_t where; a_Stmt self; };
 struct a_Stmt_Doc_ { a_Doc list; uint32_t line; uint32_t where; a_Stmt self; };
+struct a_Stmt_Example_ { a_Example list; uint32_t line; uint32_t where; a_Stmt self; };
 struct a_Stmt_Code_
 {
     // statement list
@@ -468,7 +475,7 @@ struct a_Stmt_Code_
 typedef enum { ae_stmt_exp, ae_stmt_while, ae_stmt_until, ae_stmt_for, ae_stmt_foreach,
                ae_stmt_loop, ae_stmt_if, ae_stmt_code, ae_stmt_switch, ae_stmt_break,
                ae_stmt_continue, ae_stmt_return, ae_stmt_case, ae_stmt_gotolabel,
-               ae_stmt_import, ae_stmt_doc
+               ae_stmt_import, ae_stmt_doc, ae_stmt_example
              } ae_Stmt_Type;
 
 // a statement
@@ -503,6 +510,7 @@ struct a_Stmt_
         struct a_Stmt_GotoLabel_ stmt_gotolabel;
         struct a_Stmt_Import_ stmt_import;
         struct a_Stmt_Doc_ stmt_doc;
+        struct a_Stmt_Example_ stmt_example;
     };
 
     // code position

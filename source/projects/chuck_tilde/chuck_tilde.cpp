@@ -23,19 +23,58 @@
 
 #include "chuck.h"
 #include "chuck_globals.h"
+#include "chuck_dl.h"
+
+#include <atomic>
 
 // globals defs
 #define CK_CHANNELS 1
 
+// max simultaneous chuck~ objects that can receive routed callbacks
+#define CK_MAX_INSTANCES 128
+// depth of the audio-thread -> main-thread reply queue, per instance
+#define CK_REPLY_QUEUE_SIZE 256
+// max atoms carried by a single reply
+#define CK_REPLY_MAX_ATOMS 64
+// max in-flight 'get' requests whose variable name is remembered, per instance
+#define CK_PENDING_SIZE 256
+// max concurrent event listeners, per instance
+#define CK_MAX_LISTENS 32
+
 namespace fs = std::filesystem;
 
 // global variables
-int CK_INSTANCE_COUNT = 0;
+int CK_INSTANCE_COUNT = 0;              // monotonic; source of per-object ids
+int CK_INSTANCE_LIVE = 0;               // currently-alive instances; guards globalCleanup
 std::vector<std::string> CK_INSTANCE_NAMES;
+
+// forward decl so the instance slot table can refer to it
+typedef struct _ck t_ck;
+
+// chuck's globals callbacks carry a t_CKINT id and nothing else, so routing a
+// reply back to the object that asked for it means encoding the destination in
+// that id. slot indexes this table; the table is only mutated on the main thread
+// (object creation / destruction) and only read on the audio thread, so atomic
+// pointer slots are enough to make the lookup safe without locking
+static std::atomic<t_ck*> CK_INSTANCE_SLOTS[CK_MAX_INSTANCES];
+
+// a reply queued from the audio thread, drained on the main thread
+typedef struct _ck_reply {
+    t_symbol* selector;
+    long argc;
+    t_atom argv[CK_REPLY_MAX_ATOMS];
+} t_ck_reply;
+
+// pack / unpack a globals callback id: high 32 bits select the instance slot,
+// low 32 bits are a per-instance ticket identifying the request
+#define CK_ID_PACK(slot, ticket) \
+    (((t_CKINT)(slot) << 32) | ((t_CKINT)(ticket) & 0xFFFFFFFFLL))
+#define CK_ID_SLOT(id)   ((long)(((t_CKINT)(id)) >> 32))
+#define CK_ID_TICKET(id) ((long)(((t_CKINT)(id)) & 0xFFFFFFFFLL))
 
 
 // data structures
-typedef struct _ck {
+struct _ck {
     t_pxobject ob;                  // the object itself (t_pxobject in MSP)
 
     // max-related
@@ -63,8 +102,22 @@ typedef struct _ck {
     // tap-related (for reading global UGen samples)
     long tap_channels;              // number of tap outlet channels (0 = disabled)
     t_symbol* tap_ugens[16];        // names of global UGens to tap (one per outlet, max 16)
+    long tap_ugen_nchans[16];       // channel count of the UGen feeding this outlet (0 = mono)
+    long tap_ugen_chan[16];         // which channel of that UGen this outlet carries
     float* tap_buffer;              // buffer for tapped samples
-} t_ck;
+    long tap_buffer_frames;         // frames allocated per channel in tap_buffer
+
+    // reply-related (routing chuck callbacks back out to the patch)
+    void* reply_outlet;             // rightmost outlet: get/listen/shred replies
+    void* reply_qelem;              // defers queued replies to the main thread
+    long slot;                      // index into CK_INSTANCE_SLOTS (-1 if none)
+    t_ck_reply reply_queue[CK_REPLY_QUEUE_SIZE];
+    std::atomic<long> reply_head;   // read cursor, owned by the main thread
+    std::atomic<long> reply_tail;   // write cursor, owned by the audio thread
+    t_symbol* pending_names[CK_PENDING_SIZE]; // variable name per in-flight get
+    long pending_ticket;            // next ticket to issue
+    t_symbol* listen_names[CK_MAX_LISTENS];  // event name per active listener
+};
 
 
 // method prototypes
@@ -95,6 +148,7 @@ t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv); // replace 
 t_max_err ck_clear(t_ck* x, t_symbol* s, long argc, t_atom* argv);   // clear_vm, clear_globals
 t_max_err ck_reset(t_ck* x, t_symbol* s, long argc, t_atom* argv);   // clear_vm, reset_id
 t_max_err ck_removeall(t_ck* x);                // remove all shreds (keeps VM state)
+t_max_err ck_abort(t_ck* x);                    // abort the currently-running shred
 t_max_err ck_status(t_ck* x);                   // metadata about running shreds in the chuck vm
 t_max_err ck_time(t_ck* x);                     // current time
 
@@ -126,10 +180,18 @@ t_max_err ck_adaptive(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 // error-reporting / logging helpers
 void ck_stdout_print(const char* msg);
 void ck_stderr_print(const char* msg);
-void ck_info(t_ck* x, char* fmt, ...);
-void ck_warn(t_ck* x, char* fmt, ...);
-void ck_debug(t_ck* x, char* fmt, ...);
-void ck_error(t_ck* x, char* fmt, ...);
+// let the compiler type-check the varargs against the format string
+#if defined(__GNUC__) || defined(__clang__)
+#define CK_PRINTF_FMT(fmt_idx, args_idx) \
+    __attribute__((format(printf, fmt_idx, args_idx)))
+#else
+#define CK_PRINTF_FMT(fmt_idx, args_idx)
+#endif
+
+void ck_info(t_ck* x, const char* fmt, ...) CK_PRINTF_FMT(2, 3);
+void ck_warn(t_ck* x, const char* fmt, ...) CK_PRINTF_FMT(2, 3);
+void ck_debug(t_ck* x, const char* fmt, ...) CK_PRINTF_FMT(2, 3);
+void ck_error(t_ck* x, const char* fmt, ...) CK_PRINTF_FMT(2, 3);
 
 // helpers
 void replace_character(char* str, char c1, char c2);
@@ -157,19 +219,31 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
 t_max_err ck_get(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 
-// callbacks (events) -> map_cb_event
-void cb_event(const char* name);
+// reply plumbing: chuck's globals callbacks fire on the audio thread, so replies
+// are queued there and flushed out the reply outlet on the main thread
+void ck_reply_push(t_ck* x, t_symbol* selector, long argc, t_atom* argv);
+void ck_reply_drain(t_ck* x);
+t_ck* ck_instance_from_id(t_CKINT id);
+t_symbol* ck_pending_name(t_ck* x, t_CKINT id);
+t_CKINT ck_pending_issue(t_ck* x, t_symbol* name);
 
-// callbacks (variables)
-void cb_get_int(const char* name, t_CKINT val);
-void cb_get_float(const char* name, t_CKFLOAT val);
-void cb_get_string(const char* name, const char* val);
-void cb_get_int_array(const char* name, t_CKINT array[], t_CKUINT n);
-void cb_get_int_array_value(const char* name, t_CKINT value);
-void cb_get_float_array(const char* name, t_CKFLOAT array[], t_CKUINT n);
-void cb_get_float_array_value(const char* name, t_CKFLOAT value);
-void cb_get_assoc_int_array_value(const char* name, t_CKINT val);
-void cb_get_assoc_float_array_value(const char* name, t_CKFLOAT val);
+// callbacks (events); the id encodes instance slot + listener ticket
+void cb_event(t_CKINT id);
+
+// callbacks (variables); the id encodes instance slot + request ticket
+void cb_get_int(t_CKINT id, t_CKINT val);
+void cb_get_float(t_CKINT id, t_CKFLOAT val);
+void cb_get_string(t_CKINT id, const char* val);
+void cb_get_int_array(t_CKINT id, t_CKINT array[], t_CKUINT n);
+void cb_get_int_array_value(t_CKINT id, t_CKINT value);
+void cb_get_float_array(t_CKINT id, t_CKFLOAT array[], t_CKUINT n);
+void cb_get_float_array_value(t_CKINT id, t_CKFLOAT value);
+void cb_get_assoc_int_array_value(t_CKINT id, t_CKINT val);
+void cb_get_assoc_float_array_value(t_CKINT id, t_CKFLOAT val);
+
+// shred lifecycle watcher; BINDLE carries the t_ck* directly
+void CK_DLL_CALL cb_shreds_watcher(Chuck_VM_Shred* shred, t_CKINT code,
+                                   t_CKINT param, Chuck_VM* vm, void* bindle);
 
 // dump all global variables
 void cb_get_all_global_vars(const std::vector<Chuck_Globals_TypeValue> & list, void * data);
@@ -177,6 +251,16 @@ void cb_get_all_global_vars(const std::vector<Chuck_Globals_TypeValue> & list, v
 
 // global class pointer variable
 static t_class* ck_class = NULL;
+
+// cached reply selectors. every message out of the reply outlet uses one of
+// these: the selector is always ours and any user-supplied name travels as an
+// argument, so no ChucK global can ever collide with the reply vocabulary.
+// cached rather than gensym'd at call time because these are emitted from the
+// audio thread
+static t_symbol* ps_val = NULL;      // val <name> <value...>   -- 'get' reply
+static t_symbol* ps_event = NULL;    // event <name>            -- 'listen'
+static t_symbol* ps_shred = NULL;    // shred add|remove <id>   -- vm watcher
+static t_symbol* ps_global = NULL;   // global <name> <type>    -- 'globals'
 
 
 //-----------------------------------------------------------------------------------------------
@@ -202,6 +286,7 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_clear,        "clear",    A_GIMME, 0);
     class_addmethod(c, (method)ck_reset,        "reset",    A_GIMME, 0); // reset -> 'clear vm', 'reset id'
     class_addmethod(c, (method)ck_removeall,    "removeall", 0);
+    class_addmethod(c, (method)ck_abort,        "abort",    0);
     class_addmethod(c, (method)ck_status,       "status",   0);
     class_addmethod(c, (method)ck_time,         "time",     0);
 
@@ -263,6 +348,12 @@ void ext_main(void* r)
     class_dspinit(c);
     class_register(CLASS_BOX, c);
     ck_class = c;
+
+    // cache the reply selectors once
+    ps_val = gensym("val");
+    ps_event = gensym("event");
+    ps_shred = gensym("shred");
+    ps_global = gensym("global");
 }
 
 void* ck_new(t_symbol* s, long argc, t_atom* argv)
@@ -288,8 +379,25 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->tap_channels = 0;
         for (int i = 0; i < 16; i++) {
             x->tap_ugens[i] = gensym("");
+            x->tap_ugen_nchans[i] = 0;
+            x->tap_ugen_chan[i] = 0;
         }
         x->tap_buffer = NULL;
+        x->tap_buffer_frames = 0;
+
+        // reply defaults
+        x->reply_outlet = NULL;
+        x->reply_qelem = NULL;
+        x->slot = -1;
+        x->reply_head.store(0);
+        x->reply_tail.store(0);
+        x->pending_ticket = 0;
+        for (int i = 0; i < CK_PENDING_SIZE; i++) {
+            x->pending_names[i] = NULL;
+        }
+        for (int i = 0; i < CK_MAX_LISTENS; i++) {
+            x->listen_names[i] = NULL;
+        }
 
         // get external editor
         if (const char* editor = std::getenv("EDITOR")) {
@@ -301,6 +409,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // object id corresponds to order of object creation
         x->oid = CK_INSTANCE_COUNT++;
+        CK_INSTANCE_LIVE++;
 
         // set patcher object
         object_obex_lookup(x, gensym("#P"), (t_patcher**)&x->patcher);
@@ -373,14 +482,36 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         dsp_setup((t_pxobject*)x, x->channels);   // MSP inlets: 2nd arg is # of inlets
 
-        // create main signal outlets
-        for (int i = 0; i < x->channels; i++) {
-            outlet_new((t_pxobject*)x, "signal"); // signal outlet
-        }
+        // outlets are created right to left: the FIRST outlet_new call produces
+        // the rightmost outlet. so the reply outlet must be created before the
+        // signal outlets to land on the right. creating it last would make it
+        // outlet 0 and shift every audio and tap outlet one position over,
+        // silently rewiring existing patches
+        x->reply_outlet = outlet_new((t_object*)x, NULL);
+        x->reply_qelem = qelem_new(x, (method)ck_reply_drain);
 
-        // create tap outlets (if @ntap attribute is set)
+        // the signal outlets below are interchangeable at creation time; which
+        // one carries audio and which carries a tap is decided by the outs[]
+        // index written in ck_perform64, and outs[] runs left to right. so the
+        // main outlets are outs[0..channels-1] and the taps follow them
+        for (int i = 0; i < x->channels; i++) {
+            outlet_new((t_pxobject*)x, "signal"); // main signal outlet
+        }
         for (int i = 0; i < x->tap_channels; i++) {
             outlet_new((t_pxobject*)x, "signal"); // tap signal outlet
+        }
+
+        // claim an instance slot so chuck's callbacks can find their way back
+        for (long i = 0; i < CK_MAX_INSTANCES; i++) {
+            t_ck* expected = NULL;
+            if (CK_INSTANCE_SLOTS[i].compare_exchange_strong(expected, x)) {
+                x->slot = i;
+                break;
+            }
+        }
+        if (x->slot < 0) {
+            ck_warn(x, (char*)"more than %d chuck~ objects: replies from this "
+                             "instance will not be routed", CK_MAX_INSTANCES);
         }
 
         // chuck-related
@@ -414,6 +545,10 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->chuck->setParam(CHUCK_PARAM_VM_HALT, (t_CKINT)0);
         x->chuck->setParam(CHUCK_PARAM_DUMP_INSTRUCTIONS, (t_CKINT)0);
 
+        // chuck~ is always driven from the MSP audio callback, so tell the VM so;
+        // this defaults to 0 and affects realtime-dependent behaviour in the engine
+        x->chuck->setParam(CHUCK_PARAM_IS_REALTIME_AUDIO_HINT, (t_CKINT)1);
+
         // set default chuck examples dirs
         std::string global_dir = std::string(x->working_dir->s_name);
         x->chuck->setParam(CHUCK_PARAM_WORKING_DIRECTORY, global_dir);
@@ -430,7 +565,10 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         chugin_search.push_back(global_dir + "/chugins");
 #endif
         x->chuck->setParam(CHUCK_PARAM_IMPORT_PATH_SYSTEM, chugin_search);
-        // redirect chuck stdout/stderr to local callbacks
+        // redirect chuck stdout/stderr to local callbacks.
+        // these are process-wide, but they are the ONLY route for the VM's own
+        // printing: 'status' output, the "(VM) ..." messages, EM_log, and so on.
+        // dropping them in favour of chout/cherr alone silences all of that
         x->chuck->setStdoutCallback(ck_stdout_print);
         x->chuck->setStderrCallback(ck_stderr_print);
 
@@ -438,6 +576,19 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->chuck->init();
         x->chuck->start();
         ChucK::setLogLevel(x->loglevel);
+
+        // chout/cherr carry <<< >>> output from chuck code and are per-instance.
+        // they must be set AFTER init(): setChoutCallback() bails out early
+        // unless m_init is true and the carrier's chout already exists
+        x->chuck->setChoutCallback(ck_stdout_print);
+        x->chuck->setCherrCallback(ck_stderr_print);
+
+        // report shred lifecycle out the reply outlet; the bindle carries the
+        // instance, so this needs no id packing
+        x->chuck->vm()->subscribe_watcher(
+            cb_shreds_watcher,
+            ckvm_shreds_watch_SPORK | ckvm_shreds_watch_REMOVE,
+            x);
 
         post("ChucK %s", x->chuck->version());
         post("inputs: %d  outputs: %d  tap: %d",
@@ -467,10 +618,31 @@ void ck_free(t_ck* x)
         delete[] x->tap_buffer;
         x->tap_buffer = NULL;
     }
+    // release the instance slot first so any callback still in flight on the
+    // audio thread resolves to NULL and bails out instead of touching a
+    // half-destroyed object
+    if (x->slot >= 0) {
+        CK_INSTANCE_SLOTS[x->slot].store(NULL, std::memory_order_release);
+        x->slot = -1;
+    }
     if (x->chuck) {
-        ChucK::globalCleanup();
+        if (x->chuck->vm()) {
+            x->chuck->vm()->remove_watcher(cb_shreds_watcher);
+        }
         delete x->chuck;
         x->chuck = NULL;
+    }
+    // no further qelem_set can occur now that the VM is gone
+    if (x->reply_qelem) {
+        qelem_free(x->reply_qelem);
+        x->reply_qelem = NULL;
+    }
+    // globalCleanup() tears down process-wide chuck state, so it may only run
+    // once the last chuck~ in the process is gone; calling it per-instance
+    // pulled that state out from under any still-running siblings
+    if (--CK_INSTANCE_LIVE <= 0) {
+        CK_INSTANCE_LIVE = 0;
+        ChucK::globalCleanup();
     }
     dsp_free((t_pxobject*)x);
 }
@@ -483,9 +655,11 @@ void ck_assist(t_ck* x, void* b, long m, long a, char* s)
     } else {                 // outlet
         if (a < x->channels) {
             snprintf_zero(s, 512, "(signal) audio output %ld", a + 1);
-        } else {
+        } else if (a < x->channels + x->tap_channels) {
             long tap_index = a - x->channels;
             snprintf_zero(s, 512, "(signal) tap output %ld", tap_index + 1);
+        } else {
+            snprintf_zero(s, 512, "(list) get values, events, shred changes");
         }
     }
 }
@@ -557,8 +731,8 @@ bool is_path(const char* target)
 
 void replace_character(char* str, char c1, char c2)
 {
-    int j, n = strlen(str);
-    for (int i = j = 0; i < n; i++) {
+    size_t j, n = strlen(str);
+    for (size_t i = j = 0; i < n; i++) {
         if (str[i] != c1) {
             str[j++] = str[i];
         }
@@ -661,7 +835,7 @@ t_max_err ck_editor_get(t_ck *x, t_object *attr, long *argc, t_atom **argv)
 
 
 
-void ck_warn(t_ck* x, char* fmt, ...)
+void ck_warn(t_ck* x, const char* fmt, ...)
 {
     if (x->loglevel >= 4) {
         char msg[MAX_PATH_CHARS];
@@ -675,7 +849,7 @@ void ck_warn(t_ck* x, char* fmt, ...)
     }
 }
 
-void ck_info(t_ck* x, char* fmt, ...)
+void ck_info(t_ck* x, const char* fmt, ...)
 {
     if (x->loglevel >= 5) {
         char msg[MAX_PATH_CHARS];
@@ -689,7 +863,7 @@ void ck_info(t_ck* x, char* fmt, ...)
     }
 }
 
-void ck_debug(t_ck* x, char* fmt, ...)
+void ck_debug(t_ck* x, const char* fmt, ...)
 {
     if (x->loglevel >= 6) {
         char msg[MAX_PATH_CHARS];
@@ -703,7 +877,7 @@ void ck_debug(t_ck* x, char* fmt, ...)
     }
 }
 
-void ck_error(t_ck* x, char* fmt, ...)
+void ck_error(t_ck* x, const char* fmt, ...)
 {
     char msg[MAX_PATH_CHARS];
 
@@ -760,14 +934,14 @@ long ck_spork_highest_id(t_ck* x)
 long ck_spork_last_id(t_ck* x)
 {
     long id = x->chuck->vm()->last_id();
-    ck_info(x, (char*)"last_id: %d", id);
+    ck_info(x, "last_id: %ld", (long)id);
     return id;
 }
 
 long ck_spork_next_id(t_ck* x)
 {
     long id = x->chuck->vm()->next_id();
-    ck_info(x, (char*)"next_id: %d", id);
+    ck_info(x, "next_id: %ld", (long)id);
     return id;
 }
 
@@ -1211,11 +1385,53 @@ t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 
 t_max_err ck_removeall(t_ck* x)
 {
+    // NOTE: this removes shreds only. global UGens belong to the VM rather than
+    // to any shred, so a 'global SinOsc g => dac' keeps sounding after every
+    // shred is gone -- which reads as "removeall did nothing" when the patch
+    // gets its sound from globals. 'reset' (CK_MSG_CLEARVM) clears the type
+    // system and globals too, which is why that one goes silent.
+    std::vector<t_CKUINT> shred_ids;
+    x->chuck->vm()->shreduler()->get_all_shred_ids(shred_ids);
+
     Chuck_Msg* msg = new Chuck_Msg;
     msg->type = CK_MSG_REMOVEALL;
     msg->reply_cb = (ck_msg_func)0;
     x->chuck->vm()->queue_msg(msg, 1);
-    ck_info(x, (char*)"removeall: removed all shreds");
+
+    object_post((t_object*)x,
+                "removeall: removing %ld shred(s); global UGens are VM state "
+                "and keep running -- use 'reset' to clear those too",
+                (long)shred_ids.size());
+    return MAX_ERR_NONE;
+}
+
+t_max_err ck_abort(t_ck* x)
+{
+    // abort the shred currently executing in the VM. unlike 'remove', this can
+    // break out of a shred stuck in a loop that never advances time.
+    //
+    // NOTE: this only has a target while the VM is inside a compute() cycle,
+    // because Chuck_VM::abort_current_shred() reads m_shreduler->m_current_shred
+    // and that is only non-NULL during compute. sending 'abort' from a message
+    // box on an otherwise healthy patch therefore finds nothing to abort, and
+    // correctly reports so. it bites precisely when it is needed: a runaway
+    // shred leaves the audio thread stuck inside compute(), and the abort
+    // arriving from the main thread then does have a current shred to flag.
+    //
+    // reported with object_post/object_warn rather than ck_info/ck_warn, which
+    // are gated on loglevel >= 5 / >= 4 and so are silent at the default
+    // loglevel of CK_LOG_SYSTEM (2). a user-invoked command must always answer.
+    if (x->chuck == NULL || x->chuck->vm() == NULL) {
+        ck_error(x, (char*)"abort: vm not available");
+        return MAX_ERR_GENERIC;
+    }
+    if (x->chuck->vm()->abort_current_shred()) {
+        object_post((t_object*)x, "abort: aborted the running shred");
+        return MAX_ERR_NONE;
+    }
+    object_warn((t_object*)x,
+                "abort: no shred is currently executing; abort only takes "
+                "effect on a shred that is stuck inside the VM");
     return MAX_ERR_NONE;
 }
 
@@ -1333,7 +1549,7 @@ t_max_err ck_status(t_ck* x)
         std::vector<Chuck_VM_Shred*> shreds;
         shreduler->get_all_shreds(shreds);
         for (const Chuck_VM_Shred* i : shreds) {
-            ck_info(x, (char*)"%d:%s", i->get_id(), i->name.c_str());
+            ck_info(x, "%lu:%s", (unsigned long)i->get_id(), i->name.c_str());
         }
     }
 
@@ -1408,7 +1624,7 @@ t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             if ((level >= 0) && (level <= 10)) {
                 name = ck_get_loglevel_name(level);
                 x->loglevel = level;
-                ck_info(x, (char*)"setting loglevel to %d (%s)", x->loglevel, name->s_name);
+                ck_info(x, "setting loglevel to %ld (%s)", (long)x->loglevel, name->s_name);
                 ChucK::setLogLevel(x->loglevel);
                 return MAX_ERR_NONE;
             } else {
@@ -1477,7 +1693,7 @@ t_max_err ck_anything(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         }
         case A_LONG: {
             long p_long = atom_getlong(argv);
-            ck_debug(x, (char*)"param %s: %d", s->s_name, p_long);
+            ck_debug(x, "param %s: %ld", s->s_name, (long)p_long);
             x->chuck->vm()->globals_manager()->setGlobalInt(s->s_name, p_long);
             break;
         }
@@ -1612,7 +1828,7 @@ t_max_err ck_docs(t_ck* x)
 
 t_max_err ck_globals(t_ck* x)
 {
-    if (x->chuck->vm()->globals_manager()->getAllGlobalVariables(cb_get_all_global_vars, NULL)) {
+    if (x->chuck->vm()->globals_manager()->getAllGlobalVariables(cb_get_all_global_vars, x)) {
         return MAX_ERR_NONE;
     }
     ck_error(x, (char*)"could not dump global variable to console");
@@ -1622,9 +1838,41 @@ t_max_err ck_globals(t_ck* x)
 t_max_err ck_vm(t_ck* x)
 {
     ck_info(x, (char*)"VM %d / %d status", x->oid, CK_INSTANCE_COUNT);
-    ck_info(x, (char*)"\tinitialized: %d", x->chuck->vm()->has_init());
-    ck_info(x, (char*)"\trunning: %d", x->chuck->vm()->running());
+    ck_info(x, "\tinitialized: %lu", (unsigned long)x->chuck->vm()->has_init());
+    ck_info(x, "\trunning: %lu", (unsigned long)x->chuck->vm()->running());
     return MAX_ERR_NONE;
+}
+
+// clear a single tap slot back to "unassigned, mono"
+static void ck_tap_clear_slot(t_ck* x, long i)
+{
+    x->tap_ugens[i] = gensym("");
+    x->tap_ugen_nchans[i] = 0;
+    x->tap_ugen_chan[i] = 0;
+}
+
+// drop any multichannel group that is no longer internally consistent. assigning
+// a group over part of an existing one can otherwise strand the leftover members,
+// which the perform loop would skip forever and leave holding stale audio
+static void ck_tap_normalize(t_ck* x)
+{
+    for (long i = 0; i < x->tap_channels; i++) {
+        long nchans = x->tap_ugen_nchans[i];
+        if (nchans <= 1) {
+            continue;
+        }
+        long base = i - x->tap_ugen_chan[i];
+        bool ok = (base >= 0) && (base + nchans <= x->tap_channels);
+        for (long c = 0; ok && c < nchans; c++) {
+            long j = base + c;
+            ok = (x->tap_ugens[j] == x->tap_ugens[i])
+                 && (x->tap_ugen_nchans[j] == nchans)
+                 && (x->tap_ugen_chan[j] == c);
+        }
+        if (!ok) {
+            ck_tap_clear_slot(x, i);
+        }
+    }
 }
 
 t_max_err ck_tap(t_ck* x, t_symbol* s, long argc, t_atom* argv)
@@ -1637,7 +1885,7 @@ t_max_err ck_tap(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     if (argc == 0) {
         // tap (no args): clear all taps
         for (int i = 0; i < x->tap_channels; i++) {
-            x->tap_ugens[i] = gensym("");
+            ck_tap_clear_slot(x, i);
         }
         ck_info(x, (char*)"tap: cleared all");
     }
@@ -1646,6 +1894,7 @@ t_max_err ck_tap(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             // tap ugen_name: set all outlets to tap the same UGen
             t_symbol* ugen_name = atom_getsym(&argv[0]);
             for (int i = 0; i < x->tap_channels; i++) {
+                ck_tap_clear_slot(x, i);
                 x->tap_ugens[i] = ugen_name;
             }
             ck_info(x, (char*)"tap: all outlets set to '%s'", ugen_name->s_name);
@@ -1657,7 +1906,7 @@ t_max_err ck_tap(t_ck* x, t_symbol* s, long argc, t_atom* argv)
                 ck_error(x, (char*)"tap: outlet %ld out of range (1-%ld)", outlet, x->tap_channels);
                 return MAX_ERR_GENERIC;
             }
-            x->tap_ugens[outlet - 1] = gensym("");
+            ck_tap_clear_slot(x, outlet - 1);
             ck_info(x, (char*)"tap: outlet %ld cleared", outlet);
         }
         else {
@@ -1665,8 +1914,9 @@ t_max_err ck_tap(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             return MAX_ERR_GENERIC;
         }
     }
-    else if (argc == 2) {
-        // tap outlet_index ugen_name: set specific outlet
+    else if (argc == 2 || argc == 3) {
+        // tap outlet_index ugen_name [nchannels]: set specific outlet, where a
+        // multichannel UGen spans nchannels consecutive outlets
         if (argv[0].a_type != A_LONG) {
             ck_error(x, (char*)"tap: first argument must be outlet number (1-%ld)", x->tap_channels);
             return MAX_ERR_GENERIC;
@@ -1681,13 +1931,46 @@ t_max_err ck_tap(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             return MAX_ERR_GENERIC;
         }
         t_symbol* ugen_name = atom_getsym(&argv[1]);
-        x->tap_ugens[outlet - 1] = ugen_name;
-        ck_info(x, (char*)"tap: outlet %ld set to '%s'", outlet, ugen_name->s_name);
+
+        long nchans = 1;
+        if (argc == 3) {
+            if (argv[2].a_type != A_LONG) {
+                ck_error(x, (char*)"tap: third argument must be a channel count");
+                return MAX_ERR_GENERIC;
+            }
+            nchans = atom_getlong(&argv[2]);
+            if (nchans < 1) {
+                ck_error(x, (char*)"tap: channel count must be at least 1");
+                return MAX_ERR_GENERIC;
+            }
+            if (outlet - 1 + nchans > x->tap_channels) {
+                ck_error(x, (char*)"tap: %ld channels from outlet %ld exceeds %ld tap outlets",
+                         nchans, outlet, x->tap_channels);
+                return MAX_ERR_GENERIC;
+            }
+        }
+
+        if (nchans > 1) {
+            for (long c = 0; c < nchans; c++) {
+                long j = outlet - 1 + c;
+                x->tap_ugens[j] = ugen_name;
+                x->tap_ugen_nchans[j] = nchans;
+                x->tap_ugen_chan[j] = c;
+            }
+            ck_info(x, (char*)"tap: outlets %ld-%ld set to '%s' (%ld channels)",
+                    outlet, outlet + nchans - 1, ugen_name->s_name, nchans);
+        } else {
+            ck_tap_clear_slot(x, outlet - 1);
+            x->tap_ugens[outlet - 1] = ugen_name;
+            ck_info(x, (char*)"tap: outlet %ld set to '%s'", outlet, ugen_name->s_name);
+        }
     }
     else {
         ck_error(x, (char*)"tap: too many arguments");
         return MAX_ERR_GENERIC;
     }
+
+    ck_tap_normalize(x);
     return MAX_ERR_NONE;
 }
 
@@ -1702,6 +1985,7 @@ t_max_err ck_param(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         CHUCK_PARAM_VM_HALT,
         CHUCK_PARAM_OTF_ENABLE,
         CHUCK_PARAM_OTF_PORT,
+        CHUCK_PARAM_OTF_PRINT_WARNINGS,
         CHUCK_PARAM_DUMP_INSTRUCTIONS,
         CHUCK_PARAM_AUTO_DEPEND,
         CHUCK_PARAM_DEPRECATE_LEVEL,
@@ -1996,11 +2280,91 @@ t_max_err ck_adaptive(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 }
 
 //-----------------------------------------------------------------------------------------------
+// reply plumbing
+
+// resolve the instance that issued a globals request from its callback id.
+// returns NULL if the object was freed while the request was in flight
+t_ck* ck_instance_from_id(t_CKINT id)
+{
+    long slot = CK_ID_SLOT(id);
+    if (slot < 0 || slot >= CK_MAX_INSTANCES) {
+        return NULL;
+    }
+    return CK_INSTANCE_SLOTS[slot].load(std::memory_order_acquire);
+}
+
+// remember the variable name for an outgoing request and return the id to hand
+// to chuck. the ticket ring is only consulted when the reply arrives, which is
+// within an audio block or two, so wraparound is not a practical concern
+t_CKINT ck_pending_issue(t_ck* x, t_symbol* name)
+{
+    long ticket = x->pending_ticket++;
+    x->pending_names[ticket % CK_PENDING_SIZE] = name;
+    return CK_ID_PACK(x->slot, ticket);
+}
+
+// recover the variable name a reply belongs to
+t_symbol* ck_pending_name(t_ck* x, t_CKINT id)
+{
+    long ticket = CK_ID_TICKET(id);
+    t_symbol* name = x->pending_names[ticket % CK_PENDING_SIZE];
+    return name ? name : gensym("?");
+}
+
+// queue a reply from the audio thread. drops the reply rather than block if the
+// queue is full, which is the right trade in a realtime context
+void ck_reply_push(t_ck* x, t_symbol* selector, long argc, t_atom* argv)
+{
+    if (x == NULL || x->reply_outlet == NULL) {
+        return;
+    }
+    long tail = x->reply_tail.load(std::memory_order_relaxed);
+    long next = (tail + 1) % CK_REPLY_QUEUE_SIZE;
+    if (next == x->reply_head.load(std::memory_order_acquire)) {
+        return; // full
+    }
+    t_ck_reply* r = &x->reply_queue[tail];
+    r->selector = selector;
+    r->argc = (argc > CK_REPLY_MAX_ATOMS) ? CK_REPLY_MAX_ATOMS : argc;
+    for (long i = 0; i < r->argc; i++) {
+        r->argv[i] = argv[i];
+    }
+    x->reply_tail.store(next, std::memory_order_release);
+    qelem_set(x->reply_qelem);
+}
+
+// drain queued replies out the reply outlet; runs on the main thread via qelem
+void ck_reply_drain(t_ck* x)
+{
+    long head = x->reply_head.load(std::memory_order_relaxed);
+    while (head != x->reply_tail.load(std::memory_order_acquire)) {
+        t_ck_reply* r = &x->reply_queue[head];
+        outlet_anything(x->reply_outlet, r->selector, (short)r->argc, r->argv);
+        head = (head + 1) % CK_REPLY_QUEUE_SIZE;
+        x->reply_head.store(head, std::memory_order_release);
+    }
+}
+
+//-----------------------------------------------------------------------------------------------
 // global event callback
 
-void cb_event(const char* name)
+void cb_event(t_CKINT id)
 {
-    post("cb_event: %s", name);
+    t_ck* x = ck_instance_from_id(id);
+    if (x == NULL) {
+        return;
+    }
+    long ticket = CK_ID_TICKET(id);
+    if (ticket < 0 || ticket >= CK_MAX_LISTENS) {
+        return;
+    }
+    t_symbol* name = x->listen_names[ticket];
+    if (name == NULL) {
+        return; // listener was cancelled
+    }
+    t_atom a[1];
+    atom_setsym(a, name);
+    ck_reply_push(x, ps_event, 1, a);
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -2008,61 +2372,131 @@ void cb_event(const char* name)
 
 void cb_get_all_global_vars(const std::vector<Chuck_Globals_TypeValue> & list, void * data)
 {
+    t_ck* x = (t_ck*)data;
     post("cb_get_all_global_vars:");
     for (auto v : list) {
         post("type: %s name: %s", v.type.c_str(), v.name.c_str());
+        if (x != NULL) {
+            // name before type. once a patch strips our selector with
+            // [route global], whatever follows becomes the new selector, and
+            // ChucK's 'int' and 'float' type names collide with Max's typed
+            // int/float methods there ("bad arguments for message int").
+            // variable names cannot be ChucK keywords, so leading with the
+            // name avoids that, and matches the shape of 'val <name> ...'
+            t_atom a[2];
+            atom_setsym(a, gensym(v.name.c_str()));
+            atom_setsym(a + 1, gensym(v.type.c_str()));
+            ck_reply_push(x, ps_global, 2, a);
+        }
     }
 }
 
-void cb_get_int(const char* name, t_CKINT val)
+// 'get' replies are emitted as 'val <name> <value...>'. the variable name is
+// user-controlled text, so it travels as an argument rather than as the
+// selector; putting it in the selector would let a ChucK global named 'shred'
+// or 'event' masquerade as a control message
+#define CK_VAL_MAX_VALUES (CK_REPLY_MAX_ATOMS - 1)
+
+void cb_get_int(t_CKINT id, t_CKINT val)
 {
-    post("cb_get_int: name: %s value: %d", name, val);
+    t_ck* x = ck_instance_from_id(id);
+    if (x == NULL) return;
+    t_atom a[2];
+    atom_setsym(a, ck_pending_name(x, id));
+    atom_setlong(a + 1, (t_atom_long)val);
+    ck_reply_push(x, ps_val, 2, a);
 }
 
-void cb_get_float(const char* name, t_CKFLOAT val)
+void cb_get_float(t_CKINT id, t_CKFLOAT val)
 {
-    post("cb_get_float: name: %s value: %f", name, val);
+    t_ck* x = ck_instance_from_id(id);
+    if (x == NULL) return;
+    t_atom a[2];
+    atom_setsym(a, ck_pending_name(x, id));
+    atom_setfloat(a + 1, (t_atom_float)val);
+    ck_reply_push(x, ps_val, 2, a);
 }
 
-void cb_get_string(const char* name, const char* val)
+void cb_get_string(t_CKINT id, const char* val)
 {
-    post("cb_get_string: name: %s value: %s", name, val);
+    t_ck* x = ck_instance_from_id(id);
+    if (x == NULL) return;
+    t_atom a[2];
+    atom_setsym(a, ck_pending_name(x, id));
+    atom_setsym(a + 1, gensym(val ? val : ""));
+    ck_reply_push(x, ps_val, 2, a);
 }
 
-void cb_get_int_array(const char* name, t_CKINT array[], t_CKUINT n)
+void cb_get_int_array(t_CKINT id, t_CKINT array[], t_CKUINT n)
 {
-    post("cb_get_int_array: name: %s size: %d", name, n);
-    for (int i = 0; i < n; i++) {
-        post("array[%d] = %d", i, array[i]);
+    t_ck* x = ck_instance_from_id(id);
+    if (x == NULL) return;
+    t_atom a[CK_REPLY_MAX_ATOMS];
+    long count = (n > (t_CKUINT)CK_VAL_MAX_VALUES) ? CK_VAL_MAX_VALUES : (long)n;
+    atom_setsym(a, ck_pending_name(x, id));
+    for (long i = 0; i < count; i++) {
+        atom_setlong(a + 1 + i, (t_atom_long)array[i]);
     }
+    ck_reply_push(x, ps_val, count + 1, a);
 }
 
-void cb_get_float_array(const char* name, t_CKFLOAT array[], t_CKUINT n)
+void cb_get_float_array(t_CKINT id, t_CKFLOAT array[], t_CKUINT n)
 {
-    post("cb_get_float_array: name: %s size: %d", name, n);
-    for (int i = 0; i < n; i++) {
-        post("array[%d] = %d", i, array[i]);
+    t_ck* x = ck_instance_from_id(id);
+    if (x == NULL) return;
+    t_atom a[CK_REPLY_MAX_ATOMS];
+    long count = (n > (t_CKUINT)CK_VAL_MAX_VALUES) ? CK_VAL_MAX_VALUES : (long)n;
+    atom_setsym(a, ck_pending_name(x, id));
+    for (long i = 0; i < count; i++) {
+        atom_setfloat(a + 1 + i, (t_atom_float)array[i]);
     }
+    ck_reply_push(x, ps_val, count + 1, a);
 }
 
-void cb_get_int_array_value(const char* name, t_CKINT value)
+void cb_get_int_array_value(t_CKINT id, t_CKINT value)
 {
-    post("cb_get_int_array_value: name: %s value: %d", name, value);
+    cb_get_int(id, value);
 }
 
-void cb_get_float_array_value(const char* name, t_CKFLOAT value)
+void cb_get_float_array_value(t_CKINT id, t_CKFLOAT value)
 {
-    post("cb_get_float_array_value: name: %s value: %d", name, value);
+    cb_get_float(id, value);
 }
 
-void cb_get_assoc_int_array_value(const char* name, t_CKINT val)
+void cb_get_assoc_int_array_value(t_CKINT id, t_CKINT val)
 {
-     post("cb_get_assoc_int_array_value: name: %s value: %d", name, val);
+    cb_get_int(id, val);
 }
 
-void cb_get_assoc_float_array_value(const char* name, t_CKFLOAT val)
+void cb_get_assoc_float_array_value(t_CKINT id, t_CKFLOAT val)
 {
-     post("cb_get_assoc_float_array_value: name: %s value: %f", name, val);
+    cb_get_float(id, val);
+}
+
+//-----------------------------------------------------------------------------------------------
+// shred lifecycle watcher
+
+void CK_DLL_CALL cb_shreds_watcher(Chuck_VM_Shred* shred, t_CKINT code,
+                                   t_CKINT param, Chuck_VM* vm, void* bindle)
+{
+    t_ck* x = (t_ck*)bindle;
+    if (x == NULL || shred == NULL) {
+        return;
+    }
+
+    const char* what = NULL;
+    switch (code) {
+    case ckvm_shreds_watch_SPORK:    what = "add";      break;
+    case ckvm_shreds_watch_REMOVE:   what = "remove";   break;
+    case ckvm_shreds_watch_SUSPEND:  what = "suspend";  break;
+    case ckvm_shreds_watch_ACTIVATE: what = "activate"; break;
+    default: return;
+    }
+
+    t_atom a[2];
+    atom_setsym(a, gensym(what));
+    atom_setlong(a + 1, (t_atom_long)shred->get_id());
+    ck_reply_push(x, ps_shred, 2, a);
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -2087,7 +2521,7 @@ t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         if (type == gensym("int") && (argv+2)->a_type == A_LONG) {
             t_atom_long value = atom_getlong(argv+2);
             if (x->chuck->vm()->globals_manager()->setGlobalInt(name->s_name, (t_CKINT)value)) {
-                ck_info(x, (char*)"set %s -> %d", name->s_name, value);
+                ck_info(x, "set %s -> %ld", name->s_name, (long)value);
                 return MAX_ERR_NONE;
             }
         }
@@ -2113,7 +2547,7 @@ t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         if (type == gensym("int[]")) { // list of longs
             t_atom_long* long_array = (t_atom_long*)sysmem_newptr(sizeof(t_atom_long) * length);
             for (int i = 0; i < length; i++) {
-                ck_info(x, (char*)"set %s[%d] -> %d ", name->s_name, i, atom_getlong((argv+offset) + i));
+                ck_info(x, "set %s[%d] -> %ld ", name->s_name, i, (long)atom_getlong((argv+offset) + i));
                 long_array[i] = atom_getlong((argv+offset) + i);
             }
             if (x->chuck->vm()->globals_manager()->setGlobalIntArray(name->s_name, long_array, length)) {
@@ -2136,15 +2570,18 @@ t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             long index = atom_getlong((argv+2));
             long value = atom_getlong((argv+3));
             if (x->chuck->vm()->globals_manager()->setGlobalIntArrayValue(name->s_name, (t_CKUINT)index, (t_CKINT)value)) {
-                ck_info(x, (char*)"set %s %d -> %d", name->s_name, index, value);
+                ck_info(x, "set %s[%ld] -> %ld", name->s_name, (long)index, (long)value);
                 return MAX_ERR_NONE;                
             }
         }
         else if (type == gensym("float[i]")) {
             long index = atom_getlong((argv+2));
-            long value = atom_getfloat((argv+3));
-            if (x->chuck->vm()->globals_manager()->setGlobalFloatArrayValue(name->s_name, (t_CKUINT)index, (t_CKFLOAT)value)) {                
-                ck_info(x, (char*)"set %s %d -> %f", name->s_name, index, value);
+            // must be t_atom_float: holding this in a long truncated every
+            // fractional value on its way to the VM, so 'set float[i] a 0 0.5'
+            // stored 0.0
+            t_atom_float value = atom_getfloat((argv+3));
+            if (x->chuck->vm()->globals_manager()->setGlobalFloatArrayValue(name->s_name, (t_CKUINT)index, (t_CKFLOAT)value)) {
+                ck_info(x, "set %s[%ld] -> %f", name->s_name, index, (double)value);
                 return MAX_ERR_NONE;
             }
         }
@@ -2156,7 +2593,8 @@ t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         }
         else if (type == gensym("float[k]")) {
             t_symbol* key = atom_getsym((argv+2));
-            long value = atom_getfloat((argv+3));
+            // as above: truncating here silently discarded the fractional part
+            t_atom_float value = atom_getfloat((argv+3));
             if (x->chuck->vm()->globals_manager()->setGlobalAssociativeFloatArrayValue(name->s_name, key->s_name, (t_CKFLOAT)value))
                 return MAX_ERR_NONE;
         }
@@ -2179,21 +2617,27 @@ t_max_err ck_get(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     t_symbol* type = atom_getsym(argv);
     t_symbol* name = atom_getsym(argv+1);
 
+    // the callback-id overloads let the reply be routed back to this object;
+    // the plain-name overloads cannot be attributed when several chuck~ objects
+    // are present. the id also carries a ticket that recovers the variable name
+    Chuck_Globals_Manager* gm = x->chuck->vm()->globals_manager();
+    t_CKINT id = ck_pending_issue(x, name);
+
     if (argc == 2) {
         if (type == gensym("int")) {
-            if (x->chuck->vm()->globals_manager()->getGlobalInt(name->s_name, cb_get_int))
+            if (gm->getGlobalInt(name->s_name, id, cb_get_int))
                 return MAX_ERR_NONE;
         } else if (type == gensym("float")) {
-            if (x->chuck->vm()->globals_manager()->getGlobalFloat(name->s_name, cb_get_float))
+            if (gm->getGlobalFloat(name->s_name, id, cb_get_float))
                 return MAX_ERR_NONE;
         } else if (type == gensym("string")) {
-            if (x->chuck->vm()->globals_manager()->getGlobalString(name->s_name, cb_get_string))
+            if (gm->getGlobalString(name->s_name, id, cb_get_string))
                 return MAX_ERR_NONE;
         } else if (type == gensym("int[]")) {
-            if (x->chuck->vm()->globals_manager()->getGlobalIntArray(name->s_name, cb_get_int_array))
+            if (gm->getGlobalIntArray(name->s_name, id, cb_get_int_array))
                 return MAX_ERR_NONE;
         } else if (type == gensym("float[]")) {
-            if (x->chuck->vm()->globals_manager()->getGlobalFloatArray(name->s_name, cb_get_float_array))
+            if (gm->getGlobalFloatArray(name->s_name, id, cb_get_float_array))
                 return MAX_ERR_NONE;
         }
         return MAX_ERR_GENERIC;
@@ -2201,21 +2645,21 @@ t_max_err ck_get(t_ck* x, t_symbol* s, long argc, t_atom* argv)
         if ((argv+2)->a_type == A_LONG) {
             t_atom_long index = atom_getlong(argv+2);
             if (type == gensym("int[]") || type == gensym("int[i]")) {
-                if (x->chuck->vm()->globals_manager()->getGlobalIntArrayValue(name->s_name, (t_CKUINT)index, cb_get_int_array_value))
+                if (gm->getGlobalIntArrayValue(name->s_name, id, (t_CKUINT)index, cb_get_int_array_value))
                     return MAX_ERR_NONE;
             } else if (type == gensym("float[]") || type == gensym("float[i]")) {
-                if (x->chuck->vm()->globals_manager()->getGlobalFloatArrayValue(name->s_name, (t_CKUINT)index, cb_get_float_array_value))
+                if (gm->getGlobalFloatArrayValue(name->s_name, id, (t_CKUINT)index, cb_get_float_array_value))
                     return MAX_ERR_NONE;
             }
             return MAX_ERR_GENERIC;
         } else if ((argv+2)->a_type == A_SYM) {
             t_symbol* key = atom_getsym(argv+2);
             if (type == gensym("int[]") || type == gensym("int[k]")) {
-                if (x->chuck->vm()->globals_manager()->getGlobalAssociativeIntArrayValue(name->s_name, key->s_name, cb_get_assoc_int_array_value))
-                    return MAX_ERR_NONE;;
+                if (gm->getGlobalAssociativeIntArrayValue(name->s_name, id, key->s_name, cb_get_assoc_int_array_value))
+                    return MAX_ERR_NONE;
             } else if (type == gensym("float[]") || type == gensym("float[k]")) {
-                if (x->chuck->vm()->globals_manager()->getGlobalAssociativeFloatArrayValue(name->s_name, key->s_name, cb_get_assoc_float_array_value))
-                    return MAX_ERR_NONE;;
+                if (gm->getGlobalAssociativeFloatArrayValue(name->s_name, id, key->s_name, cb_get_assoc_float_array_value))
+                    return MAX_ERR_NONE;
             }
         }
     }
@@ -2224,19 +2668,57 @@ t_max_err ck_get(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 
 t_max_err ck_listen(t_ck* x, t_symbol* s, long listen_forever)
 {
-    if (x->chuck->vm()->globals_manager()->listenForGlobalEvent(s->s_name, cb_event, (bool)listen_forever)) {
+    // listeners are long-lived, so each gets a dedicated ticket slot rather than
+    // a ring entry; the ticket is needed again to cancel the listener later
+    long ticket = -1;
+    for (long i = 0; i < CK_MAX_LISTENS; i++) {
+        if (x->listen_names[i] == NULL) {
+            ticket = i;
+            break;
+        }
+        if (x->listen_names[i] == s) {
+            ck_warn(x, (char*)"listen: already listening to event %s", s->s_name);
+            return MAX_ERR_NONE;
+        }
+    }
+    if (ticket < 0) {
+        ck_error(x, (char*)"listen: too many active listeners (max %d)", CK_MAX_LISTENS);
+        return MAX_ERR_GENERIC;
+    }
+
+    x->listen_names[ticket] = s;
+    t_CKINT id = CK_ID_PACK(x->slot, ticket);
+
+    if (x->chuck->vm()->globals_manager()->listenForGlobalEvent(
+            s->s_name, id, cb_event, (t_CKBOOL)listen_forever)) {
         ck_info(x, (char*)"listening to event %s", s->s_name);
         return MAX_ERR_NONE;
-    };
+    }
+    x->listen_names[ticket] = NULL;
     return MAX_ERR_GENERIC;
 }
 
 t_max_err ck_unlisten(t_ck* x, t_symbol* s)
 {
-    if (x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent(s->s_name, cb_event)) {
+    long ticket = -1;
+    for (long i = 0; i < CK_MAX_LISTENS; i++) {
+        if (x->listen_names[i] == s) {
+            ticket = i;
+            break;
+        }
+    }
+    if (ticket < 0) {
+        ck_error(x, (char*)"unlisten: not listening to event %s", s->s_name);
+        return MAX_ERR_GENERIC;
+    }
+
+    t_CKINT id = CK_ID_PACK(x->slot, ticket);
+    if (x->chuck->vm()->globals_manager()->stopListeningForGlobalEvent(
+            s->s_name, id, cb_event)) {
+        x->listen_names[ticket] = NULL;
         ck_info(x, (char*)"stop listening to event %s", s->s_name);
         return MAX_ERR_NONE;
-    };
+    }
     return MAX_ERR_GENERIC;
 }
 
@@ -2246,8 +2728,17 @@ t_max_err ck_unlisten(t_ck* x, t_symbol* s)
 void ck_dsp64(t_ck* x, t_object* dsp64, short* count, double samplerate,
               long maxvectorsize, long flags)
 {
-    // post("sample rate: %f", samplerate);
-    // post("maxvectorsize: %d", maxvectorsize);
+    // propagate the host sample rate to the VM. the rate is otherwise fixed at
+    // object creation from sys_getsr(), so changing Max's sample rate afterwards
+    // left chuck computing at the old rate (drifting pitch and timing).
+    // setParam() forwards to Chuck_VM::update_srate() on a running VM.
+    if (x->chuck != NULL && samplerate > 0) {
+        t_CKINT sr = (t_CKINT)samplerate;
+        if (sr != x->chuck->getParamInt(CHUCK_PARAM_SAMPLE_RATE)) {
+            x->chuck->setParam(CHUCK_PARAM_SAMPLE_RATE, sr);
+            ck_info(x, (char*)"sample rate updated to %d", (int)sr);
+        }
+    }
 
     delete[] x->in_chuck_buffer;
     delete[] x->out_chuck_buffer;
@@ -2260,12 +2751,15 @@ void ck_dsp64(t_ck* x, t_object* dsp64, short* count, double samplerate,
     memset(x->out_chuck_buffer, 0.f,
            sizeof(float) * maxvectorsize * x->channels);
 
-    // allocate tap buffer if tap is enabled
+    // allocate tap buffer if tap is enabled. sized for the widest possible
+    // multichannel fetch: getGlobalUGenSamplesMulti() writes numFrames samples
+    // per channel, non-interleaved, for up to tap_channels channels
     if (x->tap_channels > 0) {
         delete[] x->tap_buffer;
         x->tap_buffer = new float[maxvectorsize * x->tap_channels];
         memset(x->tap_buffer, 0.f,
                sizeof(float) * maxvectorsize * x->tap_channels);
+        x->tap_buffer_frames = maxvectorsize;
     }
 
     object_method(dsp64, gensym("dsp_add64"), x, ck_perform64, 0, NULL);
@@ -2304,9 +2798,33 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
             t_symbol* ugen_name = x->tap_ugens[chan];
 
             if (ugen_name != gensym("")) {
+                long nchans = x->tap_ugen_nchans[chan];
+                t_CKBOOL success;
+
+                if (nchans > 1) {
+                    // multichannel UGen: fetch every channel once, on the outlet
+                    // carrying channel 0, then fan the block out to the outlets
+                    // that follow. chuck writes non-interleaved, channel-major.
+                    if (x->tap_ugen_chan[chan] != 0) {
+                        continue; // already filled by this group's channel 0
+                    }
+                    success = x->chuck->vm()->globals_manager()->getGlobalUGenSamplesMulti(
+                        ugen_name->s_name, x->tap_buffer, (int)n, (int)nchans);
+
+                    for (int c = 0; c < nchans; c++) {
+                        long out_index = tap_outlet_start + chan + c;
+                        for (int i = 0; i < n; i++) {
+                            outs[out_index][i] = success
+                                ? x->tap_buffer[c * n + i]
+                                : 0.0;
+                        }
+                    }
+                    continue;
+                }
+
                 // tap this outlet's UGen (mono)
-                t_CKBOOL success = x->chuck->vm()->globals_manager()->getGlobalUGenSamples(
-                    ugen_name->s_name, x->tap_buffer, n);
+                success = x->chuck->vm()->globals_manager()->getGlobalUGenSamples(
+                    ugen_name->s_name, x->tap_buffer, (int)n);
 
                 if (success) {
                     for (int i = 0; i < n; i++) {

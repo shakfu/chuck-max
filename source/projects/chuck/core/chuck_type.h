@@ -404,6 +404,8 @@ struct Chuck_Context : public Chuck_VM_Object
     a_Program parse_tree;
     // ckdoc pending @doc statement for this context | 1.5.4.5 (ge) added
     a_Stmt_Doc stmt_doc;
+    // ckdoc pending @example statement(s) for this context | 1.5.5.8 (ge,nick,alex) added
+    std::vector<a_Stmt_Example> stmt_examples;
 
     // progress
     enum ContextProgress { P_NONE = 0, P_IMPORTING, P_IMPORTED, P_ALL_DONE };

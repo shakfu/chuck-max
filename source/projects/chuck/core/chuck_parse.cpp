@@ -234,6 +234,7 @@ string absyn_break2str( a_Stmt_Break stmt_break );
 string absyn_continue2str( a_Stmt_Continue stmt_continue );
 string absyn_return2str( a_Stmt_Return stmt_return );
 string absyn_doc2str( a_Stmt_Doc stmt_doc );
+string absyn_example2str( a_Stmt_Example stmt_example );
 string absyn_code2str( a_Stmt_Code stmt_code );
 
 
@@ -312,6 +313,10 @@ string absyn_stmt2str( a_Stmt stmt )
 
         case ae_stmt_doc: // doc statement | 1.5.4.4 (ge) added
             str = absyn_doc2str( &stmt->stmt_doc );
+            break;
+
+        case ae_stmt_example: // doc statement | 1.5.5.8 (ge,nick,alex) added
+            str = absyn_example2str( &stmt->stmt_example );
             break;
 
         case ae_stmt_code:  // code segment
@@ -884,6 +889,45 @@ string absyn_doc2str( a_Stmt_Doc stmt_doc )
     string str = "@doc [ ";
     // the current target
     a_Doc i = stmt_doc->list;
+    // iterate
+    while( i )
+    {
+        // append
+        str += "\"" + string( i->desc ) + "\"";
+        // next
+        i = i->next;
+        // check
+        str += ( i ? ", " : " ");
+    }
+    // end string
+    str += "];";
+    // return it
+    return str;
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+// name: absyn_example2str() | 1.5.5.8 (ge,nick,alex) added
+// desc: convert abstract syntax doc stmt to string
+//-----------------------------------------------------------------------------
+string absyn_example2str( a_Stmt_Example stmt_example )
+{
+    // check
+    if( !stmt_example || !stmt_example->list ) return "@example [empty]";
+
+    // more than one target in list?
+    if( stmt_example->list->next == NULL )
+    {
+        // return one item format
+        return "@example \"" + string(stmt_example->list->desc) + "\";";
+    }
+
+    // the string to be constructed
+    string str = "@example [ ";
+    // the current target
+    a_Example i = stmt_example->list;
     // iterate
     while( i )
     {

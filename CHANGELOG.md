@@ -15,6 +15,70 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ## [Unreleased]
 
+### Added
+
+- Added a reply outlet: an additional non-signal outlet, rightmost, which reports data to the patch rather than only to the Max console
+  - `val <name> <value...>` in response to `get`
+  - `event <name>` while a `listen` is active
+  - `shred add <id>` / `shred remove <id>` from a ChucK VM shred watcher
+  - `global <name> <type>` in response to `globals`
+  - Selectors always come from the object's own vocabulary and any ChucK name travels as an argument, so no global variable name can collide with a control message. Route with `route val event shred global`
+  - The name precedes the type in `global <name> <type>` deliberately. Once a patch strips the selector with `route global`, the next atom becomes the new selector, and ChucK's `int` and `float` type names collide with Max's typed methods there, producing `bad arguments for message "int"`. ChucK variable names cannot be reserved words, so leading with the name avoids the collision
+  - Replies are queued from the audio thread and flushed on the main thread; the queue drops rather than blocks when full
+
+- Added `abort` message, which aborts a shred currently executing inside the VM
+  - Unlike `remove`, this can break out of a shred looping without advancing time
+  - Only has a target while the VM is inside a compute cycle, which is the situation it exists for; on an otherwise healthy patch it reports that there is nothing to abort
+
+- Added multichannel tapping: `tap <outlet> <ugen> <nchannels>` assigns a multichannel global UGen across consecutive tap outlets, reading via `getGlobalUGenSamplesMulti()`
+  - Each sub-channel needs its own `buffered` flag in ChucK, for example `1 => stereo.chan(0).buffered`, as the parent flag does not propagate
+
+- Added `CHUCK_PARAM_OTF_PRINT_WARNINGS` to the `param` message tables, the only integer VM parameter that was missing
+
+- Added `source/docs/logging.md`, documenting the console and outlet reporting channels, the `loglevel` conflation, and the selector namespacing rules
+
+- Added a rewritten `help/chuck~.maxhelp` covering the current message set
+  - Six sections: load and run, read globals, set globals, events, tap global UGens, and VM introspection
+  - Message boxes feed a single `[s to-chuck]` rather than each carrying its own patch cord to the object
+  - Demonstrates the data outlet with `route val event shred global` into four labelled prints, and the tap outlets with three scopes
+  - `chuck~ 2 @ntap 3` leaves no outlet unconnected: the demo uses exactly one mono tap and one stereo pair
+  - Does not demonstrate `eval`, since ChucK code needs semicolons and a bare `;` in a Max message box means "send to a named receive"; the previous help file covered this with the `ui_code.maxpat` bpatcher
+  - The previous help file is kept as `help/chuck~.old.maxhelp`
+
+- Added `patchers/tests/test_chuck_tilde.maxpat` and `examples/test/help_features.ck` demonstrating the above
+  - The demo file wires its globals to audible parameters rather than leaving them as inert values: `freq` drives the oscillator pitch and `levels[0]` its gain, so `set float freq 660.`, the `freq 550.` shorthand and `set float[i] levels 0 0.75` all produce an obvious change
+  - Uses a saw oscillator for the mono voice and a panning triangle for the stereo pair, so the two are distinguishable by ear and the tap scopes show a readable waveform
+
+- Added compile-time `printf` format checking to the logging helpers on GCC and Clang
+
+### Changed
+
+- Set `CHUCK_PARAM_IS_REALTIME_AUDIO_HINT` to 1 at startup; it had been left at its default of 0 even though `chuck~` is always driven from the MSP audio callback
+
+- Registered per-instance `chout`/`cherr` callbacks in addition to the process-wide `stdout`/`stderr` ones, so ChucK's `<<< >>>` output and the VM's own printing are both captured
+
+- `abort` and `removeall` now report unconditionally via `object_post`, rather than through `ck_info`/`ck_warn`, which are gated at loglevels the object never reaches by default
+
+- `removeall` now reports the shred count and notes that global UGens survive shred removal
+
+- Logging helpers take `const char* fmt`, removing the need for a `(char*)` cast at every call site
+
+### Fixed
+
+- Fixed sample rate changes being ignored. `ck_dsp64()` received the host rate and discarded it, leaving the VM at the rate captured when the object was created, so changing Max's sample rate afterwards caused pitch and timing to drift. The rate is now forwarded to the VM via `setParam()`
+
+- Fixed `set float[i]` and `set float[k]` silently discarding the fractional part of every value. `atom_getfloat()` was assigned to a `long`, truncating before the value reached the VM, so `set float[i] a 0 0.5` stored `0.0`
+
+- Fixed 13 format string mismatches, mostly `%d` applied to 64-bit types, which printed incorrect values and were formally undefined behaviour
+
+- Fixed `ChucK::globalCleanup()` being called whenever any `chuck~` was freed, tearing down process-wide ChucK state while other instances were still running. It now runs only when the last instance goes away
+
+- Fixed `get` replies and event notifications not being attributable to a specific `chuck~` object. The callback-id overloads are now used, with the id encoding both the instance and the request, so replies reach the object that asked
+
+- Fixed `@tap` being documented in the README where the implemented attribute is `@ntap`. The documented form was silently ignored by Max, producing no tap outlets
+
+- Fixed a `size_t` to `int` truncation in `replace_character()`
+
 ## [0.2.2]
 
 ### Changed

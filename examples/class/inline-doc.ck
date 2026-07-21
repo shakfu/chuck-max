@@ -1,15 +1,21 @@
 // show how to add descriptions with classes and functions
-// using @doc; descriptions added in this manner are associatd
+// @doc: descriptions added in this manner are associatd
 // with respective classes and functions and will appear in the
 // .help() runtime info mechanism, as well as in documentation
 // generated using CKDoc.
+// @example: example ChucK files can be associatec with class
+// definitions and will be appear in CKDoc-generated documentation
+// NOTE: file paths expected to be relative the CKDoc.examplesRoot
+// (examples do not appear in the .help() funtime info)
 //
-// requires: chuck-1.5.4.5 or higher
+// requires: chuck-1.5.5.8 or higher
 
 // add inline documenation (processed at compile-time)
-// (@doc must appear right before the class definition)
+// (@doc and @example must appear right before the target)
+@example "foo1.ck"
+@example ["foo2.ck", "foo3.ck"]
 @doc "this is a description for the class Foo"
-class Foo
+public class Foo
 {
     // add inline documenation (processed at compile-time)
     // (@doc must appear immediately before the function definition)

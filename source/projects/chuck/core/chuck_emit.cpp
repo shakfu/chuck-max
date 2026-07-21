@@ -624,6 +624,11 @@ t_CKBOOL emit_engine_emit_stmt( Chuck_Emitter * emit, a_Stmt stmt, t_CKBOOL pop 
             ret = TRUE;
             break;
 
+        case ae_stmt_example: // 1.5.5.8 (ge,nick,alex) added
+            // do nothing here (return true to bypass)
+            ret = TRUE;
+            break;
+
         case ae_stmt_if:  // if statement
             ret = emit_engine_emit_if( emit, &stmt->stmt_if );
             codestr_close = "} /** " + codestr + " **/";

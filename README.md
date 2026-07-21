@@ -121,9 +121,11 @@ make brew
   - `[chuck~ <N>]` : N channel in/out, no default chuck file
   - `[chuck~ <filename>]` : single channel in/out with default chuck file
   - `[chuck~ <N> <filename>]` : N channels with default chuck file
-  - `[chuck~ <N> @tap <M>]` : N audio channels + M tap outlets for reading global UGens
+  - `[chuck~ <N> @ntap <M>]` : N audio channels + M tap outlets for reading global UGens
 
 It's recommended to choose 2 channels for stereo audio.
+
+Outlets are laid out left to right as: `N` audio outlets, then `M` tap outlets if `@ntap` is set, then a single reply outlet. The reply outlet is not a signal outlet; it reports values and notifications to the patch and is described under [The Reply Outlet](#the-reply-outlet).
 
 If a `<filename>` argument is given it will be searched for according to the following rules:
 
@@ -152,7 +154,12 @@ As of the current version, `chuck~` implements the core Chuck vm messages as Max
 | Clear vm                          | `clear vm`                   | `reset`                      |
 | Clear globals                     | `clear globals`              |                              |
 | Reset id                          | `reset id`                   |                              |
+| Abort the running shred           | `abort`                      |                              |
 | Time                              | `time`                       |                              |
+
+*Note on `removeall` vs `reset`*: `removeall` removes shreds but preserves VM state, and global UGens are VM state rather than shred state. A patch whose sound comes from a `global SinOsc g => dac` will keep sounding after every shred is gone. Use `reset` (`clear vm`) to clear globals and the type system as well.
+
+*Note on `abort`*: `abort` flags the shred currently executing inside the VM, which `remove` cannot do for a shred stuck in a loop that never advances time. It only has a target while the VM is mid-computation, so on a healthy patch it will correctly report that there is nothing to abort.
 
 It's worth reading the [ChucK Language Specification's section on Concurrency and Shreds](https://chuck.cs.princeton.edu/doc/language/spork.html) to get a sense of what the above means. The first paragraph will be quoted here since it's quite informative:
 
@@ -174,6 +181,7 @@ The core set of chuck vm messesages is also extended in `chuck-max` with the fol
 | Launch chuck docs in a browser          | `docs`                       |
 | Clear Max console                       | `clear console`              |
 | Set global UGen to tap                  | `tap <ugen_name>`            |
+| Tap a multichannel UGen across outlets  | `tap <outlet> <ugen> <n>`    |
 | Clear tap (output silence)              | `tap`                        |
 | List all VM parameters                  | `param`                      |
 | Get VM parameter value                  | `param <name>`               |
@@ -232,16 +240,36 @@ In addition to the typical way of changing parameters there is also an extensive
 | Set int associative array value   | global variable    | `set int[k] <name> <key> <value>`    |
 | Set float associative array value | global variable    | `set float[k] <name> <key> <value>`  |
 
+### The Reply Outlet
+
+The rightmost outlet reports data to the patch. Previously this information was only printed to the Max console, where it could be read but not acted upon.
+
+| Message                    | Sent when                             |
+| :------------------------- | :------------------------------------ |
+| `val <name> <value...>`    | a `get` request completes             |
+| `event <name>`             | a global event fires, while listening  |
+| `shred add <id>`           | a shred is sporked                    |
+| `shred remove <id>`        | a shred is removed                    |
+| `global <name> <type>`     | one per variable, in reply to `globals` |
+
+The selector is always one of the four words above, and any name coming from your ChucK code appears as an argument rather than as the selector. This means no global variable name can be mistaken for a control message: a ChucK file may declare `global int shred;` without ambiguity. Route the outlet with:
+
+```
+[route val event shred global]
+```
+
+Replies are generated on the audio thread and delivered on the main thread. If replies are produced faster than the patch consumes them the queue will drop rather than block, which is the appropriate trade-off in a real-time context.
+
 ### Tapping Global UGens
 
-The `@tap` attribute allows you to read audio samples directly from global UGens declared in your ChucK code. This enables advanced signal routing where ChucK-generated audio can be processed separately in Max.
+The `@ntap` attribute allows you to read audio samples directly from global UGens declared in your ChucK code. This enables advanced signal routing where ChucK-generated audio can be processed separately in Max.
 
 **Setup:**
 
-Create a `chuck~` object with the `@tap` attribute specifying the number of tap outlet channels:
+Create a `chuck~` object with the `@ntap` attribute specifying the number of tap outlet channels:
 
 ```
-[chuck~ 2 @tap 2]
+[chuck~ 2 @ntap 2]
 ```
 
 This creates an object with 2 audio input/output channels plus 2 additional tap outlets.
@@ -266,13 +294,28 @@ while(true) 1::second => now;
 
 After running the ChucK file, send the `tap` message to specify which global UGen to read:
 
-```
-tap gTap
-```
+| Action                                   | Max msg                            |
+| :--------------------------------------- | :--------------------------------- |
+| Tap one UGen from every outlet            | `tap <ugen>`                       |
+| Tap a UGen from one outlet                | `tap <outlet> <ugen>`              |
+| Tap a multichannel UGen across outlets    | `tap <outlet> <ugen> <nchannels>`  |
+| Clear one outlet                          | `tap <outlet>`                     |
+| Clear all outlets                         | `tap`                              |
 
-The tap outlets will now output the audio from the `gTap` UGen. To stop tapping (output silence), send `tap` with no arguments.
+Outlet numbers are 1-based. Cleared outlets emit silence.
 
-*Note*: The number of tap channels must match the UGen's channel count. For stereo UGens, use `@tap 2`. The tap outlets appear after the main audio outlets.
+**Multichannel UGens:**
+
+A UGen with more than one channel, such as `Pan2`, can fill a run of consecutive outlets. `tap 2 stereo 2` assigns both channels of the global `stereo` to tap outlets 2 and 3.
+
+The channel count must match the UGen's own channel count exactly, otherwise the read fails and those outlets emit silence. Note also that each sub-channel needs its own `buffered` flag, as the parent's does not propagate:
+
+```chuck
+global Pan2 stereo;
+SinOsc src => stereo;
+1 => stereo.chan(0).buffered;
+1 => stereo.chan(1).buffered;
+```
 
 ### VM Parameter Querying
 

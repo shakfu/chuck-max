@@ -101,10 +101,11 @@ t_CKBOOL type_engine_check_code_segment( Chuck_Env * env, a_Stmt_Code stmt, t_CK
 t_CKBOOL type_engine_check_func_def( Chuck_Env * env, a_Func_Def func_def );
 t_CKBOOL type_engine_check_class_def( Chuck_Env * env, a_Class_Def class_def );
 t_CKBOOL type_engine_remember_doc( Chuck_Env * env, a_Stmt_Doc doc );
-t_CKBOOL type_engine_check_stmt_list_for_doc_only( Chuck_Env * env, a_Stmt_List list );
-void type_engine_set_doc( Chuck_Env * env, Chuck_Func * func_def );
-void type_engine_set_doc( Chuck_Env * env, Chuck_Type * class_def );
-void type_engine_set_doc( Chuck_Env * env, Chuck_Value * value );
+t_CKBOOL type_engine_remember_example( Chuck_Env * env, a_Stmt_Example doc );
+t_CKBOOL type_engine_check_stmt_list_for_documentation_only( Chuck_Env * env, a_Stmt_List list );
+t_CKBOOL type_engine_set_doc( Chuck_Env * env, Chuck_Func * func_def );
+t_CKBOOL type_engine_set_doc( Chuck_Env * env, Chuck_Type * class_def );
+t_CKBOOL type_engine_set_doc( Chuck_Env * env, Chuck_Value * value );
 
 // helpers
 void type_engine_init_op_overload_builtin( Chuck_Env * env );
@@ -1009,7 +1010,8 @@ t_CKBOOL type_engine_check_context( Chuck_Env * env,
             {
                 // pick up any @doc statements... the latest is assumed to pertain to an upcoming class | 1.5.4.5 (ge) added
                 // this ensures that @doc (which comes *before* the class def) works for imported class definitions
-                ret = type_engine_check_stmt_list_for_doc_only( env, prog->section->stmt_list );
+                // semantically also include @example statements
+                ret = type_engine_check_stmt_list_for_documentation_only( env, prog->section->stmt_list );
                 // bypass the rest
                 break;
             }
@@ -1182,10 +1184,10 @@ t_CKBOOL type_engine_check_stmt_list( Chuck_Env * env, a_Stmt_List list )
 
 
 //-----------------------------------------------------------------------------
-// name: type_engine_check_stmt_list_for_doc_only() | 1.5.4.5 (ge) added
-// desc: type check a statement list, but only paying attention to @doc statements
+// name: type_engine_check_stmt_list_for_documentation_only() | 1.5.4.5 (ge) added
+// desc: type check a statement list, but only paying attention to @doc @example statements
 //-----------------------------------------------------------------------------
-t_CKBOOL type_engine_check_stmt_list_for_doc_only( Chuck_Env * env, a_Stmt_List list )
+t_CKBOOL type_engine_check_stmt_list_for_documentation_only( Chuck_Env * env, a_Stmt_List list )
 {
     // return type
     t_CKBOOL ret = TRUE;
@@ -1201,6 +1203,12 @@ t_CKBOOL type_engine_check_stmt_list_for_doc_only( Chuck_Env * env, a_Stmt_List 
             {
                 case ae_stmt_doc: // 1.5.4.5 (ge) added
                     ret = type_engine_remember_doc( env, &list->stmt->stmt_doc );
+                    // actually, allow doc errors here, for now, including consecutive @doc
+                    if( !ret ) ret = TRUE; // lol
+                    break;
+
+                case ae_stmt_example: // 1.5.5.8 (ge,nick,alex) added
+                    ret = type_engine_remember_example( env, &list->stmt->stmt_example );
                     // actually, allow doc errors here, for now, including consecutive @doc
                     if( !ret ) ret = TRUE; // lol
                     break;
@@ -1254,6 +1262,7 @@ t_CKBOOL type_engine_verify_stmt_static( Chuck_Env * env, a_Stmt stmt )
         case ae_stmt_return:
         case ae_stmt_code:
         case ae_stmt_doc: // 1.5.4.4 (ge) added
+        case ae_stmt_example: // 1.5.5.8 (ge,nick,alex) added
         default:
             // shouldn't get here
             EM_error2( stmt->where,
@@ -1296,6 +1305,10 @@ t_CKBOOL type_engine_check_stmt( Chuck_Env * env, a_Stmt stmt )
 
         case ae_stmt_doc: // 1.5.4.4 (ge) added
             ret = type_engine_remember_doc( env, &stmt->stmt_doc );
+            break;
+
+        case ae_stmt_example: // 1.5.5.8 (ge,nick,alex) added
+            ret = type_engine_remember_example( env, &stmt->stmt_example );
             break;
 
         case ae_stmt_if:
@@ -1931,49 +1944,116 @@ t_CKBOOL type_engine_remember_doc( Chuck_Env * env, a_Stmt_Doc doc )
 
 
 //-----------------------------------------------------------------------------
+// name: type_engine_remember_example()
+// desc: remember @example statement for upcoming target | 1.5.5.8 (ge,nick,alex) added
+//-----------------------------------------------------------------------------
+t_CKBOOL type_engine_remember_example( Chuck_Env * env, a_Stmt_Example example )
+{
+    // get the current context
+    Chuck_Context * context = env->context;
+    // no context?
+    if( !context )
+    {
+        // error
+        EM_error2( example->where, "(internal error) @example encountered NULL file context" );
+        return FALSE;
+    }
+
+    // remember
+    context->stmt_examples.push_back( example );
+
+    // done
+    return TRUE;
+}
+
+
+
+//-----------------------------------------------------------------------------
 // name: type_engine_set_doc()
 // desc: take action for @doc statement
 //-----------------------------------------------------------------------------
-void type_engine_set_doc( Chuck_Env * env, Chuck_Func * func_def )
+t_CKBOOL type_engine_set_doc( Chuck_Env * env, Chuck_Func * func_def )
 {
     // check if we have an outstanding doc stmt
-    if( !env->context || !env->context->stmt_doc ) return;
+    if( !env->context || !env->context->stmt_doc ) return TRUE;
     // get the doc
     a_Stmt_Doc doc = env->context->stmt_doc;
     // reset the remembered @doc
     env->context->stmt_doc = NULL;
     // set the documentation string from first
     func_def->doc = doc->list ? doc->list->desc : "";
+
+    // @examples not supported for function
+    if( env->context->stmt_examples.size() )
+    {
+        // error
+        EM_error2( env->context->stmt_examples.front()->where, "@example not supported for function definitions" );
+        return FALSE;
+    }
+    // reset the remembered examples
+    env->context->stmt_examples.clear();
+    return TRUE;
 }
 //-----------------------------------------------------------------------------
 // name: type_engine_set_doc()
 // desc: take action for @doc statement
 //-----------------------------------------------------------------------------
-void type_engine_set_doc( Chuck_Env * env, Chuck_Type * class_def )
+t_CKBOOL type_engine_set_doc( Chuck_Env * env, Chuck_Type * class_def )
 {
     // check if we have an outstanding doc stmt
-    if( !env->context || !env->context->stmt_doc ) return;
+    if( !env->context || !env->context->stmt_doc ) return TRUE;
     // get the doc
     a_Stmt_Doc doc = env->context->stmt_doc;
     // reset the remembered @doc
     env->context->stmt_doc = NULL;
     // set the documentation string from first
     class_def->doc = doc->list ? doc->list->desc : "";
+
+    // check for @example | 1.5.5.8 (ge,nick,alex) added
+    for( t_CKUINT i = 0; i < env->context->stmt_examples.size(); i++ )
+    {
+        // get current list
+        a_Example e = env->context->stmt_examples[i]->list;
+        // iterate
+        while(e)
+        {
+            // copy the string
+            class_def->examples.push_back( e->desc );
+            // next example in list
+            e = e->next;
+        }
+    }
+    // reset the remembered examples
+    env->context->stmt_examples.clear();
+
+    return TRUE;
 }
 //-----------------------------------------------------------------------------
 // name: type_engine_set_doc()
 // desc: take action for @doc statement
 //-----------------------------------------------------------------------------
-void type_engine_set_doc( Chuck_Env * env, Chuck_Value * value )
+t_CKBOOL type_engine_set_doc( Chuck_Env * env, Chuck_Value * value )
 {
     // check if we have an outstanding doc stmt
-    if( !env->context || !env->context->stmt_doc ) return;
+    if( !env->context || !env->context->stmt_doc ) return TRUE;
     // get the doc
     a_Stmt_Doc doc = env->context->stmt_doc;
     // reset the remembered @doc
     env->context->stmt_doc = NULL;
     // set the documentation string from first
     value->doc = doc->list ? doc->list->desc : "";
+
+    // @examples not supported for values
+    if( env->context->stmt_examples.size() )
+    {
+        // error
+        EM_error2( env->context->stmt_examples.front()->where, "@example not supported for variable definitions" );
+        return FALSE;
+    }
+
+    // reset the remembered examples
+    env->context->stmt_examples.clear();
+    return TRUE;
 }
 
 
@@ -4591,7 +4671,7 @@ t_CKTYPE type_engine_check_exp_decl_part2( Chuck_Env * env, a_Exp_Decl decl )
         // make sure
         assert( value != NULL );
         // set ckdoc, if present | 1.5.4.5 (ge) added
-        type_engine_set_doc( env, value );
+        if( !type_engine_set_doc( env, value ) ) return NULL;
         // get the type
         type = value->type;
         // make sure
@@ -5575,7 +5655,7 @@ t_CKBOOL type_engine_check_class_def( Chuck_Env * env, a_Class_Def class_def )
     }
 
     // set ckdoc, if present | 1.5.4.5 (ge)
-    type_engine_set_doc( env, the_class );
+    if( !type_engine_set_doc( env, the_class ) ) return FALSE;
 
     // NB the following should be done AFTER the parent is completely defined
     // --
@@ -5916,7 +5996,7 @@ t_CKBOOL type_engine_check_func_def( Chuck_Env * env, a_Func_Def f )
     }
 
     // set ckdoc, if present | 1.5.4.5 (ge)
-    type_engine_set_doc( env, theFunc );
+    if( !type_engine_set_doc( env, theFunc ) ) goto error;
 
     // type check the code
     assert( f->code == NULL || f->code->s_type == ae_stmt_code );

@@ -100,6 +100,7 @@ a_Program g_program = NULL;
     a_Vec vec_exp; // ge: added 1.3.5.3
     a_Import import; // 1.5.4.0 (ge) added
     a_Doc doc; // 1.5.4.4 (ge) added
+    a_Example example; // 1.5.5.8 (ge,nick,alex) added
 };
 
 // expect shift/reduce conflicts
@@ -111,7 +112,8 @@ a_Program g_program = NULL;
 // 1.5.1.1: changed to 80 for trailing comma in array literals
 // 1.5.4.0: changed to 84 for @import statements
 // 1.5.4.4: changed to 86 for @doc statements
-%expect 86
+// 1.5.5.8: changed to 88 for @example statements
+%expect 88
 
 %token <sval> ID STRING_LIT CHAR_LIT
 %token <ival> INT_VAL
@@ -139,7 +141,7 @@ a_Program g_program = NULL;
   PUBLIC PROTECTED PRIVATE STATIC ABSTRACT CONST 
   SPORK ARROW_RIGHT ARROW_LEFT L_HACK R_HACK
   GRUCK_RIGHT GRUCK_LEFT UNGRUCK_RIGHT UNGRUCK_LEFT
-  AT_OP AT_CTOR AT_DTOR AT_IMPORT AT_DOC
+  AT_OP AT_CTOR AT_DTOR AT_IMPORT AT_DOC AT_EXAMPLE
 
 
 %type <program> program
@@ -162,6 +164,7 @@ a_Program g_program = NULL;
 %type <stmt> expression_statement
 %type <stmt> import_statement
 %type <stmt> doc_statement
+%type <stmt> example_statement
 %type <exp> expression
 %type <exp> chuck_expression
 %type <exp> arrow_expression
@@ -207,6 +210,8 @@ a_Program g_program = NULL;
 %type <import> import_list // 1.5.4.0 (ge) added
 %type <doc> doc_target // 1.5.4.4 (ge) added
 %type <doc> doc_list // 1.5.4.4 (ge) added
+%type <example> example_target // 1.5.5.8 (ge,nick,alex) added
+%type <example> example_list // 1.5.5.8 (ge,nick,alex) added
 
 %start program
 
@@ -367,6 +372,7 @@ statement
         | code_segment                      { $$ = $1; }
         | import_statement                  { $$ = $1; }
         | doc_statement                     { $$ = $1; }
+        | example_statement                 { $$ = $1; }
         ;
 
 jump_statement
@@ -438,6 +444,21 @@ doc_list
 
 doc_target
         : STRING_LIT                        { $$ = new_doc( $1, @1.first_line, @1.first_column ); }
+        ;
+
+example_statement
+        : AT_EXAMPLE example_target             { $$ = new_stmt_from_example( $2, @1.first_line, @1.first_column ); }
+        | AT_EXAMPLE LBRACK example_list RBRACK { $$ = new_stmt_from_example( $3, @1.first_line, @1.first_column ); }
+        | AT_EXAMPLE LBRACE example_list RBRACE { $$ = new_stmt_from_example( $3, @1.first_line, @1.first_column ); }
+        ;
+
+example_list
+        : example_target                        { $$ = $1; }
+        | example_target COMMA example_list     { $$ = prepend_example( $1, $3, @1.first_line, @1.first_column ); }
+        ;
+
+example_target
+        : STRING_LIT                        { $$ = new_example( $1, @1.first_line, @1.first_column ); }
         ;
 
 expression_statement

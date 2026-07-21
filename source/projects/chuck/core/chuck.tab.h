@@ -157,7 +157,8 @@
      AT_CTOR = 373,
      AT_DTOR = 374,
      AT_IMPORT = 375,
-     AT_DOC = 376
+     AT_DOC = 376,
+     AT_EXAMPLE = 377
    };
 #endif
 /* Tokens.  */
@@ -280,6 +281,7 @@
 #define AT_DTOR 374
 #define AT_IMPORT 375
 #define AT_DOC 376
+#define AT_EXAMPLE 377
 
 
 
@@ -313,9 +315,10 @@ typedef union YYSTYPE
     a_Vec vec_exp; // ge: added 1.3.5.3
     a_Import import; // 1.5.4.0 (ge) added
     a_Doc doc; // 1.5.4.4 (ge) added
+    a_Example example; // 1.5.5.8 (ge,nick,alex) added
 }
 /* Line 1529 of yacc.c.  */
-#line 319 "chuck.tab.h"
+#line 322 "chuck.tab.h"
 	YYSTYPE;
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
