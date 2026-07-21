@@ -650,8 +650,8 @@
                                     "maxclass": "newobj",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 433.0, 90.0, 22.0 ],
-                                    "text": "s to-chuck"
+                                    "patching_rect": [ 20.0, 433.0, 81.0, 22.0 ],
+                                    "text": "s #0-to-chuck"
                                 }
                             },
                             {
@@ -671,8 +671,8 @@
                                     "numinlets": 0,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 20.0, 473.0, 90.0, 22.0 ],
-                                    "text": "r to-chuck"
+                                    "patching_rect": [ 20.0, 473.0, 79.0, 22.0 ],
+                                    "text": "r #0-to-chuck"
                                 }
                             },
                             {
@@ -684,7 +684,7 @@
                                     "outlettype": [ "signal", "signal", "signal", "signal", "signal", "" ],
                                     "patching_rect": [ 20.0, 507.0, 190.0, 22.0 ],
                                     "text": "chuck~ 2 @ntap 3",
-                                    "varname": "chuck-3"
+                                    "varname": "chuck-2"
                                 }
                             },
                             {
@@ -864,25 +864,38 @@
                         "lines": [
                             {
                                 "patchline": {
-                                    "destination": [ "h-send", 0 ],
+                                    "destination": [ "ch-vm", 0 ],
+                                    "hidden": 1,
+                                    "order": 1,
                                     "source": [ "h-abort", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
+                                    "order": 0,
+                                    "source": [ "h-abort", 0 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-adaptive", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-any", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-bcast", 0 ]
                                 }
                             },
@@ -925,78 +938,91 @@
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-chugins", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-docs", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-gf", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-gfa", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-gi", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-gia", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-gidx", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-globals", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-gs", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-listen", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-loglevel", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-param", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-paramrt", 0 ]
                                 }
                             },
@@ -1009,12 +1035,14 @@
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-removeall", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-reset", 0 ]
                                 }
                             },
@@ -1045,84 +1073,98 @@
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-run", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-sf", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-sfi", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-shreds", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-si", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-sig", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-ss", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-status", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-tap0", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-tap1", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-tap2", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-time", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-unlisten", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-send", 0 ],
+                                    "hidden": 1,
                                     "source": [ "h-vm", 0 ]
                                 }
                             }
@@ -1201,7 +1243,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 226.0, 88.5, 76.0, 114.0 ],
+                                    "patching_rect": [ 226.0, 88.5, 78.0, 114.0 ],
                                     "text": "Move this slider, increase it above 0 and run code on right. Try different values.",
                                     "textcolor": [ 0.0, 0.0, 0.0, 1.0 ]
                                 }
@@ -2175,7 +2217,7 @@
                                     "outlettype": [ "signal", "signal", "" ],
                                     "patching_rect": [ 29.75, 590.0, 119.0, 21.0 ],
                                     "text": "chuck~ 2 max/test.ck",
-                                    "varname": "chuck-1"
+                                    "varname": "chuck-3"
                                 }
                             },
                             {

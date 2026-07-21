@@ -71,7 +71,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Fixed 13 format string mismatches, mostly `%d` applied to 64-bit types, which printed incorrect values and were formally undefined behaviour
 
-- Fixed `ChucK::globalCleanup()` being called whenever any `chuck~` was freed, tearing down process-wide ChucK state while other instances were still running. It now runs only when the last instance goes away
+- Fixed `ChucK::globalCleanup()` being called whenever any `chuck~` was freed, rather than once when the last one goes away as its contract requires. It shuts down the HID manager, serial IO and the keyboard-hit manager process-wide, so closing one `chuck~` pulled those subsystems out from under every other instance still running. Audio, the VM and the type system are untouched by it, so instances not using HID, serial or keyboard input were unaffected, which is why this went unnoticed
 
 - Fixed `get` replies and event notifications not being attributable to a specific `chuck~` object. The callback-id overloads are now used, with the id encoding both the instance and the request, so replies reach the object that asked
 
