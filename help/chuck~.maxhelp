@@ -34,24 +34,12 @@
                         "boxes": [
                             {
                                 "box": {
-                                    "fontface": 1,
-                                    "fontsize": 16.0,
-                                    "id": "t",
-                                    "maxclass": "comment",
-                                    "numinlets": 1,
-                                    "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 12.0, 700.0, 24.0 ],
-                                    "text": "chuck~ : the ChucK audio programming language in Max"
-                                }
-                            },
-                            {
-                                "box": {
                                     "id": "t2",
                                     "linecount": 2,
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 38.0, 960.0, 33.0 ],
+                                    "patching_rect": [ 20.0, 15.0, 960.0, 33.0 ],
                                     "text": "Load the demo with 'run', then turn on audio at the bottom. Messages below are sent through [s to-chuck]. You should hear a saw oscillator plus a triangle panning across the stereo field. The rightmost outlet is a data outlet reporting values, events and shred changes back to the patch; everything else is audio."
                                 }
                             },
@@ -62,7 +50,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 78.0, 190.0, 20.0 ],
+                                    "patching_rect": [ 20.0, 55.0, 190.0, 20.0 ],
                                     "text": "1. Load and run"
                                 }
                             },
@@ -73,7 +61,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 20.0, 100.0, 190.0, 22.0 ],
+                                    "patching_rect": [ 20.0, 77.0, 190.0, 22.0 ],
                                     "text": "run test/help_features.ck"
                                 }
                             },
@@ -83,7 +71,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 26.0, 122.0, 184.0, 20.0 ],
+                                    "patching_rect": [ 26.0, 99.0, 184.0, 20.0 ],
                                     "text": "loads the demo ChucK file"
                                 }
                             },
@@ -94,7 +82,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 20.0, 143.0, 190.0, 22.0 ],
+                                    "patching_rect": [ 20.0, 120.0, 190.0, 22.0 ],
                                     "text": "status"
                                 }
                             },
@@ -104,7 +92,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 26.0, 165.0, 184.0, 20.0 ],
+                                    "patching_rect": [ 26.0, 142.0, 184.0, 20.0 ],
                                     "text": "lists running shreds"
                                 }
                             },
@@ -115,7 +103,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 20.0, 186.0, 190.0, 22.0 ],
+                                    "patching_rect": [ 20.0, 163.0, 190.0, 22.0 ],
                                     "text": "time"
                                 }
                             },
@@ -126,7 +114,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 20.0, 212.0, 190.0, 22.0 ],
+                                    "patching_rect": [ 20.0, 189.0, 190.0, 22.0 ],
                                     "text": "removeall"
                                 }
                             },
@@ -136,7 +124,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 26.0, 234.0, 184.0, 20.0 ],
+                                    "patching_rect": [ 26.0, 211.0, 184.0, 20.0 ],
                                     "text": "removes shreds, keeps VM state"
                                 }
                             },
@@ -147,7 +135,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 20.0, 255.0, 190.0, 22.0 ],
+                                    "patching_rect": [ 20.0, 232.0, 190.0, 22.0 ],
                                     "text": "reset"
                                 }
                             },
@@ -157,7 +145,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 26.0, 277.0, 184.0, 20.0 ],
+                                    "patching_rect": [ 26.0, 254.0, 184.0, 20.0 ],
                                     "text": "clears the VM and globals too"
                                 }
                             },
@@ -168,7 +156,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 20.0, 298.0, 190.0, 22.0 ],
+                                    "patching_rect": [ 20.0, 275.0, 190.0, 22.0 ],
                                     "text": "abort"
                                 }
                             },
@@ -178,7 +166,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 26.0, 320.0, 184.0, 20.0 ],
+                                    "patching_rect": [ 26.0, 297.0, 184.0, 20.0 ],
                                     "text": "breaks out of a stuck shred"
                                 }
                             },
@@ -189,7 +177,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 225.0, 78.0, 180.0, 20.0 ],
+                                    "patching_rect": [ 225.0, 55.0, 180.0, 20.0 ],
                                     "text": "2. Read globals"
                                 }
                             },
@@ -200,7 +188,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 225.0, 100.0, 180.0, 22.0 ],
+                                    "patching_rect": [ 225.0, 77.0, 180.0, 22.0 ],
                                     "text": "get int counter"
                                 }
                             },
@@ -210,7 +198,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 231.0, 122.0, 174.0, 20.0 ],
+                                    "patching_rect": [ 231.0, 99.0, 174.0, 20.0 ],
                                     "text": "replies: val counter 17"
                                 }
                             },
@@ -221,7 +209,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 225.0, 143.0, 180.0, 22.0 ],
+                                    "patching_rect": [ 225.0, 120.0, 180.0, 22.0 ],
                                     "text": "get float freq"
                                 }
                             },
@@ -232,7 +220,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 225.0, 169.0, 180.0, 22.0 ],
+                                    "patching_rect": [ 225.0, 146.0, 180.0, 22.0 ],
                                     "text": "get string label"
                                 }
                             },
@@ -243,7 +231,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 225.0, 195.0, 180.0, 22.0 ],
+                                    "patching_rect": [ 225.0, 172.0, 180.0, 22.0 ],
                                     "text": "get int[] steps"
                                 }
                             },
@@ -254,7 +242,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 225.0, 221.0, 180.0, 22.0 ],
+                                    "patching_rect": [ 225.0, 198.0, 180.0, 22.0 ],
                                     "text": "get float[] levels"
                                 }
                             },
@@ -265,7 +253,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 225.0, 247.0, 180.0, 22.0 ],
+                                    "patching_rect": [ 225.0, 224.0, 180.0, 22.0 ],
                                     "text": "get int[] steps 3"
                                 }
                             },
@@ -275,7 +263,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 231.0, 269.0, 174.0, 20.0 ],
+                                    "patching_rect": [ 231.0, 246.0, 174.0, 20.0 ],
                                     "text": "one element by index"
                                 }
                             },
@@ -286,7 +274,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 415.0, 78.0, 185.0, 20.0 ],
+                                    "patching_rect": [ 415.0, 55.0, 185.0, 20.0 ],
                                     "text": "3. Set globals"
                                 }
                             },
@@ -297,7 +285,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 415.0, 100.0, 185.0, 22.0 ],
+                                    "patching_rect": [ 415.0, 77.0, 185.0, 22.0 ],
                                     "text": "set int counter 100"
                                 }
                             },
@@ -308,7 +296,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 415.0, 126.0, 185.0, 22.0 ],
+                                    "patching_rect": [ 415.0, 103.0, 185.0, 22.0 ],
                                     "text": "set float freq 660."
                                 }
                             },
@@ -318,7 +306,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 421.0, 148.0, 179.0, 20.0 ],
+                                    "patching_rect": [ 421.0, 125.0, 179.0, 20.0 ],
                                     "text": "audibly raises the saw pitch"
                                 }
                             },
@@ -329,7 +317,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 415.0, 169.0, 185.0, 22.0 ],
+                                    "patching_rect": [ 415.0, 146.0, 185.0, 22.0 ],
                                     "text": "set string label hello"
                                 }
                             },
@@ -340,7 +328,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 415.0, 195.0, 185.0, 22.0 ],
+                                    "patching_rect": [ 415.0, 172.0, 185.0, 22.0 ],
                                     "text": "set float[i] levels 0 0.75"
                                 }
                             },
@@ -350,7 +338,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 421.0, 217.0, 179.0, 20.0 ],
+                                    "patching_rect": [ 421.0, 194.0, 179.0, 20.0 ],
                                     "text": "levels[0] is the saw level"
                                 }
                             },
@@ -361,7 +349,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 415.0, 238.0, 185.0, 22.0 ],
+                                    "patching_rect": [ 415.0, 215.0, 185.0, 22.0 ],
                                     "text": "freq 550."
                                 }
                             },
@@ -371,7 +359,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 421.0, 260.0, 179.0, 20.0 ],
+                                    "patching_rect": [ 421.0, 237.0, 179.0, 20.0 ],
                                     "text": "untyped shorthand, also audible"
                                 }
                             },
@@ -382,7 +370,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 610.0, 78.0, 175.0, 20.0 ],
+                                    "patching_rect": [ 610.0, 55.0, 175.0, 20.0 ],
                                     "text": "4. Events"
                                 }
                             },
@@ -393,7 +381,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 610.0, 100.0, 175.0, 22.0 ],
+                                    "patching_rect": [ 610.0, 77.0, 175.0, 22.0 ],
                                     "text": "listen tick 1"
                                 }
                             },
@@ -403,7 +391,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 616.0, 122.0, 169.0, 20.0 ],
+                                    "patching_rect": [ 616.0, 99.0, 169.0, 20.0 ],
                                     "text": "replies: event tick"
                                 }
                             },
@@ -414,7 +402,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 610.0, 143.0, 175.0, 22.0 ],
+                                    "patching_rect": [ 610.0, 120.0, 175.0, 22.0 ],
                                     "text": "unlisten tick"
                                 }
                             },
@@ -425,7 +413,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 610.0, 169.0, 175.0, 22.0 ],
+                                    "patching_rect": [ 610.0, 146.0, 175.0, 22.0 ],
                                     "text": "sig tick"
                                 }
                             },
@@ -436,7 +424,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 610.0, 195.0, 175.0, 22.0 ],
+                                    "patching_rect": [ 610.0, 172.0, 175.0, 22.0 ],
                                     "text": "broadcast tick"
                                 }
                             },
@@ -447,7 +435,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 610.0, 221.0, 175.0, 22.0 ],
+                                    "patching_rect": [ 610.0, 198.0, 175.0, 22.0 ],
                                     "text": "globals"
                                 }
                             },
@@ -457,7 +445,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 616.0, 243.0, 170.0, 20.0 ],
+                                    "patching_rect": [ 616.0, 220.0, 170.0, 20.0 ],
                                     "text": "replies: global <name> <type>"
                                 }
                             },
@@ -468,7 +456,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 795.0, 78.0, 185.0, 20.0 ],
+                                    "patching_rect": [ 795.0, 55.0, 185.0, 20.0 ],
                                     "text": "5. Tap global UGens"
                                 }
                             },
@@ -479,7 +467,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 795.0, 100.0, 185.0, 22.0 ],
+                                    "patching_rect": [ 795.0, 77.0, 185.0, 22.0 ],
                                     "text": "tap 1 mono"
                                 }
                             },
@@ -489,7 +477,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 801.0, 122.0, 179.0, 20.0 ],
+                                    "patching_rect": [ 801.0, 99.0, 179.0, 20.0 ],
                                     "text": "the saw, into tap outlet 1"
                                 }
                             },
@@ -500,7 +488,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 795.0, 143.0, 185.0, 22.0 ],
+                                    "patching_rect": [ 795.0, 120.0, 185.0, 22.0 ],
                                     "text": "tap 2 stereo 2"
                                 }
                             },
@@ -510,7 +498,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 801.0, 165.0, 179.0, 20.0 ],
+                                    "patching_rect": [ 801.0, 142.0, 179.0, 20.0 ],
                                     "text": "panning triangle, outlets 2-3"
                                 }
                             },
@@ -521,7 +509,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 795.0, 186.0, 185.0, 22.0 ],
+                                    "patching_rect": [ 795.0, 163.0, 185.0, 22.0 ],
                                     "text": "tap"
                                 }
                             },
@@ -531,7 +519,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 801.0, 208.0, 179.0, 20.0 ],
+                                    "patching_rect": [ 801.0, 185.0, 179.0, 20.0 ],
                                     "text": "clear all taps"
                                 }
                             },
@@ -542,7 +530,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 359.0, 400.0, 20.0 ],
+                                    "patching_rect": [ 20.0, 336.0, 400.0, 20.0 ],
                                     "text": "6. VM introspection and settings"
                                 }
                             },
@@ -553,7 +541,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 20.0, 381.0, 55.0, 22.0 ],
+                                    "patching_rect": [ 20.0, 358.0, 55.0, 22.0 ],
                                     "text": "param"
                                 }
                             },
@@ -564,7 +552,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 83.0, 381.0, 202.0, 22.0 ],
+                                    "patching_rect": [ 83.0, 358.0, 202.0, 22.0 ],
                                     "text": "param IS_REALTIME_AUDIO_HINT"
                                 }
                             },
@@ -575,7 +563,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 266.0, 381.0, 55.0, 22.0 ],
+                                    "patching_rect": [ 266.0, 358.0, 55.0, 22.0 ],
                                     "text": "shreds"
                                 }
                             },
@@ -586,7 +574,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 329.0, 381.0, 35.0, 22.0 ],
+                                    "patching_rect": [ 329.0, 358.0, 35.0, 22.0 ],
                                     "text": "vm"
                                 }
                             },
@@ -597,7 +585,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 372.0, 381.0, 60.0, 22.0 ],
+                                    "patching_rect": [ 372.0, 358.0, 60.0, 22.0 ],
                                     "text": "chugins"
                                 }
                             },
@@ -608,7 +596,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 440.0, 381.0, 60.0, 22.0 ],
+                                    "patching_rect": [ 440.0, 358.0, 60.0, 22.0 ],
                                     "text": "loglevel"
                                 }
                             },
@@ -619,7 +607,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 508.0, 381.0, 60.0, 22.0 ],
+                                    "patching_rect": [ 508.0, 358.0, 60.0, 22.0 ],
                                     "text": "adaptive"
                                 }
                             },
@@ -630,7 +618,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 576.0, 381.0, 40.0, 22.0 ],
+                                    "patching_rect": [ 576.0, 358.0, 40.0, 22.0 ],
                                     "text": "docs"
                                 }
                             },
@@ -640,7 +628,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 26.0, 405.0, 600.0, 20.0 ],
+                                    "patching_rect": [ 26.0, 382.0, 600.0, 20.0 ],
                                     "text": "These print to the Max window. 'param' and 'shreds' take arguments; see the README."
                                 }
                             },
@@ -650,7 +638,7 @@
                                     "maxclass": "newobj",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 433.0, 81.0, 22.0 ],
+                                    "patching_rect": [ 20.0, 410.0, 81.0, 22.0 ],
                                     "text": "s #0-to-chuck"
                                 }
                             },
@@ -660,7 +648,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 118.0, 435.0, 500.0, 20.0 ],
+                                    "patching_rect": [ 118.0, 412.0, 500.0, 20.0 ],
                                     "text": "every message box above feeds this send, to keep the patch readable"
                                 }
                             },
@@ -671,7 +659,7 @@
                                     "numinlets": 0,
                                     "numoutlets": 1,
                                     "outlettype": [ "" ],
-                                    "patching_rect": [ 20.0, 473.0, 79.0, 22.0 ],
+                                    "patching_rect": [ 20.0, 450.0, 79.0, 22.0 ],
                                     "text": "r #0-to-chuck"
                                 }
                             },
@@ -682,9 +670,9 @@
                                     "numinlets": 2,
                                     "numoutlets": 6,
                                     "outlettype": [ "signal", "signal", "signal", "signal", "signal", "" ],
-                                    "patching_rect": [ 20.0, 507.0, 190.0, 22.0 ],
+                                    "patching_rect": [ 20.0, 484.0, 190.0, 22.0 ],
                                     "text": "chuck~ 2 @ntap 3",
-                                    "varname": "chuck-2"
+                                    "varname": "chuck-0"
                                 }
                             },
                             {
@@ -693,7 +681,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 220.0, 509.0, 760.0, 20.0 ],
+                                    "patching_rect": [ 220.0, 486.0, 760.0, 20.0 ],
                                     "text": "Outlets left to right: 2 audio, then 3 tap outlets (@ntap 3), then the data outlet. The demo uses exactly three: one mono tap and a stereo pair."
                                 }
                             },
@@ -704,7 +692,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 549.0, 64.0, 20.0 ],
+                                    "patching_rect": [ 20.0, 526.0, 64.0, 20.0 ],
                                     "text": "Audio out"
                                 }
                             },
@@ -714,7 +702,7 @@
                                     "maxclass": "ezdac~",
                                     "numinlets": 2,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 571.0, 45.0, 45.0 ]
+                                    "patching_rect": [ 20.0, 548.0, 45.0, 45.0 ]
                                 }
                             },
                             {
@@ -724,7 +712,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 90.0, 549.0, 330.0, 20.0 ],
+                                    "patching_rect": [ 90.0, 526.0, 330.0, 20.0 ],
                                     "text": "Tap outlets: mono, then the stereo pair"
                                 }
                             },
@@ -734,7 +722,7 @@
                                     "maxclass": "scope~",
                                     "numinlets": 2,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 90.0, 571.0, 100.0, 45.0 ]
+                                    "patching_rect": [ 90.0, 548.0, 100.0, 45.0 ]
                                 }
                             },
                             {
@@ -743,7 +731,7 @@
                                     "maxclass": "scope~",
                                     "numinlets": 2,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 198.0, 571.0, 100.0, 45.0 ]
+                                    "patching_rect": [ 198.0, 548.0, 100.0, 45.0 ]
                                 }
                             },
                             {
@@ -752,7 +740,7 @@
                                     "maxclass": "scope~",
                                     "numinlets": 2,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 306.0, 571.0, 100.0, 45.0 ]
+                                    "patching_rect": [ 306.0, 548.0, 100.0, 45.0 ]
                                 }
                             },
                             {
@@ -762,7 +750,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 430.0, 549.0, 550.0, 20.0 ],
+                                    "patching_rect": [ 430.0, 526.0, 550.0, 20.0 ],
                                     "text": "Data outlet: values, events and shred changes"
                                 }
                             },
@@ -773,7 +761,7 @@
                                     "numinlets": 5,
                                     "numoutlets": 5,
                                     "outlettype": [ "", "", "", "", "" ],
-                                    "patching_rect": [ 430.0, 571.0, 215.0, 22.0 ],
+                                    "patching_rect": [ 430.0, 548.0, 215.0, 22.0 ],
                                     "text": "route val event shred global"
                                 }
                             },
@@ -783,7 +771,7 @@
                                     "maxclass": "newobj",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 430.0, 607.0, 90.0, 22.0 ],
+                                    "patching_rect": [ 430.0, 584.0, 90.0, 22.0 ],
                                     "text": "print VAL"
                                 }
                             },
@@ -793,7 +781,7 @@
                                     "maxclass": "newobj",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 526.0, 607.0, 100.0, 22.0 ],
+                                    "patching_rect": [ 526.0, 584.0, 100.0, 22.0 ],
                                     "text": "print EVENT"
                                 }
                             },
@@ -803,7 +791,7 @@
                                     "maxclass": "newobj",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 632.0, 607.0, 100.0, 22.0 ],
+                                    "patching_rect": [ 632.0, 584.0, 100.0, 22.0 ],
                                     "text": "print SHRED"
                                 }
                             },
@@ -813,7 +801,7 @@
                                     "maxclass": "newobj",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 738.0, 607.0, 105.0, 22.0 ],
+                                    "patching_rect": [ 738.0, 584.0, 105.0, 22.0 ],
                                     "text": "print GLOBAL"
                                 }
                             },
@@ -824,7 +812,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 430.0, 637.0, 550.0, 33.0 ],
+                                    "patching_rect": [ 430.0, 614.0, 550.0, 33.0 ],
                                     "text": "Selectors always come from chuck~; ChucK variable names travel as arguments, so a global named 'shred' or 'event' can never be mistaken for a control message."
                                 }
                             },
@@ -834,7 +822,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 689.0, 960.0, 20.0 ],
+                                    "patching_rect": [ 20.0, 655.0, 960.0, 20.0 ],
                                     "text": "Sample rate: chuck~ follows the rate set in Max's Audio Status window, updating the VM when it changes."
                                 }
                             },
@@ -845,19 +833,8 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 709.0, 961.0, 33.0 ],
+                                    "patching_rect": [ 20.0, 675.0, 961.0, 33.0 ],
                                     "text": "removeall vs reset: global UGens belong to the VM rather than to any shred, so a patch whose sound comes from a global keeps sounding after every shred is removed. Use 'reset' to clear globals as well."
-                                }
-                            },
-                            {
-                                "box": {
-                                    "id": "f3",
-                                    "linecount": 2,
-                                    "maxclass": "comment",
-                                    "numinlets": 1,
-                                    "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 744.0, 960.0, 33.0 ],
-                                    "text": "See README.md for the full message reference, source/docs/logging.md for how console and outlet reporting differ, and patchers/tests/ for focused test patchers. The previous help file is kept as chuck~.old.maxhelp."
                                 }
                             }
                         ],
@@ -1445,6 +1422,7 @@
                                     "numoutlets": 0,
                                     "patching_rect": [ 24.0, 63.0, 270.0, 20.0 ],
                                     "text": "patch parameters",
+                                    "textcolor": [ 0.16470588235294117, 0.16470588235294117, 0.16470588235294117, 1.0 ],
                                     "textjustification": 1
                                 }
                             },
@@ -2173,7 +2151,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 16.0, 16.0, 417.0, 22.0 ],
-                                    "text": "chuck~ : embedding ChucK in a Max/MSP external"
+                                    "text": "chuck~ : the ChucK audio programming language in Max"
                                 }
                             },
                             {
@@ -2217,7 +2195,7 @@
                                     "outlettype": [ "signal", "signal", "" ],
                                     "patching_rect": [ 29.75, 590.0, 119.0, 21.0 ],
                                     "text": "chuck~ 2 max/test.ck",
-                                    "varname": "chuck-3"
+                                    "varname": "chuck-1"
                                 }
                             },
                             {

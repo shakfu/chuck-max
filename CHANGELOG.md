@@ -37,13 +37,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Added `source/docs/logging.md`, documenting the console and outlet reporting channels, the `loglevel` conflation, and the selector namespacing rules
 
-- Added a rewritten `help/chuck~.maxhelp` covering the current message set
+- Added an `advanced` tab to `help/chuck~.maxhelp` covering the current message set, alongside the previous help content which is now the `main` tab
   - Six sections: load and run, read globals, set globals, events, tap global UGens, and VM introspection
-  - Message boxes feed a single `[s to-chuck]` rather than each carrying its own patch cord to the object
   - Demonstrates the data outlet with `route val event shred global` into four labelled prints, and the tap outlets with three scopes
   - `chuck~ 2 @ntap 3` leaves no outlet unconnected: the demo uses exactly one mono tap and one stereo pair
-  - Does not demonstrate `eval`, since ChucK code needs semicolons and a bare `;` in a Max message box means "send to a named receive"; the previous help file covered this with the `ui_code.maxpat` bpatcher
-  - The previous help file is kept as `help/chuck~.old.maxhelp`
+  - Message boxes feed a single `[s #0-to-chuck]` rather than each carrying its own patch cord to the object
+  - Does not demonstrate `eval`, since ChucK code needs semicolons and a bare `;` in a Max message box means "send to a named receive"; the `main` tab covers this with the `ui_code.maxpat` bpatcher
+
+- Note for maintainers: each help tab holds its own `chuck~`, so their send/receive names must not collide. An unscoped name such as `to-chuck` is global across all of Max, so every `chuck~` fed by a matching `[r to-chuck]` runs every message intended for any other, and their audio is heard together. The `main` tab still uses the unscoped name, as do `test_add`, `test_editor`, `test_global_vars`, `test_song` and `test_sync`. Note also that `#0` alone is not sufficient to separate two tabs: it expands per top-level patcher instance and subpatchers inherit the parent's value, so two tabs both using `#0-to-chuck` would collide again. Distinct names such as `#0-main-to-chuck` and `#0-adv-to-chuck` are needed
 
 - Added `patchers/tests/test_chuck_tilde.maxpat` and `examples/test/help_features.ck` demonstrating the above
   - The demo file wires its globals to audible parameters rather than leaving them as inert values: `freq` drives the oscillator pitch and `levels[0]` its gain, so `set float freq 660.`, the `freq 550.` shorthand and `set float[i] levels 0 0.75` all produce an obvious change
@@ -57,11 +58,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Registered per-instance `chout`/`cherr` callbacks in addition to the process-wide `stdout`/`stderr` ones, so ChucK's `<<< >>>` output and the VM's own printing are both captured
 
-- `abort` and `removeall` now report unconditionally via `object_post`, rather than through `ck_info`/`ck_warn`, which are gated at loglevels the object never reaches by default
+- `abort` and `removeall` now report unconditionally via `object_post`, rather than through the gated helpers, which at the time could not reach the user at all
 
 - `removeall` now reports the shred count and notes that global UGens survive shred removal
 
 - Logging helpers take `const char* fmt`, removing the need for a `(char*)` cast at every call site
+
+- Separated this object's reporting verbosity from the ChucK VM's log level, via a new `@verbose` attribute (`0` quiet, `1` normal, `2` debug; also settable as a message). `loglevel` now means only what `ChucK::setLogLevel()` means
+  - Previously `x->loglevel` did both jobs, and `ck_new` set it to `CK_LOG_SYSTEM` (2) against helper thresholds of 4, 5 and 6, so 47 of the 118 reporting calls could never appear. Raising the level to reach them also made the engine verbose
+  - `@verbose` defaults to 0, which is what the old gating amounted to in practice, so this changes no observable behaviour; it makes the output reachable without side effects on the engine
+  - `ck_warn` is no longer gated at all: a warning nobody sees is not a warning
+  - Query answers in `status`, `vm`, `chugins` and `loglevel` now report unconditionally, since a question that returns nothing is indistinguishable from a broken object
+  - See `source/docs/logging.md`
+
+- Made `loglevel` honestly process-global. It maps to `ChucK::setLogLevel()`, which is static, so one level is shared by every `chuck~` in the process; the code had kept a stale per-instance copy alongside it. Setting the level on one object left the others' copies stale, and querying it with no argument mutated the queried object's copy as a side effect. The copy is removed: `ck_loglevel` reads and writes the shared VM state directly, and the package default is now applied once by the first instance rather than re-asserted (and thus clobbered) by every new object. Per-object reporting is what the new `@verbose` is for
 
 ### Fixed
 

@@ -13,7 +13,7 @@
    80.0,
    80.0,
    1000.0,
-   870.0
+   890.0
   ],
   "default_fontsize": 10.0,
   "default_fontname": "Verdana",
@@ -996,10 +996,10 @@
       20.0,
       770.0,
       900.0,
-      50.0
+      65.0
      ],
-     "text": "Multiple instances: duplicate this chuck~ object and confirm each one's 'get' replies come out of its own reply outlet rather than being mixed together or attributed to the last object created.",
-     "linecount": 3
+     "text": "Multiple instances: open a second copy of this patcher rather than duplicating the object, since a duplicate would have no message connections. Each instance's 'get' replies should come out of its own reply outlet. Beware plain send/receive names when driving several chuck~ objects: [s to-chuck] is global to all of Max, so every instance fed by [r to-chuck] runs every message. Use a #0- prefix to scope it.",
+     "linecount": 4
     }
    }
   ],

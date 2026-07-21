@@ -176,7 +176,8 @@ The core set of chuck vm messesages is also extended in `chuck-max` with the fol
 | Prevent running shreds when dsp is off  | `run_needs_audio`            |
 | Open file in external editor            | `edit <path>`                |
 | Probe chugins                           | `chugins`                    |
-| Get/set loglevel (0-10)                 | `loglevel` & `loglevel <n>`  |
+| Get/set ChucK VM loglevel (0-10)        | `loglevel` & `loglevel <n>`  |
+| Get/set object verbosity (0-2)          | `verbose` & `verbose <n>`    |
 | Get state of chuck vm                   | `vm`                         |
 | Launch chuck docs in a browser          | `docs`                       |
 | Clear Max console                       | `clear console`              |

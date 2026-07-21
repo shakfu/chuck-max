@@ -92,7 +92,8 @@ struct _ck {
     t_symbol* chugins_dir;          // chugins directory
     float* in_chuck_buffer;         // intermediate chuck input buffer
     float* out_chuck_buffer;        // intermediate chuck output buffer
-    long loglevel;                  // chuck log level
+    long verbose;                   // max-side reporting verbosity (loglevel is
+                                    // process-global; see ck_loglevel)
     long current_shred_id;          // current shred id
     t_symbol* editor;               // external text editor for chuck code
     t_symbol* edit_file;            // path of file to edit by external editor
@@ -336,6 +337,13 @@ void ext_main(void* r)
     CLASS_ATTR_BASIC(c,     "run_needs_audio", 0);
     // CLASS_ATTR_SAVE(c,      "run_needs_audio", 0);
 
+    // verbose: how much this object reports, independent of 'loglevel' which
+    // controls the ChucK VM's own logging. 0 quiet, 1 normal, 2 adds debug
+    CLASS_ATTR_LONG(c,      "verbose", 0, t_ck, verbose);
+    CLASS_ATTR_LABEL(c,     "verbose", 0, "Object Reporting Verbosity");
+    CLASS_ATTR_BASIC(c,     "verbose", 0);
+    CLASS_ATTR_FILTER_CLIP(c, "verbose", 0, 2);
+
     // ntap: number of additional outlets for tapping global UGen samples
     CLASS_ATTR_LONG(c,      "ntap", 0, t_ck, tap_channels);
     CLASS_ATTR_LABEL(c,     "ntap", 0, "Number of Tap Outlet Channels");
@@ -363,7 +371,9 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
     if (x) {
         // set default attributes (allcaps can be overriden by compile-time defs)
         x->channels = CK_CHANNELS;
-        x->loglevel = CK_LOG_SYSTEM;
+        // 0 by default, which is what the old loglevel gating amounted to in
+        // practice: ck_info required loglevel >= 5 against a default of 2
+        x->verbose = 0;
         x->current_shred_id = 0;
         x->run_file = gensym("");
         x->edit_file = gensym("");
@@ -575,7 +585,15 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         // init chuck
         x->chuck->init();
         x->chuck->start();
-        ChucK::setLogLevel(x->loglevel);
+        // loglevel is process-global (ChucK::setLogLevel is static). set the
+        // package default just once, on the first instance, so creating a
+        // second chuck~ does not reset a level the user changed on the first.
+        // ChucK itself defaults to CK_LOG_CORE (1); we prefer CK_LOG_SYSTEM (2)
+        static bool s_loglevel_defaulted = false;
+        if (!s_loglevel_defaulted) {
+            ChucK::setLogLevel(CK_LOG_SYSTEM);
+            s_loglevel_defaulted = true;
+        }
 
         // chout/cherr carry <<< >>> output from chuck code and are per-instance.
         // they must be set AFTER init(): setChoutCallback() bails out early
@@ -835,23 +853,34 @@ t_max_err ck_editor_get(t_ck *x, t_object *attr, long *argc, t_atom **argv)
 
 
 
+// Reporting helpers.
+//
+// These are gated on x->verbose, NOT on the ChucK VM log level. loglevel means one thing
+// only -- how chatty the ChucK VM is in its own internal logging, which is what
+// ChucK::setLogLevel() controls. Conflating the two meant you could not make
+// this object talk without also making the engine talk, and the default
+// loglevel never reached these thresholds anyway, so 47 of the 118 calls were
+// dead. See source/docs/logging.md.
+//
+// Errors and warnings are never gated: a warning nobody sees is not a warning.
+// Query answers ('status', 'vm', 'param', 'get', ...) use object_post directly,
+// since a question that returns nothing is indistinguishable from a broken
+// object.
 void ck_warn(t_ck* x, const char* fmt, ...)
 {
-    if (x->loglevel >= 4) {
-        char msg[MAX_PATH_CHARS];
+    char msg[MAX_PATH_CHARS];
 
-        va_list va;
-        va_start(va, fmt);
-        vsnprintf(msg, MAX_PATH_CHARS, fmt, va);
-        va_end(va);
+    va_list va;
+    va_start(va, fmt);
+    vsnprintf(msg, MAX_PATH_CHARS, fmt, va);
+    va_end(va);
 
-        object_warn((t_object*)x, "[warn] %s", msg);
-    }
+    object_warn((t_object*)x, "[warn] %s", msg);
 }
 
 void ck_info(t_ck* x, const char* fmt, ...)
 {
-    if (x->loglevel >= 5) {
+    if (x->verbose >= 1) {
         char msg[MAX_PATH_CHARS];
 
         va_list va;
@@ -865,7 +894,7 @@ void ck_info(t_ck* x, const char* fmt, ...)
 
 void ck_debug(t_ck* x, const char* fmt, ...)
 {
-    if (x->loglevel >= 6) {
+    if (x->verbose >= 2) {
         char msg[MAX_PATH_CHARS];
 
         va_list va;
@@ -1549,7 +1578,7 @@ t_max_err ck_status(t_ck* x)
         std::vector<Chuck_VM_Shred*> shreds;
         shreduler->get_all_shreds(shreds);
         for (const Chuck_VM_Shred* i : shreds) {
-            ck_info(x, "%lu:%s", (unsigned long)i->get_id(), i->name.c_str());
+            object_post((t_object*)x, "%lu:%s", (unsigned long)i->get_id(), i->name.c_str());
         }
     }
 
@@ -1609,30 +1638,30 @@ t_symbol* ck_get_loglevel_name(long level)
 
 t_max_err ck_loglevel(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
-    t_symbol* name = _sym_nothing;
-
+    // loglevel controls the ChucK VM's own logging, which is process-global:
+    // ChucK::setLogLevel/getLogLevel are static, so there is one level shared by
+    // every chuck~ in the process. This reads and writes that shared state
+    // directly rather than caching a per-instance copy, which previously made a
+    // query on one object silently overwrite a stale field and read as if the
+    // level were per-object. For per-object reporting, use 'verbose' instead.
     if (argc == 0) {
-        x->loglevel = ChucK::getLogLevel();
-        name = ck_get_loglevel_name(x->loglevel);
-        post("loglevel is %d (%s)", x->loglevel, name->s_name);
+        long level = (long)ChucK::getLogLevel();
+        t_symbol* name = ck_get_loglevel_name(level);
+        post("loglevel %ld (%s), shared by all chuck~ in this process",
+             level, name->s_name);
         return MAX_ERR_NONE;
     }
-    if (argc == 1) {
-        long level = 2;
-        if (argv->a_type == A_LONG) {
-            level = atom_getlong(argv);
-            if ((level >= 0) && (level <= 10)) {
-                name = ck_get_loglevel_name(level);
-                x->loglevel = level;
-                ck_info(x, "setting loglevel to %ld (%s)", (long)x->loglevel, name->s_name);
-                ChucK::setLogLevel(x->loglevel);
-                return MAX_ERR_NONE;
-            } else {
-                ck_error(x, (char*)"loglevel out-of-range: must between 0-10 inclusive. Defaulting to level 2");
-                ChucK::setLogLevel(CK_LOG_SYSTEM);
-                return MAX_ERR_GENERIC;
-            }
+    if (argc == 1 && argv->a_type == A_LONG) {
+        long level = atom_getlong(argv);
+        if ((level >= 0) && (level <= 10)) {
+            t_symbol* name = ck_get_loglevel_name(level);
+            ChucK::setLogLevel(level);
+            object_post((t_object*)x, "loglevel %ld (%s), applies to all "
+                        "chuck~ in this process", level, name->s_name);
+            return MAX_ERR_NONE;
         }
+        ck_error(x, (char*)"loglevel out of range: must be 0-10 inclusive");
+        return MAX_ERR_GENERIC;
     }
     ck_error(x, (char*)"could not get or set loglevel");
     return MAX_ERR_GENERIC;
@@ -1815,7 +1844,7 @@ t_max_err ck_broadcast(t_ck* x, t_symbol* s)
 
 t_max_err ck_chugins(t_ck* x)
 {
-    ck_info(x, (char*)"probe chugins:");
+    object_post((t_object*)x, "probe chugins:");
     x->chuck->probeChugins();
     return MAX_ERR_NONE;
 }
@@ -1837,9 +1866,9 @@ t_max_err ck_globals(t_ck* x)
 
 t_max_err ck_vm(t_ck* x)
 {
-    ck_info(x, (char*)"VM %d / %d status", x->oid, CK_INSTANCE_COUNT);
-    ck_info(x, "\tinitialized: %lu", (unsigned long)x->chuck->vm()->has_init());
-    ck_info(x, "\trunning: %lu", (unsigned long)x->chuck->vm()->running());
+    object_post((t_object*)x, "VM %d / %d status", x->oid, CK_INSTANCE_COUNT);
+    object_post((t_object*)x, "\tinitialized: %lu", (unsigned long)x->chuck->vm()->has_init());
+    object_post((t_object*)x, "\trunning: %lu", (unsigned long)x->chuck->vm()->running());
     return MAX_ERR_NONE;
 }
 

@@ -1,7 +1,10 @@
 # Logging and Data Output in `chuck~`
 
-Status: current behaviour as of the reply-outlet work. Contains a recommendation
-that has not been implemented.
+Status: items 1 to 3 of the recommendation are **implemented** in both `chuck~`
+(Max) and the sibling `pd-chuck`. Items 4 and 5 are not. The analysis sections
+below describe the problem as it stood before that change and are kept because
+the reasoning still explains why the current design is shaped as it is; the
+tables have been updated to current behaviour.
 
 ## Purpose
 
@@ -55,19 +58,25 @@ been rerouted to a channel it never uses.
 ### 3. Wrapper-side reporting helpers
 
 Four varargs helpers in `chuck_tilde.cpp` report through Max's object-scoped
-console functions. Three are gated on `x->loglevel`:
+console functions. Two of them are gated, on `x->verbose`:
 
-| Helper      | Call sites | Max function  | Threshold        | Reachable at default? |
-|-------------|-----------:|---------------|------------------|-----------------------|
-| `ck_error`  |         71 | `object_error`| none             | yes                   |
-| `ck_info`   |         35 | `object_post` | `loglevel >= 5`  | no                    |
-| `ck_debug`  |          9 | `object_post` | `loglevel >= 6`  | no                    |
-| `ck_warn`   |          3 | `object_warn` | `loglevel >= 4`  | no                    |
+| Helper      | Max function  | Threshold       | Reachable at default? |
+|-------------|---------------|-----------------|-----------------------|
+| `ck_error`  | `object_error`| none            | yes                   |
+| `ck_warn`   | `object_warn` | none            | yes                   |
+| `ck_info`   | `object_post` | `verbose >= 1`  | no, `verbose` defaults to 0 |
+| `ck_debug`  | `object_post` | `verbose >= 2`  | no                    |
 
-`ck_new` initialises `x->loglevel` to `CK_LOG_SYSTEM`, which is **2**. The
-thresholds are 4, 5 and 6. Consequently 47 of the 118 wrapper log calls are
-unreachable unless the user raises the log level by hand. Only errors are
-guaranteed to appear.
+Historically these were gated on `x->loglevel`, which `ck_new` initialises to
+`CK_LOG_SYSTEM` (**2**) against thresholds of 4, 5 and 6. 47 of the 118 wrapper
+log calls were therefore unreachable unless the user raised the log level by
+hand, which also made the VM itself verbose. That is the conflation described in
+the next section, now resolved: `verbose` is a separate axis, exposed as an
+attribute (`@verbose 0|1|2`, settable as a message too).
+
+`verbose` defaults to **0**, which is what the old gating amounted to in
+practice, so the change is behaviour-preserving. What it buys is that the output
+is now *reachable* without side effects on the engine.
 
 All four helpers carry `__attribute__((format(printf, 2, 3)))` on GCC and Clang,
 so the compiler type-checks each format string against its arguments. This is
@@ -103,9 +112,13 @@ dropped silently.** That is the correct trade in a realtime context, but it is
 an observability gap: a patch cannot currently distinguish "no reply" from
 "reply discarded under load".
 
-## The `loglevel` conflation
+## The `loglevel` conflation (resolved)
 
-`x->loglevel` carries two unrelated meanings simultaneously:
+This described the defect that motivated the split. Both the primary conflation
+and the second-order problem below are now fixed; retained because the reasoning
+still explains the current shape.
+
+`x->loglevel` used to carry two unrelated meanings simultaneously:
 
 1. It is passed to `ChucK::setLogLevel()`, controlling how verbose the **ChucK
    VM** is in its own internal logging.
@@ -116,14 +129,27 @@ These are different concerns with different natural defaults. ChucK's default of
 thresholds of 4, 5 and 6 guarantees silence. Raising the log level to make the
 wrapper talk also makes the VM talk, which is rarely what the user wanted.
 
-There is a second-order problem. `ChucK::setLogLevel()` and `getLogLevel()` are
-static, but `x->loglevel` is per-instance:
+Item 3 of the recommendation removed the second meaning: the helpers now gate on
+`x->verbose`, and `loglevel` means only what `ChucK::setLogLevel()` means.
 
-- Setting `loglevel` on one `chuck~` changes VM verbosity for every instance in
-  the process, while updating only that one object's Max-side gate.
-- Querying `loglevel` with no argument assigns the process-wide value back into
-  `x->loglevel`, so a query can silently change an instance's reporting
-  threshold as a side effect.
+A second-order problem used to remain here, and is now also fixed.
+`ChucK::setLogLevel()` and `getLogLevel()` are static -- there is one VM log
+level shared by every `chuck~` in the process -- but the code kept a per-instance
+`x->loglevel` copy alongside it. That copy was the bug, not the staticness:
+
+- Setting `loglevel` on one object changed the level for all of them while
+  recording it on only that one, so the other objects' copies went stale.
+- Querying `loglevel` with no argument wrote the process value back into the
+  queried object's copy, so a read mutated state as a side effect, and the
+  reported value looked per-object when it was not.
+
+The per-instance copy has been removed. `ck_loglevel` now reads and writes the
+static VM state directly, and reports that the level is process-wide. The
+package's preferred default (`CK_LOG_SYSTEM`, since ChucK itself defaults to the
+lower `CK_LOG_CORE`) is applied once, by the first instance created, rather than
+re-asserted by every new object -- so creating a second `chuck~` no longer
+resets a level the user changed on the first. Per-object reporting is what
+`verbose` is for; `loglevel` is honestly global.
 
 ## Consequences observed in practice
 
@@ -172,18 +198,18 @@ thread, and the cost is console flooding rather than dropouts.
 
 In priority order:
 
-### 1. Make `ck_warn` unconditional
+### 1. Make `ck_warn` unconditional -- DONE
 
 Three call sites. Lowest risk change in this document, and it aligns the helper
 with what `object_warn` is for.
 
-### 2. Guarantee that queries answer
+### 2. Guarantee that queries answer -- DONE
 
 Audit the query commands so that none depend on `ck_info`. Most already bypass
 it; `status` depends instead on the VM stdout redirection, which must therefore
 stay registered.
 
-### 3. Separate Max-side verbosity from ChucK's log level
+### 3. Separate Max-side verbosity from ChucK's log level -- DONE
 
 Introduce a `@verbose` attribute (off by default) that gates `ck_info` only, and
 let `loglevel` mean solely what ChucK means by it. This resolves the conflation
@@ -192,11 +218,11 @@ directly and removes the need to raise VM verbosity to obtain wrapper feedback.
 While doing this, make the `loglevel` query stop writing the process-wide value
 back into the instance, and document that setting it affects all instances.
 
-### 4. Leave `ck_debug` gated
+### 4. Leave `ck_debug` gated -- DONE (now on `verbose >= 2`)
 
 It is doing its job.
 
-### 5. Consider moving confirmations to the reply outlet
+### 5. Consider moving confirmations to the reply outlet -- NOT DONE
 
 The larger question. Configuration commands such as `tap`, `listen` and
 `unlisten` currently confirm to the console, where the confirmation is
@@ -302,6 +328,59 @@ Consequences of the rule:
   `globals` uses and makes replies self-describing, but lengthens the route
   expression and largely duplicates information the patch already has, since
   the `get` that requested it named the type.
+
+## Relationship to pd-chuck
+
+The sibling project `pd-chuck` embeds the same engine behind the same message
+vocabulary, and the two externals are kept deliberately close. On the subjects
+of this document they agree in design but differ in two details, both on
+purpose. Recorded here so the differences read as decisions rather than drift.
+
+### The logging split: converged, with different defaults
+
+`pd-chuck` got this first, because it had no reporting helpers at all -- every
+diagnostic was a raw, ungated `post()` or `pd_error()` -- which made it a clean
+slate. `chuck~` followed. Both now separate host-side verbosity from the ChucK
+VM's log level, and both leave errors and warnings ungated.
+
+The one substantive difference is the **default**, and it differs for the same
+reason in each case: preserve what that external already did.
+
+| | chuck-max (Max) | pd-chuck (Pd) |
+|---|---|---|
+| Control | `@verbose` attribute, also settable as a message | `verbose` message (Pd has no attributes) |
+| Default | `0` | `1` |
+| Why that default | `ck_info` was gated at `loglevel >= 5` against a default of 2, so it was already silent | every message was already printed unconditionally |
+
+So neither change altered observable behaviour on the day it landed. Both are
+now a one-line edit away from the quiet-on-success default that principle 3
+argues for, whenever that is decided deliberately rather than as a side effect.
+
+Both carry `__attribute__((format(printf, 2, 3)))` on the four helpers.
+
+### The deferral mechanism differs of necessity
+
+Not a decision so much as a constraint, but it is the other place the two files
+are structurally different and it should not be mistaken for carelessness.
+
+The reply ring buffer is identical in both -- plain C++ atomics, no host API.
+What differs is how the drain is scheduled:
+
+- **Max** uses `qelem_set()`, which is documented safe to call from the audio
+  thread.
+- **Pd** has no equivalent. `outlet_anything()` from the perform routine would
+  be reentrant into the DSP graph being traversed, and `clock_delay()` mutates
+  the scheduler's clock list, which is only safe when DSP runs on the scheduler
+  thread. Pd can run audio in callback mode, and there is no public API to ask
+  which mode is active. So `pd-chuck` uses a clock on the scheduler thread that
+  polls the ring every 20 ms.
+
+The Pd clock only runs while replies are enabled, which is the other difference:
+the Pd reply outlet is **opt-in** via a `reply 0|1` message, where the Max one
+is always live. Making it optional there removed the objection to a permanently
+running timer.
+
+Both sites carry a comment pointing at the other.
 
 ## Non-goals
 
