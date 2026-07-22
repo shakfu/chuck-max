@@ -670,7 +670,7 @@
                                     "numinlets": 2,
                                     "numoutlets": 6,
                                     "outlettype": [ "signal", "signal", "signal", "signal", "signal", "" ],
-                                    "patching_rect": [ 20.0, 484.0, 190.0, 22.0 ],
+                                    "patching_rect": [ 20.0, 484.0, 317.0, 22.0 ],
                                     "text": "chuck~ 2 @ntap 3",
                                     "varname": "chuck-0"
                                 }
@@ -681,7 +681,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 220.0, 486.0, 760.0, 20.0 ],
+                                    "patching_rect": [ 111.0, 451.0, 760.0, 20.0 ],
                                     "text": "Outlets left to right: 2 audio, then 3 tap outlets (@ntap 3), then the data outlet. The demo uses exactly three: one mono tap and a stereo pair."
                                 }
                             },
@@ -692,7 +692,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 526.0, 64.0, 20.0 ],
+                                    "patching_rect": [ 15.5, 599.0, 64.0, 20.0 ],
                                     "text": "Audio out"
                                 }
                             },
@@ -712,7 +712,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 90.0, 526.0, 330.0, 20.0 ],
+                                    "patching_rect": [ 90.0, 599.0, 330.0, 20.0 ],
                                     "text": "Tap outlets: mono, then the stereo pair"
                                 }
                             },
@@ -750,7 +750,7 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 430.0, 526.0, 550.0, 20.0 ],
+                                    "patching_rect": [ 445.0, 526.0, 398.0, 20.0 ],
                                     "text": "Data outlet: values, events and shred changes"
                                 }
                             },
@@ -879,36 +879,42 @@
                             {
                                 "patchline": {
                                     "destination": [ "h-dac", 1 ],
+                                    "midpoints": [ 89.1, 527.0, 55.5, 527.0 ],
                                     "source": [ "h-chuck", 1 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-dac", 0 ],
+                                    "midpoints": [ 29.5, 527.0, 29.5, 527.0 ],
                                     "source": [ "h-chuck", 0 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-route", 0 ],
+                                    "midpoints": [ 327.5, 527.0, 439.5, 527.0 ],
                                     "source": [ "h-chuck", 5 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-sc1", 0 ],
+                                    "midpoints": [ 148.7, 527.0, 99.5, 527.0 ],
                                     "source": [ "h-chuck", 2 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-sc2", 0 ],
+                                    "midpoints": [ 208.3, 527.0, 207.5, 527.0 ],
                                     "source": [ "h-chuck", 3 ]
                                 }
                             },
                             {
                                 "patchline": {
                                     "destination": [ "h-sc3", 0 ],
+                                    "midpoints": [ 267.9, 527.0, 315.5, 527.0 ],
                                     "source": [ "h-chuck", 4 ]
                                 }
                             },
