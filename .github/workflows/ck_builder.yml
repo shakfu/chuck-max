@@ -40,7 +40,7 @@ jobs:
         echo "OS Version: `uname -v`"
         echo "MacOS SDK Platform Version: `xcrun --show-sdk-platform-version`"
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         submodules: 'recursive'
         fetch-depth: '0'
@@ -76,7 +76,7 @@ jobs:
     - name: create package for distribution
       run: make package
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: ${{ github.event.repository.name }}-${{ inputs.variant }}-${{ runner.os }}-${{ runner.arch }}-${{ env.SHA }}
         path: build/dist/${{ github.event.repository.name }}

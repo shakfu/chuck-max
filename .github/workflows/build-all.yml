@@ -6,7 +6,7 @@ jobs:
     runs-on: windows-2022
     steps:
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         submodules: 'recursive'
         fetch-depth: '0'
@@ -16,7 +16,7 @@ jobs:
     - name: build chuck
       run: make
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: chuck-max-windows-amd64-${{ env.SHA }}
         path: |
@@ -34,7 +34,7 @@ jobs:
     runs-on: macos-14
     steps:
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         submodules: 'recursive'
         fetch-depth: '0'
@@ -49,7 +49,7 @@ jobs:
     - name: build chuck
       run: make brew
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: chuck-max-darwin-arm64-${{ env.SHA }}
         path: |

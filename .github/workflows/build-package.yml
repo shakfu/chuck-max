@@ -28,7 +28,7 @@ jobs:
     runs-on: ${{ github.event.inputs.windows_version }}
     steps:
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         submodules: 'recursive'
         fetch-depth: '0'
@@ -37,14 +37,14 @@ jobs:
       run: make MULTI=1
 
     - name: upload win64 externals
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: win64-externals
         path: externals/*.mxe64
         retention-days: 1
 
     - name: upload win64 chugins
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: win64-chugins
         path: examples/chugins/windows-amd64/*.chug
@@ -55,7 +55,7 @@ jobs:
     needs: [build-windows]
     steps:
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
       with:
         submodules: 'recursive'
         fetch-depth: '0'
@@ -69,14 +69,14 @@ jobs:
       run: make brew MULTI=1
 
     - name: upload macos externals
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: macos-externals
         path: externals/*.mxo
         retention-days: 1
 
     - name: upload macos chugins
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: macos-chugins
         path: examples/chugins/darwin-arm64/*.chug
@@ -87,31 +87,31 @@ jobs:
     needs: [build-macos]
     steps:
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Download Windows externals
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: win64-externals
         path: externals
         merge-multiple: true
 
     - name: Download Windows chugins
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: win64-chugins
         path: examples/chugins/windows-amd64
         merge-multiple: true
 
     - name: Download MacOS externals
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: macos-externals
         path: externals
         merge-multiple: true
 
     - name: Download MacOS chugins
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: macos-chugins
         path: examples/chugins/darwin-arm64
@@ -119,7 +119,7 @@ jobs:
 
     - uses: benjlevesque/short-sha@v3.0
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: chuck-max-pkg-${{ env.SHA }}
         path: |
