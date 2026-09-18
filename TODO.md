@@ -15,7 +15,3 @@
 ## Low
 
 - [ ] More (musical) examples combining Max / chuck ...
-
-## Done
-
-- [x] Add Windows Support
