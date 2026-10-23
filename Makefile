@@ -24,7 +24,7 @@ UNIVERSAL=0
 
 -DCM_VST3=ON 
 ifeq ($(PLATFORM), Darwin)
-OS = "macos"
+OS = macos
 GENERATOR ?= "-GXcode"
 ifeq ($(UNIVERSAL), 0)
 EXTRA_OPTIONS += -DCM_VST3=ON -DCM_MACOS_UNIVERSAL=OFF
@@ -40,7 +40,7 @@ EXTRA_OPTIONS += -DCM_MACOS_BUNDLED_CHUGINS=ON
 CHUGINS_DIR = externals/$(EXTERNAL_NAME).mxo/Contents/Resources/chugins
 endif
 else
-OS = "windows"
+OS = windows
 endif
 
 ifeq ($(MULTI), 1)
@@ -51,7 +51,7 @@ else
 CHUGIN_GLOB = *.chug
 endif
 
-DIST_NAME = $(PROJECT_NAME)-$(VERSION)-$(OS)-$(ARCH)
+DIST_NAME ?= $(PROJECT_NAME)-$(VERSION)-$(OS)-$(ARCH)
 DMG = $(DIST_NAME).dmg
 ZIP = $(DIST_NAME).zip
 
@@ -128,7 +128,7 @@ full: install_deps
 			-DCM_EXTRA_FORMATS=ON \
 			-DCM_MP3=ON \
 			-DCM_WARPBUF=ON \
-			-DCM_FAUST=ON
+			-DCM_FAUST=ON \
 			&& \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
@@ -288,6 +288,7 @@ setup:
 
 # Compile (no audio) each examples/test/*.ck. chuck exits 0 on compile errors,
 # so any output counts as failure. warpbuf_* needs the optional WarpBuf chugin.
+# Then run the engine-level bind() tests (source/projects/tests).
 test:
 	@cd examples && fail=0; \
 	for f in test/*.ck; do \
@@ -296,6 +297,9 @@ test:
 		if [ -n "$$out" ]; then echo "FAIL $$f"; echo "$$out"; fail=1; \
 		else echo "ok   $$f"; fi; \
 	done; exit $$fail
+	@# rebuild first: a stale bind_test would pass against old sources
+	@cmake --build $(BUILD) --config $(CONFIG) --target bind_test > /dev/null
+	@$(BUILD)/$(CONFIG)/bind_test
 
 example:
 	@cd examples && timeout 10 ./chuck --chugin-path:chugins stk/rhodey-song.ck -v3 || true

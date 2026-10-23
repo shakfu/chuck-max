@@ -7,6 +7,8 @@
 #include "ext_obex.h"
 #include "ext_preferences.h"
 #include "z_dsp.h"
+#include "ext_itm.h"
+#include "ext_buffer.h"
 
 #ifdef __APPLE__
 #include "unistd.h"
@@ -24,6 +26,9 @@
 #include "chuck.h"
 #include "chuck_globals.h"
 #include "chuck_dl.h"
+#include "maxclock.h"
+#include "maxin.h"
+#include "maxbuffer.h"
 
 #include <atomic>
 
@@ -108,6 +113,28 @@ struct _ck {
     float* tap_buffer;              // buffer for tapped samples
     long tap_buffer_frames;         // frames allocated per channel in tap_buffer
 
+    // clock probe (prototype, see source/docs/dev/bind.md): compares the Max
+    // transport read on the audio thread against a [phasor~ @lock 1] on inlet 1
+    std::atomic<t_itm*> clk_itm;    // global itm while the probe is on, else NULL
+    double clk_period;              // phasor~ period in ticks (480 = 4n)
+    double clk_sr;                  // sample rate, set in ck_dsp64
+    long clk_frames;                // frames since the last report
+    long clk_count;                 // blocks measured since the last report
+    double clk_sum;                 // sum of signed errors, in samples
+    double clk_min;                 // min signed error, in samples
+    double clk_max;                 // max signed error, in samples
+    double clk_prev_ticks;          // transport ticks at the previous block
+    long clk_prev_n;                // frames in the previous block (0 = none)
+    long clk_jcount;                // tick increments measured since the last report
+    double clk_jmin;                // min increment error vs audio frames, in samples
+    double clk_jmax;                // max increment error vs audio frames, in samples
+
+    // MaxClock (see source/docs/dev/bind.md)
+    MaxClockState* clock;           // transport snapshot and live MaxClock objects
+    MaxInState* inbox;              // msg -> MaxIn queue and live MaxIn objects
+    MaxBufferState* buffers;        // buffer~ references named by MaxBuffer
+    t_itm* itm;                     // global transport, referenced for this object's life
+
     // reply-related (routing chuck callbacks back out to the patch)
     void* reply_outlet;             // rightmost outlet: get/listen/shred replies
     void* reply_qelem;              // defers queued replies to the main thread
@@ -178,6 +205,23 @@ t_max_err ck_shreds(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 // adaptive message handler (for adaptive block processing control)
 t_max_err ck_adaptive(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 
+// clock probe (prototype): transport-vs-phasor~ timing measurement
+t_max_err ck_clockprobe(t_ck* x, t_symbol* s, long argc, t_atom* argv);
+void ck_clockprobe_measure(t_ck* x, double** ins, long numins, long n);
+
+// MaxClock: per-block transport snapshot
+MaxClockState* ck_clock_from_vm(Chuck_VM* vm);
+void ck_clock_update(t_ck* x);
+
+// MaxIn: msg <name> <args...> into ChucK
+t_max_err ck_msg(t_ck* x, t_symbol* s, long argc, t_atom* argv);
+MaxInState* ck_inbox_from_vm(Chuck_VM* vm);
+
+// MaxBuffer: buffer~ access from ChucK
+MaxBufferState* ck_buffers_from_vm(Chuck_VM* vm);
+MaxBufferHost ck_buffer_host(t_ck* x);
+t_max_err ck_notify(t_ck* x, t_symbol* s, t_symbol* msg, void* sender, void* data);
+
 // error-reporting / logging helpers
 void ck_stdout_print(const char* msg);
 void ck_stderr_print(const char* msg);
@@ -225,6 +269,8 @@ t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 void ck_reply_push(t_ck* x, t_symbol* selector, long argc, t_atom* argv);
 void ck_reply_drain(t_ck* x);
 t_ck* ck_instance_from_id(t_CKINT id);
+t_ck* ck_instance_from_vm(Chuck_VM* vm);
+static t_CKBOOL CK_DLL_CALL ck_max_query(Chuck_DL_Query* QUERY);
 t_symbol* ck_pending_name(t_ck* x, t_CKINT id);
 t_CKINT ck_pending_issue(t_ck* x, t_symbol* name);
 
@@ -262,6 +308,8 @@ static t_symbol* ps_val = NULL;      // val <name> <value...>   -- 'get' reply
 static t_symbol* ps_event = NULL;    // event <name>            -- 'listen'
 static t_symbol* ps_shred = NULL;    // shred add|remove <id>   -- vm watcher
 static t_symbol* ps_global = NULL;   // global <name> <type>    -- 'globals'
+static t_symbol* ps_clockprobe = NULL; // clockprobe <stats...>  -- 'clockprobe'
+static t_symbol* ps_msg = NULL;      // msg <name> <value>      -- Max.send()
 
 
 //-----------------------------------------------------------------------------------------------
@@ -310,6 +358,8 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_param,        "param",    A_GIMME, 0);
     class_addmethod(c, (method)ck_shreds,       "shreds",   A_GIMME, 0);
     class_addmethod(c, (method)ck_adaptive,     "adaptive", A_GIMME, 0);
+    class_addmethod(c, (method)ck_clockprobe,   "clockprobe", A_GIMME, 0);
+    class_addmethod(c, (method)ck_msg,          "msg",      A_GIMME, 0);
 
     class_addmethod(c, (method)ck_bang,         "bang",     0);
     class_addmethod(c, (method)ck_anything,     "anything", A_GIMME, 0);
@@ -317,6 +367,7 @@ void ext_main(void* r)
     class_addmethod(c, (method)ck_dsp64,        "dsp64",    A_CANT, 0);
     class_addmethod(c, (method)ck_assist,       "assist",   A_CANT, 0);
     class_addmethod(c, (method)ck_dblclick,     "dblclick", A_CANT, 0);
+    class_addmethod(c, (method)ck_notify,       "notify",   A_CANT, 0);
     
     // class attributes
     //------------------------------------------------------------------------
@@ -362,6 +413,12 @@ void ext_main(void* r)
     ps_event = gensym("event");
     ps_shred = gensym("shred");
     ps_global = gensym("global");
+    ps_clockprobe = gensym("clockprobe");
+    ps_msg = gensym("msg");
+
+    maxclock_set_lookup(ck_clock_from_vm);
+    maxin_set_lookup(ck_inbox_from_vm);
+    maxbuffer_set_lookup(ck_buffers_from_vm);
 }
 
 void* ck_new(t_symbol* s, long argc, t_atom* argv)
@@ -394,6 +451,21 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         }
         x->tap_buffer = NULL;
         x->tap_buffer_frames = 0;
+
+        // clock probe defaults (off)
+        x->clk_itm.store(NULL);
+        x->clk_period = 480.0;
+        x->clk_sr = sys_getsr();
+
+        // MaxClock: allocated before bind() so MaxClock objects find it
+        x->clock = new MaxClockState;
+        x->inbox = new MaxInState;
+        x->buffers = new MaxBufferState;
+        x->buffers->host = ck_buffer_host(x);
+        x->itm = (t_itm*)itm_getglobal();
+        if (x->itm) {
+            itm_reference(x->itm);
+        }
 
         // reply defaults
         x->reply_outlet = NULL;
@@ -584,6 +656,20 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // init chuck
         x->chuck->init();
+        if (!x->chuck->bind(ck_max_query, "Max")) {
+            ck_error(x, (char*)"could not bind the Max class");
+        }
+        if (!x->chuck->bind(maxclock_query, "MaxClock")) {
+            ck_error(x, (char*)"could not bind the MaxClock class");
+        }
+        if (!x->chuck->bind(maxin_query, "MaxIn")) {
+            ck_error(x, (char*)"could not bind the MaxIn class");
+        }
+        if (!x->chuck->bind(maxbuffer_query, "MaxBuffer")) {
+            ck_error(x, (char*)"could not bind the MaxBuffer class");
+        }
+        x->chuck->vm()->subscribe_watcher(maxin_watcher,
+                                          ckvm_shreds_watch_REMOVE, x->inbox);
         x->chuck->start();
         // loglevel is process-global (ChucK::setLogLevel is static). set the
         // package default just once, on the first instance, so creating a
@@ -624,6 +710,9 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
 void ck_free(t_ck* x)
 {
+    // leave the DSP chain first: ck_perform64 reads the buffers and
+    // x->chuck, so freeing either while still in the chain is a use-after-free
+    dsp_free((t_pxobject*)x);
     if (x->in_chuck_buffer) {
         delete[] x->in_chuck_buffer;
         x->in_chuck_buffer = NULL;
@@ -646,14 +735,42 @@ void ck_free(t_ck* x)
     if (x->chuck) {
         if (x->chuck->vm()) {
             x->chuck->vm()->remove_watcher(cb_shreds_watcher);
+            x->chuck->vm()->remove_watcher(maxin_watcher);
         }
         delete x->chuck;
         x->chuck = NULL;
+    }
+    // after the VM: MaxClock dtors ran during its teardown and found no
+    // instance, since the slot was already released; MaxIn dtors still
+    // unregistered from x->inbox
+    delete x->clock;
+    x->clock = NULL;
+    delete x->inbox;
+    x->inbox = NULL;
+    if (x->itm) {
+        itm_dereference(x->itm);
+        x->itm = NULL;
+    }
+    t_itm* itm = x->clk_itm.exchange(NULL);
+    if (itm) {
+        itm_dereference(itm);
     }
     // no further qelem_set can occur now that the VM is gone
     if (x->reply_qelem) {
         qelem_free(x->reply_qelem);
         x->reply_qelem = NULL;
+    }
+    // after the VM and the qelem: nothing reads the slots now
+    if (x->buffers) {
+        int n = x->buffers->count.load();
+        for (int i = 0; i < n; i++) {
+            void* ref = x->buffers->slots[i].handle.load();
+            if (ref) {
+                object_free(ref);
+            }
+        }
+        delete x->buffers;
+        x->buffers = NULL;
     }
     // globalCleanup() tears down process-wide chuck state, so it may only run
     // once the last chuck~ in the process is gone; calling it per-instance
@@ -662,7 +779,6 @@ void ck_free(t_ck* x)
         CK_INSTANCE_LIVE = 0;
         ChucK::globalCleanup();
     }
-    dsp_free((t_pxobject*)x);
 }
 
 
@@ -2308,6 +2424,248 @@ t_max_err ck_adaptive(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     return MAX_ERR_GENERIC;
 }
 
+// clockprobe [ticks]: start measuring against a [phasor~ <ticks> @lock 1] on
+// inlet 1 (default 480 = 4n). clockprobe 0: stop. prototype for MaxClock
+t_max_err ck_clockprobe(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+{
+    double period = (argc > 0) ? atom_getfloat(argv) : 480.0;
+
+    // the global itm is never freed, so a block still reading it after this
+    // swap is safe; the stats may mix one block across the reset
+    t_itm* old = x->clk_itm.exchange(NULL);
+    if (old) {
+        itm_dereference(old);
+    }
+    if (period <= 0) {
+        ck_info(x, (char*)"clockprobe: off");
+        return MAX_ERR_NONE;
+    }
+
+    t_itm* itm = (t_itm*)itm_getglobal();
+    if (itm == NULL) {
+        ck_error(x, (char*)"clockprobe: no global transport");
+        return MAX_ERR_GENERIC;
+    }
+    itm_reference(itm);
+    x->clk_period = period;
+    x->clk_frames = 0;
+    x->clk_count = 0;
+    x->clk_sum = 0;
+    x->clk_min = 0;
+    x->clk_max = 0;
+    x->clk_prev_n = 0;
+    x->clk_jcount = 0;
+    x->clk_jmin = 0;
+    x->clk_jmax = 0;
+    x->clk_itm.store(itm, std::memory_order_release);
+    ck_info(x, (char*)"clockprobe: on, period %g ticks", period);
+    return MAX_ERR_NONE;
+}
+
+// audio thread, before chuck->run(). error = transport phase minus phasor~
+// phase at frame 0, in samples; positive means the transport reads ahead.
+// phasor~ @lock reads the same transport, so it cannot expose transport
+// jitter; jmin/jmax compare each block's tick increment with its frame count.
+// reports once per second of audio:
+//   clockprobe <blocks> <mean> <min> <max> <tempo> <running> <ticks> <jmin> <jmax>
+void ck_clockprobe_measure(t_ck* x, double** ins, long numins, long n)
+{
+    t_itm* itm = x->clk_itm.load(std::memory_order_acquire);
+    if (itm == NULL || ins == NULL || numins < 1) {
+        return;
+    }
+
+    double ticks = itm_getticks(itm);
+    long running = itm_getstate(itm);
+    // itm_gettempo is absent from the SDK's MaxAPI stub, so it may be missing
+    // from older Max and would block loading; derive tempo from tickstoms
+    double period_ms = itm_tickstoms(itm, x->clk_period);
+    double tempo = (period_ms > 0)
+                 ? 60000.0 * x->clk_period / itm_getresolution() / period_ms
+                 : 0;
+
+    if (running && period_ms > 0) {
+        double itm_phase = fmod(ticks, x->clk_period) / x->clk_period;
+        double d = itm_phase - ins[0][0];
+        d -= floor(d + 0.5); // wrap to [-0.5, 0.5) cycles
+        double period_samps = period_ms * 0.001 * x->clk_sr;
+        double err = d * period_samps;
+        if (x->clk_count == 0 || err < x->clk_min) x->clk_min = err;
+        if (x->clk_count == 0 || err > x->clk_max) x->clk_max = err;
+        x->clk_sum += err;
+        x->clk_count++;
+
+        // ticks advanced since the previous block, in samples, minus the
+        // frames that block actually rendered
+        if (x->clk_prev_n > 0) {
+            double inc = (ticks - x->clk_prev_ticks) / x->clk_period * period_samps;
+            double jerr = inc - x->clk_prev_n;
+            if (x->clk_jcount == 0 || jerr < x->clk_jmin) x->clk_jmin = jerr;
+            if (x->clk_jcount == 0 || jerr > x->clk_jmax) x->clk_jmax = jerr;
+            x->clk_jcount++;
+        }
+        x->clk_prev_ticks = ticks;
+        x->clk_prev_n = n;
+    } else {
+        x->clk_prev_n = 0;
+    }
+
+    x->clk_frames += n;
+    if (x->clk_frames >= x->clk_sr) {
+        t_atom a[9];
+        atom_setlong(a, x->clk_count);
+        atom_setfloat(a + 1, x->clk_count ? x->clk_sum / x->clk_count : 0);
+        atom_setfloat(a + 2, x->clk_min);
+        atom_setfloat(a + 3, x->clk_max);
+        atom_setfloat(a + 4, tempo);
+        atom_setlong(a + 5, running);
+        atom_setfloat(a + 6, ticks);
+        atom_setfloat(a + 7, x->clk_jmin);
+        atom_setfloat(a + 8, x->clk_jmax);
+        ck_reply_push(x, ps_clockprobe, 9, a);
+        x->clk_frames = 0;
+        x->clk_count = 0;
+        x->clk_sum = 0;
+        x->clk_min = 0;
+        x->clk_max = 0;
+        x->clk_jcount = 0;
+        x->clk_jmin = 0;
+        x->clk_jmax = 0;
+    }
+}
+
+MaxClockState* ck_clock_from_vm(Chuck_VM* vm)
+{
+    t_ck* x = ck_instance_from_vm(vm);
+    return x ? x->clock : NULL;
+}
+
+// audio thread, before chuck->run(). clockprobe showed the global transport
+// advances exactly with audio frames, so a block-start snapshot is exact
+void ck_clock_update(t_ck* x)
+{
+    if (x->itm == NULL || x->clock == NULL || x->clk_sr <= 0) {
+        return;
+    }
+    double res = itm_getresolution();
+    // itm_tickstoms over itm_gettempo: see ck_clockprobe_measure
+    double quarter_ms = itm_tickstoms(x->itm, res);
+    if (res <= 0 || quarter_ms <= 0) {
+        return;
+    }
+    MaxClockSnapshot snap;
+    snap.now = x->chuck->now();
+    snap.ticks = itm_getticks(x->itm);
+    snap.tps = res / (quarter_ms * 0.001 * x->clk_sr);
+    snap.tempo = 60000.0 / quarter_ms;
+    snap.resolution = res;
+    itm_gettimesignature(x->itm, &snap.num, &snap.denom);
+    snap.running = itm_getstate(x->itm) != 0;
+    maxclock_update(x->clock, snap);
+}
+
+MaxInState* ck_inbox_from_vm(Chuck_VM* vm)
+{
+    t_ck* x = ck_instance_from_vm(vm);
+    return x ? x->inbox : NULL;
+}
+
+MaxBufferState* ck_buffers_from_vm(Chuck_VM* vm)
+{
+    t_ck* x = ck_instance_from_vm(vm);
+    return x ? x->buffers : NULL;
+}
+
+// lock/unlock as the full Max SDK's index~ example does in its perform routine
+static bool ck_buffer_lock(void* ctx, void* handle, MaxBufferView* v)
+{
+    t_buffer_obj* b = buffer_ref_getobject((t_buffer_ref*)handle);
+    float* samples = b ? buffer_locksamples(b) : NULL;
+    if (samples == NULL) {
+        return false;
+    }
+    v->obj = b;
+    v->samples = samples;
+    v->frames = (long)buffer_getframecount(b);
+    v->chans = (long)buffer_getchannelcount(b);
+    v->sr = buffer_getsamplerate(b);
+    return true;
+}
+
+static void ck_buffer_unlock(void* ctx, MaxBufferView* v)
+{
+    buffer_unlocksamples((t_buffer_obj*)v->obj);
+}
+
+static void ck_buffer_request(void* ctx)
+{
+    qelem_set(((t_ck*)ctx)->reply_qelem);
+}
+
+static void* ck_buffer_create(void* ctx, const char* name)
+{
+    return buffer_ref_new((t_object*)ctx, gensym(name));
+}
+
+static void ck_buffer_set_dirty(void* ctx, void* handle)
+{
+    t_buffer_obj* b = buffer_ref_getobject((t_buffer_ref*)handle);
+    if (b) {
+        buffer_setdirty(b);
+    }
+}
+
+MaxBufferHost ck_buffer_host(t_ck* x)
+{
+    return {x, ck_buffer_request, ck_buffer_lock, ck_buffer_unlock,
+            ck_buffer_create, ck_buffer_set_dirty};
+}
+
+// buffer references only follow a buffer~ being created, freed or renamed
+// if the owner forwards its notifications
+t_max_err ck_notify(t_ck* x, t_symbol* s, t_symbol* msg, void* sender, void* data)
+{
+    if (x->buffers) {
+        int n = x->buffers->count.load(std::memory_order_acquire);
+        for (int i = 0; i < n; i++) {
+            void* ref = x->buffers->slots[i].handle.load(std::memory_order_acquire);
+            if (ref) {
+                buffer_ref_notify((t_buffer_ref*)ref, s, msg, sender, data);
+            }
+        }
+    }
+    return MAX_ERR_NONE;
+}
+
+// msg <name> <args...>: queue for every MaxIn listening for <name>; the
+// audio thread delivers it before the next block
+t_max_err ck_msg(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+{
+    if (argc < 1 || atom_gettype(argv) != A_SYM) {
+        ck_error(x, (char*)"msg: expected a name, e.g. 'msg note 60'");
+        return MAX_ERR_GENERIC;
+    }
+    if (argc - 1 > MAXIN_MAX_ATOMS) {
+        ck_error(x, (char*)"msg: more than %d arguments", MAXIN_MAX_ATOMS);
+        return MAX_ERR_GENERIC;
+    }
+    MaxInAtom a[MAXIN_MAX_ATOMS];
+    for (long i = 1; i < argc; i++) {
+        MaxInAtom* m = &a[i - 1];
+        switch (atom_gettype(argv + i)) {
+        case A_LONG:  m->type = MAXIN_INT;   m->i = atom_getlong(argv + i);  break;
+        case A_FLOAT: m->type = MAXIN_FLOAT; m->f = atom_getfloat(argv + i); break;
+        default:      m->type = MAXIN_STRING; m->s = atom_getsym(argv + i)->s_name; break;
+        }
+    }
+    // symbol names live for the process, as maxin_push requires
+    if (!maxin_push(x->inbox, atom_getsym(argv)->s_name, argc - 1, a)) {
+        ck_warn(x, (char*)"msg: inbox full (DSP off?), message dropped");
+        return MAX_ERR_GENERIC;
+    }
+    return MAX_ERR_NONE;
+}
+
 //-----------------------------------------------------------------------------------------------
 // reply plumbing
 
@@ -2320,6 +2678,47 @@ t_ck* ck_instance_from_id(t_CKINT id)
         return NULL;
     }
     return CK_INSTANCE_SLOTS[slot].load(std::memory_order_acquire);
+}
+
+// bound ChucK functions get the VM but no host pointer; audio-thread safe
+t_ck* ck_instance_from_vm(Chuck_VM* vm)
+{
+    for (long i = 0; i < CK_MAX_INSTANCES; i++) {
+        t_ck* x = CK_INSTANCE_SLOTS[i].load(std::memory_order_acquire);
+        if (x && x->chuck && x->chuck->vm() == vm) {
+            return x;
+        }
+    }
+    return NULL;
+}
+
+// Max.send(string name, float value) -> reply outlet: msg <name> <value>.
+// runs on the audio thread, so it queues rather than calling the outlet
+CK_DLL_SFUN(max_send)
+{
+    Chuck_String* name = GET_NEXT_STRING(ARGS);
+    t_CKFLOAT value = GET_NEXT_FLOAT(ARGS);
+    t_ck* x = ck_instance_from_vm(VM);
+    if (x == NULL || name == NULL) {
+        return;
+    }
+    t_atom a[2];
+    atom_setsym(a, gensym(name->c_str()));
+    atom_setfloat(a + 1, value);
+    ck_reply_push(x, ps_msg, 2, a);
+}
+
+// the Max class, bound into each VM by ck_new (see source/docs/dev/bind.md)
+static t_CKBOOL CK_DLL_CALL ck_max_query(Chuck_DL_Query* QUERY)
+{
+    QUERY->begin_class(QUERY, "Max", "Object");
+    QUERY->doc_class(QUERY, "messages from ChucK to the chuck~ reply outlet");
+    QUERY->add_sfun(QUERY, max_send, "void", "send");
+    QUERY->add_arg(QUERY, "string", "name");
+    QUERY->add_arg(QUERY, "float", "value");
+    QUERY->doc_func(QUERY, "send 'msg <name> <value>' out the reply outlet");
+    QUERY->end_class(QUERY);
+    return TRUE;
 }
 
 // remember the variable name for an outgoing request and return the id to hand
@@ -2371,6 +2770,10 @@ void ck_reply_drain(t_ck* x)
         outlet_anything(x->reply_outlet, r->selector, (short)r->argc, r->argv);
         head = (head + 1) % CK_REPLY_QUEUE_SIZE;
         x->reply_head.store(head, std::memory_order_release);
+    }
+    // MaxBuffer shares this qelem for its main-thread work
+    if (x->buffers) {
+        maxbuffer_service(x->buffers);
     }
 }
 
@@ -2791,6 +3194,10 @@ void ck_dsp64(t_ck* x, t_object* dsp64, short* count, double samplerate,
         x->tap_buffer_frames = maxvectorsize;
     }
 
+    if (samplerate > 0) {
+        x->clk_sr = samplerate;
+    }
+
     object_method(dsp64, gensym("dsp_add64"), x, ck_perform64, 0, NULL);
 }
 
@@ -2809,6 +3216,10 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
             }
         }
     }
+
+    ck_clockprobe_measure(x, ins, numins, n);
+    maxin_drain(x->inbox);
+    ck_clock_update(x);
 
     x->chuck->run(x->in_chuck_buffer, x->out_chuck_buffer, n);
 
