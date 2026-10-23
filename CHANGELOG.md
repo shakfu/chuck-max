@@ -5,10 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## Types of Changes
 
 - Added: for new features.
+
 - Changed: for changes in existing functionality.
+
 - Deprecated: for soon-to-be removed features.
+
 - Removed: for now removed features.
+
 - Fixed: for any bug fixes.
+
 - Security: in case of vulnerabilities.
 
 ---
@@ -19,15 +24,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Added a reply outlet: an additional non-signal outlet, rightmost, which reports data to the patch rather than only to the Max console
   - `val <name> <value...>` in response to `get`
+
   - `event <name>` while a `listen` is active
+
   - `shred add <id>` / `shred remove <id>` from a ChucK VM shred watcher
+
   - `global <name> <type>` in response to `globals`
+
   - Selectors always come from the object's own vocabulary and any ChucK name travels as an argument, so no global variable name can collide with a control message. Route with `route val event shred global`
+
   - The name precedes the type in `global <name> <type>` deliberately. Once a patch strips the selector with `route global`, the next atom becomes the new selector, and ChucK's `int` and `float` type names collide with Max's typed methods there, producing `bad arguments for message "int"`. ChucK variable names cannot be reserved words, so leading with the name avoids the collision
+
   - Replies are queued from the audio thread and flushed on the main thread; the queue drops rather than blocks when full
 
 - Added `abort` message, which aborts a shred currently executing inside the VM
   - Unlike `remove`, this can break out of a shred looping without advancing time
+
   - Only has a target while the VM is inside a compute cycle, which is the situation it exists for; on an otherwise healthy patch it reports that there is nothing to abort
 
 - Added multichannel tapping: `tap <outlet> <ugen> <nchannels>` assigns a multichannel global UGen across consecutive tap outlets, reading via `getGlobalUGenSamplesMulti()`
@@ -39,15 +51,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Added an `advanced` tab to `help/chuck~.maxhelp` covering the current message set, alongside the previous help content which is now the `main` tab
   - Six sections: load and run, read globals, set globals, events, tap global UGens, and VM introspection
+
   - Demonstrates the data outlet with `route val event shred global` into four labelled prints, and the tap outlets with three scopes
+
   - `chuck~ 2 @ntap 3` leaves no outlet unconnected: the demo uses exactly one mono tap and one stereo pair
+
   - Message boxes feed a single `[s #0-to-chuck]` rather than each carrying its own patch cord to the object
+
   - Does not demonstrate `eval`, since ChucK code needs semicolons and a bare `;` in a Max message box means "send to a named receive"; the `main` tab covers this with the `ui_code.maxpat` bpatcher
 
 - Note for maintainers: each help tab holds its own `chuck~`, so their send/receive names must not collide. An unscoped name such as `to-chuck` is global across all of Max, so every `chuck~` fed by a matching `[r to-chuck]` runs every message intended for any other, and their audio is heard together. The `main` tab still uses the unscoped name, as do `test_add`, `test_editor`, `test_global_vars`, `test_song` and `test_sync`. Note also that `#0` alone is not sufficient to separate two tabs: it expands per top-level patcher instance and subpatchers inherit the parent's value, so two tabs both using `#0-to-chuck` would collide again. Distinct names such as `#0-main-to-chuck` and `#0-adv-to-chuck` are needed
 
 - Added `patchers/tests/test_chuck_tilde.maxpat` and `examples/test/help_features.ck` demonstrating the above
   - The demo file wires its globals to audible parameters rather than leaving them as inert values: `freq` drives the oscillator pitch and `levels[0]` its gain, so `set float freq 660.`, the `freq 550.` shorthand and `set float[i] levels 0 0.75` all produce an obvious change
+
   - Uses a saw oscillator for the mono voice and a panning triangle for the stereo pair, so the two are distinguishable by ear and the tap scopes show a readable waveform
 
 - Added compile-time `printf` format checking to the logging helpers on GCC and Clang
@@ -66,9 +83,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Separated this object's reporting verbosity from the ChucK VM's log level, via a new `@verbose` attribute (`0` quiet, `1` normal, `2` debug; also settable as a message). `loglevel` now means only what `ChucK::setLogLevel()` means
   - Previously `x->loglevel` did both jobs, and `ck_new` set it to `CK_LOG_SYSTEM` (2) against helper thresholds of 4, 5 and 6, so 47 of the 118 reporting calls could never appear. Raising the level to reach them also made the engine verbose
+
   - `@verbose` defaults to 0, which is what the old gating amounted to in practice, so this changes no observable behaviour; it makes the output reachable without side effects on the engine
+
   - `ck_warn` is no longer gated at all: a warning nobody sees is not a warning
+
   - Query answers in `status`, `vm`, `chugins` and `loglevel` now report unconditionally, since a question that returns nothing is indistinguishable from a broken object
+
   - See `source/docs/logging.md`
 
 - Made `loglevel` honestly process-global. It maps to `ChucK::setLogLevel()`, which is static, so one level is shared by every `chuck~` in the process; the code had kept a stale per-instance copy alongside it. Setting the level on one object left the others' copies stale, and querying it with no argument mutated the queried object's copy as a side effect. The copy is removed: `ck_loglevel` reads and writes the shared VM state directly, and the package default is now applied once by the first instance rather than re-asserted (and thus clobbered) by every new object. Per-object reporting is what the new `@verbose` is for
@@ -101,43 +122,63 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Added `@ntap` attribute and `tap` message for reading audio samples from global UGens
   - Enables tapping into global UGens declared in ChucK code for signal routing to Max
+
   - Supports up to 16 independent tap outlets, each can tap a different global UGen
+
   - Usage: `[chuck~ 2 @ntap 2]` creates 2 audio channels + 2 tap outlets
+
   - Tap message syntax:
     - `tap` - clear all tap outlets
+
     - `tap <ugen>` - set all outlets to tap the same UGen
+
     - `tap <outlet> <ugen>` - set specific outlet to tap a UGen (e.g., `tap 1 osc1`)
+
     - `tap <outlet>` - clear specific outlet
+
   - Requires `1 => ugen.buffered` in ChucK code to enable sample capture
 
 - Added `param` message for querying and setting ChucK VM parameters
   - `param` (no args): lists all available parameters with their current values
+
   - `param <name>`: get specific parameter value
+
   - `param <name> <value>`: set parameter value
+
   - Supports integer, string, and string list parameter types
 
 - Added `shreds` message for shred introspection
   - `shreds`: list all shreds with IDs, names, and state
+
   - `shreds ready`: list ready (running) shreds
+
   - `shreds blocked`: list blocked (waiting) shreds
+
   - `shreds <id>`: detailed info about specific shred
+
   - `shreds highest/last/next/count`: query shred ID info
 
 - Added `removeall` message as a direct way to remove all shreds
   - Equivalent to `remove all` but more discoverable
+
   - Unlike `clear vm`, preserves VM state (globals, etc.)
 
 - Added `adaptive` message for runtime control of adaptive block processing
   - `adaptive`: query current adaptive mode status
+
   - `adaptive <size>`: set adaptive mode (0 to disable, >1 to enable with max block size)
+
   - Can improve CPU performance for certain workloads
 
 #### ChucK and Chugins Updates
 
 - Updated `chuck` source and examples to latest `1.5.5.8-dev (chai)`
   - Refreshed `source/projects/chuck/core` from upstream (compile, emit, globals, instr, lang, type, ugen_xxx, ulib_math, util_math, util_network, util_platforms, util_thread)
+
   - Refreshed `examples/` from upstream, including new `examples/math/spherical-harmonics.ck` and `examples/spatial/ambisonic-encoding.ck`
+
   - Relocated `tap_test.ck` / `tap_test2.ck` into `source/projects/examples/test/` so they survive future `update.sh` runs
+
   - Patched `source/scripts/update.sh` to recreate the `examples/chuck` symlink (wiped by the examples-dir replacement)
 
 - Added `VST3` chugin
@@ -148,8 +189,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Added `AbletonLink` chugin for tempo synchronization with Link-enabled applications
   - Real-time tempo and beat grid synchronization across network
+
   - Compatible with Ableton Live, Max/MSP, and other Link-enabled software
+
   - Configurable quantum, resolution, and latency offset settings
+
   - Thread-safe implementation optimized for audio processing
 
 #### Other
@@ -160,15 +204,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - Security
   - Fixed potential command injection vulnerability in `ck_edit` function by adding input validation for editor and file paths
-  
+
   - Added path validation function `is_safe_path()` to prevent directory traversal attacks in file operations
-  
+
   - Enhanced `ck_check_file()` with security validation to block unsafe path patterns (../, absolute paths, UNC paths)
 
 - Fixed:
   - Crash when running ChucK files with custom events after VM clear ([issue #11](https://github.com/shakfu/chuck-max/issues/11), [chuck #537](https://github.com/ccrma/chuck/issues/537))
     - Root cause: NULL pointer dereference in ChucK core when `get_global_event()` accessed a non-existent global via `std::map::operator[]`
+
     - Added null checks in `chuck_globals.cpp` for `get_global_event()`, `get_global_ugen()`, and `get_global_object()`
+
     - Added null guard in `chuck_instr.cpp` (`Chuck_Instr_Alloc_Word_Global::execute()`) to convert crashes into recoverable errors
 
   - Memory management in `ck_free()` function now includes null checks before deletion to prevent crashes
@@ -179,12 +225,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
   - AudioUnit chugin audio effects now properly process input audio instead of passing through unmodified
     - Added input sample storage and render callback for all AudioUnit types
+
     - Effects now receive actual audio input while instruments continue to receive silent input
+
     - Fixes issue where AudioUnit effects like AUDelay were not processing audio in Max/MSP context
 
   - CLAP chugin now compiles on Windows
     - Added cross-platform dynamic library loading (LoadLibrary/GetProcAddress on Windows, dlopen/dlsym on POSIX)
+
     - Added cross-platform directory enumeration (FindFirstFile/FindNextFile on Windows, opendir/readdir on POSIX)
+
     - Fixed CMakeLists.txt to only apply macOS-specific linker flags on Apple platforms
 
 ## [0.2.1]
@@ -305,7 +355,7 @@ see [prerelease 0.1.1](https://github.com/shakfu/chuck-max/releases/tag/0.1.1)
 
 - Added support for setting file and editor attributes, to facilitate use of external editor via setting inspector vars or via setting `editor <path>` and `edit <filename>`. Also double-clicking on the `chuck~` object will open the current file in the specified external editor.
 
-- The`add` and `replace` messages now both handle chuck style file args:  `add <path>:<arg1>:<arg2>:<argN>`  While this is consistent without chuck treats file arguments, there is some thought to making this more readable and Max friendly in the future by dropping the colons to adopt the following style: `add <path> <arg1> <arg2> ... <argN>`
+- The`add` and `replace` messages now both handle chuck style file args: `add <path>:<arg1>:<arg2>:<argN>` While this is consistent without chuck treats file arguments, there is some thought to making this more readable and Max friendly in the future by dropping the colons to adopt the following style: `add <path> <arg1> <arg2> ... <argN>`
 
 - Fixed `chuck~` object args to allow just the number of channels as args.
 
@@ -317,8 +367,7 @@ see [prerelease 0.1.1](https://github.com/shakfu/chuck-max/releases/tag/0.1.1)
 
 - Changed back to keeping all chugins in `chuck-max/examples/chugins` (alternative is to move chugins and faust stdlib to `support`)
 
-- Added support for building the `Faust` or `Fauck` chugin with the `faust`
-stdlib in `chuck-max/examples/faust`
+- Added support for building the `Faust` or `Fauck` chugin with the `faust` stdlib in `chuck-max/examples/faust`
 
 - Added support for building the `WarpBuf` chugin
 

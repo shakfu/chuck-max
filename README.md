@@ -13,23 +13,35 @@ This cross-platform project combines the power of [ChucK](https://chuck.stanford
 `chuck-max` is a cross-platform open-source Max package that embeds the [ChucK](https://chuck.stanford.edu) audio programming language engine in a Max/MSP external (`chuck~`). This powerful integration allows you to:
 
 - **Generate and process audio** by running ChucK files and evaluating code with real-time control of parameters.
+
 - **Layer multiple sounds** from a single instance by running multiple ChucK files concurrently  
+
 - **Modify audio processes on-the-fly** using ChucK messages via Max messages.
+
 - **Interact with Max** via MIDI and OSC protocols
 
 ### Key Features
 
 - **Complete ChucK Examples**: Includes a full set of current ChucK examples
+
 - **Rich ChucK plugin (Chugin) Ecosystem**: Includes default [CCRMA chugins](https://github.com/ccrma/chugins) as well as (for macOS):
   - `WarpBuf` - Time-stretching and pitch-shifting.
+
   - `Faust` - LLVM-based DSP platform.
+
   - `FluidSynth` - Software synthesizer with SoundFont support.
+
 - **Extra chugins**: include experimental plugins:
   - `AbletonLink` - syncronization using ableton link
+
   - `AudioUnit` - audio unit plugin support (macOS only)
+
   - `CLAP` - clap plugin support
+
   - `VST3` - vst3 plugin support
+
 - **Max Integration**: Comprehensive Max patchers for testing and demonstration
+
 - **Community Contributions**: User-contributed patchers and code examples
 
 ## Build Guide
@@ -118,9 +130,13 @@ make brew
 - The `chuck~` object can take the following arguments:
 
   - `[chuck~]` : single channel in/out, no default chuck file
+
   - `[chuck~ <N>]` : N channel in/out, no default chuck file
+
   - `[chuck~ <filename>]` : single channel in/out with default chuck file
+
   - `[chuck~ <N> <filename>]` : N channels with default chuck file
+
   - `[chuck~ <N> @ntap <M>]` : N audio channels + M tap outlets for reading global UGens
 
 It's recommended to choose 2 channels for stereo audio.
@@ -255,7 +271,7 @@ The rightmost outlet reports data to the patch. Previously this information was 
 
 The selector is always one of the four words above, and any name coming from your ChucK code appears as an argument rather than as the selector. This means no global variable name can be mistaken for a control message: a ChucK file may declare `global int shred;` without ambiguity. Route the outlet with:
 
-```
+```text
 [route val event shred global]
 ```
 
@@ -269,7 +285,7 @@ The `@ntap` attribute allows you to read audio samples directly from global UGen
 
 Create a `chuck~` object with the `@ntap` attribute specifying the number of tap outlet channels:
 
-```
+```text
 [chuck~ 2 @ntap 2]
 ```
 
@@ -323,20 +339,23 @@ SinOsc src => stereo;
 The `param` message allows you to query and set ChucK VM parameters at runtime.
 
 **List all parameters:**
-```
+
+```text
 param
 ```
 
 This displays all available parameters grouped by type (integer, string, string list) with their current values.
 
 **Get a specific parameter:**
-```
+
+```text
 param SAMPLE_RATE
 param WORKING_DIRECTORY
 ```
 
 **Set a parameter:**
-```
+
+```text
 param VM_ADAPTIVE 256
 param WORKING_DIRECTORY /path/to/files
 ```
@@ -363,27 +382,31 @@ param WORKING_DIRECTORY /path/to/files
 The `shreds` message provides detailed information about running shreds (ChucK's concurrent processes).
 
 **List all shreds:**
-```
+
+```text
 shreds
 ```
 
 This displays all shreds with their ID, name, and current state (running, ready, or blocked).
 
 **Filter by state:**
-```
+
+```text
 shreds ready      <- list shreds ready to run
 shreds blocked    <- list shreds waiting on events
 ```
 
 **Get detailed info about a specific shred:**
-```
+
+```text
 shreds 1
 ```
 
 This shows the shred's name, state flags, wake time, start time, and any arguments.
 
 **Query shred IDs:**
-```
+
+```text
 shreds highest    <- highest shred ID ever assigned
 shreds last       <- last shred ID assigned
 shreds next       <- next shred ID to be assigned
@@ -395,18 +418,21 @@ shreds count      <- total number of running shreds
 The `adaptive` message controls ChucK's adaptive block processing mode, which can improve CPU performance for certain workloads.
 
 **Query current status:**
-```
+
+```text
 adaptive
 ```
 
 **Enable adaptive mode:**
-```
+
+```text
 adaptive 64       <- enable with max block size of 64 samples
 adaptive 128      <- enable with max block size of 128 samples
 ```
 
 **Disable adaptive mode:**
-```
+
+```text
 adaptive 0        <- disable adaptive mode
 adaptive 1        <- also disables (size must be > 1 to enable)
 ```
@@ -456,8 +482,11 @@ In the `patchers` section, there are quite a few patchers demonstrating one feat
 We welcome contributions! Please:
 
 1. Fork the repository
+
 2. Create a feature branch
+
 3. Make your changes
+
 4. Submit a pull request
 
 ## Related Projects
@@ -465,8 +494,11 @@ We welcome contributions! Please:
 Used in `chuck-max`:
 
 - [ChuGins](https://github.com/ccrma/chugins): Repository for Officially Supported ChuGins
+
 - [ChuMP](https://chuck.stanford.edu/chump): The ChucK Manager of Packages.
+
 - [Chai](https://chuck.stanford.edu/chai): ChucK for AI.
+
 - [FaucK](https://ccrma.stanford.edu/~rmichon/fauck): Hybridizing the Faust and ChucK Audio Programming Languages.
 
 Our sibling project:
@@ -476,10 +508,15 @@ Our sibling project:
 Other ChucK projects:
 
 - [ChuGL](https://github.com/ccrma/chugl): ChucK Graphics Library.
+
 - [WebChuck](https://chuck.cs.princeton.edu/webchuck) for Web-based computer music programming with ChucK.
+
 - [ChucKDesigner](https://github.com/DBraun/ChucKDesigner): ChucK audio integration with TouchDesigner.
+
 - [SMucK](https://chuck.stanford.edu/smuck): Symbolic Music in ChucK.
+
 - [Chunity](https://chuck.stanford.edu/chunity): ChucK for Unity.
+
 - [Chunreal](https://github.com/ccrma/chunreal): ChucK in Unreal Engine.
 
 ## Future Integrations
