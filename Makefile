@@ -27,12 +27,14 @@ ifeq ($(PLATFORM), Darwin)
 OS = "macos"
 GENERATOR ?= "-GXcode"
 ifeq ($(UNIVERSAL), 0)
-EXTRA_OPTIONS += -DCM_VST3=ON
+EXTRA_OPTIONS += -DCM_VST3=ON -DCM_MACOS_UNIVERSAL=OFF
 endif
 ifeq ($(UNIVERSAL), 1)
 DIST_NAME = $(PROJECT_NAME)-$(VERSION)-macos-universal
-EXTRA_OPTIONS += -DCM_MACOS_UNIVERSAL=ON
+EXTRA_OPTIONS += -DCM_MACOS_UNIVERSAL=ON -DCM_VST3=OFF
 endif
+# clear cached archs so a reused build dir follows CM_MACOS_UNIVERSAL
+EXTRA_OPTIONS += -UCMAKE_OSX_ARCHITECTURES
 ifeq ($(BUNDLED), 1)
 EXTRA_OPTIONS += -DCM_MACOS_BUNDLED_CHUGINS=ON
 CHUGINS_DIR = externals/$(EXTERNAL_NAME).mxo/Contents/Resources/chugins
@@ -69,6 +71,9 @@ native:
 		cmake $(GENERATOR) .. $(EXTRA_OPTIONS) && \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
+
+universal:
+	@$(MAKE) native UNIVERSAL=1
 
 install_deps:
 	./source/scripts/install_deps.sh
@@ -280,6 +285,17 @@ setup:
 	else \
 		echo "... symlink already exists" ; \
 	fi
+
+# Compile (no audio) each examples/test/*.ck. chuck exits 0 on compile errors,
+# so any output counts as failure. warpbuf_* needs the optional WarpBuf chugin.
+test:
+	@cd examples && fail=0; \
+	for f in test/*.ck; do \
+		case $$f in test/warpbuf_*) continue;; esac; \
+		out=$$(./chuck --chugin-path:chugins --silent --syntax $$f 2>&1); \
+		if [ -n "$$out" ]; then echo "FAIL $$f"; echo "$$out"; fail=1; \
+		else echo "ok   $$f"; fi; \
+	done; exit $$fail
 
 example:
 	@cd examples && timeout 10 ./chuck --chugin-path:chugins stk/rhodey-song.ck -v3 || true

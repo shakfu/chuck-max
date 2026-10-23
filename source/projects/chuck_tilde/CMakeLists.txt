@@ -1,4 +1,6 @@
 include(${CMAKE_CURRENT_SOURCE_DIR}/../../max-sdk-base/script/max-pretarget.cmake)
+# max-pretarget forces 10.11; restore the project minimum
+set(CMAKE_OSX_DEPLOYMENT_TARGET "${CM_OSX_DEPLOYMENT_TARGET}" CACHE STRING "Minimum OS X deployment version" FORCE)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CHUCK_INCLUDE ${CMAKE_SOURCE_DIR}/source/projects/chuck/core)
