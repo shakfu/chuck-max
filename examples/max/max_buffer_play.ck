@@ -1,15 +1,15 @@
-// MaxBufPlay: loop channel 0 of buffer~ ckbuf. follows the buffer~ as it is
+// HostBufPlay: loop channel 0 of buffer~ ckbuf. follows the buffer~ as it is
 // refilled, resized, or deleted (silence).
 // in Max: [msg rate 0.5( -> [chuck~] sets the rate; negative plays backward
 
-MaxBufPlay p => dac;
+HostBufPlay p => dac;
 0.5 => p.gain;
 p.name( "ckbuf" );
 1 => p.loop;
 
-MaxIn min;
+HostIn min;
 min.addAddress( "rate" );
-MaxMsg m;
+HostMsg m;
 while( true )
 {
     min => now;

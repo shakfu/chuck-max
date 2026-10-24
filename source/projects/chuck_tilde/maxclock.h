@@ -1,4 +1,4 @@
-// MaxClock: ChucK view of a host transport (see source/docs/dev/bind.md).
+// HostClock: ChucK view of a host transport (see source/docs/dev/bind.md).
 // No Max dependency: the host fills a MaxClockSnapshot each block, so
 // source/projects/tests/bind_test.cpp can drive it with a simulated transport.
 
@@ -24,20 +24,20 @@ struct MaxClockSnapshot {
 struct MaxClockState {
     MaxClockSnapshot cur = {};
     bool valid = false;
-    std::vector<Chuck_Object*> clocks;  // live MaxClock objects, VM thread only
+    std::vector<Chuck_Object*> clocks;  // live HostClock objects, VM thread only
 };
 
 // maps a VM to its state; NULL once the host is tearing down
 typedef MaxClockState* (*f_maxclock_lookup)(Chuck_VM* vm);
 
-// set once, before any VM binds MaxClock
+// set once, before any VM binds HostClock
 void maxclock_set_lookup(f_maxclock_lookup lookup);
 
-// ChucK::bind() query that declares the MaxClock class
+// ChucK::bind() query that declares the HostClock class
 t_CKBOOL CK_DLL_CALL maxclock_query(Chuck_DL_Query* QUERY);
 
 // VM thread, before ChucK::run(): store the snapshot and broadcast every
-// MaxClock on start/stop, tempo or time signature change, or a jump of more
+// HostClock on start/stop, tempo or time signature change, or a jump of more
 // than half a sample. returns true if it broadcast
 bool maxclock_update(MaxClockState* state, const MaxClockSnapshot& snap);
 

@@ -1,8 +1,8 @@
-// MaxBuffer write: fill buffer~ ckbuf with a decaying 220 Hz tone.
+// HostBuffer write: fill buffer~ ckbuf with a decaying 220 Hz tone.
 // in Max: [buffer~ ckbuf 1000]; double-click it to see the result.
 // reply outlet -> [route msg] -> [route written]: frames written
 
-MaxBuffer b;
+HostBuffer b;
 b.name( "ckbuf" );
 
 // the buffer~ reference is made on the main thread, a few ms from now
@@ -17,4 +17,4 @@ for( 0 => int i; i < n; i++ )
     Math.sin( 2 * pi * 220 * i / sr ) * Math.exp( -4.0 * i / n ) => float v;
     for( 0 => int c; c < b.channels(); c++ ) b.poke( i, c, v );
 }
-Max.send( "written", n );
+Host.send( "written", n );

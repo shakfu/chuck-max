@@ -1,4 +1,4 @@
-// MaxBuffer: ChucK reads and writes buffer~ samples (see source/docs/dev/bind.md).
+// HostBuffer: ChucK reads and writes buffer~ samples (see source/docs/dev/bind.md).
 // No Max dependency: the host supplies the buffer calls through MaxBufferHost,
 // so source/projects/tests/bind_test.cpp can drive it with fake buffers.
 
@@ -55,10 +55,10 @@ struct MaxBufferState {
 // maps a VM to its state; NULL once the host is tearing down
 typedef MaxBufferState* (*f_maxbuffer_lookup)(Chuck_VM* vm);
 
-// set once, before any VM binds MaxBuffer
+// set once, before any VM binds HostBuffer
 void maxbuffer_set_lookup(f_maxbuffer_lookup lookup);
 
-// ChucK::bind() query that declares MaxBuffer and the MaxBufPlay UGen
+// ChucK::bind() query that declares HostBuffer and the HostBufPlay UGen
 t_CKBOOL CK_DLL_CALL maxbuffer_query(Chuck_DL_Query* QUERY);
 
 // main thread: create references for new names; pass dirty flags to Max

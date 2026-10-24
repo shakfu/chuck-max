@@ -1,5 +1,5 @@
 // bind_test: engine-level tests for ChucK::bind(), no Max required.
-// checks the assumptions behind the Max class proposal in
+// checks the assumptions behind the host classes in
 // source/docs/dev/bind.md. exits non-zero if any check fails.
 
 #include "chuck.h"
@@ -9,6 +9,7 @@
 #include "maxclock.h"
 #include "maxin.h"
 #include "maxbuffer.h"
+#include "maxsend.h"
 
 #include <cmath>
 #include <cstdio>
@@ -16,6 +17,7 @@
 #include <filesystem>
 #include <iterator>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -340,7 +342,7 @@ static void check_removed_shred_unregisters(RemoveHow how)
 }
 
 //-----------------------------------------------------------------------------
-// MaxClock and MaxIn, as chuck_tilde wires them; a simulated transport
+// HostClock and HostIn, as chuck_tilde wires them; a simulated transport
 // stands in for Max's ITM
 
 static std::map<Chuck_VM*, MaxClockState*> g_clock_states;
@@ -431,9 +433,9 @@ struct Rig {
 
     Rig() : ck(make_chuck(true))
     {
-        ck->bind(maxclock_query, "MaxClock");
-        ck->bind(maxin_query, "MaxIn");
-        ck->bind(maxbuffer_query, "MaxBuffer");
+        ck->bind(maxclock_query, "HostClock");
+        ck->bind(maxin_query, "HostIn");
+        ck->bind(maxbuffer_query, "HostBuffer");
         buffers.host = fake_buffer_host(&fake);
         g_buffer_states[ck->vm()] = &buffers;
         ck->vm()->subscribe_watcher(maxin_watcher, ckvm_shreds_watch_REMOVE, &in);
@@ -443,7 +445,7 @@ struct Rig {
     ~Rig()
     {
         Chuck_VM* vm = ck->vm();
-        delete ck;  // MaxClock and MaxIn dtors still find their state here
+        delete ck;  // HostClock and HostIn dtors still find their state here
         g_clock_states.erase(vm);
         g_in_states.erase(vm);
         g_buffer_states.erase(vm);
@@ -485,7 +487,7 @@ static void test_clock_extrapolates()
     Rig rig;
     rig.tr.ticks = 1000;
     CHECK(rig.ck->compileCode(
-        "MaxClock clk; Probe.send(\"t0\", clk.ticks());"
+        "HostClock clk; Probe.send(\"t0\", clk.ticks());"
         "100::samp => now; Probe.send(\"t1\", clk.ticks());"));
     rig.blocks(3);
     const Record* t0 = find_record("t0");
@@ -501,7 +503,7 @@ static void test_clock_to_next_beat()
     Rig rig;
     rig.tr.ticks = 470;  // 10 ticks = 500 samples before beat 2
     CHECK(rig.ck->compileCode(
-        "MaxClock clk; clk.toNextBeat() => now; Probe.send(\"on\", clk.ticks());"
+        "HostClock clk; clk.toNextBeat() => now; Probe.send(\"on\", clk.ticks());"
         "Probe.send(\"next\", clk.toNextBeat() / samp);"));
     rig.blocks(10);
     const Record* on = find_record("on");
@@ -516,7 +518,7 @@ static void test_clock_to_next_beat()
     Rig frac;
     frac.tr.ticks = 480 - 500.3 * 0.02;
     CHECK(frac.ck->compileCode(
-        "MaxClock clk; clk.toNextBeat() => now; Probe.send(\"on\", clk.ticks());"));
+        "HostClock clk; clk.toNextBeat() => now; Probe.send(\"on\", clk.ticks());"));
     frac.blocks(10);
     on = find_record("on");
     CHECK(on && near(on->now, 500.3) && near(on->value, 480));
@@ -529,7 +531,7 @@ static void test_clock_stopped()
     rig.tr.running = false;
     rig.tr.ticks = 100;
     CHECK(rig.ck->compileCode(
-        "MaxClock clk; Probe.send(\"t0\", clk.ticks()); Probe.send(\"run\", clk.running());"
+        "HostClock clk; Probe.send(\"t0\", clk.ticks()); Probe.send(\"run\", clk.running());"
         "1000::samp => now; Probe.send(\"t1\", clk.ticks());"
         "Probe.send(\"next\", clk.toNextBeat() / samp);"));
     rig.blocks(20);
@@ -543,7 +545,7 @@ static void test_clock_stopped()
 
 // a shred that reports each broadcast with the tempo and running state
 static const char* WATCHER =
-    "MaxClock clk;"
+    "HostClock clk;"
     "while (true) { clk => now; Probe.send(\"chg\", clk.tempo() * 10 + clk.running()); }";
 
 static void test_clock_broadcasts()
@@ -588,7 +590,7 @@ static void test_clock_bbu()
     Rig rig;
     rig.tr.running = false;
     const char* code =
-        "MaxClock clk; Probe.send(\"bar\", clk.bar());"
+        "HostClock clk; Probe.send(\"bar\", clk.bar());"
         "Probe.send(\"beat\", clk.beatInBar()); Probe.send(\"unit\", clk.unit());";
     rig.tr.ticks = 2 * 1920 + 480 + 7;  // 4/4: bar 3, beat 2, 7 ticks in
     CHECK(rig.ck->compileCode(code));
@@ -628,7 +630,7 @@ static void test_clock_lifecycle()
 {
     g_records.clear();
     Rig rig;
-    CHECK(rig.ck->compileCode("MaxClock clk;"));  // exits: clk is released
+    CHECK(rig.ck->compileCode("HostClock clk;"));  // exits: clk is released
     rig.blocks(2);
     CHECK(rig.state.clocks.empty());
 
@@ -646,7 +648,7 @@ static void test_clock_lifecycle()
 }
 
 //-----------------------------------------------------------------------------
-// MaxIn / MaxMsg, fed through maxin_push as ck_msg does
+// HostIn / HostMsg, fed through maxin_push as ck_msg does
 
 static MaxInAtom I(t_CKINT v) { MaxInAtom a; a.type = MAXIN_INT; a.i = v; return a; }
 static MaxInAtom F(t_CKFLOAT v) { MaxInAtom a; a.type = MAXIN_FLOAT; a.f = v; return a; }
@@ -659,7 +661,7 @@ static bool push(Rig& rig, const char* name, std::vector<MaxInAtom> args = {})
 
 // reports each 'note' message: name and count, int 0, float 1, string 2
 static const char* RECEIVER =
-    "MaxIn min; min.addAddress(\"note\"); MaxMsg m;"
+    "HostIn min; min.addAddress(\"note\"); HostMsg m;"
     "while (true) { min => now; while (min.recv(m)) {"
     "  Probe.send(m.name(), m.numArgs()); Probe.send(\"i\", m.getInt(0));"
     "  Probe.send(\"f\", m.getFloat(1)); Probe.send(\"s:\" + m.getString(2), 0); } }";
@@ -695,7 +697,7 @@ static void test_maxin_coerces()
     g_records.clear();
     Rig rig;
     CHECK(rig.ck->compileCode(
-        "MaxIn min; min.addAddress(\"x\"); MaxMsg m; min => now; min.recv(m);"
+        "HostIn min; min.addAddress(\"x\"); HostMsg m; min => now; min.recv(m);"
         "Probe.send(\"i0\", m.getInt(0)); Probe.send(\"f1\", m.getFloat(1));"
         "Probe.send(\"i2\", m.getInt(2)); Probe.send(\"f2\", m.getFloat(2));"
         "Probe.send(\"s:\" + m.getString(0), 0); Probe.send(\"neg\", m.getInt(-1));"));
@@ -715,10 +717,10 @@ static void test_maxin_addresses()
     g_records.clear();
     Rig rig;
     CHECK(rig.ck->compileCode(
-        "fun void rd(MaxIn x, string tag) { MaxMsg m;"
+        "fun void rd(HostIn x, string tag) { HostMsg m;"
         "  while (true) { x => now; while (x.recv(m)) Probe.send(tag + m.name(), 0); } }"
-        "MaxIn p; p.addAddress(\"a\"); p.addAddress(\"b\");"
-        "MaxIn q; q.addAddress(\"a\");"
+        "HostIn p; p.addAddress(\"a\"); p.addAddress(\"b\");"
+        "HostIn q; q.addAddress(\"a\");"
         "spork ~ rd(p, \"p\"); spork ~ rd(q, \"q\"); 1::day => now;"));
     rig.blocks(1);
     CHECK(push(rig, "a"));
@@ -734,7 +736,7 @@ static void test_maxin_no_listener()
     g_records.clear();
     Rig rig;
     CHECK(push(rig, "note", {I(1)}));
-    rig.blocks(1);  // drained with no MaxIn: dropped
+    rig.blocks(1);  // drained with no HostIn: dropped
     CHECK(rig.ck->compileCode(RECEIVER));
     rig.blocks(2);
     CHECK(g_records.empty());
@@ -753,8 +755,8 @@ static void test_maxin_limits()
     rig.blocks(1);
     CHECK(push(rig, "x"));
 
-    // a MaxIn that never calls recv() keeps at most MAXIN_MAX_PENDING
-    CHECK(rig.ck->compileCode("MaxIn min; min.addAddress(\"x\"); 1::day => now;"));
+    // a HostIn that never calls recv() keeps at most MAXIN_MAX_PENDING
+    CHECK(rig.ck->compileCode("HostIn min; min.addAddress(\"x\"); 1::day => now;"));
     rig.blocks(1);
     for (int i = 0; i < MAXIN_MAX_PENDING + 10; i++) push(rig, "x");
     rig.blocks(1);
@@ -777,13 +779,13 @@ static void test_maxin_unregisters()
 {
     Rig rig;
     // the shred exits at once, so min is released and its dtor unregisters
-    CHECK(rig.ck->compileCode("MaxIn min; min.addAddress(\"x\");"));
+    CHECK(rig.ck->compileCode("HostIn min; min.addAddress(\"x\");"));
     rig.blocks(2);
     CHECK(rig.in.entries.empty());
 
     // freed while its shred runs: the watcher cannot help, the dtor must
     CHECK(rig.ck->compileCode(
-        "MaxIn min; min.addAddress(\"x\"); null @=> min; 1::second => now;"));
+        "HostIn min; min.addAddress(\"x\"); null @=> min; 1::second => now;"));
     rig.blocks(1);
     CHECK(rig.in.entries.empty());
     push(rig, "x");
@@ -808,7 +810,7 @@ static void check_maxin_removed(RemoveHow how)
     rig.blocks(2);
     CHECK(rig.in.entries.empty());
 
-    // MaxIn is in the global namespace, so it compiles after CLEARVM too
+    // HostIn is in the global namespace, so it compiles after CLEARVM too
     CHECK(rig.ck->compileCode(RECEIVER));
     rig.blocks(1);
     CHECK(rig.in.entries.size() == 1);
@@ -817,16 +819,16 @@ static void check_maxin_removed(RemoveHow how)
     CHECK(g_records.size() == 4 && find_record("i") && find_record("i")->value == 7);
 }
 
-// documents a limitation: the watcher drops a MaxIn when its creating shred
+// documents a limitation: the watcher drops a HostIn when its creating shred
 // ends, even if a global keeps it alive for another shred
 static void test_maxin_global_outlives_creator()
 {
     g_records.clear();
     Rig rig;
-    CHECK(rig.ck->compileCode("global MaxIn gin; gin.addAddress(\"x\");"));
+    CHECK(rig.ck->compileCode("global HostIn gin; gin.addAddress(\"x\");"));
     rig.blocks(2);  // creator exits; gin lives on as a global
     CHECK(rig.ck->compileCode(
-        "global MaxIn gin; MaxMsg m; gin => now; Probe.send(\"woke\", gin.recv(m));"));
+        "global HostIn gin; HostMsg m; gin => now; Probe.send(\"woke\", gin.recv(m));"));
     rig.blocks(1);
     push(rig, "x");
     rig.blocks(2);
@@ -852,7 +854,7 @@ static void test_maxin_instances_isolated()
 }
 
 //-----------------------------------------------------------------------------
-// MaxBuffer, against FakeHost; service() stands in for the main-thread qelem
+// HostBuffer, against FakeHost; service() stands in for the main-thread qelem
 
 static void test_buffer_resolves()
 {
@@ -860,7 +862,7 @@ static void test_buffer_resolves()
     Rig rig;
     rig.fake.buffers["drums"] = {std::vector<float>(2 * 100, 0), 2, 48000};
     CHECK(rig.ck->compileCode(
-        "MaxBuffer b; b.name(\"drums\") => string n; Probe.send(\"n:\" + n, b.ready());"
+        "HostBuffer b; b.name(\"drums\") => string n; Probe.send(\"n:\" + n, b.ready());"
         "while (!b.ready()) 1::samp => now;"
         "Probe.send(\"frames\", b.frames()); Probe.send(\"chans\", b.channels());"
         "Probe.send(\"sr\", b.sampleRate()); Probe.send(\"get:\" + b.name(), 0);"));
@@ -885,12 +887,12 @@ static void test_buffer_peek_poke()
     // 3 stereo frames, then one guard frame that must never be read or written
     FakeBuffer& fb = rig.fake.buffers["st"] =
         {{0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 9.f, 9.f}, 2, 44100, 3};
-    CHECK(rig.ck->compileCode("MaxBuffer b; b.name(\"st\");"));
+    CHECK(rig.ck->compileCode("HostBuffer b; b.name(\"st\");"));
     rig.blocks(1);
     maxbuffer_service(&rig.buffers);
     CHECK(rig.fake.dirtied.empty());
     CHECK(rig.ck->compileCode(
-        "MaxBuffer b; b.name(\"st\");"
+        "HostBuffer b; b.name(\"st\");"
         "Probe.send(\"p0\", b.peek(1)); Probe.send(\"p1\", b.peek(2, 1));"
         "Probe.send(\"oob\", b.peek(3) + b.peek(-1) + b.peek(0, 2) + b.peek(0, -1));"
         "b.poke(0, 1, 0.9); b.poke(2, -0.5); b.poke(3, 0, 1); b.poke(0, 2, 1);"));
@@ -918,7 +920,7 @@ static void test_buffer_appears_and_goes()
     g_records.clear();
     Rig rig;
     CHECK(rig.ck->compileCode(
-        "MaxBuffer b; b.name(\"late\");"
+        "HostBuffer b; b.name(\"late\");"
         "while (true) { Probe.send(\"r\", b.ready()); Probe.send(\"v\", b.peek(0)); 64::samp => now; }"));
     rig.blocks(1);
     maxbuffer_service(&rig.buffers);
@@ -937,22 +939,22 @@ static void test_buffer_slots()
     g_records.clear();
     Rig rig;
     rig.fake.buffers["a"] = {{0.25f}, 1, 44100};
-    CHECK(rig.ck->compileCode("MaxBuffer b; b.name(\"a\");"));
+    CHECK(rig.ck->compileCode("HostBuffer b; b.name(\"a\");"));
     rig.blocks(1);
     maxbuffer_service(&rig.buffers);
     // a name already referenced is ready at once, even after a reset
     send_vm_msg(rig.ck, CK_MSG_CLEARVM);
     rig.blocks(1);
     CHECK(rig.ck->compileCode(
-        "MaxBuffer c; c.name(\"a\"); Probe.send(\"again\", c.ready());"));
+        "HostBuffer c; c.name(\"a\"); Probe.send(\"again\", c.ready());"));
     rig.blocks(1);
     CHECK(find_record("again") && find_record("again")->value == 1);
     CHECK(rig.buffers.count == 1 && rig.fake.refs.size() == 1);
 
     // names beyond MAXBUFFER_MAX_SLOTS are refused
     CHECK(rig.ck->compileCode(
-        "MaxBuffer m; for (1 => int i; i < 70; i++) m.name(\"x\" + i) => string s;"
-        "MaxBuffer z; z.name(\"over\") => string s; Probe.send(\"over:\" + s, z.ready());"
+        "HostBuffer m; for (1 => int i; i < 70; i++) m.name(\"x\" + i) => string s;"
+        "HostBuffer z; z.name(\"over\") => string s; Probe.send(\"over:\" + s, z.ready());"
         "Probe.send(\"zname:\" + z.name(), 0);"));
     rig.blocks(1);
     CHECK(rig.buffers.count == MAXBUFFER_MAX_SLOTS);
@@ -967,7 +969,7 @@ static void test_buffer_unbound_state()
     Rig rig;
     g_buffer_states.erase(rig.ck->vm());
     CHECK(rig.ck->compileCode(
-        "MaxBuffer b; b.name(\"a\") => string s; b.poke(0, 1);"
+        "HostBuffer b; b.name(\"a\") => string s; b.poke(0, 1);"
         "Probe.send(\"r\", b.ready() + b.frames() + b.peek(0));"));
     rig.blocks(1);
     CHECK(find_record("r") && find_record("r")->value == 0);
@@ -977,7 +979,7 @@ static void test_buffer_unbound_state()
 static void test_buffer_instances_isolated()
 {
     Rig a, b;
-    CHECK(a.ck->compileCode("MaxBuffer m; m.name(\"s\");"));
+    CHECK(a.ck->compileCode("HostBuffer m; m.name(\"s\");"));
     a.blocks(1);
     b.blocks(1);
     CHECK(a.buffers.count == 1 && b.buffers.count == 0);
@@ -985,7 +987,7 @@ static void test_buffer_instances_isolated()
 }
 
 //-----------------------------------------------------------------------------
-// MaxBufPlay UGen, against FakeHost
+// HostBufPlay UGen, against FakeHost
 
 // outputs of the shred's n samples after 'setup', read with last(): the
 // value the UGen computed on the previous sample
@@ -993,7 +995,7 @@ static std::vector<double> play(Rig& rig, const std::string& setup, int n)
 {
     g_records.clear();
     CHECK(rig.ck->compileCode(
-        "MaxBufPlay p => blackhole; p.name(\"a\");"
+        "HostBufPlay p => blackhole; p.name(\"a\");"
         "while (!p.ready()) 1::samp => now;" + setup +
         "repeat (" + std::to_string(n) + ") { 1::samp => now; Probe.send(\"o\", p.last()); }"));
     rig.blocks(1);
@@ -1059,7 +1061,7 @@ static void test_bufplay_missing_buffer()
     g_records.clear();
     Rig rig;
     CHECK(rig.ck->compileCode(
-        "MaxBufPlay p => blackhole; p.name(\"a\");"
+        "HostBufPlay p => blackhole; p.name(\"a\");"
         "while (true) { 1::samp => now; Probe.send(\"o\", p.last()); }"));
     rig.blocks(1);
     maxbuffer_service(&rig.buffers);
@@ -1086,22 +1088,185 @@ static void test_bufplay_shares_slots()
     Rig rig;
     rig.fake.buffers["a"] = {RAMP, 1, 44100};
     CHECK(rig.ck->compileCode(
-        "MaxBuffer b; b.name(\"a\"); MaxBufPlay p => blackhole; p.name(\"a\");"
+        "HostBuffer b; b.name(\"a\"); HostBufPlay p => blackhole; p.name(\"a\");"
         "Probe.send(\"n:\" + p.name(), 0);"));
     rig.blocks(1);
     CHECK(rig.buffers.count == 1 && rig.fake.requests == 1);
     CHECK(find_record("n:a") != NULL);
 }
 
-// stand-in for chuck_tilde's Max class, same signature, recording to g_records
+// stand-in for chuck_tilde's Host class, same signature, recording to g_records
 static t_CKBOOL CK_DLL_CALL max_stub_query(Chuck_DL_Query* QUERY)
 {
-    QUERY->begin_class(QUERY, "Max", "Object");
+    QUERY->begin_class(QUERY, "Host", "Object");
     QUERY->add_sfun(QUERY, probe_send, "void", "send");
     QUERY->add_arg(QUERY, "string", "name");
     QUERY->add_arg(QUERY, "float", "value");
+    maxsend_add_methods(QUERY);
     QUERY->end_class(QUERY);
     return TRUE;
+}
+
+
+//-----------------------------------------------------------------------------
+// Host.send*: ChucK to [receive], through maxsend.cpp with a fake host
+
+struct Delivery {
+    MaxSendType type;
+    std::string receiver;
+    std::string symbol;
+    std::vector<double> values;
+};
+
+struct FakeSendHost {
+    std::set<std::string> names;  // interned: set nodes never move
+    std::vector<Delivery> got;
+    int requests = 0;
+};
+
+static void* fake_intern(void* ctx, const char* name)
+{
+    return (void*)&*((FakeSendHost*)ctx)->names.insert(name).first;
+}
+
+static void fake_send_request(void* ctx)
+{
+    ((FakeSendHost*)ctx)->requests++;
+}
+
+static void fake_deliver(void* ctx, const MaxSendMessage* m)
+{
+    ((FakeSendHost*)ctx)->got.push_back({m->type, *(const std::string*)m->receiver,
+        m->symbol ? *(const std::string*)m->symbol : std::string(),
+        std::vector<double>(m->argv, m->argv + m->argc)});
+}
+
+static std::map<Chuck_VM*, MaxSendState*> g_send_states;
+
+static MaxSendState* send_lookup(Chuck_VM* vm)
+{
+    auto it = g_send_states.find(vm);
+    return it == g_send_states.end() ? NULL : it->second;
+}
+
+struct SendRig {
+    ChucK* ck;
+    FakeSendHost fake;
+    MaxSendState state;
+    long dropped = -1;
+    long truncated = -1;
+
+    // with_state false: the host has no state for this VM (tearing down)
+    explicit SendRig(bool with_state = true) : ck(make_chuck(false))
+    {
+        state.host = {&fake, fake_intern, fake_send_request, fake_deliver};
+        if (with_state) {
+            g_send_states[ck->vm()] = &state;
+        }
+        ck->bind(max_stub_query, "Host");
+    }
+    ~SendRig()
+    {
+        Chuck_VM* vm = ck->vm();
+        delete ck;
+        g_send_states.erase(vm);
+    }
+    void drain() { maxsend_drain(&state, &dropped, &truncated); }
+};
+
+static void test_send_types()
+{
+    SendRig rig;
+    CHECK(rig.ck->compileCode(
+        "Host.sendBang(\"b\");"
+        "Host.sendFloat(\"f\", 2.5);"
+        "Host.sendSymbol(\"s\", \"kick.wav\");"
+        "Host.sendList(\"l\", [1.0, -2.0, 3.5]);"
+        "float e[0]; Host.sendList(\"e\", e);"));
+    run_block(rig.ck);
+    // queued on the VM thread; nothing reaches a receiver before the drain
+    CHECK(rig.fake.got.empty() && rig.fake.requests == 5);
+    rig.drain();
+    const std::vector<Delivery>& g = rig.fake.got;
+    CHECK(g.size() == 5);
+    if (g.size() == 5) {
+        CHECK(g[0].type == MAXSEND_BANG && g[0].receiver == "b" && g[0].values.empty());
+        CHECK(g[1].type == MAXSEND_FLOAT && g[1].receiver == "f"
+              && g[1].values == std::vector<double>{2.5});
+        CHECK(g[2].type == MAXSEND_SYMBOL && g[2].receiver == "s" && g[2].symbol == "kick.wav");
+        CHECK(g[3].type == MAXSEND_LIST && g[3].receiver == "l"
+              && g[3].values == (std::vector<double>{1.0, -2.0, 3.5}));
+        // an empty list arrives as bang, as in Pd
+        CHECK(g[4].type == MAXSEND_BANG && g[4].receiver == "e");
+    }
+    CHECK(rig.dropped == 0 && rig.truncated == 0);
+}
+
+static void test_send_list_truncated()
+{
+    SendRig rig;
+    CHECK(rig.ck->compileCode(
+        "float v[40]; for (0 => int i; i < 40; i++) i => v[i];"
+        "Host.sendList(\"l\", v);"));
+    run_block(rig.ck);
+    rig.drain();
+    CHECK(rig.fake.got.size() == 1);
+    if (rig.fake.got.size() == 1) {
+        const std::vector<double>& v = rig.fake.got[0].values;
+        CHECK(v.size() == MAXSEND_MAX_ATOMS && v.front() == 0 && v.back() == 31);
+    }
+    CHECK(rig.truncated == 1);
+    rig.drain();
+    CHECK(rig.truncated == 0);  // reset by the drain that reported it
+}
+
+static void test_send_queue_full()
+{
+    SendRig rig;
+    CHECK(rig.ck->compileCode(
+        "for (0 => int i; i < 300; i++) Host.sendFloat(\"n\", i);"
+        "1::samp => now;"
+        "for (0 => int i; i < 100; i++) Host.sendFloat(\"m\", i);"));
+    run_block(rig.ck);
+    // one block: 256 queued, 44 refused, the 100 'm' refused too
+    rig.drain();
+    CHECK(rig.fake.got.size() == MAXSEND_QUEUE_SIZE && rig.dropped == 144);
+    bool in_order = true;
+    for (size_t i = 0; i < rig.fake.got.size(); i++) {
+        in_order = in_order && rig.fake.got[i].values == std::vector<double>{(double)i};
+    }
+    CHECK(in_order);
+    // the cursors keep growing past the queue size
+    rig.fake.got.clear();
+    CHECK(rig.ck->compileCode(
+        "for (0 => int i; i < 200; i++) Host.sendFloat(\"w\", i);"));
+    run_block(rig.ck);
+    rig.drain();
+    CHECK(rig.fake.got.size() == 200 && rig.dropped == 0);
+    CHECK(!rig.fake.got.empty() && rig.fake.got.back().values == std::vector<double>{199});
+}
+
+static void test_send_no_state()
+{
+    SendRig rig(false);
+    CHECK(rig.ck->compileCode(
+        "Host.sendBang(\"b\"); Host.sendList(\"l\", [1.0]);"));
+    run_block(rig.ck);
+    rig.drain();
+    CHECK(rig.fake.got.empty() && rig.fake.requests == 0);
+}
+
+static void test_send_instances_isolated()
+{
+    SendRig a, b;
+    CHECK(a.ck->compileCode("Host.sendFloat(\"x\", 1);"));
+    CHECK(b.ck->compileCode("Host.sendFloat(\"x\", 2);"));
+    run_block(a.ck);
+    run_block(b.ck);
+    a.drain();
+    b.drain();
+    CHECK(a.fake.got.size() == 1 && a.fake.got[0].values == std::vector<double>{1});
+    CHECK(b.fake.got.size() == 1 && b.fake.got[0].values == std::vector<double>{2});
 }
 
 // the chuck CLI in 'make test' cannot compile these: it binds no host classes
@@ -1114,7 +1279,7 @@ static void test_max_examples_compile()
             continue;
         }
         Rig rig;
-        rig.ck->bind(max_stub_query, "Max");
+        rig.ck->bind(max_stub_query, "Host");
         bool ok = rig.ck->compileFile(f.path().string());
         if (!ok) {
             fprintf(stderr, "FAIL compile %s\n", name.c_str());
@@ -1179,6 +1344,13 @@ int main()
     test_bufplay_channel_and_sr();
     test_bufplay_missing_buffer();
     test_bufplay_shares_slots();
+
+    maxsend_set_lookup(send_lookup);
+    test_send_types();
+    test_send_list_truncated();
+    test_send_queue_full();
+    test_send_no_state();
+    test_send_instances_isolated();
 
     test_max_examples_compile();
 

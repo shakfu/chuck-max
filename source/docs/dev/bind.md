@@ -2,30 +2,36 @@
 
 Status:
 
-- `Max.send()`: implemented in `chuck_tilde.cpp`. Passes the manual Max test
+- `Host.send()`: implemented in `chuck_tilde.cpp`. Passes the manual Max test
   (Max 9.2.0, macOS arm64, 2026-10-23).
 
-- `MaxClock`: implemented in `chuck_tilde/maxclock.cpp`. Passes `bind_test`.
+- `HostClock`: implemented in `chuck_tilde/maxclock.cpp`. Passes `bind_test`.
   Passes the manual Max test in `test_max_clock.maxpat` (Max 9.2.0, macOS
   arm64, 2026-10-23): beat clicks, tempo change, stop/start, seek to 0.
 
-- `MaxIn` / `MaxMsg`: implemented in `chuck_tilde/maxin.cpp`. Passes
+- `HostIn` / `HostMsg`: implemented in `chuck_tilde/maxin.cpp`. Passes
   `bind_test` and the manual Max test in `test_max_in.maxpat` (Max 9.2.0,
   macOS arm64, 2026-10-23).
 
-- `MaxBuffer`: implemented in `chuck_tilde/maxbuffer.cpp`. Passes
+- `HostBuffer`: implemented in `chuck_tilde/maxbuffer.cpp`. Passes
   `bind_test` and the manual Max test in `test_max_buffer.maxpat` (Max 9.2.0,
   macOS arm64, 48 kHz, 2026-10-23).
 
-- `MaxBufPlay` UGen: implemented in `chuck_tilde/maxbuffer.cpp`. Passes
+- `HostBufPlay` UGen: implemented in `chuck_tilde/maxbuffer.cpp`. Passes
   `bind_test` and the manual Max test in `test_max_buffer.maxpat` (Max 9.2.0,
   macOS arm64, 2026-10-23).
+
+Naming: the classes use host-neutral names (`Host`, `HostIn`, `HostMsg`,
+`HostBuffer`, `HostBufPlay`, `HostClock`), shared with numchuck and pd-chuck,
+so one `.ck` file can run in each. They were `Max`, `MaxIn`, and so on until
+2026-10-24. The manual Max tests above ran under those names and have not been
+rerun since; `bind_test` has.
 
 ## Purpose
 
 `ChucK::bind()` registers native classes from the host into a ChucK VM.
-`chuck~` does not call it. This document proposes a `Max` class.
-`Max.send()` lets a shred push a message out of the `chuck~` reply outlet.
+`chuck~` does not call it. This document proposes a `Host` class.
+`Host.send()` lets a shred push a message out of the `chuck~` reply outlet.
 
 Today, pushing a value from ChucK to Max takes four steps:
 
@@ -34,18 +40,18 @@ Today, pushing a value from ChucK to Max takes four steps:
 3. Send `listen` to the event.
 4. Answer each event with a `get` round trip.
 
-`Max.send()` does this in one call.
+`Host.send()` does this in one call.
 
 The same mechanism supports four bindings:
 
 | Direction | Binding | Delivery |
 |-|-|-|
-| ChucK to Max | `Max.send()` | queued, next main-thread tick |
-| Max to ChucK | `MaxIn` / `MaxMsg` | queued, next audio block |
-| ChucK reads Max | `MaxBuffer` | immediate, audio thread |
-| Transport sync | `MaxClock` | snapshot per block, extrapolated per sample |
+| ChucK to Max | `Host.send()` | queued, next main-thread tick |
+| Max to ChucK | `HostIn` / `HostMsg` | queued, next audio block |
+| ChucK reads Max | `HostBuffer` | immediate, audio thread |
+| Transport sync | `HostClock` | snapshot per block, extrapolated per sample |
 
-`Max.send()` is specified in full below. The others are outlines.
+`Host.send()` is specified in full below. The others are outlines.
 
 ## API
 
@@ -65,7 +71,7 @@ ChucK:
 SinOsc s => dac;
 while (true) {
     Math.random2f(200, 800) => float f => s.freq;
-    Max.send("freq", f);     // reply outlet: msg freq 437.2
+    Host.send("freq", f);     // reply outlet: msg freq 437.2
     250::ms => now;
 }
 ```
@@ -77,7 +83,7 @@ Max: `[chuck~]` rightmost outlet -> `[route msg]` -> `[route freq]`.
 In `chuck_tilde.cpp`:
 
 ```cpp
-static t_symbol* ps_msg = NULL;      // msg <name> <value>      -- Max.send()
+static t_symbol* ps_msg = NULL;      // msg <name> <value>      -- Host.send()
 
 // find the chuck~ that owns this VM; audio-thread safe (atomic slot reads)
 static t_ck* ck_instance_from_vm(Chuck_VM* vm)
@@ -89,7 +95,7 @@ static t_ck* ck_instance_from_vm(Chuck_VM* vm)
     return NULL;
 }
 
-// Max.send(string name, float value); runs on the audio thread
+// Host.send(string name, float value); runs on the audio thread
 CK_DLL_SFUN(max_send)
 {
     Chuck_String* name = GET_NEXT_STRING(ARGS);
@@ -105,7 +111,7 @@ CK_DLL_SFUN(max_send)
 
 static t_CKBOOL CK_DLL_CALL ck_max_query(Chuck_DL_Query* QUERY)
 {
-    QUERY->begin_class(QUERY, "Max", "Object");
+    QUERY->begin_class(QUERY, "Host", "Object");
     QUERY->doc_class(QUERY, "messages from ChucK to the chuck~ reply outlet");
     QUERY->add_sfun(QUERY, max_send, "void", "send");
     QUERY->add_arg(QUERY, "string", "name");
@@ -118,7 +124,7 @@ static t_CKBOOL CK_DLL_CALL ck_max_query(Chuck_DL_Query* QUERY)
 Registration:
 
 - `ext_main`, beside `ps_val = gensym("val")`: `ps_msg = gensym("msg");`
-- `ck_new`, after `x->chuck->init()`: `x->chuck->bind(ck_max_query, "Max");`
+- `ck_new`, after `x->chuck->init()`: `x->chuck->bind(ck_max_query, "Host");`
 
 ## Design decisions
 
@@ -136,7 +142,7 @@ Registration:
   can collide with those selectors.
 
 - **`reset`.** `CK_MSG_CLEARVM` calls `clear_user_namespace()`
-  (`chuck_vm.cpp`). `Max` lives in the global namespace, so it survives.
+  (`chuck_vm.cpp`). `Host` lives in the global namespace, so it survives.
   `bind_test` confirms this.
 
 ## Caveats
@@ -151,17 +157,63 @@ Registration:
 - **Overflow.** `ck_reply_push` drops the message when the queue is full. It
   does not report the drop. A shred that sends every sample will fill the queue.
 
+## `Host.sendBang` / `sendFloat` / `sendSymbol` / `sendList`
+
+Status: implemented in `chuck_tilde/maxsend.cpp`, ported from pd-chuck.
+Passes `bind_test`. Not yet tested in Max.
+
+```chuck
+Host.sendBang("go");                  // every [receive go] gets bang
+Host.sendFloat("freq", 440.0);        // ... float 440.
+Host.sendSymbol("file", "kick.wav");  // ... symbol kick.wav
+Host.sendList("xy", [0.2, 0.7]);      // ... list 0.2 0.7
+```
+
+Example: `examples/max/max_send_receive.ck`. Unlike `Host.send`, these need
+no patch cord to `chuck~` and no `[route msg]`.
+
+- The four calls share one queue per instance. It holds 256 calls between
+  drains; further calls are dropped, and the drain posts a warning with the
+  count.
+- `sendList` sends at most 32 elements; the drain warns about each cut list.
+  An empty list sends bang, as Pd delivers it.
+- `sendSymbol` sends the `symbol` selector, so `[receive]` outputs
+  `symbol kick.wav`, as in Pd. Sending the symbol as the selector would be
+  more usual in Max, but a word such as `set` or `clear` would then act as a
+  message.
+- A name with no `[receive]` at delivery is skipped, as `[send]` skips it.
+
+### Implementation
+
+`maxsend.cpp` has no Max dependency. The shred pushes onto a single-producer,
+single-consumer queue on the audio thread. The reply qelem drains it on the
+main thread, after the `Host.send` replies, and `ck_send_deliver` calls
+`typedmess` on the receiver name's `s_thing`.
+
+- Delivery uses the main thread, as `Host.send` does. Calling `typedmess` from
+  the audio thread would break Max's threading rules. pd-chuck instead
+  delivers after the current DSP tick, from a 0 ms clock.
+- `s_thing` is the binding a message box's `;` syntax sends to. The SDK
+  headers describe it only as a "possible binding to a t_object"
+  (`ext_mess.h`). That `[receive]` binds there is inferred from Max
+  externals practice, not documented. `NOGOOD` guards a stale pointer.
+- Another object bound to the name, such as a `buffer~`, receives the
+  message too, as it would from `[send]`.
+- `gensym` runs on the audio thread for the receiver and symbol names, as for
+  `Host.send` (see Caveats).
+- Ordering is kept within the four calls, not between them and `Host.send`,
+  which uses the reply queue.
+
 ## Extensions
 
 The same pattern covers:
 
 - Overloads of `send` with `int`, `string`, or `float[]` arguments.
-- `Max.post(string)` to the Max console.
-- `Max.bang(string name)`.
+- `Host.post(string)` to the Max console.
 
 ## Signals (audio and CV)
 
-`Max.send()` does not suit audio or CV. It delivers at main-thread tick rate
+`Host.send()` does not suit audio or CV. It delivers at main-thread tick rate
 and drops messages when the queue fills.
 
 Existing routes already carry signals:
@@ -193,11 +245,11 @@ The only gain over `dac` and taps is outlets named from ChucK. The costs:
 Max fixes outlet count at object creation, so ChucK code cannot add outlets at
 runtime. Not recommended.
 
-For CV work, transport sync matters more. See `MaxClock` below.
+For CV work, transport sync matters more. See `HostClock` below.
 
-## Max to ChucK: `MaxIn` / `MaxMsg`
+## Max to ChucK: `HostIn` / `HostMsg`
 
-Max-to-ChucK without `MaxIn` goes through `ck_anything`:
+Max-to-ChucK without `HostIn` goes through `ck_anything`:
 
 - `<name> <value>` sets a ChucK global.
 
@@ -215,15 +267,15 @@ Gaps:
 
 - Every name must be a declared `global`.
 
-`MaxIn` and `MaxMsg` follow ChucK's `OscIn` and `OscMsg`
+`HostIn` and `HostMsg` follow ChucK's `OscIn` and `OscMsg`
 (`examples/max/max_in.ck`):
 
 ```chuck
-MaxIn min;
+HostIn min;
 min.addAddress("note");
-MaxMsg msg;
+HostMsg msg;
 while (true) {
-    min => now;                     // MaxIn extends Event
+    min => now;                     // HostIn extends Event
     while (min.recv(msg)) {
         msg.getInt(0) => int pitch;
         msg.getFloat(1) => float vel;
@@ -236,17 +288,17 @@ Max: `[msg note 60 0.8 legato(` -> `[chuck~]`.
 
 API:
 
-- `MaxIn.addAddress(string)`: receive messages with this name. Callable more
+- `HostIn.addAddress(string)`: receive messages with this name. Callable more
   than once.
-- `MaxIn.recv(MaxMsg)`: move the oldest message into the `MaxMsg`; 0 if none.
-- `MaxMsg.name()`, `numArgs()`, `getInt(i)`, `getFloat(i)`, `getString(i)`.
+- `HostIn.recv(HostMsg)`: move the oldest message into the `HostMsg`; 0 if none.
+- `HostMsg.name()`, `numArgs()`, `getInt(i)`, `getFloat(i)`, `getString(i)`.
 
 `getInt` and `getFloat` convert between int and float, since Max sends `60`
 and `60.` interchangeably. A missing argument or a type mismatch with a string
 reads as 0 or `""`.
 
 `msg` is an inlet selector. It matches the `msg` reply selector of
-`Max.send()`. A ChucK global named `msg` can no longer be set by name; use
+`Host.send()`. A ChucK global named `msg` can no longer be set by name; use
 `set`.
 
 ### Implementation
@@ -259,12 +311,12 @@ atoms (`ck_msg`), drains, and owns the state.
    threads; the audio thread never takes it.
 
 2. `ck_perform64` calls `maxin_drain` before `chuck->run()`. Each message is
-   copied to every `MaxIn` listening for its name, which then broadcasts.
+   copied to every `HostIn` listening for its name, which then broadcasts.
 
 3. The shred wakes inside the same `run()`, at the block's first sample.
 
 Draining in `ck_perform64` is preferred over `API->vm->queue_event()`
-(`chuck_dl.h`), which `OscIn` and MIDI use. With `queue_event`, each `MaxIn`
+(`chuck_dl.h`), which `OscIn` and MIDI use. With `queue_event`, each `HostIn`
 needs a mutex, and `recv()` takes it on the audio thread. Either way, delivery
 is at the next block boundary.
 
@@ -276,32 +328,32 @@ Limits:
 - 32 arguments per message. `ck_msg` rejects longer messages with an error.
 - 128 messages queued between blocks. `ck_msg` warns when the ring is full,
   e.g. with DSP off.
-- 64 unread messages per `MaxIn`. Further messages to it are dropped.
+- 64 unread messages per `HostIn`. Further messages to it are dropped.
 
 ### Lifecycle
 
-- A `MaxIn` unregisters in its destructor, on the VM thread. This covers an
+- A `HostIn` unregisters in its destructor, on the VM thread. This covers an
   object freed while its shred still runs.
 
 - A removed shred never releases its locals. `Chuck_VM_Shred::shutdown()`
   frees the stacks without releasing the objects on them. Those objects leak,
   and their destructors never run. `bind_test` confirms this for `reset`,
   `remove <id>` and `removeall`. A `REMOVE` shred watcher (`maxin_watcher`)
-  therefore unregisters every `MaxIn` created by the removed shred.
+  therefore unregisters every `HostIn` created by the removed shred.
 
 - The watcher cannot tell whether an object outlived its shred, e.g. through
   a `global`. Such an object stops receiving when its creating shred ends.
 
-- An unregistered `MaxIn` is never freed by the watcher. Its object may still
+- An unregistered `HostIn` is never freed by the watcher. Its object may still
   be referenced, so `recv()` stays safe and returns 0.
 
-## ChucK reads Max: `MaxBuffer`
+## ChucK reads Max: `HostBuffer`
 
-`MaxBuffer` reads and writes the samples of a named `buffer~`
+`HostBuffer` reads and writes the samples of a named `buffer~`
 (`examples/max/max_buffer.ck`, `max_buffer_play.ck`):
 
 ```chuck
-MaxBuffer b;
+HostBuffer b;
 b.name("ckbuf");
 while (!b.ready()) 1::ms => now;    // reference made on the main thread
 b.peek(0, 1) => float x;            // frame 0, channel 1
@@ -346,20 +398,20 @@ the Max calls through `MaxBufferHost`.
 - The main-thread work runs in the reply qelem, after the reply drain.
 
 Cost: about three calls into Max per `peek`, plus a shred step per sample if
-a shred reads every sample. For playback, use `MaxBufPlay`.
+a shred reads every sample. For playback, use `HostBufPlay`.
 
-### `MaxBufPlay` UGen
+### `HostBufPlay` UGen
 
 Plays one channel of a `buffer~` (`examples/max/max_buffer_play.ck`):
 
 ```chuck
-MaxBufPlay p => dac;
+HostBufPlay p => dac;
 p.name("ckbuf");        // restarts from frame 0, as SndBuf.read does
 1 => p.loop;
 -0.5 => p.rate;         // half speed, backward
 ```
 
-- `name`, `ready()`, `frames()`: as `MaxBuffer`. Both classes share the
+- `name`, `ready()`, `frames()`: as `HostBuffer`. Both classes share the
   per-instance name slots.
 - `pos` (frames), `rate`, `loop` (default 0), `interp` (1 linear, the
   default; 0 none), `channel` (from 0).
@@ -375,7 +427,7 @@ caveat as above). A ChucK UGen ticks one sample at a time, so a
 per-block lock would need a host hook after `run()`; not built. Mono only;
 stereo takes two instances.
 
-## Transport sync: `MaxClock`
+## Transport sync: `HostClock`
 
 ### What is already synchronized
 
@@ -422,7 +474,7 @@ the VM clock reads 500.
 ChucK:
 
 ```chuck
-MaxClock clk;
+HostClock clk;
 while (true) {
     clk.toNextBeat() => now;
     <<< clk.bar(), clk.beatInBar() >>>;
@@ -452,7 +504,7 @@ Semantics:
 
 - A beat is `resolution * 4 / denom` ticks, so 6/8 counts eighth notes.
 
-`MaxClock` extends `Event`. `maxclock_update` broadcasts on:
+`HostClock` extends `Event`. `maxclock_update` broadcasts on:
 
 - start or stop
 
@@ -466,13 +518,13 @@ Semantics:
 A wait computed before a tempo change finishes at the old tempo. The idiom in
 `examples/max/max_clock.ck` restarts its beat loop on each broadcast.
 
-Lifecycle: a removed shred leaks its `MaxClock` (see `MaxIn` above), so the
+Lifecycle: a removed shred leaks its `HostClock` (see `HostIn` above), so the
 object stays in `MaxClockState::clocks`. Broadcasting it is safe.
 `Chuck_VM_Shreduler::remove_blocked` takes the removed shred off the event's
-wait queue, so the broadcast wakes nothing. `MaxClock` therefore needs no shred
-watcher, and a `global MaxClock` keeps working after its creating shred ends.
+wait queue, so the broadcast wakes nothing. `HostClock` therefore needs no shred
+watcher, and a `global HostClock` keeps working after its creating shred ends.
 
-ChucK as tempo master: `Max.send("tempo", 128)` -> `[route msg]` ->
+ChucK as tempo master: `Host.send("tempo", 128)` -> `[route msg]` ->
 `[transport]`. `ext_itm.h` has no tempo setter.
 
 ### Open questions
@@ -486,10 +538,10 @@ ChucK as tempo master: `Max.send("tempo", 128)` -> `[route msg]` ->
   advanced exactly with the audio frame count in all four runs.
 
 - **Which ITM.** `itm_getglobal()` is the global transport. Named transports
-  (`[transport @name foo]`) need `itm_getnamed()`, e.g. `MaxClock clk("foo")`.
+  (`[transport @name foo]`) need `itm_getnamed()`, e.g. `HostClock clk("foo")`.
 
 - **Jumps.** Switching SIAI made the transport jump 334.67 samples in one
-  block. Tempo changes, seeks and loops should jump too. `MaxClock` should
+  block. Tempo changes, seeks and loops should jump too. `HostClock` should
   broadcast when a block's tick advance differs from its frame count by more
   than 0.5 samples.
 
@@ -501,7 +553,7 @@ ChucK as tempo master: `Max.send("tempo", 128)` -> `[route msg]` ->
 ### Prototype: `clockprobe`
 
 `chuck~` has a `clockprobe [ticks]` message. It answers the first two open
-questions before `MaxClock` is built. `clockprobe 0` stops it.
+questions before `HostClock` is built. `clockprobe 0` stops it.
 
 Each block, before `chuck->run()`, `ck_clockprobe_measure` reads
 `itm_getticks` and `itm_getstate` on the global ITM. It compares the transport
@@ -552,9 +604,9 @@ Conclusions:
 ## Testing
 
 `source/projects/tests/bind_test.cpp` tests the engine side without Max.
-`make test` runs it. It binds the real `MaxClock`, `MaxIn`, `MaxMsg` and
-`MaxBuffer` (against a fake `buffer~` host), and
-stand-ins for `Max` (`Probe`) and an early `MaxIn` (`ProbeIn`). It checks:
+`make test` runs it. It binds the real `HostClock`, `HostIn`, `HostMsg` and
+`HostBuffer` (against a fake `buffer~` host), and
+stand-ins for `Host` (`Probe`) and an early `HostIn` (`ProbeIn`). It checks:
 
 | Case | Result |
 |-|-|
@@ -568,7 +620,7 @@ stand-ins for `Max` (`Probe`) and an early `MaxIn` (`ProbeIn`). It checks:
 | Normal shred exit runs the `ProbeIn` dtor | pass |
 | An object freed while its shred runs leaves the registry | pass |
 | `CK_MSG_CLEARVM`, `CK_MSG_REMOVE <id>`, `CK_MSG_REMOVEALL` on a blocked shred: dtor does not run; the watcher clears the entry | pass |
-| `MaxClock.ticks()` extrapolates within a block at the snapshot tempo | pass |
+| `HostClock.ticks()` extrapolates within a block at the snapshot tempo | pass |
 | `toNextBeat() => now` lands on the boundary, including at a fractional 500.3 samples | pass |
 | `toNextBeat()` on a boundary returns a full beat, not zero | pass |
 | Stopped: `ticks()` frozen; `toNextBeat()` as if started now | pass |
@@ -576,28 +628,28 @@ stand-ins for `Max` (`Probe`) and an early `MaxIn` (`ProbeIn`). It checks:
 | No broadcast for 0.2 samples of drift | pass |
 | `bar()`, `beatInBar()`, `unit()` in 4/4 and 6/8 | pass |
 | A jump in one instance does not wake the other | pass |
-| A released `MaxClock` leaves `clocks`; broadcasting a leaked one wakes nothing | pass |
-| `MaxIn`: `note 60 0.8 legato` arrives with name, count and typed arguments, in order, at the block's first sample | pass |
-| `MaxIn`: int/float conversion; missing or mismatched arguments read 0 or `""` | pass |
-| `MaxIn`: two addresses on one object; two objects on one address; other names ignored | pass |
-| `MaxIn`: a message with no listener is dropped, not held for a later `MaxIn` | pass |
-| `MaxIn`: ring holds 127; 64 unread per object; arguments cut at 32 | pass |
-| `MaxIn`: normal exit and release while the shred runs unregister | pass |
-| `MaxIn`: `CK_MSG_CLEARVM`, `CK_MSG_REMOVE <id>`, `CK_MSG_REMOVEALL`: the watcher unregisters; a new receiver gets one copy | pass |
-| `MaxIn`: a `global MaxIn` stops receiving when its creating shred ends (limitation) | pass |
-| `MaxIn`: a message to one instance does not reach the other | pass |
-| `MaxBuffer`: not ready until the main-thread service; then frames, channels, sample rate | pass |
-| `MaxBuffer`: interleaved `peek`/`poke`; out-of-range reads 0 and writes nothing, checked with guard samples | pass |
-| `MaxBuffer`: one dirty notice per service pass after writes; one request per new name and per first write | pass |
-| `MaxBuffer`: a `buffer~` created after `name()` becomes ready; a deleted one reads 0 | pass |
-| `MaxBuffer`: slots reused by name, across `reset`; the 65th name is refused | pass |
-| `MaxBuffer`: no state (host tearing down): every call is a no-op | pass |
-| `MaxBuffer`: every lock is unlocked; instances do not share slots | pass |
-| `MaxBufPlay`: exact output sequences for one-shot, loop, half rate with and without interpolation, backward | pass |
-| `MaxBufPlay`: interpolation wraps at the loop point and holds the last frame without loop | pass |
-| `MaxBufPlay`: channel select; out-of-range channel is silent; 22050 Hz buffer plays at half speed | pass |
-| `MaxBufPlay`: silent while missing, position held; resumes when the buffer~ appears; silent when deleted | pass |
-| `MaxBufPlay`: `name()` restarts from frame 0; shares slots with `MaxBuffer` | pass |
+| A released `HostClock` leaves `clocks`; broadcasting a leaked one wakes nothing | pass |
+| `HostIn`: `note 60 0.8 legato` arrives with name, count and typed arguments, in order, at the block's first sample | pass |
+| `HostIn`: int/float conversion; missing or mismatched arguments read 0 or `""` | pass |
+| `HostIn`: two addresses on one object; two objects on one address; other names ignored | pass |
+| `HostIn`: a message with no listener is dropped, not held for a later `HostIn` | pass |
+| `HostIn`: ring holds 127; 64 unread per object; arguments cut at 32 | pass |
+| `HostIn`: normal exit and release while the shred runs unregister | pass |
+| `HostIn`: `CK_MSG_CLEARVM`, `CK_MSG_REMOVE <id>`, `CK_MSG_REMOVEALL`: the watcher unregisters; a new receiver gets one copy | pass |
+| `HostIn`: a `global HostIn` stops receiving when its creating shred ends (limitation) | pass |
+| `HostIn`: a message to one instance does not reach the other | pass |
+| `HostBuffer`: not ready until the main-thread service; then frames, channels, sample rate | pass |
+| `HostBuffer`: interleaved `peek`/`poke`; out-of-range reads 0 and writes nothing, checked with guard samples | pass |
+| `HostBuffer`: one dirty notice per service pass after writes; one request per new name and per first write | pass |
+| `HostBuffer`: a `buffer~` created after `name()` becomes ready; a deleted one reads 0 | pass |
+| `HostBuffer`: slots reused by name, across `reset`; the 65th name is refused | pass |
+| `HostBuffer`: no state (host tearing down): every call is a no-op | pass |
+| `HostBuffer`: every lock is unlocked; instances do not share slots | pass |
+| `HostBufPlay`: exact output sequences for one-shot, loop, half rate with and without interpolation, backward | pass |
+| `HostBufPlay`: interpolation wraps at the loop point and holds the last frame without loop | pass |
+| `HostBufPlay`: channel select; out-of-range channel is silent; 22050 Hz buffer plays at half speed | pass |
+| `HostBufPlay`: silent while missing, position held; resumes when the buffer~ appears; silent when deleted | pass |
+| `HostBufPlay`: `name()` restarts from frame 0; shares slots with `HostBuffer` | pass |
 | Every `examples/max/max_*.ck` compiles with the host classes bound | pass |
 
 The Max side is a manual run of `patchers/tests/test_max_send.maxpat`,
@@ -606,21 +658,21 @@ All three checks passed on Max 9.2.0, macOS arm64, 2026-10-23:
 
 - `msg freq <value>` arrives four times per second.
 
-- `Max.send` still works after `reset`.
+- `Host.send` still works after `reset`.
 
 - Two `chuck~` instances keep their messages apart.
 
-`MaxIn` has a manual test in `patchers/tests/test_max_in.maxpat`, which uses
+`HostIn` has a manual test in `patchers/tests/test_max_in.maxpat`, which uses
 `examples/max/max_in.ck`. All five steps passed on Max 9.2.0, macOS arm64,
 2026-10-23: notes and `got` echo, legato without retrigger, `off`, no
 delivery after `removeall`, one copy per note after `reset`.
 
-`MaxBuffer` has a manual test in `patchers/tests/test_max_buffer.maxpat`, which
+`HostBuffer` has a manual test in `patchers/tests/test_max_buffer.maxpat`, which
 uses `examples/max/max_buffer.ck` and `max_buffer_play.ck`. All steps passed
 on Max 9.2.0, macOS arm64, 48 kHz, 2026-10-23: write (48000 frames), loop
 playback, `replace` with a sound file, delete the `buffer~` (silence), undo
 and rewrite (playback resumes). A second run, with `max_buffer_play.ck` using
-`MaxBufPlay`, also passed, including `msg rate 0.5`, `1` and `-1`.
+`HostBufPlay`, also passed, including `msg rate 0.5`, `1` and `-1`.
 
 The `chuck` CLI cannot compile `examples/max/max_*.ck`, because it binds no
 host classes. `bind_test` compiles them instead.

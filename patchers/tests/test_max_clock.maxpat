@@ -35,7 +35,7 @@
       680,
       64
      ],
-     "text": "MaxClock test. 1) DSP on. 2) add max_clock_check.ck, start transport: err (samples) should stay within +-1. 3) add max_clock.ck: clicks on each beat, beat 1 higher; beat box counts 1-4. 4) change tempo, stop/start, seek to 0 (right inlet of transport): clicks follow without a late or doubled click."
+     "text": "HostClock test. 1) DSP on. 2) add max_clock_check.ck, start transport: err (samples) should stay within +-1. 3) add max_clock.ck: clicks on each beat, beat 1 higher; beat box counts 1-4. 4) change tempo, stop/start, seek to 0 (right inlet of transport): clicks follow without a late or doubled click."
     }
    },
    {

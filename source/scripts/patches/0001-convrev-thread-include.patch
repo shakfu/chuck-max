@@ -1,0 +1,14 @@
+diff --git a/source/projects/chugins/ConvRev/ConvRev.cpp b/source/projects/chugins/ConvRev/ConvRev.cpp
+--- a/source/projects/chugins/ConvRev/ConvRev.cpp
++++ b/source/projects/chugins/ConvRev/ConvRev.cpp
+@@ -24,7 +24,9 @@
+ #include <mutex>
+ #include <string>
+ 
+-#if __EMSCRIPTEN__
++// local patch: upstream guards this with `#if __EMSCRIPTEN__`, but
++// std::thread is used only when __EMSCRIPTEN__ is undefined.
++#ifndef __EMSCRIPTEN__
+ #include <thread>
+ #endif
+ 

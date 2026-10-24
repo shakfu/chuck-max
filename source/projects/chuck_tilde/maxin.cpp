@@ -208,9 +208,9 @@ CK_DLL_MFUN(maxmsg_get_string)
 
 t_CKBOOL CK_DLL_CALL maxin_query(Chuck_DL_Query* QUERY)
 {
-    // MaxMsg first: MaxIn.recv() takes one
-    QUERY->begin_class(QUERY, "MaxMsg", "Object");
-    QUERY->doc_class(QUERY, "one message received by a MaxIn");
+    // HostMsg first: HostIn.recv() takes one
+    QUERY->begin_class(QUERY, "HostMsg", "Object");
+    QUERY->doc_class(QUERY, "one message received by a HostIn");
     QUERY->add_ctor(QUERY, maxmsg_ctor);
     QUERY->add_dtor(QUERY, maxmsg_dtor);
     maxmsg_offset_data = QUERY->add_mvar(QUERY, "int", "@data", FALSE);
@@ -230,7 +230,7 @@ t_CKBOOL CK_DLL_CALL maxin_query(Chuck_DL_Query* QUERY)
     QUERY->doc_func(QUERY, "argument as string; numbers give \"\"");
     QUERY->end_class(QUERY);
 
-    QUERY->begin_class(QUERY, "MaxIn", "Event");
+    QUERY->begin_class(QUERY, "HostIn", "Event");
     QUERY->doc_class(QUERY, "receives 'msg <name> ...' sent to chuck~; "
                             "broadcasts once per message");
     QUERY->add_ctor(QUERY, maxin_ctor);
@@ -241,7 +241,7 @@ t_CKBOOL CK_DLL_CALL maxin_query(Chuck_DL_Query* QUERY)
     QUERY->add_arg(QUERY, "string", "name");
     QUERY->doc_func(QUERY, "receive messages with this name");
     QUERY->add_mfun(QUERY, maxin_recv, "int", "recv");
-    QUERY->add_arg(QUERY, "MaxMsg", "msg");
+    QUERY->add_arg(QUERY, "HostMsg", "msg");
     QUERY->doc_func(QUERY, "move the oldest message into msg; 0 if none");
     QUERY->end_class(QUERY);
     return TRUE;

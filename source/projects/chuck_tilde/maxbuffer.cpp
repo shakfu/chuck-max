@@ -212,7 +212,7 @@ CK_DLL_MFUN(maxbuffer_poke_chan)
 
 
 //-----------------------------------------------------------------------------
-// MaxBufPlay: plays one channel of a buffer~ as a UGen
+// HostBufPlay: plays one channel of a buffer~ as a UGen
 
 static t_CKUINT maxbufplay_offset_data = 0;
 
@@ -257,7 +257,7 @@ static float frame_at(const MaxBufferView& v, long frame, t_CKINT chan)
     return v.samples[frame * v.chans + chan];
 }
 
-// one lock per sample, as in MaxBuffer.peek, but without a shred step
+// one lock per sample, as in HostBuffer.peek, but without a shred step
 CK_DLL_TICK(maxbufplay_tick)
 {
     BufPlay* p = bufplay_of(SELF);
@@ -382,7 +382,7 @@ CK_DLL_MFUN(maxbufplay_get_channel)
 
 static void query_maxbufplay(Chuck_DL_Query* QUERY)
 {
-    QUERY->begin_class(QUERY, "MaxBufPlay", "UGen");
+    QUERY->begin_class(QUERY, "HostBufPlay", "UGen");
     QUERY->doc_class(QUERY, "plays one channel of a named buffer~; "
                             "silent until the buffer~ is ready");
     QUERY->add_ctor(QUERY, maxbufplay_ctor);
@@ -429,7 +429,7 @@ static void query_maxbufplay(Chuck_DL_Query* QUERY)
 
 t_CKBOOL CK_DLL_CALL maxbuffer_query(Chuck_DL_Query* QUERY)
 {
-    QUERY->begin_class(QUERY, "MaxBuffer", "Object");
+    QUERY->begin_class(QUERY, "HostBuffer", "Object");
     QUERY->doc_class(QUERY, "reads and writes the samples of a named buffer~");
     QUERY->add_ctor(QUERY, maxbuffer_ctor);
     maxbuffer_offset_state = QUERY->add_mvar(QUERY, "int", "@state", FALSE);

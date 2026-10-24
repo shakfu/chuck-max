@@ -35,7 +35,7 @@
       680,
       64
      ],
-     "text": "MaxIn test. 1) DSP on. 2) add max/max_in.ck. 3) click the note messages: each plays and 'got' shows the pitch; 'legato' changes pitch without a new attack; 'off' releases. 4) removeall, then a note: no sound, no error. 5) reset, add again: one 'got' per note, not two.",
+     "text": "HostIn test. 1) DSP on. 2) add max/max_in.ck. 3) click the note messages: each plays and 'got' shows the pitch; 'legato' changes pitch without a new attack; 'off' releases. 4) removeall, then a note: no sound, no error. 5) reset, add again: one 'got' per note, not two.",
      "linecount": 4
     }
    },

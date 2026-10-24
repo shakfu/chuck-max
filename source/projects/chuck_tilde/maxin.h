@@ -1,4 +1,4 @@
-// MaxIn / MaxMsg: Max messages into ChucK (see source/docs/dev/bind.md).
+// HostIn / HostMsg: Max messages into ChucK (see source/docs/dev/bind.md).
 // No Max dependency: the host pushes messages from its message threads and
 // drains them on the VM thread, so source/projects/tests/bind_test.cpp can
 // drive it without Max.
@@ -17,7 +17,7 @@
 #define MAXIN_MAX_ATOMS 32
 // depth of the host -> VM inbox, per instance
 #define MAXIN_QUEUE_SIZE 128
-// messages a MaxIn holds before recv(); further messages are dropped
+// messages a HostIn holds before recv(); further messages are dropped
 #define MAXIN_MAX_PENDING 64
 
 enum MaxInType { MAXIN_INT, MAXIN_FLOAT, MAXIN_STRING };
@@ -40,7 +40,7 @@ struct MaxInMessage {
 
 struct MaxInState;
 
-// one per MaxIn object; owned by the object, listed in its state while live
+// one per HostIn object; owned by the object, listed in its state while live
 struct MaxInEntry {
     MaxInState* state;
     Chuck_Object* obj;
@@ -62,10 +62,10 @@ struct MaxInState {
 // maps a VM to its state; NULL once the host is tearing down
 typedef MaxInState* (*f_maxin_lookup)(Chuck_VM* vm);
 
-// set once, before any VM binds MaxIn
+// set once, before any VM binds HostIn
 void maxin_set_lookup(f_maxin_lookup lookup);
 
-// ChucK::bind() query that declares MaxIn and MaxMsg
+// ChucK::bind() query that declares HostIn and HostMsg
 t_CKBOOL CK_DLL_CALL maxin_query(Chuck_DL_Query* QUERY);
 
 // shreds watcher (ckvm_shreds_watch_REMOVE, userdata = the MaxInState).
@@ -78,6 +78,6 @@ void CK_DLL_CALL maxin_watcher(Chuck_VM_Shred* shred, t_CKINT code,
 bool maxin_push(MaxInState* state, const char* name, long argc,
                 const MaxInAtom* argv);
 
-// VM thread, before ChucK::run(): hand queued messages to matching MaxIn
+// VM thread, before ChucK::run(): hand queued messages to matching HostIn
 // objects and broadcast them
 void maxin_drain(MaxInState* state);

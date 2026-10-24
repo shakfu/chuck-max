@@ -1,4 +1,4 @@
-// Max.send(name, value) -> chuck~ reply outlet: msg <name> <value>
+// Host.send(name, value) -> chuck~ reply outlet: msg <name> <value>
 // in Max: [chuck~] rightmost outlet -> [route msg] -> [route freq]
 
 SinOsc s => dac;
@@ -7,6 +7,6 @@ SinOsc s => dac;
 while( true )
 {
     Math.random2f( 200, 800 ) => float f => s.freq;
-    Max.send( "freq", f );
+    Host.send( "freq", f );
     250::ms => now;
 }

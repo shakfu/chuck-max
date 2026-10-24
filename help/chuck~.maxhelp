@@ -2697,7 +2697,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 20.0, 55.0, 225.0, 20.0 ],
-                                    "text": "1. Max.send: ChucK to Max"
+                                    "text": "1. Host.send: ChucK to Max"
                                 }
                             },
                             {
@@ -2719,7 +2719,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 20.0, 105.0, 225.0, 47.0 ],
-                                    "text": "Max.send(\"freq\", f) outputs 'msg freq <f>'. The demo picks a random pitch every 250 ms."
+                                    "text": "Host.send(\"freq\", f) outputs 'msg freq <f>'. The demo picks a random pitch every 250 ms."
                                 }
                             },
                             {
@@ -2730,7 +2730,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 260.0, 55.0, 225.0, 20.0 ],
-                                    "text": "2. MaxIn, MaxMsg: Max to ChucK"
+                                    "text": "2. HostIn, HostMsg: Max to ChucK"
                                 }
                             },
                             {
@@ -2785,7 +2785,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 260.0, 183.0, 229.0, 60.0 ],
-                                    "text": "A MaxIn broadcasts on each 'msg <name> ...' whose name it was given with addAddress(). recv() fills a MaxMsg. Replies: msg got <pitch>."
+                                    "text": "A HostIn broadcasts on each 'msg <name> ...' whose name it was given with addAddress(). recv() fills a HostMsg. Replies: msg got <pitch>."
                                 }
                             },
                             {
@@ -2796,7 +2796,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 500.0, 55.0, 225.0, 20.0 ],
-                                    "text": "3. MaxClock: the Max transport"
+                                    "text": "3. HostClock: the Max transport"
                                 }
                             },
                             {
@@ -2894,7 +2894,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 500.0, 196.0, 225.0, 60.0 ],
-                                    "text": "MaxClock reads the global transport each block. The demo clicks on each beat, accent on beat 1. Replies: msg beat <n>."
+                                    "text": "HostClock reads the global transport each block. The demo clicks on each beat, accent on beat 1. Replies: msg beat <n>."
                                 }
                             },
                             {
@@ -2905,7 +2905,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 740.0, 55.0, 225.0, 20.0 ],
-                                    "text": "4. MaxBuffer, MaxBufPlay: buffer~"
+                                    "text": "4. HostBuffer, HostBufPlay: buffer~"
                                 }
                             },
                             {
@@ -2937,7 +2937,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 746.0, 127.0, 219.0, 20.0 ],
-                                    "text": "MaxBuffer: writes a 220 Hz tone"
+                                    "text": "HostBuffer: writes a 220 Hz tone"
                                 }
                             },
                             {
@@ -2958,7 +2958,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 746.0, 175.0, 219.0, 20.0 ],
-                                    "text": "MaxBufPlay: loops ckbuf"
+                                    "text": "HostBufPlay: loops ckbuf"
                                 }
                             },
                             {
@@ -3225,7 +3225,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 20.0, 610.0, 864.0, 33.0 ],
-                                    "text": "Each class is per chuck~ instance: two chuck~ objects keep separate MaxIn queues and buffer~ references. See source/docs/dev/bind.md for limits and lifecycle."
+                                    "text": "Each class is per chuck~ instance: two chuck~ objects keep separate HostIn queues and buffer~ references. See source/docs/dev/bind.md for limits and lifecycle."
                                 }
                             }
                         ],

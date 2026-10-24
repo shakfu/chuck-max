@@ -11,6 +11,8 @@ CHUCK_SRC=build/chuck-src
 CHUCK_SRC_EXAMPLES=${CHUCK_SRC}/examples
 PROJECT_SRC_EXAMPLES=source/projects/examples
 PROJECT_EXAMPLES=examples
+# local fixes to upstream sources, re-applied after every update
+PATCHES_DIR=source/scripts/patches
 
 function update_chuck() {
 	mkdir -p build &&
@@ -159,10 +161,23 @@ function update_examples() {
 	ln -sf ../build/Release/chuck ${PROJECT_EXAMPLES}/chuck
 }
 
+function apply_patches() {
+	local patch
+	for patch in ${PATCHES_DIR}/*.patch; do
+		[ -e "${patch}" ] || continue
+		echo "applying ${patch}"
+		if ! git apply "${patch}"; then
+			echo "ERROR: ${patch} no longer applies; upstream changed, resolve by hand" >&2
+			return 1
+		fi
+	done
+}
+
 function update() {
 	update_chuck
 	update_examples
 	update_chugins
+	apply_patches
 	rm -rf ${CHUCK_SRC}
 	rm -rf ${PROJECTS_DIR}/chuck-old
 	rm -rf ${PROJECTS_DIR}/chugins-old

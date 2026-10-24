@@ -178,7 +178,7 @@ CK_DLL_MFUN(maxclock_unit)
 
 t_CKBOOL CK_DLL_CALL maxclock_query(Chuck_DL_Query* QUERY)
 {
-    QUERY->begin_class(QUERY, "MaxClock", "Event");
+    QUERY->begin_class(QUERY, "HostClock", "Event");
     QUERY->doc_class(QUERY, "host transport; broadcasts on start/stop, "
                             "tempo or time signature change, and jumps");
     QUERY->add_ctor(QUERY, maxclock_ctor);

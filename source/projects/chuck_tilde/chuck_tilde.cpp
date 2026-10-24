@@ -29,6 +29,7 @@
 #include "maxclock.h"
 #include "maxin.h"
 #include "maxbuffer.h"
+#include "maxsend.h"
 
 #include <atomic>
 
@@ -129,10 +130,11 @@ struct _ck {
     double clk_jmin;                // min increment error vs audio frames, in samples
     double clk_jmax;                // max increment error vs audio frames, in samples
 
-    // MaxClock (see source/docs/dev/bind.md)
-    MaxClockState* clock;           // transport snapshot and live MaxClock objects
-    MaxInState* inbox;              // msg -> MaxIn queue and live MaxIn objects
-    MaxBufferState* buffers;        // buffer~ references named by MaxBuffer
+    // HostClock (see source/docs/dev/bind.md)
+    MaxClockState* clock;           // transport snapshot and live HostClock objects
+    MaxInState* inbox;              // msg -> HostIn queue and live HostIn objects
+    MaxBufferState* buffers;        // buffer~ references named by HostBuffer
+    MaxSendState* sends;            // Host.send* calls bound for [receive]
     t_itm* itm;                     // global transport, referenced for this object's life
 
     // reply-related (routing chuck callbacks back out to the patch)
@@ -209,16 +211,20 @@ t_max_err ck_adaptive(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 t_max_err ck_clockprobe(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 void ck_clockprobe_measure(t_ck* x, double** ins, long numins, long n);
 
-// MaxClock: per-block transport snapshot
+// HostClock: per-block transport snapshot
 MaxClockState* ck_clock_from_vm(Chuck_VM* vm);
 void ck_clock_update(t_ck* x);
 
-// MaxIn: msg <name> <args...> into ChucK
+// HostIn: msg <name> <args...> into ChucK
 t_max_err ck_msg(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 MaxInState* ck_inbox_from_vm(Chuck_VM* vm);
 
-// MaxBuffer: buffer~ access from ChucK
+// HostBuffer: buffer~ access from ChucK
 MaxBufferState* ck_buffers_from_vm(Chuck_VM* vm);
+
+// Host.send*: ChucK to [receive]
+MaxSendState* ck_sends_from_vm(Chuck_VM* vm);
+MaxSendHost ck_send_host(t_ck* x);
 MaxBufferHost ck_buffer_host(t_ck* x);
 t_max_err ck_notify(t_ck* x, t_symbol* s, t_symbol* msg, void* sender, void* data);
 
@@ -309,7 +315,7 @@ static t_symbol* ps_event = NULL;    // event <name>            -- 'listen'
 static t_symbol* ps_shred = NULL;    // shred add|remove <id>   -- vm watcher
 static t_symbol* ps_global = NULL;   // global <name> <type>    -- 'globals'
 static t_symbol* ps_clockprobe = NULL; // clockprobe <stats...>  -- 'clockprobe'
-static t_symbol* ps_msg = NULL;      // msg <name> <value>      -- Max.send()
+static t_symbol* ps_msg = NULL;      // msg <name> <value>      -- Host.send()
 
 
 //-----------------------------------------------------------------------------------------------
@@ -419,6 +425,7 @@ void ext_main(void* r)
     maxclock_set_lookup(ck_clock_from_vm);
     maxin_set_lookup(ck_inbox_from_vm);
     maxbuffer_set_lookup(ck_buffers_from_vm);
+    maxsend_set_lookup(ck_sends_from_vm);
 }
 
 void* ck_new(t_symbol* s, long argc, t_atom* argv)
@@ -457,11 +464,13 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->clk_period = 480.0;
         x->clk_sr = sys_getsr();
 
-        // MaxClock: allocated before bind() so MaxClock objects find it
+        // HostClock: allocated before bind() so HostClock objects find it
         x->clock = new MaxClockState;
         x->inbox = new MaxInState;
         x->buffers = new MaxBufferState;
         x->buffers->host = ck_buffer_host(x);
+        x->sends = new MaxSendState;
+        x->sends->host = ck_send_host(x);
         x->itm = (t_itm*)itm_getglobal();
         if (x->itm) {
             itm_reference(x->itm);
@@ -656,17 +665,17 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
 
         // init chuck
         x->chuck->init();
-        if (!x->chuck->bind(ck_max_query, "Max")) {
-            ck_error(x, (char*)"could not bind the Max class");
+        if (!x->chuck->bind(ck_max_query, "Host")) {
+            ck_error(x, (char*)"could not bind the Host class");
         }
-        if (!x->chuck->bind(maxclock_query, "MaxClock")) {
-            ck_error(x, (char*)"could not bind the MaxClock class");
+        if (!x->chuck->bind(maxclock_query, "HostClock")) {
+            ck_error(x, (char*)"could not bind the HostClock class");
         }
-        if (!x->chuck->bind(maxin_query, "MaxIn")) {
-            ck_error(x, (char*)"could not bind the MaxIn class");
+        if (!x->chuck->bind(maxin_query, "HostIn")) {
+            ck_error(x, (char*)"could not bind the HostIn class");
         }
-        if (!x->chuck->bind(maxbuffer_query, "MaxBuffer")) {
-            ck_error(x, (char*)"could not bind the MaxBuffer class");
+        if (!x->chuck->bind(maxbuffer_query, "HostBuffer")) {
+            ck_error(x, (char*)"could not bind the HostBuffer class");
         }
         x->chuck->vm()->subscribe_watcher(maxin_watcher,
                                           ckvm_shreds_watch_REMOVE, x->inbox);
@@ -740,8 +749,8 @@ void ck_free(t_ck* x)
         delete x->chuck;
         x->chuck = NULL;
     }
-    // after the VM: MaxClock dtors ran during its teardown and found no
-    // instance, since the slot was already released; MaxIn dtors still
+    // after the VM: HostClock dtors ran during its teardown and found no
+    // instance, since the slot was already released; HostIn dtors still
     // unregistered from x->inbox
     delete x->clock;
     x->clock = NULL;
@@ -772,6 +781,9 @@ void ck_free(t_ck* x)
         delete x->buffers;
         x->buffers = NULL;
     }
+    // after the VM and the qelem: nothing pushes or drains now
+    delete x->sends;
+    x->sends = NULL;
     // globalCleanup() tears down process-wide chuck state, so it may only run
     // once the last chuck~ in the process is gone; calling it per-instance
     // pulled that state out from under any still-running siblings
@@ -2425,7 +2437,7 @@ t_max_err ck_adaptive(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 }
 
 // clockprobe [ticks]: start measuring against a [phasor~ <ticks> @lock 1] on
-// inlet 1 (default 480 = 4n). clockprobe 0: stop. prototype for MaxClock
+// inlet 1 (default 480 = 4n). clockprobe 0: stop. prototype for HostClock
 t_max_err ck_clockprobe(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
     double period = (argc > 0) ? atom_getfloat(argv) : 480.0;
@@ -2576,6 +2588,59 @@ MaxBufferState* ck_buffers_from_vm(Chuck_VM* vm)
     return x ? x->buffers : NULL;
 }
 
+MaxSendState* ck_sends_from_vm(Chuck_VM* vm)
+{
+    t_ck* x = ck_instance_from_vm(vm);
+    return x ? x->sends : NULL;
+}
+
+// gensym on the audio thread takes a lock, as Host.send already does
+static void* ck_send_intern(void* ctx, const char* name)
+{
+    return gensym(name);
+}
+
+static void ck_send_request(void* ctx)
+{
+    qelem_set(((t_ck*)ctx)->reply_qelem);
+}
+
+// main thread. a [receive] binds to its name's s_thing, which is what a
+// message box's ';' sends to; a name with no [receive] is skipped, as [send]
+// skips it
+static void ck_send_deliver(void* ctx, const MaxSendMessage* m)
+{
+    t_object* thing = ((t_symbol*)m->receiver)->s_thing;
+    if (thing == NULL || NOGOOD(thing)) {
+        return;
+    }
+    t_atom a[MAXSEND_MAX_ATOMS];
+    switch (m->type) {
+    case MAXSEND_BANG:
+        typedmess(thing, gensym("bang"), 0, NULL);
+        break;
+    case MAXSEND_FLOAT:
+        atom_setfloat(a, m->argv[0]);
+        typedmess(thing, gensym("float"), 1, a);
+        break;
+    case MAXSEND_SYMBOL:
+        atom_setsym(a, (t_symbol*)m->symbol);
+        typedmess(thing, gensym("symbol"), 1, a);
+        break;
+    case MAXSEND_LIST:
+        for (long i = 0; i < m->argc; i++) {
+            atom_setfloat(a + i, m->argv[i]);
+        }
+        typedmess(thing, gensym("list"), (short)m->argc, a);
+        break;
+    }
+}
+
+MaxSendHost ck_send_host(t_ck* x)
+{
+    return {x, ck_send_intern, ck_send_request, ck_send_deliver};
+}
+
 // lock/unlock as the full Max SDK's index~ example does in its perform routine
 static bool ck_buffer_lock(void* ctx, void* handle, MaxBufferView* v)
 {
@@ -2637,7 +2702,7 @@ t_max_err ck_notify(t_ck* x, t_symbol* s, t_symbol* msg, void* sender, void* dat
     return MAX_ERR_NONE;
 }
 
-// msg <name> <args...>: queue for every MaxIn listening for <name>; the
+// msg <name> <args...>: queue for every HostIn listening for <name>; the
 // audio thread delivers it before the next block
 t_max_err ck_msg(t_ck* x, t_symbol* s, long argc, t_atom* argv)
 {
@@ -2692,7 +2757,7 @@ t_ck* ck_instance_from_vm(Chuck_VM* vm)
     return NULL;
 }
 
-// Max.send(string name, float value) -> reply outlet: msg <name> <value>.
+// Host.send(string name, float value) -> reply outlet: msg <name> <value>.
 // runs on the audio thread, so it queues rather than calling the outlet
 CK_DLL_SFUN(max_send)
 {
@@ -2708,15 +2773,16 @@ CK_DLL_SFUN(max_send)
     ck_reply_push(x, ps_msg, 2, a);
 }
 
-// the Max class, bound into each VM by ck_new (see source/docs/dev/bind.md)
+// the Host class, bound into each VM by ck_new (see source/docs/dev/bind.md)
 static t_CKBOOL CK_DLL_CALL ck_max_query(Chuck_DL_Query* QUERY)
 {
-    QUERY->begin_class(QUERY, "Max", "Object");
+    QUERY->begin_class(QUERY, "Host", "Object");
     QUERY->doc_class(QUERY, "messages from ChucK to the chuck~ reply outlet");
     QUERY->add_sfun(QUERY, max_send, "void", "send");
     QUERY->add_arg(QUERY, "string", "name");
     QUERY->add_arg(QUERY, "float", "value");
     QUERY->doc_func(QUERY, "send 'msg <name> <value>' out the reply outlet");
+    maxsend_add_methods(QUERY);
     QUERY->end_class(QUERY);
     return TRUE;
 }
@@ -2771,9 +2837,20 @@ void ck_reply_drain(t_ck* x)
         head = (head + 1) % CK_REPLY_QUEUE_SIZE;
         x->reply_head.store(head, std::memory_order_release);
     }
-    // MaxBuffer shares this qelem for its main-thread work
+    // HostBuffer and Host.send* share this qelem for their main-thread work
     if (x->buffers) {
         maxbuffer_service(x->buffers);
+    }
+    if (x->sends) {
+        long dropped, truncated;
+        maxsend_drain(x->sends, &dropped, &truncated);
+        if (dropped) {
+            ck_warn(x, (char*)"Host.send: queue full, %ld messages dropped", dropped);
+        }
+        if (truncated) {
+            ck_warn(x, (char*)"Host.sendList: %ld lists cut to %d elements",
+                    truncated, MAXSEND_MAX_ATOMS);
+        }
     }
 }
 

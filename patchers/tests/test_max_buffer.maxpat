@@ -35,7 +35,7 @@
       680,
       78
      ],
-     "text": "MaxBuffer test. 1) DSP on. 2) add max_buffer.ck: 'written' shows one second of frames at the Max sample rate (48000 at 48 kHz); double-click buffer~: a decaying tone. 3) add max_buffer_play.ck: you hear it loop; the rate messages change speed and direction. 4) replace: load a sound file; playback follows it. 5) delete the buffer~ box: silence, no error. Undo (cmd-Z), then add max_buffer.ck again: playback resumes. 6) removeall.",
+     "text": "HostBuffer test. 1) DSP on. 2) add max_buffer.ck: 'written' shows one second of frames at the Max sample rate (48000 at 48 kHz); double-click buffer~: a decaying tone. 3) add max_buffer_play.ck: you hear it loop; the rate messages change speed and direction. 4) replace: load a sound file; playback follows it. 5) delete the buffer~ box: silence, no error. Undo (cmd-Z), then add max_buffer.ck again: playback resumes. 6) removeall.",
      "linecount": 5
     }
    },
