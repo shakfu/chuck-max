@@ -12,7 +12,7 @@ env:
   UNIVERSAL: 0
 
 vars:
-  VERSION: 0.2.0
+  VERSION: 0.3.0
   PLATFORM:
     sh: uname -s
   ARCH:

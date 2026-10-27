@@ -149,9 +149,13 @@ static void bbu(Chuck_VM* vm, t_CKTIME now, long* bar, long* beat, double* unit)
     double t = maxclock_ticks_at(st->cur, now);
     double bt = beat_ticks(st->cur);
     double bar_ticks = bt * std::max(st->cur.num, 1L);
-    double in_bar = t - std::floor(t / bar_ticks) * bar_ticks;
-    *bar = (long)std::floor(t / bar_ticks) + 1;
-    *beat = (long)std::floor(in_bar / bt) + 1;
+    // a position within half a sample of a boundary is on it: at 44.1 kHz
+    // 'toNextBeat() => now' lands 1e-14 ticks short of the beat, and a plain
+    // floor would answer the previous one
+    double snap = MAXCLOCK_JUMP_SAMPLES * st->cur.tps;
+    double in_bar = t - std::floor((t + snap) / bar_ticks) * bar_ticks;
+    *bar = (long)std::floor((t + snap) / bar_ticks) + 1;
+    *beat = (long)std::floor((in_bar + snap) / bt) + 1;
     *unit = in_bar - (*beat - 1) * bt;
 }
 

@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ---
 
-## [Unreleased]
+## [0.3.0]
 
 ### Added
 
@@ -80,6 +80,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ### Changed
 
+- Updated `chuck` to `1.5.5.9-dev (chai)`
+
 - Set `CHUCK_PARAM_IS_REALTIME_AUDIO_HINT` to 1 at startup; it had been left at its default of 0 even though `chuck~` is always driven from the MSP audio callback
 
 - Registered per-instance `chout`/`cherr` callbacks in addition to the process-wide `stdout`/`stderr` ones, so ChucK's `<<< >>>` output and the VM's own printing are both captured
@@ -118,6 +120,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Fixed `@tap` being documented in the README where the implemented attribute is `@ntap`. The documented form was silently ignored by Max, producing no tap outlets
 
 - Fixed a `size_t` to `int` truncation in `replace_character()`
+
+- Fixed `HostClock.bar()`, `beatInBar()` and `unit()` answering for the previous beat when asked exactly on a boundary. At 44.1 kHz, `toNextBeat() => now` lands a few 1e-14 ticks short of the beat and `floor` rounded down. A position within half a sample of a boundary now counts as on it, the rule `toNext()` and the jump detector already use. Found by the same test in pd-chuck's port of `HostClock`
 
 ## [0.2.2]
 

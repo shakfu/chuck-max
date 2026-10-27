@@ -2,7 +2,7 @@
 
 ![chuck~ help](https://github.com/shakfu/chuck-max/blob/main/media/screenshot-min.png)
 
-This cross-platform project combines the power of [ChucK](https://chuck.stanford.edu) audio programming with the flexibility of [Max/MSP](https://cycling74.com). It includes a custom Max/MSP object, `chuck~`, that runs version `1.5.5.3-dev (chai)` of the ChucK engine for real-time sound synthesis and audio processing.
+This cross-platform project combines the power of [ChucK](https://chuck.stanford.edu) audio programming with the flexibility of [Max/MSP](https://cycling74.com). It includes a custom Max/MSP object, `chuck~`, that runs version `1.5.5.9-dev (chai)` of the ChucK engine for real-time sound synthesis and audio processing.
 
 ## Quick Start
 
@@ -19,6 +19,8 @@ This cross-platform project combines the power of [ChucK](https://chuck.stanford
 - **Modify audio processes on-the-fly** using ChucK messages via Max messages.
 
 - **Interact with Max** via MIDI and OSC protocols
+
+- **Talk to the patch from ChucK** through bound host classes: `Host.msg` and `Host.send*` out, `HostIn` in, `HostBuffer` and `HostBufPlay` for `buffer~`, `HostClock` for the transport
 
 ### Key Features
 
@@ -141,7 +143,7 @@ make brew
 
 It's recommended to choose 2 channels for stereo audio.
 
-Outlets are laid out left to right as: `N` audio outlets, then `M` tap outlets if `@ntap` is set, then a single reply outlet. The reply outlet is not a signal outlet; it reports values and notifications to the patch and is described under [The Reply Outlet](#the-reply-outlet).
+Outlets are laid out left to right as: `N` audio outlets, then `M` tap outlets if `@ntap` is set, then a single reply outlet. The reply outlet is not a signal outlet; it reports values and notifications to the patch and is described under [The Reply Outlet](#the-reply-outlet). ChucK code can also address the patch directly through the [Host Classes](#host-classes).
 
 If a `<filename>` argument is given it will be searched for according to the following rules:
 
@@ -194,6 +196,7 @@ The core set of chuck vm messesages is also extended in `chuck-max` with the fol
 | Probe chugins                           | `chugins`                    |
 | Get/set ChucK VM loglevel (0-10)        | `loglevel` & `loglevel <n>`  |
 | Get/set object verbosity (0-2)          | `verbose` & `verbose <n>`    |
+| Deliver a message to `HostIn` shreds    | `msg <name> <args...>`       |
 | Get state of chuck vm                   | `vm`                         |
 | Launch chuck docs in a browser          | `docs`                       |
 | Clear Max console                       | `clear console`              |
@@ -268,14 +271,175 @@ The rightmost outlet reports data to the patch. Previously this information was 
 | `shred add <id>`           | a shred is sporked                    |
 | `shred remove <id>`        | a shred is removed                    |
 | `global <name> <type>`     | one per variable, in reply to `globals` |
+| `msg <name> <args...>`     | a shred calls `Host.msg()`            |
 
-The selector is always one of the four words above, and any name coming from your ChucK code appears as an argument rather than as the selector. This means no global variable name can be mistaken for a control message: a ChucK file may declare `global int shred;` without ambiguity. Route the outlet with:
+The selector is always one of the five words above, and any name coming from your ChucK code appears as an argument rather than as the selector. This means no global variable name can be mistaken for a control message: a ChucK file may declare `global int shred;` without ambiguity. Route the outlet with:
 
 ```text
-[route val event shred global]
+[route val event shred global msg]
 ```
 
 Replies are generated on the audio thread and delivered on the main thread. If replies are produced faster than the patch consumes them the queue will drop rather than block, which is the appropriate trade-off in a real-time context.
+
+### Host Classes
+
+`chuck~` binds six classes into every VM with `ChucK::bind()`. They need no chugin, live in the global namespace, and survive `reset`. The names are host-neutral and shared with [pd-chuck](https://github.com/shakfu/pd-chuck) and numchuck, so one `.ck` file runs in each host that binds them.
+
+| Class                   | Direction                           | Delivery                                   |
+| :---------------------- | :---------------------------------- | :----------------------------------------- |
+| `Host.msg()`            | ChucK to the reply outlet           | queued, next main-thread tick              |
+| `Host.send*()`          | ChucK to `[receive <name>]`         | queued, next main-thread tick              |
+| `HostIn` / `HostMsg`    | Max `msg <name> ...` to a shred     | queued, next audio block                   |
+| `HostBuffer`            | ChucK reads and writes a `buffer~`  | immediate, audio thread                    |
+| `HostBufPlay`           | UGen that plays a `buffer~`         | per sample                                 |
+| `HostClock`             | Max transport in ChucK time         | snapshot per block, extrapolated per sample |
+
+Each class has an example in `examples/max/max_*.ck` and a patcher in `patchers/tests/test_max_*.maxpat`. Design notes and limits are in `source/docs/dev/bind.md`.
+
+#### `Host.msg`: ChucK to the reply outlet
+
+Pushing a value to the patch used to take a `global` variable, a `global Event`, a `listen` and a `get` round trip. `Host.msg(name, ...)` does it in one call. It arrives at the reply outlet as `msg <name> <args...>`:
+
+```chuck
+SinOsc s => dac;
+while (true) {
+    Math.random2f(200, 800) => float f => s.freq;
+    Host.msg("freq", f);           // reply outlet: msg freq 437.2
+    250::ms => now;
+}
+```
+
+Route it with `[route msg]` then `[route freq]`. The call is overloaded on the second argument:
+
+| Call                              | Output               |
+| :-------------------------------- | :------------------- |
+| `Host.msg("done")`                | `msg done`           |
+| `Host.msg("freq", 440.0)`         | `msg freq 440.`      |
+| `Host.msg("file", "kick.wav")`    | `msg file kick.wav`  |
+| `Host.msg("pair", [440.0, 0.5])`  | `msg pair 440. 0.5`  |
+
+An `int` promotes to the float overload. A list holds at most 63 values. Messages are timed in ChucK logical time but delivered on the main thread, so they carry main-thread jitter: use them for control data, not as a clock.
+
+#### `Host.send*`: ChucK to `[receive]`
+
+`Host.sendBang`, `sendFloat`, `sendSymbol` and `sendList` deliver to every `[receive <name>]` in the Max process, as `[send]` does. No patch cord to `chuck~` and no `[route msg]` is needed:
+
+```chuck
+Host.sendBang("go");                  // every [r go] gets bang
+Host.sendFloat("freq", 440.0);        // float 440.
+Host.sendSymbol("file", "kick.wav");  // symbol kick.wav
+Host.sendList("xy", [0.2, 0.7]);      // list 0.2 0.7
+```
+
+Differences from `Host.msg`:
+
+- Receive names are shared by the whole Max process. Two `chuck~` objects, or two copies of an abstraction, that call `sendFloat("freq", ...)` reach the same `[r freq]`. `Host.msg` reaches only the sending object's outlet.
+
+- Lists hold floats only, at most 32 elements. Send a string with `sendSymbol`.
+
+- `sendSymbol` sends `symbol <value>`, so `[r]` outputs the `symbol` selector, as Pd does.
+
+- The queue holds 256 calls between drains. Further calls are dropped, and the drain posts a warning with the count.
+
+#### `HostIn` / `HostMsg`: Max to a shred
+
+The `msg <name> <args...>` message to `chuck~` delivers a mixed-type list to every `HostIn` that has registered the name. `HostIn` extends `Event` and follows `OscIn` / `OscMsg`:
+
+```chuck
+SinOsc s => ADSR env => dac;
+HostIn min;
+min.addAddress("note");
+HostMsg m;
+while (true) {
+    min => now;
+    while (min.recv(m)) {
+        Std.mtof(m.getInt(0)) => s.freq;
+        m.getFloat(1) * 0.5 => s.gain;
+        if (m.getString(2) != "legato") env.keyOn();
+    }
+}
+```
+
+Max: `[msg note 60 0.8 legato(` into `chuck~`. Compared with setting a `global`, one message carries the values and wakes the shred, the arguments can mix types, and nothing has to be declared `global`.
+
+| Member                                | Returns                                                       |
+| :------------------------------------ | :------------------------------------------------------------ |
+| `HostIn.addAddress(string)`           | registers a name; callable more than once                     |
+| `HostIn.recv(HostMsg)`                | moves the oldest message into the `HostMsg`; 0 if none        |
+| `HostMsg.name()`                      | the name: `note` in `msg note 60`                             |
+| `HostMsg.numArgs()`                   | arguments after the name                                      |
+| `HostMsg.getInt(i)`, `getFloat(i)`    | argument `i`; int and float convert either way, strings give 0 |
+| `HostMsg.getString(i)`                | argument `i`; numbers give `""`                               |
+
+Messages are delivered at the start of the next audio block. Limits: 32 arguments per message, 128 messages queued between blocks, 64 unread messages per `HostIn`. `msg` is an inlet selector, so a ChucK global named `msg` must be set with `set`.
+
+#### `HostBuffer` and `HostBufPlay`: ChucK and `buffer~`
+
+`HostBuffer` reads and writes the samples of a named `buffer~`:
+
+```chuck
+HostBuffer b;
+b.name("ckbuf");
+while (!b.ready()) 1::ms => now;   // the reference is made on the main thread
+b.peek(0, 1) => float x;           // frame 0, channel 1
+b.poke(100, 0.5);                  // frame 100, channel 0
+```
+
+| Member                                              | Returns                                          |
+| :-------------------------------------------------- | :----------------------------------------------- |
+| `name(string)`, `name()`                            | set or get the `buffer~` name                    |
+| `ready()`                                           | 1 once the `buffer~` exists                      |
+| `frames()`, `channels()`, `sampleRate()`            | 0 if not ready                                   |
+| `peek(frame)`, `peek(frame, chan)`                  | the sample; 0 if out of range or not ready       |
+| `poke(frame, value)`, `poke(frame, chan, value)`    | writes the sample; ignored if out of range       |
+
+Channels count from 0, as ChucK arrays do. Each `peek` and `poke` locks the buffer, so a shred that reads every sample is costly. For playback use `HostBufPlay`, a UGen that plays one channel of a `buffer~`:
+
+```chuck
+HostBufPlay p => dac;
+p.name("ckbuf");        // restarts from frame 0, as SndBuf.read does
+1 => p.loop;
+-0.5 => p.rate;         // half speed, backward
+```
+
+`pos` (frames), `rate`, `loop` (default 0), `interp` (1 linear, the default; 0 none) and `channel` (from 0) are settable. Without `loop`, playback stops at either end and outputs 0. A `buffer~` at another sample rate plays at its own pitch, as `SndBuf` does for files. While the `buffer~` is missing the output is silent and the position holds. Stereo takes two instances. Both classes follow a `buffer~` that is created, resized or deleted after `name()` was called.
+
+#### `HostClock`: the Max transport
+
+ChucK and Max share one sample clock, so `now` cannot drift from the transport. What ChucK lacked was the transport's state. `HostClock` extends `Event` and exposes it:
+
+```chuck
+HostClock clk;
+while (true) {
+    clk.toNextBeat() => now;
+    <<< clk.bar(), clk.beatInBar() >>>;
+}
+```
+
+| Member                  | Returns                                   |
+| :---------------------- | :---------------------------------------- |
+| `ticks()`               | transport position at `now`               |
+| `tempo()`               | BPM                                       |
+| `running()`             | 1 if running                              |
+| `beat()`                | `dur` of one beat                         |
+| `toNextBeat()`          | `dur` to the next beat boundary           |
+| `toNext(float ticks)`   | `dur` to the next multiple of `ticks`     |
+| `bar()`, `beatInBar()`  | bar and beat at `now`, from 1             |
+| `unit()`                | ticks into the current beat               |
+
+- The transport is read once per block and extrapolated per sample from the shred's own `now`, so `toNextBeat()` resolves within the block rather than at its boundary.
+
+- `toNext` never returns zero. On a boundary it returns a full period, so a wait loop cannot stall. A shred that starts exactly on a beat must play that beat itself; `examples/max/max_clock.ck` checks `unit()`.
+
+- A stopped transport answers `toNext` as if it started now. `ticks()` stays frozen.
+
+- A beat is `resolution * 4 / denom` ticks, so 6/8 counts eighth notes.
+
+- The event broadcasts on start or stop, tempo change, time signature change, and any jump of more than half a sample (seek, loop, audio restart). A wait computed before a tempo change finishes at the old tempo; `max_clock.ck` restarts its loop on each broadcast.
+
+- Only the global transport is read. Named transports are not supported.
+
+ChucK can act as tempo master: `Host.msg("tempo", 128)` through `[route msg]` into `[transport]`.
 
 ### Tapping Global UGens
 

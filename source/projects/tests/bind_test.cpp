@@ -608,6 +608,36 @@ static void test_clock_bbu()
     CHECK(find_record("bar") && find_record("bar")->value == 2);
     CHECK(find_record("beat") && find_record("beat")->value == 3);
     CHECK(find_record("unit") && near(find_record("unit")->value, 5));
+
+    // within half a sample of a boundary is on it. at 120 BPM and 44.1 kHz,
+    // 'toNextBeat() => now' lands 1e-14 ticks short of the beat
+    g_records.clear();
+    rig.tr.num = 4, rig.tr.denom = 4;
+    rig.tr.tps = 960.0 / 44100;
+    rig.tr.ticks = std::nextafter(1920.0, 0.0);  // just short of bar 2
+    CHECK(rig.ck->compileCode(code));
+    rig.blocks(1);
+    CHECK(find_record("bar") && find_record("bar")->value == 2);
+    CHECK(find_record("beat") && find_record("beat")->value == 1);
+    CHECK(find_record("unit") && near(find_record("unit")->value, 0));
+
+    g_records.clear();
+    rig.tr.ticks = 1920 - rig.tr.tps;  // a whole sample short: still bar 1
+    CHECK(rig.ck->compileCode(code));
+    rig.blocks(1);
+    CHECK(find_record("bar") && find_record("bar")->value == 1);
+    CHECK(find_record("beat") && find_record("beat")->value == 4);
+
+    // the same from a running transport: wake on the beat, read beat 2
+    g_records.clear();
+    Rig live;
+    live.tr.tps = 960.0 / 44100;
+    CHECK(live.ck->compileCode(
+        "HostClock clk; clk.toNextBeat() => now; Probe.send(\"on\", clk.ticks());"
+        "Probe.send(\"beat\", clk.beatInBar());"));
+    live.blocks(22050 / FRAMES + 2);
+    CHECK(find_record("on") && near(find_record("on")->value, 480, 0.5 * live.tr.tps));
+    CHECK(find_record("beat") && find_record("beat")->value == 2);
 }
 
 static void test_clock_instances_isolated()

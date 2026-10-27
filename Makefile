@@ -1,6 +1,6 @@
 PROJECT_NAME = chuck-max
 EXTERNAL_NAME = chuck\~
-VERSION = 0.2.0
+VERSION = 0.3.0
 
 PLATFORM = $(shell uname)
 MAX_VERSION := 9
