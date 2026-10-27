@@ -5,6 +5,7 @@ name: release
 #   chuck-max-<tag>-multi          macOS arm64 + Windows amd64 (make full MULTI=1)
 #   chuck-max-<tag>-macos-x86_64   Intel macOS (make full)
 #   chuck-max-<tag>-windows-amd64  Windows
+#   chuck-max-<tag>-all            the three packages above in one download
 # Signing, notarization and the release assets are done locally (make release,
 # make release-zip).
 
@@ -109,3 +110,21 @@ jobs:
       with:
         name: chuck-max-${{ github.ref_name }}-macos-x86_64
         path: build/dist/chuck-max
+
+  collect:
+    needs: [windows, macos]
+    if: ${{ !cancelled() && (needs.windows.result == 'success' || needs.macos.result == 'success') }}
+    runs-on: ubuntu-latest
+
+    steps:
+    # pattern excludes the windows-externals and windows-chugins artifacts
+    - name: download every package
+      uses: actions/download-artifact@v8
+      with:
+        pattern: chuck-max-*
+        path: all
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: chuck-max-${{ github.ref_name }}-all
+        path: all

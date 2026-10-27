@@ -1,7 +1,9 @@
 name: build
 
 # Manual build of chuck-max on one macOS runner, one Windows runner, or both.
-# Artifacts are unsigned. Signing and notarization run locally (make release).
+# Each build uploads its own artifact; the collect job bundles them all into
+# chuck-max-all-<sha>. Artifacts are unsigned. Signing and notarization run
+# locally (make release).
 
 on:
   workflow_dispatch:
@@ -114,3 +116,24 @@ jobs:
           README.md
           package-info.json
           icon.png
+
+  collect:
+    needs: [macos, windows]
+    if: ${{ !cancelled() && (needs.macos.result == 'success' || needs.windows.result == 'success') }}
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: short sha
+      id: sha
+      run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+    - name: download every build
+      uses: actions/download-artifact@v8
+      with:
+        pattern: chuck-max-*
+        path: all
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: chuck-max-all-${{ steps.sha.outputs.short }}
+        path: all
