@@ -102,7 +102,6 @@ brew-lite:
 			-DCM_EXTRA_FORMATS=ON \
 			-DCM_MP3=ON \
 			-DCM_WARPBUF=ON \
-			-DCM_FLUIDSYNTH=ON \
 			&& \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'
@@ -116,7 +115,6 @@ brew: install_faust
 			-DCM_MP3=ON \
 			-DCM_WARPBUF=ON \
 			-DCM_FAUST=ON \
-			-DCM_FLUIDSYNTH=ON \
 			&& \
 		cmake --build . --config '$(CONFIG)' && \
 		cmake --install . --config '$(CONFIG)'

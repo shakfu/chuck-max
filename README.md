@@ -110,7 +110,7 @@ A few advanced chugins, `Faust.chug`, `WarpBuf.chug` and `FluidSynth.chug` are n
 For a full MacOS build which includes the above chugins, use `Homebrew` again to install the following dependencies:
 
 ```sh
-brew install autogen automake fluidsynth rubberband libsamplerate
+brew install autogen automake rubberband libsamplerate
 ```
 
 This is actually an abbreviated way to install all the dependencies and sub-dependencies:
@@ -122,6 +122,8 @@ After these are installed, type the following for a full `chuck-max` build[^2]:
 ```sh
 make brew
 ```
+
+`make brew` builds `Faust.chug` and `WarpBuf.chug`. It does not build `FluidSynth.chug`, because Homebrew's `fluid-synth` ships no static library. To build that chugin from source, `brew install portaudio glib gettext` and run `make full2`, which builds every dependency under `build/thirdparty`.
 
 [^1]: It is also possible to build `chuck-max` and some of the advanced chugins on MacOS using alternative methods. These are outlined in the [alternative-build-guide](https://github.com/shakfu/chuck-max/blob/main/source/docs/alternative-build-guide.md)).
 

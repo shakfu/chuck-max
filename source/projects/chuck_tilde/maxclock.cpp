@@ -83,7 +83,7 @@ static t_CKDUR to_next(Chuck_VM* vm, t_CKTIME now, double period)
 
 static double beat_ticks(const MaxClockSnapshot& s)
 {
-    return s.resolution * 4.0 / std::max(s.denom, 1L);
+    return s.resolution * 4.0 / (std::max)(s.denom, 1L);
 }
 
 CK_DLL_CTOR(maxclock_ctor)
@@ -148,7 +148,7 @@ static void bbu(Chuck_VM* vm, t_CKTIME now, long* bar, long* beat, double* unit)
     }
     double t = maxclock_ticks_at(st->cur, now);
     double bt = beat_ticks(st->cur);
-    double bar_ticks = bt * std::max(st->cur.num, 1L);
+    double bar_ticks = bt * (std::max)(st->cur.num, 1L);
     // a position within half a sample of a boundary is on it: at 44.1 kHz
     // 'toNextBeat() => now' lands 1e-14 ticks short of the beat, and a plain
     // floor would answer the previous one

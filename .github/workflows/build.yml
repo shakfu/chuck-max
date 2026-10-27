@@ -1,0 +1,116 @@
+name: build
+
+# Manual build of chuck-max on one macOS runner, one Windows runner, or both.
+# Artifacts are unsigned. Signing and notarization run locally (make release).
+
+on:
+  workflow_dispatch:
+    inputs:
+      macos_variant:
+        type: choice
+        description: macOS make target ("none" skips macOS)
+        default: full
+        required: true
+        options:
+          - full
+          - brew
+          - native
+          - universal
+          - nomp3
+          - light
+          - none
+      all_variants:
+        type: boolean
+        description: build every macOS variant (overrides macos_variant)
+        default: false
+      macos_runner:
+        type: choice
+        description: macOS runner
+        default: macos-14
+        required: true
+        options:
+          - macos-14
+          - macos-15
+          - macos-15-intel
+          - macos-latest
+      windows_runner:
+        type: choice
+        description: Windows runner ("none" skips Windows)
+        default: windows-2022
+        required: true
+        options:
+          - windows-2022
+          - windows-2025
+          - windows-latest
+          - none
+
+jobs:
+  macos:
+    if: inputs.all_variants || inputs.macos_variant != 'none'
+    runs-on: ${{ inputs.macos_runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: ${{ fromJSON(inputs.all_variants && '["native","universal","brew","full","nomp3","light"]' || format('["{0}"]', inputs.macos_variant)) }}
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: short sha
+      id: sha
+      shell: bash
+      run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+    - name: install chuck dependencies
+      run: brew install bison flex
+
+    - name: install chugin dependencies
+      if: contains(fromJSON('["brew", "full", "nomp3", "light"]'), matrix.variant)
+      run: brew install autogen automake flac libogg libvorbis opus mpg123 lame rubberband libsamplerate
+
+    - name: build
+      run: make ${{ matrix.variant }}
+
+    - name: package
+      run: make package
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: chuck-max-${{ matrix.variant }}-${{ inputs.macos_runner }}-${{ runner.arch }}-${{ steps.sha.outputs.short }}
+        path: build/dist/chuck-max
+
+  windows:
+    if: inputs.windows_runner != 'none'
+    runs-on: ${{ inputs.windows_runner }}
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - name: short sha
+      id: sha
+      shell: bash
+      run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+    - name: build
+      run: make
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: chuck-max-${{ inputs.windows_runner }}-${{ runner.arch }}-${{ steps.sha.outputs.short }}
+        path: |
+          examples
+          externals
+          help
+          media
+          patchers
+          CHANGELOG.md
+          LICENSE
+          README.md
+          package-info.json
+          icon.png

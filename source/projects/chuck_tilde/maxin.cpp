@@ -27,7 +27,7 @@ bool maxin_push(MaxInState* state, const char* name, long argc,
     }
     MaxInMessage& m = state->inbox[tail];
     m.name = name;
-    m.argc = std::max(0L, std::min(argc, (long)MAXIN_MAX_ATOMS));
+    m.argc = (std::max)(0L, (std::min)(argc, (long)MAXIN_MAX_ATOMS));
     std::copy(argv, argv + m.argc, m.argv);
     state->tail.store(next, std::memory_order_release);
     return true;
