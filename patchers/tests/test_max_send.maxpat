@@ -35,7 +35,7 @@
 						660,
 						50
 					],
-					"text": "Host.send test. 1) DSP on. 2) add max_send.ck: freq updates 4x/s. 3) reset, then add max_send_once.ck: 'once 1' still arrives (Host survives reset). 4) send max_send_once.ck to B only: only 'B' prints."
+					"text": "Host.msg test. 1) DSP on. 2) add max_send.ck: freq updates 4x/s. 3) reset, then add max_send_once.ck: 'once 1' still arrives (Host survives reset). 4) send max_send_once.ck to B only: only 'B' prints."
 				}
 			},
 			{

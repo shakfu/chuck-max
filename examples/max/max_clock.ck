@@ -11,7 +11,7 @@ fun void click()
     clk.beatInBar() => int b;
     ( b == 1 ? 1760 : 880 ) => r.freq;
     5 => imp.next;
-    Host.send( "beat", b );
+    Host.msg( "beat", b );
 }
 
 fun void beats()

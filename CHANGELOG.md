@@ -37,10 +37,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
   - Replies are queued from the audio thread and flushed on the main thread; the queue drops rather than blocks when full
 
-- Added host classes bound into every VM with `ChucK::bind()`: `Host.send()` to the reply outlet, `HostIn`/`HostMsg` for `msg <name> <args...>`, `HostBuffer`/`HostBufPlay` for `buffer~`, and `HostClock` for the Max transport (`source/docs/dev/bind.md`)
+- Added host classes bound into every VM with `ChucK::bind()`: `Host.msg(name, ...)` to the reply outlet as `msg <name> <args...>` (bang, float, string and `float[]` overloads), `HostIn`/`HostMsg` for `msg <name> <args...>`, `HostBuffer`/`HostBufPlay` for `buffer~`, and `HostClock` for the Max transport (`source/docs/dev/bind.md`)
   - The names are host-neutral and shared with numchuck and pd-chuck, so one `.ck` file can run in each host that binds them
 
-  - `Host.sendBang`, `Host.sendFloat`, `Host.sendSymbol` and `Host.sendList` send to every `[receive <name>]`, as in pd-chuck, without a patch cord or `[route msg]`; queued on the audio thread and delivered on the main thread, 256 calls per drain and 32 list elements (`examples/max/max_send_receive.ck`)
+  - `Host.sendBang`, `Host.sendFloat`, `Host.sendSymbol` and `Host.sendList` send to every `[receive <name>]`, as in pd-chuck, without a patch cord or `[route msg]`; queued on the audio thread and delivered on the main thread, 256 calls per drain and 32 list elements (`examples/max/max_send_receive.ck`); receive names are shared by the whole Max process, unlike the reply outlet, and lists hold floats only (`patchers/tests/test_max_send_receive.maxpat`)
 
 - Copied the `examples/max/max_*.ck` bind examples into `source/projects/examples/max/`, the copy `source/scripts/update.sh` restores examples from; without it the next update deleted them
 

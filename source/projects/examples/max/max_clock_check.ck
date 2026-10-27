@@ -11,5 +11,5 @@ while( true )
     clk.toNextBeat() => now;
     adc.last() => float p;
     if( p > 0.5 ) p - 1 => p;
-    Host.send( "err", p * ( clk.beat() / samp ) );
+    Host.msg( "err", p * ( clk.beat() / samp ) );
 }

@@ -42,6 +42,7 @@ struct Record {
     double value;
     Chuck_VM* vm;
     t_CKTIME now;
+    std::string kind;   // which Host.msg overload ran; "" for Probe.send
 };
 
 static std::vector<Record> g_records;
@@ -1095,13 +1096,51 @@ static void test_bufplay_shares_slots()
     CHECK(find_record("n:a") != NULL);
 }
 
-// stand-in for chuck_tilde's Host class, same signature, recording to g_records
+// stand-in for chuck_tilde's Host class, same signatures, recording to
+// g_records with the overload that ran in Record::kind
+CK_DLL_SFUN(stub_msg_bang)
+{
+    std::string name = GET_NEXT_STRING_SAFE(ARGS);
+    g_records.push_back({name, 0, VM, SHRED ? SHRED->now : VM->now(), "bang"});
+}
+
+CK_DLL_SFUN(stub_msg_float)
+{
+    std::string name = GET_NEXT_STRING_SAFE(ARGS);
+    t_CKFLOAT value = GET_NEXT_FLOAT(ARGS);
+    g_records.push_back({name, value, VM, SHRED ? SHRED->now : VM->now(), "float"});
+}
+
+CK_DLL_SFUN(stub_msg_string)
+{
+    std::string name = GET_NEXT_STRING_SAFE(ARGS);
+    std::string value = GET_NEXT_STRING_SAFE(ARGS);
+    g_records.push_back({name, (double)value.size(), VM,
+                         SHRED ? SHRED->now : VM->now(), "string"});
+}
+
+CK_DLL_SFUN(stub_msg_list)
+{
+    std::string name = GET_NEXT_STRING_SAFE(ARGS);
+    Chuck_ArrayFloat* values = (Chuck_ArrayFloat*)GET_NEXT_OBJECT(ARGS);
+    g_records.push_back({name, (double)(values ? values->size() : -1), VM,
+                         SHRED ? SHRED->now : VM->now(), "list"});
+}
+
 static t_CKBOOL CK_DLL_CALL max_stub_query(Chuck_DL_Query* QUERY)
 {
     QUERY->begin_class(QUERY, "Host", "Object");
-    QUERY->add_sfun(QUERY, probe_send, "void", "send");
+    QUERY->add_sfun(QUERY, stub_msg_bang, "void", "msg");
+    QUERY->add_arg(QUERY, "string", "name");
+    QUERY->add_sfun(QUERY, stub_msg_float, "void", "msg");
     QUERY->add_arg(QUERY, "string", "name");
     QUERY->add_arg(QUERY, "float", "value");
+    QUERY->add_sfun(QUERY, stub_msg_string, "void", "msg");
+    QUERY->add_arg(QUERY, "string", "name");
+    QUERY->add_arg(QUERY, "string", "value");
+    QUERY->add_sfun(QUERY, stub_msg_list, "void", "msg");
+    QUERY->add_arg(QUERY, "string", "name");
+    QUERY->add_arg(QUERY, "float[]", "values");
     maxsend_add_methods(QUERY);
     QUERY->end_class(QUERY);
     return TRUE;
@@ -1269,6 +1308,30 @@ static void test_send_instances_isolated()
     CHECK(b.fake.got.size() == 1 && b.fake.got[0].values == std::vector<double>{2});
 }
 
+// Host.msg resolves by argument type: bang, float (an int literal promotes),
+// string, float[]; chuck_tilde.cpp registers four sfuns under one name
+static void test_host_msg_overloads()
+{
+    SendRig rig;
+    g_records.clear();
+    CHECK(rig.ck->compileCode(
+        "Host.msg(\"a\"); Host.msg(\"b\", 1); Host.msg(\"c\", 2.5);"
+        "Host.msg(\"d\", \"sym\"); Host.msg(\"e\", [1.0, 2.0, 3.0]);"
+        "float empty[0]; Host.msg(\"f\", empty);"));
+    run_block(rig.ck);
+    CHECK(g_records.size() == 6);
+    if (g_records.size() == 6) {
+        CHECK(g_records[0].kind == "bang" && g_records[0].name == "a");
+        CHECK(g_records[1].kind == "float" && g_records[1].value == 1);
+        CHECK(g_records[2].kind == "float" && g_records[2].value == 2.5);
+        CHECK(g_records[3].kind == "string" && g_records[3].value == 3);
+        CHECK(g_records[4].kind == "list" && g_records[4].value == 3);
+        CHECK(g_records[5].kind == "list" && g_records[5].value == 0);
+    }
+    // a string[] has no overload
+    CHECK(!rig.ck->compileCode("string s[1]; Host.msg(\"g\", s);"));
+}
+
 // the chuck CLI in 'make test' cannot compile these: it binds no host classes
 static void test_max_examples_compile()
 {
@@ -1351,6 +1414,7 @@ int main()
     test_send_queue_full();
     test_send_no_state();
     test_send_instances_isolated();
+    test_host_msg_overloads();
 
     test_max_examples_compile();
 

@@ -315,7 +315,7 @@ static t_symbol* ps_event = NULL;    // event <name>            -- 'listen'
 static t_symbol* ps_shred = NULL;    // shred add|remove <id>   -- vm watcher
 static t_symbol* ps_global = NULL;   // global <name> <type>    -- 'globals'
 static t_symbol* ps_clockprobe = NULL; // clockprobe <stats...>  -- 'clockprobe'
-static t_symbol* ps_msg = NULL;      // msg <name> <value>      -- Host.send()
+static t_symbol* ps_msg = NULL;      // msg <name> <args...>    -- Host.msg()
 
 
 //-----------------------------------------------------------------------------------------------
@@ -2594,7 +2594,7 @@ MaxSendState* ck_sends_from_vm(Chuck_VM* vm)
     return x ? x->sends : NULL;
 }
 
-// gensym on the audio thread takes a lock, as Host.send already does
+// gensym on the audio thread takes a lock, as Host.msg already does
 static void* ck_send_intern(void* ctx, const char* name)
 {
     return gensym(name);
@@ -2757,9 +2757,22 @@ t_ck* ck_instance_from_vm(Chuck_VM* vm)
     return NULL;
 }
 
-// Host.send(string name, float value) -> reply outlet: msg <name> <value>.
-// runs on the audio thread, so it queues rather than calling the outlet
-CK_DLL_SFUN(max_send)
+// Host.msg(string name, ...) -> reply outlet: msg <name> <args...>. one sfun
+// per overload; runs on the audio thread, so it queues rather than calling
+// the outlet. a reply entry holds CK_REPLY_MAX_ATOMS atoms, one for the name
+CK_DLL_SFUN(max_msg_bang)
+{
+    Chuck_String* name = GET_NEXT_STRING(ARGS);
+    t_ck* x = ck_instance_from_vm(VM);
+    if (x == NULL || name == NULL) {
+        return;
+    }
+    t_atom a[1];
+    atom_setsym(a, gensym(name->c_str()));
+    ck_reply_push(x, ps_msg, 1, a);
+}
+
+CK_DLL_SFUN(max_msg_float)
 {
     Chuck_String* name = GET_NEXT_STRING(ARGS);
     t_CKFLOAT value = GET_NEXT_FLOAT(ARGS);
@@ -2773,15 +2786,68 @@ CK_DLL_SFUN(max_send)
     ck_reply_push(x, ps_msg, 2, a);
 }
 
-// the Host class, bound into each VM by ck_new (see source/docs/dev/bind.md)
+CK_DLL_SFUN(max_msg_string)
+{
+    Chuck_String* name = GET_NEXT_STRING(ARGS);
+    Chuck_String* value = GET_NEXT_STRING(ARGS);
+    t_ck* x = ck_instance_from_vm(VM);
+    if (x == NULL || name == NULL) {
+        return;
+    }
+    t_atom a[2];
+    atom_setsym(a, gensym(name->c_str()));
+    atom_setsym(a + 1, gensym(value ? value->c_str() : ""));
+    ck_reply_push(x, ps_msg, 2, a);
+}
+
+// an empty list sends 'msg <name>', as sendList sends bang; values past the
+// entry's capacity are cut
+CK_DLL_SFUN(max_msg_list)
+{
+    Chuck_String* name = GET_NEXT_STRING(ARGS);
+    Chuck_ArrayFloat* values = (Chuck_ArrayFloat*)GET_NEXT_OBJECT(ARGS);
+    t_ck* x = ck_instance_from_vm(VM);
+    if (x == NULL || name == NULL) {
+        return;
+    }
+    t_atom a[CK_REPLY_MAX_ATOMS];
+    atom_setsym(a, gensym(name->c_str()));
+    t_CKINT n = values ? values->size() : 0;
+    if (n > CK_REPLY_MAX_ATOMS - 1) {
+        n = CK_REPLY_MAX_ATOMS - 1;
+    }
+    for (t_CKINT i = 0; i < n; i++) {
+        t_CKFLOAT v = 0;
+        values->get(i, &v);
+        atom_setfloat(a + 1 + i, v);
+    }
+    ck_reply_push(x, ps_msg, 1 + n, a);
+}
+
+// the Host class, bound into each VM by ck_new (see source/docs/dev/bind.md).
+// Host.msg goes to the reply outlet; Host.send* goes to [receive]
 static t_CKBOOL CK_DLL_CALL ck_max_query(Chuck_DL_Query* QUERY)
 {
     QUERY->begin_class(QUERY, "Host", "Object");
-    QUERY->doc_class(QUERY, "messages from ChucK to the chuck~ reply outlet");
-    QUERY->add_sfun(QUERY, max_send, "void", "send");
+    QUERY->doc_class(QUERY, "messages from ChucK to the chuck~ reply outlet "
+                            "(msg) and to [receive] (send*)");
+    QUERY->add_sfun(QUERY, max_msg_bang, "void", "msg");
+    QUERY->add_arg(QUERY, "string", "name");
+    QUERY->doc_func(QUERY, "send 'msg <name>' out the reply outlet");
+    QUERY->add_sfun(QUERY, max_msg_float, "void", "msg");
     QUERY->add_arg(QUERY, "string", "name");
     QUERY->add_arg(QUERY, "float", "value");
     QUERY->doc_func(QUERY, "send 'msg <name> <value>' out the reply outlet");
+    QUERY->add_sfun(QUERY, max_msg_string, "void", "msg");
+    QUERY->add_arg(QUERY, "string", "name");
+    QUERY->add_arg(QUERY, "string", "value");
+    QUERY->doc_func(QUERY, "send 'msg <name> <value>' out the reply outlet, "
+                           "value as a symbol");
+    QUERY->add_sfun(QUERY, max_msg_list, "void", "msg");
+    QUERY->add_arg(QUERY, "string", "name");
+    QUERY->add_arg(QUERY, "float[]", "values");
+    QUERY->doc_func(QUERY, "send 'msg <name> <values...>' out the reply outlet; "
+                           "at most 63 values, and an empty list sends 'msg <name>'");
     maxsend_add_methods(QUERY);
     QUERY->end_class(QUERY);
     return TRUE;

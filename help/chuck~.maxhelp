@@ -2697,7 +2697,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 20.0, 55.0, 225.0, 20.0 ],
-                                    "text": "1. Host.send: ChucK to Max"
+                                    "text": "1. Host.msg: ChucK to Max"
                                 }
                             },
                             {
@@ -2719,7 +2719,7 @@
                                     "numinlets": 1,
                                     "numoutlets": 0,
                                     "patching_rect": [ 20.0, 105.0, 225.0, 47.0 ],
-                                    "text": "Host.send(\"freq\", f) outputs 'msg freq <f>'. The demo picks a random pitch every 250 ms."
+                                    "text": "Host.msg(\"freq\", f) outputs 'msg freq <f>'; a string, a float[] or no value also work. The demo picks a random pitch every 250 ms."
                                 }
                             },
                             {
@@ -3224,8 +3224,8 @@
                                     "maxclass": "comment",
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "patching_rect": [ 20.0, 610.0, 864.0, 33.0 ],
-                                    "text": "Each class is per chuck~ instance: two chuck~ objects keep separate HostIn queues and buffer~ references. See source/docs/dev/bind.md for limits and lifecycle."
+                                    "patching_rect": [ 20.0, 610.0, 864.0, 47.0 ],
+                                    "text": "Each class is per chuck~ instance: two chuck~ objects keep separate HostIn queues and buffer~ references. Host.sendBang/Float/Symbol/List are the exception: receive names are shared by the whole Max process, so two chuck~ objects sending to 'freq' reach the same [receive freq]. See source/docs/dev/bind.md for limits and lifecycle."
                                 }
                             }
                         ],

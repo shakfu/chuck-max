@@ -2,7 +2,7 @@
 
 Status:
 
-- `Host.send()`: implemented in `chuck_tilde.cpp`. Passes the manual Max test
+- `Host.msg()`: implemented in `chuck_tilde.cpp`. Passes the manual Max test
   (Max 9.2.0, macOS arm64, 2026-10-23).
 
 - `HostClock`: implemented in `chuck_tilde/maxclock.cpp`. Passes `bind_test`.
@@ -24,14 +24,15 @@ Status:
 Naming: the classes use host-neutral names (`Host`, `HostIn`, `HostMsg`,
 `HostBuffer`, `HostBufPlay`, `HostClock`), shared with numchuck and pd-chuck,
 so one `.ck` file can run in each. They were `Max`, `MaxIn`, and so on until
-2026-10-24. The manual Max tests above ran under those names and have not been
-rerun since; `bind_test` has.
+2026-10-24, and `Host.send(name, value)` became `Host.msg` on 2026-10-27. The
+manual Max tests in `patchers/tests/` were rerun after both renames and pass
+(2026-10-27).
 
 ## Purpose
 
 `ChucK::bind()` registers native classes from the host into a ChucK VM.
 `chuck~` does not call it. This document proposes a `Host` class.
-`Host.send()` lets a shred push a message out of the `chuck~` reply outlet.
+`Host.msg()` lets a shred push a message out of the `chuck~` reply outlet.
 
 Today, pushing a value from ChucK to Max takes four steps:
 
@@ -40,18 +41,18 @@ Today, pushing a value from ChucK to Max takes four steps:
 3. Send `listen` to the event.
 4. Answer each event with a `get` round trip.
 
-`Host.send()` does this in one call.
+`Host.msg()` does this in one call.
 
 The same mechanism supports four bindings:
 
 | Direction | Binding | Delivery |
 |-|-|-|
-| ChucK to Max | `Host.send()` | queued, next main-thread tick |
+| ChucK to Max | `Host.msg()` | queued, next main-thread tick |
 | Max to ChucK | `HostIn` / `HostMsg` | queued, next audio block |
 | ChucK reads Max | `HostBuffer` | immediate, audio thread |
 | Transport sync | `HostClock` | snapshot per block, extrapolated per sample |
 
-`Host.send()` is specified in full below. The others are outlines.
+`Host.msg()` is specified in full below. The others are outlines.
 
 ## API
 
@@ -71,19 +72,36 @@ ChucK:
 SinOsc s => dac;
 while (true) {
     Math.random2f(200, 800) => float f => s.freq;
-    Host.send("freq", f);     // reply outlet: msg freq 437.2
+    Host.msg("freq", f);     // reply outlet: msg freq 437.2
     250::ms => now;
 }
 ```
 
 Max: `[chuck~]` rightmost outlet -> `[route msg]` -> `[route freq]`.
 
+`Host.msg` is overloaded by argument type:
+
+```chuck
+Host.msg("done");                 // msg done
+Host.msg("freq", 440.0);          // msg freq 440.
+Host.msg("file", "kick.wav");     // msg file kick.wav
+Host.msg("pair", [440.0, 0.5]);   // msg pair 440. 0.5   (at most 63 values)
+```
+
+An empty list sends `msg <name>`, as `sendList` sends bang. An int argument
+promotes to the float overload.
+
+`Host.msg` goes to the reply outlet; `Host.send*` goes to `[receive]`. The
+name is the outlet selector, and mirrors `HostIn`, which receives
+`msg <name> <args...>`; `send*` keeps the `[send]`/`[receive]` idiom. The
+call was `Host.send(name, value)`, float only, until 2026-10-27.
+
 ## Implementation
 
 In `chuck_tilde.cpp`:
 
 ```cpp
-static t_symbol* ps_msg = NULL;      // msg <name> <value>      -- Host.send()
+static t_symbol* ps_msg = NULL;      // msg <name> <value>      -- Host.msg()
 
 // find the chuck~ that owns this VM; audio-thread safe (atomic slot reads)
 static t_ck* ck_instance_from_vm(Chuck_VM* vm)
@@ -95,8 +113,9 @@ static t_ck* ck_instance_from_vm(Chuck_VM* vm)
     return NULL;
 }
 
-// Host.send(string name, float value); runs on the audio thread
-CK_DLL_SFUN(max_send)
+// Host.msg(string name, float value); runs on the audio thread. the bang,
+// string and float[] overloads are three more sfuns under the same name
+CK_DLL_SFUN(max_msg_float)
 {
     Chuck_String* name = GET_NEXT_STRING(ARGS);
     t_CKFLOAT value = GET_NEXT_FLOAT(ARGS);
@@ -113,7 +132,7 @@ static t_CKBOOL CK_DLL_CALL ck_max_query(Chuck_DL_Query* QUERY)
 {
     QUERY->begin_class(QUERY, "Host", "Object");
     QUERY->doc_class(QUERY, "messages from ChucK to the chuck~ reply outlet");
-    QUERY->add_sfun(QUERY, max_send, "void", "send");
+    QUERY->add_sfun(QUERY, max_msg_float, "void", "msg");
     QUERY->add_arg(QUERY, "string", "name");
     QUERY->add_arg(QUERY, "float", "value");
     QUERY->end_class(QUERY);
@@ -160,7 +179,8 @@ Registration:
 ## `Host.sendBang` / `sendFloat` / `sendSymbol` / `sendList`
 
 Status: implemented in `chuck_tilde/maxsend.cpp`, ported from pd-chuck.
-Passes `bind_test`. Not yet tested in Max.
+Passes `bind_test` and the manual Max test in `test_max_send_receive.maxpat`
+(Max 9.2.0, macOS arm64, 2026-10-27).
 
 ```chuck
 Host.sendBang("go");                  // every [receive go] gets bang
@@ -169,7 +189,7 @@ Host.sendSymbol("file", "kick.wav");  // ... symbol kick.wav
 Host.sendList("xy", [0.2, 0.7]);      // ... list 0.2 0.7
 ```
 
-Example: `examples/max/max_send_receive.ck`. Unlike `Host.send`, these need
+Example: `examples/max/max_send_receive.ck`. Unlike `Host.msg`, these need
 no patch cord to `chuck~` and no `[route msg]`.
 
 - The four calls share one queue per instance. It holds 256 calls between
@@ -182,15 +202,28 @@ no patch cord to `chuck~` and no `[route msg]`.
   more usual in Max, but a word such as `set` or `clear` would then act as a
   message.
 - A name with no `[receive]` at delivery is skipped, as `[send]` skips it.
+- Receive names are shared by the whole Max process. Two `chuck~` objects, or
+  two copies of an abstraction, that call `sendFloat("freq", ...)` reach the
+  same `[receive freq]`. `Host.msg` goes to the sending object's outlet
+  only. Give each copy its own receiver name when they must not collide.
+- Delivery runs on the main thread, from the reply qelem, as for `Host.msg`.
+  Latency is the main-thread jitter, not the scheduler's. Use these calls for
+  display and state, not as a clock: `sendBang("tick")` on each beat arrives
+  late by a variable amount.
+- Lists hold floats only. ChucK arrays are homogeneous, so a mixed list such
+  as `["note", 60]` has no ChucK type, and the queue entry is a fixed
+  `double[32]` so the audio thread allocates nothing. Send a string with
+  `sendSymbol`. A `string[]` overload of `sendList` is the next step if one
+  host needs it.
 
 ### Implementation
 
 `maxsend.cpp` has no Max dependency. The shred pushes onto a single-producer,
 single-consumer queue on the audio thread. The reply qelem drains it on the
-main thread, after the `Host.send` replies, and `ck_send_deliver` calls
+main thread, after the `Host.msg` replies, and `ck_send_deliver` calls
 `typedmess` on the receiver name's `s_thing`.
 
-- Delivery uses the main thread, as `Host.send` does. Calling `typedmess` from
+- Delivery uses the main thread, as `Host.msg` does. Calling `typedmess` from
   the audio thread would break Max's threading rules. pd-chuck instead
   delivers after the current DSP tick, from a 0 ms clock.
 - `s_thing` is the binding a message box's `;` syntax sends to. The SDK
@@ -200,20 +233,19 @@ main thread, after the `Host.send` replies, and `ck_send_deliver` calls
 - Another object bound to the name, such as a `buffer~`, receives the
   message too, as it would from `[send]`.
 - `gensym` runs on the audio thread for the receiver and symbol names, as for
-  `Host.send` (see Caveats).
-- Ordering is kept within the four calls, not between them and `Host.send`,
+  `Host.msg` (see Caveats).
+- Ordering is kept within the four calls, not between them and `Host.msg`,
   which uses the reply queue.
 
 ## Extensions
 
 The same pattern covers:
 
-- Overloads of `send` with `int`, `string`, or `float[]` arguments.
 - `Host.post(string)` to the Max console.
 
 ## Signals (audio and CV)
 
-`Host.send()` does not suit audio or CV. It delivers at main-thread tick rate
+`Host.msg()` does not suit audio or CV. It delivers at main-thread tick rate
 and drops messages when the queue fills.
 
 Existing routes already carry signals:
@@ -298,7 +330,7 @@ and `60.` interchangeably. A missing argument or a type mismatch with a string
 reads as 0 or `""`.
 
 `msg` is an inlet selector. It matches the `msg` reply selector of
-`Host.send()`. A ChucK global named `msg` can no longer be set by name; use
+`Host.msg()`. A ChucK global named `msg` can no longer be set by name; use
 `set`.
 
 ### Implementation
@@ -524,7 +556,7 @@ object stays in `MaxClockState::clocks`. Broadcasting it is safe.
 wait queue, so the broadcast wakes nothing. `HostClock` therefore needs no shred
 watcher, and a `global HostClock` keeps working after its creating shred ends.
 
-ChucK as tempo master: `Host.send("tempo", 128)` -> `[route msg]` ->
+ChucK as tempo master: `Host.msg("tempo", 128)` -> `[route msg]` ->
 `[transport]`. `ext_itm.h` has no tempo setter.
 
 ### Open questions
@@ -658,7 +690,7 @@ All three checks passed on Max 9.2.0, macOS arm64, 2026-10-23:
 
 - `msg freq <value>` arrives four times per second.
 
-- `Host.send` still works after `reset`.
+- `Host.msg` still works after `reset`.
 
 - Two `chuck~` instances keep their messages apart.
 
@@ -673,6 +705,12 @@ on Max 9.2.0, macOS arm64, 48 kHz, 2026-10-23: write (48000 frames), loop
 playback, `replace` with a sound file, delete the `buffer~` (silence), undo
 and rewrite (playback resumes). A second run, with `max_buffer_play.ck` using
 `HostBufPlay`, also passed, including `msg rate 0.5`, `1` and `-1`.
+
+`Host.send*` has a manual test in `patchers/tests/test_max_send_receive.maxpat`,
+which uses `examples/max/max_send_receive.ck`: four `[r]` receivers with no
+cord from `chuck~`, a second instance reaching the same `[r freq]`, and
+silence after `removeall`. All three passed on Max 9.2.0, macOS arm64,
+2026-10-27.
 
 The `chuck` CLI cannot compile `examples/max/max_*.ck`, because it binds no
 host classes. `bind_test` compiles them instead.

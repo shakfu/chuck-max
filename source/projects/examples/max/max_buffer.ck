@@ -17,4 +17,4 @@ for( 0 => int i; i < n; i++ )
     Math.sin( 2 * pi * 220 * i / sr ) * Math.exp( -4.0 * i / n ) => float v;
     for( 0 => int c; c < b.channels(); c++ ) b.poke( i, c, v );
 }
-Host.send( "written", n );
+Host.msg( "written", n );
