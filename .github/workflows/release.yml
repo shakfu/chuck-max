@@ -1,13 +1,15 @@
 name: release
 
-# Runs when a GitHub release is created, or by hand. Produces unsigned
-# packages as workflow artifacts:
-#   chuck-max-<tag>-multi          macOS arm64 + Windows amd64 (make full MULTI=1)
-#   chuck-max-<tag>-macos-x86_64   Intel macOS (make full)
-#   chuck-max-<tag>-windows-amd64  Windows
-#   chuck-max-<tag>-all            the three packages above in one download
-# Signing, notarization and the release assets are done locally (make release,
-# make release-zip).
+# Runs when a GitHub release is created, or by hand. The three builds run in
+# parallel; collect assembles the multi package from the arm64 and Windows
+# packages and bundles everything. Artifacts:
+#   chuck-max-<tag>-macos-arm64    make full MULTI=1
+#   chuck-max-<tag>-macos-x86_64   make full
+#   chuck-max-<tag>-windows-amd64  make MULTI=1
+#   chuck-max-<tag>-multi          macos-arm64 + Windows externals and chugins
+#   chuck-max-<tag>-all            all of the above in one download
+# Packages are unsigned. Signing, notarization and the release assets are done
+# locally (make release, make release-zip).
 
 on:
   release:
@@ -27,45 +29,32 @@ jobs:
     - name: build
       run: make MULTI=1
 
-    - name: upload externals for the multi package
-      uses: actions/upload-artifact@v7
-      with:
-        name: windows-externals
-        path: externals/*.mxe64
-        retention-days: 1
-
-    - name: upload chugins for the multi package
-      uses: actions/upload-artifact@v7
-      with:
-        name: windows-chugins
-        path: examples/chugins/windows-amd64/*.chug
-        retention-days: 1
-
-    - name: upload package
-      uses: actions/upload-artifact@v7
+    # same layout as make package
+    - uses: actions/upload-artifact@v7
       with:
         name: chuck-max-${{ github.ref_name }}-windows-amd64
         path: |
           examples
           externals
           help
-          media
           patchers
           CHANGELOG.md
           LICENSE
           README.md
           package-info.json
-          icon.png
 
   macos:
-    needs: windows
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - macos-14
-          - macos-15-intel
+        include:
+          - os: macos-14
+            arch: arm64
+            multi: 1
+          - os: macos-15-intel
+            arch: x86_64
+            multi: 0
 
     steps:
     - uses: actions/checkout@v7
@@ -76,53 +65,53 @@ jobs:
     - name: install dependencies
       run: brew install bison flex autogen automake flac libogg libvorbis opus mpg123 lame rubberband libsamplerate
 
-    # arm64 builds the multi package; MULTI=1 lays chugins out per platform
+    # MULTI=1 lays chugins out per platform (examples/chugins/darwin-arm64)
     - name: build
-      run: make full MULTI=${{ runner.arch == 'ARM64' && '1' || '0' }}
-
-    - name: add Windows externals
-      if: runner.arch == 'ARM64'
-      uses: actions/download-artifact@v8
-      with:
-        name: windows-externals
-        path: externals
-
-    - name: add Windows chugins
-      if: runner.arch == 'ARM64'
-      uses: actions/download-artifact@v8
-      with:
-        name: windows-chugins
-        path: examples/chugins/windows-amd64
+      run: make full MULTI=${{ matrix.multi }}
 
     - name: package
       run: make package
 
-    - name: upload multi package
-      if: runner.arch == 'ARM64'
-      uses: actions/upload-artifact@v7
+    - uses: actions/upload-artifact@v7
       with:
-        name: chuck-max-${{ github.ref_name }}-multi
-        path: build/dist/chuck-max
-
-    - name: upload macOS x86_64 package
-      if: runner.arch != 'ARM64'
-      uses: actions/upload-artifact@v7
-      with:
-        name: chuck-max-${{ github.ref_name }}-macos-x86_64
+        name: chuck-max-${{ github.ref_name }}-macos-${{ matrix.arch }}
         path: build/dist/chuck-max
 
   collect:
     needs: [windows, macos]
     if: ${{ !cancelled() && (needs.windows.result == 'success' || needs.macos.result == 'success') }}
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.ref_name }}
 
     steps:
-    # pattern excludes the windows-externals and windows-chugins artifacts
     - name: download every package
       uses: actions/download-artifact@v8
       with:
         pattern: chuck-max-*
         path: all
+
+    - name: assemble multi package
+      run: |
+        arm64="all/chuck-max-$TAG-macos-arm64"
+        win="all/chuck-max-$TAG-windows-amd64"
+        multi="all/chuck-max-$TAG-multi"
+        if [ ! -d "$arm64" ] || [ ! -d "$win" ]; then
+          echo "arm64 or Windows package missing; skipping multi package"
+          exit 0
+        fi
+        cp -a "$arm64" "$multi"
+        cp "$win"/externals/*.mxe64 "$multi/externals/"
+        mkdir -p "$multi/examples/chugins/windows-amd64"
+        cp "$win"/examples/chugins/windows-amd64/*.chug "$multi/examples/chugins/windows-amd64/"
+        ls "$multi/externals" "$multi/examples/chugins"
+
+    - name: upload multi package
+      if: hashFiles(format('all/chuck-max-{0}-multi/externals/*.mxe64', env.TAG)) != ''
+      uses: actions/upload-artifact@v7
+      with:
+        name: chuck-max-${{ github.ref_name }}-multi
+        path: all/chuck-max-${{ github.ref_name }}-multi
 
     - uses: actions/upload-artifact@v7
       with:

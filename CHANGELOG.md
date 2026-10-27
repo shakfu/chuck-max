@@ -84,7 +84,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - `make brew` and `make brew-lite` no longer enable `FluidSynth.chug`. They linked `libfluidsynth.a` from the Homebrew prefix, which Homebrew's `fluid-synth` does not ship, so both targets failed at link time. `make full2` builds the chugin from source
 
-- Replaced the eleven GitHub workflows with two. `build.yml` is manual and builds any variant on any current runner, all variants at once if asked. `release.yml` runs when a release is created and produces the multi package from `make full MULTI=1` plus the Windows externals, with an Intel macOS package alongside. Both end with a `collect` job that bundles every package into one artifact. The old set targeted the retired `macos-12` and `macos-13` runners, ran two different workflows on every release, and did not install every dependency the `brew` target needs
+- Replaced the eleven GitHub workflows with two. `build.yml` is manual and builds any variant on any current runner, all variants at once if asked. `release.yml` runs when a release is created and builds arm64, Intel and Windows packages in parallel; a final `collect` job assembles the multi package from the arm64 and Windows packages and bundles every package into one artifact. The old set targeted the retired `macos-12` and `macos-13` runners, ran two different workflows on every release, and did not install every dependency the `brew` target needs
 
 - Set `CHUCK_PARAM_IS_REALTIME_AUDIO_HINT` to 1 at startup; it had been left at its default of 0 even though `chuck~` is always driven from the MSP audio callback
 
