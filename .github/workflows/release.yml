@@ -1,20 +1,29 @@
 name: release
 
-# Runs when a GitHub release is created, or by hand. The three builds run in
-# parallel; collect assembles the multi package from the arm64 and Windows
-# packages and bundles everything. Artifacts:
-#   chuck-max-<tag>-macos-arm64    make full MULTI=1
-#   chuck-max-<tag>-macos-x86_64   make full
-#   chuck-max-<tag>-windows-amd64  make MULTI=1
-#   chuck-max-<tag>-multi          macos-arm64 + Windows externals and chugins
-#   chuck-max-<tag>-all            all of the above in one download
-# Packages are unsigned. Signing, notarization and the release assets are done
-# locally (make release, make release-zip).
+# Pushing a version tag (0.3.0) builds every package, creates the GitHub
+# release with notes taken from the tag's CHANGELOG.md section, and attaches
+# the packages as zips. The three builds run in parallel; collect assembles
+# the multi package from the arm64 and Windows packages.
+#
+# Release assets (unsigned):
+#   chuck-max-<tag>-macos-arm64.zip    make full MULTI=1
+#   chuck-max-<tag>-macos-x86_64.zip   make full
+#   chuck-max-<tag>-windows-amd64.zip  make MULTI=1
+#   chuck-max-<tag>-multi.zip          macos-arm64 + Windows externals and chugins
+#
+# A manual run from a branch builds and uploads workflow artifacts only.
+# Signed and notarized dmgs come from make release locally; attach them with
+#   gh release upload <tag> build/*.dmg
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-*'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   windows:
@@ -42,6 +51,7 @@ jobs:
           LICENSE
           README.md
           package-info.json
+          !examples/chuck.exe
 
   macos:
     runs-on: ${{ matrix.os }}
@@ -85,6 +95,8 @@ jobs:
       TAG: ${{ github.ref_name }}
 
     steps:
+    - uses: actions/checkout@v7
+
     - name: download every package
       uses: actions/download-artifact@v8
       with:
@@ -106,14 +118,35 @@ jobs:
         cp "$win"/examples/chugins/windows-amd64/*.chug "$multi/examples/chugins/windows-amd64/"
         ls "$multi/externals" "$multi/examples/chugins"
 
-    - name: upload multi package
-      if: hashFiles(format('all/chuck-max-{0}-multi/externals/*.mxe64', env.TAG)) != ''
-      uses: actions/upload-artifact@v7
-      with:
-        name: chuck-max-${{ github.ref_name }}-multi
-        path: all/chuck-max-${{ github.ref_name }}-multi
+    # each zip unpacks to a chuck-max/ folder, as the Max Packages directory expects
+    - name: zip packages
+      run: |
+        mkdir -p zips
+        for dir in all/chuck-max-"$TAG"-*; do
+          name=$(basename "$dir")
+          rm -rf stage && mkdir -p stage
+          cp -a "$dir" stage/chuck-max
+          (cd stage && zip -qr "../zips/$name.zip" chuck-max)
+        done
+        ls -l zips
 
     - uses: actions/upload-artifact@v7
       with:
         name: chuck-max-${{ github.ref_name }}-all
-        path: all
+        path: zips
+
+    - name: release notes
+      if: github.ref_type == 'tag'
+      run: python3 source/scripts/release_notes.py "$TAG" --output release-notes.md
+
+    - name: create or update the GitHub release
+      if: github.ref_type == 'tag'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        if gh release view "$TAG" >/dev/null 2>&1; then
+          gh release edit "$TAG" --title "chuck-max $TAG" --notes-file release-notes.md
+          gh release upload "$TAG" zips/*.zip --clobber
+        else
+          gh release create "$TAG" --verify-tag --title "chuck-max $TAG" --notes-file release-notes.md zips/*.zip
+        fi

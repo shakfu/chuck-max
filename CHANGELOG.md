@@ -84,8 +84,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - `make brew` and `make brew-lite` no longer enable `FluidSynth.chug`. They linked `libfluidsynth.a` from the Homebrew prefix, which Homebrew's `fluid-synth` does not ship, so both targets failed at link time. `make full2` builds the chugin from source
 
-- Replaced the eleven GitHub workflows with two. `build.yml` is manual and builds any variant on any current runner, all variants at once if asked. `release.yml` runs when a release is created and builds arm64, Intel and Windows packages in parallel; a final `collect` job assembles the multi package from the arm64 and Windows packages and bundles every package into one artifact. The old set targeted the retired `macos-12` and `macos-13` runners, ran two different workflows on every release, and did not install every dependency the `brew` target needs
-
 - Set `CHUCK_PARAM_IS_REALTIME_AUDIO_HINT` to 1 at startup; it had been left at its default of 0 even though `chuck~` is always driven from the MSP audio callback
 
 - Registered per-instance `chout`/`cherr` callbacks in addition to the process-wide `stdout`/`stderr` ones, so ChucK's `<<< >>>` output and the VM's own printing are both captured
@@ -108,6 +106,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
   - See `source/docs/logging.md`
 
 - Made `loglevel` honestly process-global. It maps to `ChucK::setLogLevel()`, which is static, so one level is shared by every `chuck~` in the process; the code had kept a stale per-instance copy alongside it. Setting the level on one object left the others' copies stale, and querying it with no argument mutated the queried object's copy as a side effect. The copy is removed: `ck_loglevel` reads and writes the shared VM state directly, and the package default is now applied once by the first instance rather than re-asserted (and thus clobbered) by every new object. Per-object reporting is what the new `@verbose` is for
+
+- Replaced the eleven GitHub workflows with two. `build.yml` is manual and builds any variant on any current runner, all variants at once if asked. `release.yml` runs when a version tag is pushed. It builds the arm64, Intel and Windows packages in parallel, assembles the multi package from the first and last, creates the GitHub release with notes from the tag's CHANGELOG section, and attaches the four packages as zips. Signed dmgs are still produced locally. The old set targeted the retired `macos-12` and `macos-13` runners, ran two different workflows on every release, and did not install every dependency the `brew` target needs
 
 ### Fixed
 
