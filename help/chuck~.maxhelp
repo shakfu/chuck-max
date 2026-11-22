@@ -3412,6 +3412,248 @@
                     "patching_rect": [ 116.0, 234.0, 90.0, 22.0 ],
                     "text": "p max-classes"
                 }
+            },
+            {
+                "box": {
+                    "id": "obj-shreds",
+                    "maxclass": "newobj",
+                    "numinlets": 0,
+                    "numoutlets": 0,
+                    "patching_rect": [ 226.0, 234.0, 70.0, 22.0 ],
+                    "text": "p shreds",
+                    "patcher": {
+                        "fileversion": 1,
+                        "appversion": {
+                            "major": 9,
+                            "minor": 2,
+                            "revision": 0,
+                            "architecture": "x64",
+                            "modernui": 1
+                        },
+                        "classnamespace": "box",
+                        "rect": [ 0.0, 26.0, 983.0, 718.0 ],
+                        "showontab": 1,
+                        "boxes": [
+                            {
+                                "box": {
+                                    "id": "t",
+                                    "maxclass": "comment",
+                                    "patching_rect": [ 20.0, 15.0, 860.0, 47.0 ],
+                                    "numinlets": 1,
+                                    "numoutlets": 0,
+                                    "text": "Shreds by name, and listing them. Turn on audio at the bottom. 'addcode' and 'replacecode' are 'add' and 'replace' for code: the shred is named <name> instead of <compiled.code>. The data outlet reports 'shred add <id> <name>' and 'shred remove <id>'; 'shreds dump' answers with every shred.",
+                                    "linecount": 3
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "h1",
+                                    "maxclass": "comment",
+                                    "patching_rect": [ 20.0, 70.0, 400.0, 20.0 ],
+                                    "numinlets": 1,
+                                    "numoutlets": 0,
+                                    "text": "1. Named code shreds",
+                                    "fontface": 1
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "a1",
+                                    "maxclass": "message",
+                                    "patching_rect": [ 20.0, 92.0, 520.0, 22.0 ],
+                                    "numinlets": 2,
+                                    "numoutlets": 1,
+                                    "outlettype": [ "" ],
+                                    "text": "addcode drone.ck \"TriOsc t => dac; 110 => t.freq; 0.1 => t.gain; 1::hour => now;\""
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "a2",
+                                    "maxclass": "message",
+                                    "patching_rect": [ 20.0, 122.0, 520.0, 22.0 ],
+                                    "numinlets": 2,
+                                    "numoutlets": 1,
+                                    "outlettype": [ "" ],
+                                    "text": "replacecode 1 drone.ck \"TriOsc t => dac; 165 => t.freq; 0.1 => t.gain; 1::hour => now;\""
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "n2",
+                                    "maxclass": "comment",
+                                    "patching_rect": [ 550.0, 122.0, 330.0, 33.0 ],
+                                    "numinlets": 1,
+                                    "numoutlets": 0,
+                                    "text": "replaces shred 1 (use the id from 'shred add'); the id stays",
+                                    "linecount": 2
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "a3",
+                                    "maxclass": "message",
+                                    "patching_rect": [ 20.0, 152.0, 120.0, 22.0 ],
+                                    "numinlets": 2,
+                                    "numoutlets": 1,
+                                    "outlettype": [ "" ],
+                                    "text": "remove 1"
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "h2",
+                                    "maxclass": "comment",
+                                    "patching_rect": [ 20.0, 190.0, 400.0, 20.0 ],
+                                    "numinlets": 1,
+                                    "numoutlets": 0,
+                                    "text": "2. List shreds",
+                                    "fontface": 1
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "d1",
+                                    "maxclass": "message",
+                                    "patching_rect": [ 20.0, 212.0, 100.0, 22.0 ],
+                                    "numinlets": 2,
+                                    "numoutlets": 1,
+                                    "outlettype": [ "" ],
+                                    "text": "shreds dump"
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "n3",
+                                    "maxclass": "comment",
+                                    "patching_rect": [ 130.0, 212.0, 750.0, 33.0 ],
+                                    "numinlets": 1,
+                                    "numoutlets": 0,
+                                    "text": "replies 'shred dump <id> <name> <elapsed> ...', one triple per shred, elapsed in seconds of VM time. ck_shreds polls with it.",
+                                    "linecount": 2
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "d2",
+                                    "maxclass": "message",
+                                    "patching_rect": [ 20.0, 250.0, 80.0, 22.0 ],
+                                    "numinlets": 2,
+                                    "numoutlets": 1,
+                                    "outlettype": [ "" ],
+                                    "text": "removeall"
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "ck",
+                                    "maxclass": "newobj",
+                                    "patching_rect": [ 20.0, 300.0, 160.0, 22.0 ],
+                                    "numinlets": 2,
+                                    "numoutlets": 3,
+                                    "text": "chuck~ 2",
+                                    "outlettype": [ "signal", "signal", "" ]
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "dac",
+                                    "maxclass": "ezdac~",
+                                    "patching_rect": [ 20.0, 340.0, 45.0, 45.0 ],
+                                    "numinlets": 2,
+                                    "numoutlets": 0
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "route",
+                                    "maxclass": "newobj",
+                                    "patching_rect": [ 260.0, 340.0, 80.0, 22.0 ],
+                                    "numinlets": 2,
+                                    "numoutlets": 2,
+                                    "text": "route shred",
+                                    "outlettype": [ "", "" ]
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "print",
+                                    "maxclass": "newobj",
+                                    "patching_rect": [ 260.0, 374.0, 90.0, 22.0 ],
+                                    "numinlets": 1,
+                                    "numoutlets": 0,
+                                    "text": "print SHRED"
+                                }
+                            },
+                            {
+                                "box": {
+                                    "id": "f",
+                                    "maxclass": "comment",
+                                    "patching_rect": [ 20.0, 420.0, 860.0, 33.0 ],
+                                    "numinlets": 1,
+                                    "numoutlets": 0,
+                                    "text": "ck_code (an editor box) and ck_shreds (a shred table) are built on these messages; see their help files."
+                                }
+                            }
+                        ],
+                        "lines": [
+                            {
+                                "patchline": {
+                                    "source": [ "a1", 0 ],
+                                    "destination": [ "ck", 0 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "source": [ "a2", 0 ],
+                                    "destination": [ "ck", 0 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "source": [ "a3", 0 ],
+                                    "destination": [ "ck", 0 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "source": [ "d1", 0 ],
+                                    "destination": [ "ck", 0 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "source": [ "d2", 0 ],
+                                    "destination": [ "ck", 0 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "source": [ "ck", 0 ],
+                                    "destination": [ "dac", 0 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "source": [ "ck", 1 ],
+                                    "destination": [ "dac", 1 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "source": [ "ck", 2 ],
+                                    "destination": [ "route", 0 ]
+                                }
+                            },
+                            {
+                                "patchline": {
+                                    "source": [ "route", 0 ],
+                                    "destination": [ "print", 0 ]
+                                }
+                            }
+                        ]
+                    }
+                }
             }
         ],
         "lines": [],

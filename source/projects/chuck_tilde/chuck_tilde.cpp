@@ -30,6 +30,7 @@
 #include "maxin.h"
 #include "maxbuffer.h"
 #include "maxsend.h"
+#include "shredlist.h"
 
 #include <atomic>
 
@@ -135,6 +136,7 @@ struct _ck {
     MaxInState* inbox;              // msg -> HostIn queue and live HostIn objects
     MaxBufferState* buffers;        // buffer~ references named by HostBuffer
     MaxSendState* sends;            // Host.send* calls bound for [receive]
+    ShredListState* shreds;         // snapshot for 'shreds dump'
     t_itm* itm;                     // global transport, referenced for this object's life
 
     // reply-related (routing chuck callbacks back out to the patch)
@@ -173,6 +175,8 @@ t_max_err ck_edit(t_ck* x, t_symbol* s);        // edit chuck file
 // chuck vm message handlers
 t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv);     // add shred from file
 t_max_err ck_eval(t_ck* x, t_symbol* s, long argc, t_atom* argv);    // add chuck code as shred
+t_max_err ck_addcode(t_ck* x, t_symbol* s, long argc, t_atom* argv); // add named code shred
+t_max_err ck_replacecode(t_ck* x, t_symbol* s, long argc, t_atom* argv); // replace with named code
 t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv);  // remove shreds (all, last, by #)
 t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv); // replace shreds 
 t_max_err ck_clear(t_ck* x, t_symbol* s, long argc, t_atom* argv);   // clear_vm, clear_globals
@@ -274,6 +278,7 @@ t_max_err ck_set(t_ck* x, t_symbol* s, long argc, t_atom* argv);
 // are queued there and flushed out the reply outlet on the main thread
 void ck_reply_push(t_ck* x, t_symbol* selector, long argc, t_atom* argv);
 void ck_reply_drain(t_ck* x);
+void ck_shreds_emit(t_ck* x);
 t_ck* ck_instance_from_id(t_CKINT id);
 t_ck* ck_instance_from_vm(Chuck_VM* vm);
 static t_CKBOOL CK_DLL_CALL ck_max_query(Chuck_DL_Query* QUERY);
@@ -312,7 +317,7 @@ static t_class* ck_class = NULL;
 // audio thread
 static t_symbol* ps_val = NULL;      // val <name> <value...>   -- 'get' reply
 static t_symbol* ps_event = NULL;    // event <name>            -- 'listen'
-static t_symbol* ps_shred = NULL;    // shred add|remove <id>   -- vm watcher
+static t_symbol* ps_shred = NULL;    // shred add <id> <name> | remove <id> | dump ...
 static t_symbol* ps_global = NULL;   // global <name> <type>    -- 'globals'
 static t_symbol* ps_clockprobe = NULL; // clockprobe <stats...>  -- 'clockprobe'
 static t_symbol* ps_msg = NULL;      // msg <name> <args...>    -- Host.msg()
@@ -336,6 +341,8 @@ void ext_main(void* r)
 
     class_addmethod(c, (method)ck_add,          "add",      A_GIMME, 0);
     class_addmethod(c, (method)ck_eval,         "eval",     A_GIMME, 0);    
+    class_addmethod(c, (method)ck_addcode,      "addcode",  A_GIMME, 0);
+    class_addmethod(c, (method)ck_replacecode,  "replacecode", A_GIMME, 0);
     class_addmethod(c, (method)ck_remove,       "remove",   A_GIMME, 0);
     class_addmethod(c, (method)ck_replace,      "replace",  A_GIMME, 0);
     class_addmethod(c, (method)ck_clear,        "clear",    A_GIMME, 0);
@@ -471,6 +478,7 @@ void* ck_new(t_symbol* s, long argc, t_atom* argv)
         x->buffers->host = ck_buffer_host(x);
         x->sends = new MaxSendState;
         x->sends->host = ck_send_host(x);
+        x->shreds = new ShredListState;
         x->itm = (t_itm*)itm_getglobal();
         if (x->itm) {
             itm_reference(x->itm);
@@ -784,6 +792,8 @@ void ck_free(t_ck* x)
     // after the VM and the qelem: nothing pushes or drains now
     delete x->sends;
     x->sends = NULL;
+    delete x->shreds;
+    x->shreds = NULL;
     // globalCleanup() tears down process-wide chuck state, so it may only run
     // once the last chuck~ in the process is gone; calling it per-instance
     // pulled that state out from under any still-running siblings
@@ -1440,20 +1450,17 @@ t_max_err ck_add(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     
     std::string full_path = std::string(checked_file->s_name);
 
-    // compile but don't run yet (instance == 0)
-    if( !x->chuck->compileFile( full_path, args, 0 ) ) {
+    // deferred spork: the VM shredules it on the audio thread. process_msg
+    // (CK_MSG_ADD) would spork here, mutating the shreduler mid-compute()
+    std::vector<t_CKUINT> ids;
+    if( !x->chuck->compileFile( full_path, args, 1, FALSE, &ids ) ) {
         ck_error(x, (char*)"could not compile file");
         return MAX_ERR_GENERIC;
     }
-
-    // construct chuck msg (must allocate on heap, as VM will clean up)
-    Chuck_Msg * msg = new Chuck_Msg();
-    msg->type = CK_MSG_ADD;
-    msg->code = x->chuck->vm()->carrier()->compiler->output();
-    msg->args = new vector<string>;
-    extract_args( path, filename, *(msg->args) );
-    x->current_shred_id = x->chuck->vm()->process_msg( msg );
-    return MAX_ERR_NONE;    
+    if (!ids.empty()) {
+        x->current_shred_id = (long)ids[0];
+    }
+    return MAX_ERR_NONE;
 }
 
 t_max_err ck_eval(t_ck* x, t_symbol* s, long argc, t_atom* argv)
@@ -1488,6 +1495,55 @@ t_max_err ck_eval(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     }
 
     return MAX_ERR_GENERIC;
+}
+
+// the code after `skip` leading atoms: one symbol as is, else the atoms as text
+static std::string ck_code_arg(long argc, t_atom* argv, long skip)
+{
+    if (argc - skip == 1 && atom_gettype(argv + skip) == A_SYM) {
+        return std::string(atom_getsym(argv + skip)->s_name);
+    }
+    std::string code;
+    char* text = ck_atom_gettext(argc - skip, argv + skip);
+    if (text) {
+        code = text;
+        sysmem_freeptr(text);
+    }
+    return code;
+}
+
+// addcode <name> <code...>: spork <code> as a shred named <name>
+t_max_err ck_addcode(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+{
+    if (argc < 2 || atom_gettype(argv) != A_SYM) {
+        ck_error(x, (char*)"addcode: needs <name> <code>");
+        return MAX_ERR_GENERIC;
+    }
+    t_CKUINT id = shredlist_add_code(x->chuck, ck_code_arg(argc, argv, 1),
+                                     atom_getsym(argv)->s_name);
+    if (!id) {
+        ck_error(x, (char*)"addcode: could not compile %s", atom_getsym(argv)->s_name);
+        return MAX_ERR_GENERIC;
+    }
+    x->current_shred_id = (long)id;
+    return MAX_ERR_NONE;
+}
+
+// replacecode <id> <name> <code...>: replace shred <id>, keeping the id
+t_max_err ck_replacecode(t_ck* x, t_symbol* s, long argc, t_atom* argv)
+{
+    if (argc < 3 || atom_gettype(argv) != A_LONG || atom_gettype(argv + 1) != A_SYM) {
+        ck_error(x, (char*)"replacecode: needs <id> <name> <code>");
+        return MAX_ERR_GENERIC;
+    }
+    long id = (long)atom_getlong(argv);
+    if (!shredlist_replace_code(x->chuck, (t_CKUINT)id, ck_code_arg(argc, argv, 2),
+                                atom_getsym(argv + 1)->s_name)) {
+        ck_error(x, (char*)"replacecode: could not compile %s", atom_getsym(argv + 1)->s_name);
+        return MAX_ERR_GENERIC;
+    }
+    x->current_shred_id = id;
+    return MAX_ERR_NONE;
 }
 
 t_max_err ck_remove(t_ck* x, t_symbol* s, long argc, t_atom* argv)
@@ -1649,8 +1705,10 @@ t_max_err ck_replace(t_ck* x, t_symbol* s, long argc, t_atom* argv)
     msg->args = new vector<string>;
     // extract args again but this time into vector
     extract_args( path, filename, *(msg->args) );
-    // process REPLACE message, return new shred ID
-    x->current_shred_id = x->chuck->vm()->process_msg( msg );
+    // queued: the VM processes it on the audio thread; the new shred keeps the id
+    msg->reply_cb = (ck_msg_func)0;
+    x->chuck->vm()->queue_msg( msg, 1 );
+    x->current_shred_id = shred_id;
     return MAX_ERR_NONE;
 }
 
@@ -2343,6 +2401,17 @@ t_max_err ck_shreds(t_ck* x, t_symbol* s, long argc, t_atom* argv)
             return MAX_ERR_NONE;
         }
 
+        if (cmd == gensym("dump")) {
+            if (!shredlist_request(x->shreds)) {
+                return MAX_ERR_NONE;  // a snapshot is already on its way out
+            }
+            // no perform calls while DSP is off, so the VM is idle: fill here
+            if (!sys_getdspstate() && shredlist_service(x->shreds, x->chuck->vm())) {
+                ck_shreds_emit(x);
+            }
+            return MAX_ERR_NONE;
+        }
+
         if (cmd == gensym("highest")) {
             long id = ck_spork_highest_id(x);
             post("shreds highest: %d", id);
@@ -2903,6 +2972,9 @@ void ck_reply_drain(t_ck* x)
         head = (head + 1) % CK_REPLY_QUEUE_SIZE;
         x->reply_head.store(head, std::memory_order_release);
     }
+    if (x->shreds && shredlist_ready(x->shreds)) {
+        ck_shreds_emit(x);
+    }
     // HostBuffer and Host.send* share this qelem for their main-thread work
     if (x->buffers) {
         maxbuffer_service(x->buffers);
@@ -2917,6 +2989,31 @@ void ck_reply_drain(t_ck* x)
             ck_warn(x, (char*)"Host.sendList: %ld lists cut to %d elements",
                     truncated, MAXSEND_MAX_ATOMS);
         }
+    }
+}
+
+// send a ready snapshot as 'shred dump <id> <name> <elapsed> ...'
+void ck_shreds_emit(t_ck* x)
+{
+    ShredListState* st = x->shreds;
+    t_atom* a = (t_atom*)sysmem_newptr(sizeof(t_atom) * (1 + 3 * st->count));
+    if (a) {
+        atom_setsym(a, gensym("dump"));
+        for (long i = 0; i < st->count; i++) {
+            const ShredListEntry* e = &st->entries[i];
+            atom_setlong(a + 1 + 3 * i, (t_atom_long)e->id);
+            atom_setsym(a + 2 + 3 * i, gensym(e->name));
+            atom_setfloat(a + 3 + 3 * i, e->elapsed);
+        }
+    }
+    long total = st->total, count = st->count;
+    shredlist_release(st);
+    if (a) {
+        outlet_anything(x->reply_outlet, ps_shred, (short)(1 + 3 * count), a);
+        sysmem_freeptr(a);
+    }
+    if (total > count) {
+        object_warn((t_object*)x, "shreds dump: %ld of %ld shreds listed", count, total);
     }
 }
 
@@ -3058,6 +3155,10 @@ void CK_DLL_CALL cb_shreds_watcher(Chuck_VM_Shred* shred, t_CKINT code,
     if (x == NULL || shred == NULL) {
         return;
     }
+    // a replace keeps the id: its SPORK already reported the new shred
+    if (code == ckvm_shreds_watch_REMOVE && shredlist_replaced(vm, shred)) {
+        return;
+    }
 
     const char* what = NULL;
     switch (code) {
@@ -3068,10 +3169,15 @@ void CK_DLL_CALL cb_shreds_watcher(Chuck_VM_Shred* shred, t_CKINT code,
     default: return;
     }
 
-    t_atom a[2];
+    t_atom a[3];
     atom_setsym(a, gensym(what));
     atom_setlong(a + 1, (t_atom_long)shred->get_id());
-    ck_reply_push(x, ps_shred, 2, a);
+    long n = 2;
+    if (code == ckvm_shreds_watch_SPORK) {
+        atom_setsym(a + 2, gensym(shred->name.c_str()));
+        n = 3;
+    }
+    ck_reply_push(x, ps_shred, n, a);
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -3365,6 +3471,9 @@ void ck_perform64(t_ck* x, t_object* dsp64, double** ins, long numins,
     ck_clock_update(x);
 
     x->chuck->run(x->in_chuck_buffer, x->out_chuck_buffer, n);
+    if (shredlist_service(x->shreds, x->chuck->vm())) {
+        qelem_set(x->reply_qelem);
+    }
 
     // output main channels
     for (int i = 0; i < n; i++) {

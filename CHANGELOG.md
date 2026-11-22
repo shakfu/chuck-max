@@ -18,6 +18,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 ---
 
+## [Unreleased]
+
+### Added
+
+- Added `shreds dump`, answered out the reply outlet as `shred dump <id> <name> <elapsed> ...`, one triple per shred, `<elapsed>` in seconds of VM time. The snapshot is taken on the audio thread between `run()` calls, or on the main thread while DSP is off. It lists at most 256 shreds and warns when more are running. An object whose perform routine is not called while DSP is on (for example, a disabled `poly~` voice) never answers.
+
+- Added `addcode <name> <code>` and `replacecode <id> <name> <code>`: `add` and `replace` for code instead of a file. The shred is named `<name>` rather than `<compiled.code>`, so a patch can tell code shreds apart. `replacecode` keeps the id.
+
+- Added `ck_code` (macOS), an in-patch ChucK editor box (`source/projects/ck_code/`). It highlights with a patched [tree-sitter-chuck](https://github.com/tymbalodeon/tree-sitter-chuck) grammar and sends `addcode`, `replacecode` and `remove` to `chuck~`: Cmd-Return adds the buffer or selection, Shift-Return the top-level item under the caret, Cmd-\ or Cmd-Shift-Return replaces this box's latest shred, Cmd-Backspace removes it. Shreds are named after `@shredname`, else the `@file` name, else `untitled-<n>.ck`. Connect `chuck~`'s reply outlet back to the box's inlet: it claims the shreds that carry its name, so boxes editing the same file share them. The editor core is vendored from `py_code` (`source/projects/ck_code/LICENSE.md`).
+
+- Added `ck_shreds` (macOS), a box listing `chuck~`'s shreds: id, name, elapsed VM time and a remove button that sends `remove <id>`. Connect its outlet to `chuck~` and `chuck~`'s reply outlet to its inlet. It polls with `shreds dump` every `@interval` ms (default 1000, 0 = off) and updates on `shred add` and `shred remove` in between. Between dumps, the time column advances only while DSP is on, since VM time stops with it. `patchers/tests/test_ck_code.maxpat` wires two `ck_code` boxes and a `ck_shreds` to one `chuck~`.
+
+### Changed
+
+- `shred add <id>` is now `shred add <id> <name>`.
+
+### Fixed
+
+- `add` and `replace` sporked on the main thread through `process_msg`, so they could change the shreduler while the audio thread was computing it. The shred watcher then also wrote to the reply queue, which has one producer, from a second thread. `add` now uses a deferred spork and `replace` is queued, so both take effect on the next audio block.
+
+- A replace reported `shred add <id>` for the new shred, then `shred remove <id>` for the old one under the same id, so a patch tracking ids dropped a live shred. The remove is no longer reported when the id belongs to a replacement.
+
 ## [0.3.0]
 
 ### Added

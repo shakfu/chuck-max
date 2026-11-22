@@ -286,7 +286,8 @@ setup:
 
 # Compile (no audio) each examples/test/*.ck. chuck exits 0 on compile errors,
 # so any output counts as failure. warpbuf_* needs the optional WarpBuf chugin.
-# Then run the engine-level bind() tests (source/projects/tests).
+# Then run the engine-level bind() tests (source/projects/tests) and the
+# ck_code and ck_shreds tests (source/projects/ck_*/tests).
 test:
 	@cd examples && fail=0; \
 	for f in test/*.ck; do \
@@ -298,6 +299,10 @@ test:
 	@# rebuild first: a stale bind_test would pass against old sources
 	@cmake --build $(BUILD) --config $(CONFIG) --target bind_test > /dev/null
 	@$(BUILD)/$(CONFIG)/bind_test
+	@cmake --build $(BUILD) --config $(CONFIG) --target ck_code_tests > /dev/null
+	@$(BUILD)/$(CONFIG)/ck_code_tests
+	@cmake --build $(BUILD) --config $(CONFIG) --target ck_shreds_tests > /dev/null
+	@$(BUILD)/$(CONFIG)/ck_shreds_tests
 
 example:
 	@cd examples && timeout 10 ./chuck --chugin-path:chugins stk/rhodey-song.ck -v3 || true

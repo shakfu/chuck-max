@@ -868,7 +868,7 @@
       420.0,
       65.0
      ],
-     "text": "Reply outlet. Selectors are always ours and ChucK names travel as arguments, so no global can collide: 'val <name> <value>', 'event <name>', 'shred add|remove <id>', 'global <name> <type>'. Route with 'route val event shred global'.",
+     "text": "Reply outlet. Selectors are always ours and ChucK names travel as arguments, so no global can collide: 'val <name> <value>', 'event <name>', 'shred add <id> <name>', 'shred remove <id>', 'shred dump <id> <name> <elapsed> ...', 'global <name> <type>'. Route with 'route val event shred global'.",
      "linecount": 4
     }
    },

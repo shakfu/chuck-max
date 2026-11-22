@@ -8,13 +8,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
 set(CHUCK_TILDE_DIR ${CMAKE_SOURCE_DIR}/source/projects/chuck_tilde)
 
-# the maxclock, maxin, maxbuffer and maxsend sources have no Max dependency, so the
-# test builds them
+# the maxclock, maxin, maxbuffer, maxsend and shredlist sources have no Max
+# dependency, so the test builds them
 add_executable(bind_test bind_test.cpp
     ${CHUCK_TILDE_DIR}/maxclock.cpp
     ${CHUCK_TILDE_DIR}/maxin.cpp
     ${CHUCK_TILDE_DIR}/maxbuffer.cpp
     ${CHUCK_TILDE_DIR}/maxsend.cpp
+    ${CHUCK_TILDE_DIR}/shredlist.cpp
 )
 
 target_compile_definitions(bind_test PRIVATE

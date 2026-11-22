@@ -10,9 +10,11 @@
 #include "maxin.h"
 #include "maxbuffer.h"
 #include "maxsend.h"
+#include "shredlist.h"
 
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <deque>
 #include <filesystem>
 #include <iterator>
@@ -1384,6 +1386,198 @@ static void test_max_examples_compile()
 }
 
 
+
+//-----------------------------------------------------------------------------
+// shreds dump: shredlist.cpp snapshot, filled where compute() runs
+
+// `add` relies on this: a deferred spork reports its id at compile time but
+// shredules (and notifies watchers) only inside the next compute()
+static std::vector<t_CKUINT> g_sporked;
+
+static void CK_DLL_CALL spork_watcher(Chuck_VM_Shred* shred, t_CKINT code,
+                                      t_CKINT param, Chuck_VM* vm, void* bindle)
+{
+    g_sporked.push_back(shred->get_id());
+}
+
+static void test_deferred_spork_notifies_in_compute()
+{
+    g_sporked.clear();
+    ChucK* ck = make_chuck(false);
+    ck->vm()->subscribe_watcher(spork_watcher, ckvm_shreds_watch_SPORK);
+    std::vector<t_CKUINT> ids;
+    CHECK(ck->compileCode("1::second => now;", "", 1, FALSE, &ids));
+    CHECK(ids.size() == 1);
+    CHECK(g_sporked.empty());
+    run_block(ck);
+    CHECK(g_sporked.size() == 1);
+    if (ids.size() == 1 && g_sporked.size() == 1) {
+        CHECK(g_sporked[0] == ids[0]);
+    }
+    delete ck;
+}
+
+static void test_shredlist_lists()
+{
+    ChucK* ck = make_chuck(false);
+    ShredListState st;
+    std::vector<t_CKUINT> ids;
+    CHECK(ck->compileCode("1::second => now;", "", 2, FALSE, &ids));
+    CHECK(ck->compileCode("1 + 1;"));  // exits in its first compute()
+    run_block(ck);
+
+    CHECK(!shredlist_service(&st, ck->vm()));  // nothing requested
+    CHECK(shredlist_request(&st));
+    CHECK(shredlist_request(&st));             // coalesces
+    CHECK(!shredlist_ready(&st));
+    CHECK(shredlist_service(&st, ck->vm()));
+    CHECK(!shredlist_service(&st, ck->vm()));  // one fill per request
+    CHECK(shredlist_ready(&st));
+    CHECK(st.count == 2);
+    CHECK(st.total == 2);
+    std::set<t_CKUINT> got;
+    for (long i = 0; i < st.count; i++) {
+        got.insert(st.entries[i].id);
+        CHECK(strcmp(st.entries[i].name, CHUCK_CODE_LITERAL_SIGNIFIER) == 0);
+        CHECK(st.entries[i].elapsed > 0);
+        CHECK(st.entries[i].elapsed <= (double)FRAMES / 44100 + 1e-12);
+    }
+    CHECK(got == std::set<t_CKUINT>(ids.begin(), ids.end()));
+
+    CHECK(!shredlist_request(&st));  // unread snapshot holds the buffer
+    shredlist_release(&st);
+    CHECK(!shredlist_ready(&st));
+    CHECK(shredlist_request(&st));
+    delete ck;
+}
+
+static void test_shredlist_truncates()
+{
+    ChucK* ck = make_chuck(false);
+    ShredListState st;
+    CHECK(ck->compileCode("1::second => now;", "", SHREDLIST_MAX + 44));
+    run_block(ck);
+    CHECK(shredlist_request(&st));
+    CHECK(shredlist_service(&st, ck->vm()));
+    CHECK(st.count == SHREDLIST_MAX);
+    CHECK(st.total == SHREDLIST_MAX + 44);
+    delete ck;
+}
+
+static void test_shredlist_copy_name()
+{
+    char buf[8];
+    shredlist_copy_name(buf, sizeof(buf), "abc");
+    CHECK(strcmp(buf, "abc") == 0);
+    shredlist_copy_name(buf, 3, "abcdef");
+    CHECK(strcmp(buf, "ab") == 0);
+    shredlist_copy_name(buf, 3, "a\xc3\xa9");   // would split U+00E9
+    CHECK(strcmp(buf, "a") == 0);
+    shredlist_copy_name(buf, 2, "\xc3\xa9");
+    CHECK(strcmp(buf, "") == 0);
+    buf[0] = 'x';
+    shredlist_copy_name(buf, 0, "abc");          // no room, no write
+    CHECK(buf[0] == 'x');
+}
+
+// named code shreds and replace detection (addcode / replacecode)
+struct WatchEvent {
+    t_CKINT code;
+    t_CKUINT id;
+    std::string name;
+    bool replaced;
+};
+static std::vector<WatchEvent> g_watch;
+
+static void CK_DLL_CALL record_watcher(Chuck_VM_Shred* shred, t_CKINT code,
+                                       t_CKINT param, Chuck_VM* vm, void* bindle)
+{
+    bool replaced = code == ckvm_shreds_watch_REMOVE && shredlist_replaced(vm, shred);
+    g_watch.push_back(WatchEvent{code, shred->get_id(), shred->name, replaced});
+}
+
+// one shred listed, as `shreds dump` would report it
+static bool listed_alone(ChucK* ck, t_CKUINT id, const char* name)
+{
+    ShredListState st;
+    shredlist_request(&st);
+    shredlist_service(&st, ck->vm());
+    return st.count == 1 && st.entries[0].id == id && strcmp(st.entries[0].name, name) == 0;
+}
+
+static void test_add_code_named()
+{
+    g_watch.clear();
+    ChucK* ck = make_chuck(false);
+    ck->vm()->subscribe_watcher(record_watcher,
+                                ckvm_shreds_watch_SPORK | ckvm_shreds_watch_REMOVE);
+    t_CKUINT id = shredlist_add_code(ck, "1::second => now;", "otf_01.ck");
+    CHECK(id != 0);
+    CHECK(g_watch.empty());  // deferred to compute()
+    run_block(ck);
+    CHECK(g_watch.size() == 1);
+    if (g_watch.size() == 1) {
+        CHECK(g_watch[0].code == ckvm_shreds_watch_SPORK);
+        CHECK(g_watch[0].id == id);
+        CHECK(g_watch[0].name == "otf_01.ck");
+    }
+    CHECK(listed_alone(ck, id, "otf_01.ck"));
+    CHECK(shredlist_add_code(ck, "this is not chuck", "bad.ck") == 0);
+    delete ck;
+}
+
+static void test_replace_code_keeps_id()
+{
+    g_watch.clear();
+    ChucK* ck = make_chuck(false);
+    ck->vm()->subscribe_watcher(record_watcher,
+                                ckvm_shreds_watch_SPORK | ckvm_shreds_watch_REMOVE);
+    t_CKUINT id = shredlist_add_code(ck, "1::second => now;", "a.ck");
+    run_block(ck);
+    g_watch.clear();
+
+    CHECK(shredlist_replace_code(ck, id, "2::second => now;", "b.ck"));
+    CHECK(g_watch.empty());  // queued for compute()
+    run_block(ck);
+    // the VM reports the new shred, then the old one under the same id
+    CHECK(g_watch.size() == 2);
+    if (g_watch.size() == 2) {
+        CHECK(g_watch[0].code == ckvm_shreds_watch_SPORK);
+        CHECK(g_watch[0].id == id);
+        CHECK(g_watch[0].name == "b.ck");
+        CHECK(g_watch[1].code == ckvm_shreds_watch_REMOVE);
+        CHECK(g_watch[1].id == id);
+        CHECK(g_watch[1].replaced);
+    }
+    CHECK(listed_alone(ck, id, "b.ck"));
+    CHECK(!shredlist_replace_code(ck, id, "not chuck", "c.ck"));
+
+    // a plain remove is not a replace
+    g_watch.clear();
+    queue_vm_msg(ck, CK_MSG_REMOVE, id);
+    run_block(ck);
+    CHECK(g_watch.size() == 1);
+    if (g_watch.size() == 1) {
+        CHECK(g_watch[0].code == ckvm_shreds_watch_REMOVE);
+        CHECK(!g_watch[0].replaced);
+    }
+    delete ck;
+}
+
+static void test_finished_shred_not_replaced()
+{
+    g_watch.clear();
+    ChucK* ck = make_chuck(false);
+    ck->vm()->subscribe_watcher(record_watcher, ckvm_shreds_watch_REMOVE);
+    CHECK(shredlist_add_code(ck, "1 + 1;", "quick.ck") != 0);
+    run_block(ck);
+    CHECK(g_watch.size() == 1);
+    if (g_watch.size() == 1) {
+        CHECK(!g_watch[0].replaced);
+    }
+    delete ck;
+}
+
 int main()
 {
     ChucK::setLogLevel(CK_LOG_NONE);
@@ -1445,6 +1639,14 @@ int main()
     test_send_no_state();
     test_send_instances_isolated();
     test_host_msg_overloads();
+
+    test_deferred_spork_notifies_in_compute();
+    test_shredlist_lists();
+    test_shredlist_truncates();
+    test_shredlist_copy_name();
+    test_add_code_named();
+    test_replace_code_keeps_id();
+    test_finished_shred_not_replaced();
 
     test_max_examples_compile();
 
