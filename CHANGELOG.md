@@ -34,6 +34,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 
 - `shred add <id>` is now `shred add <id> <name>`.
 
+- The Windows job in `build.yml` runs `ck_code_tests` and `ck_shreds_tests` after the build; `make test` covers them on macOS.
+
 ### Fixed
 
 - `add` and `replace` sporked on the main thread through `process_msg`, so they could change the shreduler while the audio thread was computing it. The shred watcher then also wrote to the reply queue, which has one producer, from a second thread. `add` now uses a deferred spork and `replace` is queued, so both take effect on the next audio block.

@@ -22,6 +22,8 @@ This cross-platform project combines the power of [ChucK](https://chuck.stanford
 
 - **Talk to the patch from ChucK** through bound host classes: `Host.msg` and `Host.send*` out, `HostIn` in, `HostBuffer` and `HostBufPlay` for `buffer~`, `HostClock` for the transport
 
+- **Live-code in the patch** with `ck_code`, a ChucK editor box with syntax highlighting, and watch the VM with `ck_shreds`, a table of running shreds (see [Editor and Shred Monitor](#editor-and-shred-monitor))
+
 ### Key Features
 
 - **Complete ChucK Examples**: Includes a full set of current ChucK examples
@@ -166,6 +168,8 @@ As of the current version, `chuck~` implements the core Chuck vm messages as Max
 | Add shred from file               | `add <file> [arg1 arg2 .. ]` | `+ <filepath> [args]`        |
 | Run chuck file (save last used)   | `run <file>`                 |                              |
 | Eval code as shred                | `eval <code>`                |                              |
+| Add code as a named shred         | `addcode <name> <code>`      |                              |
+| Replace shred with named code     | `replacecode <shredID> <name> <code>` |                     |
 | Remove shred                      | `remove <shredID>`           | `- <shredID>`                |
 | Remove last shred                 | `remove last`                |                              |
 | Remove all shreds                 | `remove all`                 | `removeall`                  |
@@ -270,8 +274,9 @@ The rightmost outlet reports data to the patch. Previously this information was 
 | :------------------------- | :------------------------------------ |
 | `val <name> <value...>`    | a `get` request completes             |
 | `event <name>`             | a global event fires, while listening  |
-| `shred add <id>`           | a shred is sporked                    |
+| `shred add <id> <name>`    | a shred is sporked                    |
 | `shred remove <id>`        | a shred is removed                    |
+| `shred dump <id> <name> <elapsed> ...` | in reply to `shreds dump`  |
 | `global <name> <type>`     | one per variable, in reply to `globals` |
 | `msg <name> <args...>`     | a shred calls `Host.msg()`            |
 
@@ -579,6 +584,39 @@ shreds next       <- next shred ID to be assigned
 shreds count      <- total number of running shreds
 ```
 
+**List shreds to the reply outlet:**
+
+```text
+shreds dump
+```
+
+The other `shreds` forms print to the Max console. `shreds dump` answers out the reply outlet as `shred dump <id> <name> <elapsed> ...`, one triple per shred, with `<elapsed>` in seconds of VM time. The snapshot is taken on the audio thread, so it is safe while shreds are running. `ck_shreds` polls with it.
+
+### Editor and Shred Monitor
+
+Two UI objects work with `chuck~` through its messages and reply outlet. Both need the same wiring: their outlet into `chuck~`, and `chuck~`'s rightmost outlet back into their inlet.
+
+```text
+[ck_code]   [ck_shreds]
+    |            |
+[chuck~ 2]-------+---> reply outlet back into both
+```
+
+`ck_code` is an editor box with tree-sitter ChucK highlighting, bracket matching, indentation and word completion. It sends `addcode`, `replacecode` and `remove`:
+
+| Key (Ctrl for Cmd on Windows)  | Action                                          |
+| :----------------------------- | :---------------------------------------------- |
+| Cmd-Return                     | add the buffer, or the selection, as a new shred |
+| Shift-Return                   | add the top-level statements on the caret's line |
+| Cmd-\ or Cmd-Shift-Return     | replace this box's latest shred                 |
+| Cmd-Backspace                  | remove this box's latest shred                  |
+
+A box owns the shreds named after it: `@shredname`, else the `@file` name, else `untitled-<n>.ck`. Boxes with the same name share shreds. Without the reply cord the box cannot learn its shred ids, so replace adds and remove has nothing to remove. The text is saved in the patcher; `@file` reads and (with `@autowrite`) writes a `.ck` file.
+
+`ck_shreds` lists every shred in the VM with its id, name and elapsed time, and a button that sends `remove <id>`. It polls with `shreds dump` every `@interval` ms (default 1000) and updates on `shred add` and `shred remove` in between.
+
+See `help/ck_code.maxhelp`, `help/ck_shreds.maxhelp` and `patchers/tests/test_ck_code.maxpat`.
+
 ### Adaptive Block Processing
 
 The `adaptive` message controls ChucK's adaptive block processing mode, which can improve CPU performance for certain workloads.
@@ -628,7 +666,9 @@ chuck-max
 │    ├── ...
 │    └── warpbuf
 ├── externals
-│    └── chuck~.mxo
+│    ├── chuck~.mxo
+│    ├── ck_code.mxo
+│    └── ck_shreds.mxo
 ├── help
 ├── media
 └── patchers
