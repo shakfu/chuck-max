@@ -9,9 +9,12 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET "${CM_OSX_DEPLOYMENT_TARGET}" CACHE STRING "Mini
 if (MSVC)
     # /utf-8: sources and strings are UTF-8. NOMINMAX: <windows.h>, pulled in by
     # the Max SDK, otherwise defines min/max macros that break std::min/std::max.
+    # _CRT_SECURE_NO_WARNINGS: getenv; the SDK defines it after <stdlib.h>.
     set(CK_CODE_WARN /W3 /utf-8)
-    set(CK_CODE_DEFS NOMINMAX)
-    set(CK_CODE_QUIET /w /utf-8)
+    set(CK_CODE_DEFS NOMINMAX _CRT_SECURE_NO_WARNINGS)
+    # /W0, not /w: the generator maps /W0 onto the warning level, so it does
+    # not trip D9025 (overriding '/W1').
+    set(CK_CODE_QUIET /W0 /utf-8)
 else ()
     set(CK_CODE_WARN -Wall -Wextra -Wno-unused-parameter)
     set(CK_CODE_DEFS)

@@ -323,7 +323,7 @@ void ckc::getdrawparams(t_ck_code *x, t_object *patcherview, t_jboxdrawparams *p
 	if (!x->st)
 		return;
 	const bool f = x->st->focused;
-	params->d_borderthickness = f ? 2 : 1;
+	params->d_borderthickness = f ? 2.f : 1.f;
 	params->d_cornersize = 0;
 	params->d_bordercolor = f ? color(x, RoleCaret) : color(x, RoleText, 0.15);
 	params->d_boxfillcolor = color(x, RoleBg);
