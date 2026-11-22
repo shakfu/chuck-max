@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-/* filedialog.h -- modal macOS file panels. Main thread. Return a POSIX path or "". */
+/* filedialog.h -- modal file panels. Main thread. Return a path or "".
+ * filedialog.mm (macOS), filedialog_win.cpp (Windows). */
 
 #pragma once
 
@@ -7,7 +8,7 @@
 
 namespace ckc {
 
-std::string save_dialog(const std::string &default_name); /* restricted to .ck */
+std::string save_dialog(const std::string &default_name); /* a .ck file */
 std::string open_dialog();                                 /* any file */
 
 } // namespace ckc

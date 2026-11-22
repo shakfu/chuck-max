@@ -76,7 +76,7 @@
                                     "patching_rect": [ 560.0, 100.0, 320.0, 20.0 ],
                                     "numinlets": 1,
                                     "numoutlets": 0,
-                                    "text": "Keys (click into the editor first)",
+                                    "text": "Keys (click into the editor first; Ctrl for Cmd on Windows)",
                                     "fontface": 1
                                 }
                             },

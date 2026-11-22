@@ -46,9 +46,14 @@ t_ck_code *ckc::find_box(long id) {
 
 static std::string sym_str(t_symbol *s) { return s && s->s_name ? s->s_name : ""; }
 
+/* HOME, else USERPROFILE (Windows sets only that), with '/' separators. */
 std::string ckc::home_dir() {
 	const char *h = getenv("HOME");
-	return h ? h : "";
+	if (!h || !*h)
+		h = getenv("USERPROFILE");
+	std::string s = h ? h : "";
+	std::replace(s.begin(), s.end(), '\\', '/');
+	return s;
 }
 
 /* Attribute path -> filesystem path. */
@@ -94,7 +99,7 @@ static std::string normalize_newlines(const std::string &s) {
 }
 
 static bool read_file(const std::string &path, std::string *out) {
-	std::ifstream f(path, std::ios::binary);
+	std::ifstream f(fs_path(path), std::ios::binary);
 	if (!f)
 		return false;
 	std::ostringstream ss;
@@ -106,7 +111,7 @@ static bool read_file(const std::string &path, std::string *out) {
 }
 
 static bool write_file(const std::string &path, const std::string &text) {
-	std::ofstream f(path, std::ios::binary | std::ios::trunc);
+	std::ofstream f(fs_path(path), std::ios::binary | std::ios::trunc);
 	if (!f)
 		return false;
 	f.write(text.data(), (std::streamsize)text.size());
@@ -143,7 +148,7 @@ void ckc::ensure_metrics(t_ck_code *x) {
 		return;
 	if (m.font)
 		jfont_destroy(m.font);
-	m.font = jfont_create("Menlo", JGRAPHICS_FONT_SLANT_NORMAL, JGRAPHICS_FONT_WEIGHT_NORMAL, size);
+	m.font = jfont_create(kMonoFont, JGRAPHICS_FONT_SLANT_NORMAL, JGRAPHICS_FONT_WEIGHT_NORMAL, size);
 	m.size = size;
 	double ascent = size * 0.8, descent = size * 0.2;
 	m.cw = size * 0.6;

@@ -8,7 +8,7 @@
 #include "ext_systime.h"
 #include "platform/clipboard.h"
 
-#include <sys/stat.h>
+#include <system_error>
 
 #include <algorithm>
 #include <cctype>
@@ -101,9 +101,16 @@ long ckc::key(t_ck_code *x, t_object *patcherview, long keycode, long modifiers,
 	State &st = *x->st;
 	Editor &ed = st.ed;
 	CompletionSession &cs = st.comp;
-	const bool cmd = modifiers & eCommandKey, shift = modifiers & eShiftKey, alt = modifiers & eAltKey;
+#ifdef WIN_VERSION
+	/* Ctrl plays Cmd's part. Either bit counts, so this holds however Max
+	 * reports Ctrl on Windows. */
+	const bool cmd = modifiers & (eCommandKey | eControlKey);
+#else
+	const bool cmd = modifiers & eCommandKey;
 	if (modifiers & eControlKey)
 		return 0; /* Max shortcuts */
+#endif
+	const bool shift = modifiers & eShiftKey, alt = modifiers & eAltKey;
 	view_size(x, patcherview);
 	sync_layout(x);
 	if (!x->completion)
@@ -480,8 +487,8 @@ long ckc::acceptsdrag(t_ck_code *x, t_object *drag, t_object *view) {
 	if (!x->st || x->readonly || jdrag_itemcount(drag) < 1)
 		return 0;
 	const char *s = jdrag_getitemstring(drag, 0, 0, 0);
-	struct stat sb;
-	if (!s || stat(posix_path(s).c_str(), &sb) != 0)
+	std::error_code ec;
+	if (!s || !std::filesystem::exists(fs_path(posix_path(s)), ec))
 		return 0; /* also rejects object drags */
 	jdrag_add(drag, (t_object *)x, gensym("dropfile"), "Insert path", nullptr);
 	return 1;

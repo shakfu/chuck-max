@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-/* clipboard.h -- macOS general pasteboard, plain UTF-8 text. Main thread. */
+/* clipboard.h -- the system clipboard as plain UTF-8 text. Main thread.
+ * clipboard.mm (macOS), clipboard_win.cpp (Windows). */
 
 #pragma once
 

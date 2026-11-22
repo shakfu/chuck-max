@@ -18,6 +18,9 @@ TEST(paths_posix_path) {
 		{"relative/x", "relative/x"},
 		{"C:foo", "C:foo"},
 		{"a:b:/c", "/c"},
+		{"C:/Users/a/x.wav", "C:/Users/a/x.wav"}, /* Windows drive: kept */
+		{"d:/x", "d:/x"},
+		{"HD:/x", "/x"}, /* two letters: a Mac volume */
 		{"", ""},
 	};
 	for (auto &c : cases)
@@ -79,4 +82,10 @@ TEST(paths_drop_text) {
 	CHECK_EQ(drop_text("/Users/a", {"/q\"uote"}), string("\"/q\\\"uote\""));
 	CHECK_EQ(drop_text("", {"~/x"}), string("\"~/x\""));
 	CHECK_EQ(drop_text("/h", {}), string(""));
+}
+
+TEST(paths_fs_path) {
+	CHECK_EQ(fs_path("a/b.ck").generic_string(), string("a/b.ck"));
+	/* UTF-8 survives the round trip (on Windows through UTF-16) */
+	CHECK_EQ(fs_path("caf\xC3\xA9.ck").u8string(), string("caf\xC3\xA9.ck"));
 }

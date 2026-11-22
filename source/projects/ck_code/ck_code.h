@@ -107,6 +107,11 @@ constexpr double kPadY = 4;    /* Layout pad above the first and below the last 
 constexpr double kPadX = 6;    /* text inset from the gutter */
 constexpr double kScrollW = 7; /* scroll bar width */
 constexpr int kPopupRows = 8;
+#ifdef WIN_VERSION
+constexpr const char *kMonoFont = "Consolas";
+#else
+constexpr const char *kMonoFont = "Menlo";
+#endif
 
 /* ck_code.cpp */
 t_ck_code *find_box(long id); /* null once freed */

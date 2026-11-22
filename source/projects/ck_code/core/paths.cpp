@@ -9,7 +9,10 @@ std::string posix_path(const std::string &s) {
 	if (s.empty() || s[0] == '/')
 		return s;
 	const size_t p = s.find(":/");
-	return p == std::string::npos ? s : s.substr(p + 1);
+	if (p == std::string::npos)
+		return s;
+	const bool drive = p == 1 && ((s[0] >= 'A' && s[0] <= 'Z') || (s[0] >= 'a' && s[0] <= 'z'));
+	return drive ? s : s.substr(p + 1);
 }
 
 std::string expand_home(const std::string &home, const std::string &s) {
@@ -57,6 +60,14 @@ std::string drop_text(const std::string &home, const std::vector<std::string> &n
 		o += chuck_string(expand_home(home, posix_path(n)));
 	}
 	return o;
+}
+
+std::filesystem::path fs_path(const std::string &utf8) {
+#ifdef _WIN32
+	return std::filesystem::u8path(utf8);
+#else
+	return std::filesystem::path(utf8);
+#endif
 }
 
 } // namespace ckc

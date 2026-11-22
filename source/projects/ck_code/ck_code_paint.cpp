@@ -313,7 +313,7 @@ void ckc::paint(t_ck_code *x, t_object *patcherview) {
 	if (st.m.font)
 		jgraphics_select_jfont(g, st.m.font);
 	else {
-		jgraphics_select_font_face(g, "Menlo", JGRAPHICS_FONT_SLANT_NORMAL, JGRAPHICS_FONT_WEIGHT_NORMAL);
+		jgraphics_select_font_face(g, kMonoFont, JGRAPHICS_FONT_SLANT_NORMAL, JGRAPHICS_FONT_WEIGHT_NORMAL);
 		jgraphics_set_font_size(g, st.m.size);
 	}
 	Painter(x, g, gm).run();
