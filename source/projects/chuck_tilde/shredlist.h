@@ -15,9 +15,10 @@
 #include <string>
 #include <vector>
 
+// same class-keys as ChucK's own declarations: MSVC mangles them into names
 class ChucK;
-class Chuck_VM;
-class Chuck_VM_Shred;
+struct Chuck_VM;
+struct Chuck_VM_Shred;
 
 // entries per snapshot; further shreds are counted in `total` only
 #define SHREDLIST_MAX 256
